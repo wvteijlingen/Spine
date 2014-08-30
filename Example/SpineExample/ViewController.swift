@@ -20,18 +20,22 @@ class ViewController: UIViewController {
 		spine.registerType(User.self, resourceType: "users")
 		spine.registerType(Comment.self, resourceType: "comments")
 		
-		let user = User()
-		
 		// Querying
 		let query = Query(resourceType: "posts", resourceIDs: ["1"])
-		//			.whereRelationship("author", isOrContains: user)
-		//			.include(["author", "comments", "comments.author"])
+			.whereRelationship("author", isOrContains: User())
+			.include(["author", "comments", "comments.author"])
 		
 		spine.fetchResourcesForQuery(query, success: { fetchedResources in
 			let post = fetchedResources.first as Post
 			println(post.title)
 			println(post.creationDate)
 			println(post.author?.username)
+			
+			spine.saveResource(post, success: {
+				
+			}, failure: {
+				(error) in
+			})
 			
 			}, failure: { (error: NSError) in
 				println("Error: \(error)")

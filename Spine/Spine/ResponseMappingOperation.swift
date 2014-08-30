@@ -46,9 +46,7 @@ class ResponseMappingOperation: NSOperation {
 		
 		// Extract link templates
 		if let linkTemplates = self.responseData["links"].object {
-			for linkTemplateName in linkTemplates {
-				
-			}
+			self.linkTemplates = linkTemplates
 		}
 		
 		assert(self.responseData.object != nil, "The given JSON representation was not of type 'object' (dictionary).")
