@@ -61,33 +61,33 @@ public class Mapper {
 				dictionary[resourceType] = []
 			}
 			
-			var values: NSMutableDictionary = NSMutableDictionary()
-			var links: NSMutableDictionary = NSMutableDictionary()
+			var resourceRepresentation: NSMutableDictionary = NSMutableDictionary()
+			var resourceLinks: NSMutableDictionary = NSMutableDictionary()
 			
 			//Add the ID to the representation
 			if let ID = resource.resourceID {
-				values.setValue(ID, forKey: "id")
+				resourceRepresentation.setValue(ID, forKey: "id")
 			}
 			
+			//Add the other persistent attributes to the representation
 			for (attributeName, attribute) in resource.persistentAttributes {
 				switch attribute {
-				
 				//The attribute is a plain property, add it to the representation
 				case .Property:
-					values.setValue(resource.valueForKey(attributeName), forKey: attributeName)
+					resourceRepresentation.setValue(resource.valueForKey(attributeName), forKey: attributeName)
 
 				//The attribute is a date, format it as ISO-8601
 				case .Date:
 					let formatter = NSDateFormatter()
 					formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ssZZZZZ"
-					values.setValue(formatter.stringFromDate(resource.valueForKey(attributeName) as NSDate), forKey: attributeName)
+					resourceRepresentation.setValue(formatter.stringFromDate(resource.valueForKey(attributeName) as NSDate), forKey: attributeName)
 					
 				//The attribute is a to-one relationship, add related ID, or null if no resource is related
 				case .ToOne:
 					if let relatedResource = resource.valueForKey(attributeName) as? Resource {
-						links.setValue(relatedResource.resourceID, forKey: attributeName)
+						resourceLinks.setValue(relatedResource.resourceID, forKey: attributeName)
 					} else {
-						links.setValue(NSNull(), forKey: attributeName)
+						resourceLinks.setValue(NSNull(), forKey: attributeName)
 					}
 					
 				//The attribute is a to-many relationship, add related IDs, or an empty array if no resources are related
@@ -97,20 +97,20 @@ public class Mapper {
 							assert(resource.resourceID != nil, "Related resources must be saved before saving their parent resource.")
 							return resource.resourceID!
 						}
-						links.setValue(IDs, forKey: attributeName)
+						resourceLinks.setValue(IDs, forKey: attributeName)
 					} else {
-						links.setValue([], forKey: attributeName)
+						resourceLinks.setValue([], forKey: attributeName)
 					}
 				}
 			}
 			
 			//If links were found, add them to the representation
-			if links.allKeys.count != 0 {
-				values.setValue(links, forKey: "links")
+			if resourceLinks.allKeys.count != 0 {
+				resourceRepresentation.setValue(resourceLinks, forKey: "links")
 			}
 			
 			//Add the resoruce respresentation to the root dictionary
-			dictionary[resourceType]!.append(values)
+			dictionary[resourceType]!.append(resourceRepresentation)
 		}
 		
 		return dictionary
