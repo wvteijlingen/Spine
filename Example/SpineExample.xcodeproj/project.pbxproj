@@ -7,6 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		D331837319B2378B00936FBB /* Artist.swift in Sources */ = {isa = PBXBuildFile; fileRef = D331837219B2378B00936FBB /* Artist.swift */; };
+		D3432A9B19B237CB00CED9E7 /* Album.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3432A9A19B237CB00CED9E7 /* Album.swift */; };
+		D3432A9E19B2380100CED9E7 /* Song.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3432A9D19B2380100CED9E7 /* Song.swift */; };
 		D373F71F19B2235D00275AFC /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = D373F71E19B2235D00275AFC /* AppDelegate.swift */; };
 		D373F72119B2235D00275AFC /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D373F72019B2235D00275AFC /* ViewController.swift */; };
 		D373F72419B2235D00275AFC /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = D373F72219B2235D00275AFC /* Main.storyboard */; };
@@ -50,6 +53,9 @@
 
 /* Begin PBXFileReference section */
 		D331833919B225A900936FBB /* Spine.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = Spine.xcodeproj; path = ../Spine/Spine.xcodeproj; sourceTree = "<group>"; };
+		D331837219B2378B00936FBB /* Artist.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Artist.swift; sourceTree = "<group>"; };
+		D3432A9A19B237CB00CED9E7 /* Album.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Album.swift; sourceTree = "<group>"; };
+		D3432A9D19B2380100CED9E7 /* Song.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Song.swift; sourceTree = "<group>"; };
 		D373F71919B2235D00275AFC /* SpineExample.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SpineExample.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		D373F71D19B2235D00275AFC /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		D373F71E19B2235D00275AFC /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -101,6 +107,16 @@
 			name = Resources;
 			sourceTree = "<group>";
 		};
+		D331837119B2377300936FBB /* RestPack */ = {
+			isa = PBXGroup;
+			children = (
+				D331837219B2378B00936FBB /* Artist.swift */,
+				D3432A9A19B237CB00CED9E7 /* Album.swift */,
+				D3432A9D19B2380100CED9E7 /* Song.swift */,
+			);
+			name = RestPack;
+			sourceTree = "<group>";
+		};
 		D373F71019B2235D00275AFC = {
 			isa = PBXGroup;
 			children = (
@@ -123,6 +139,7 @@
 		D373F71B19B2235D00275AFC /* SpineExample */ = {
 			isa = PBXGroup;
 			children = (
+				D331837119B2377300936FBB /* RestPack */,
 				D373F71E19B2235D00275AFC /* AppDelegate.swift */,
 				D373F72019B2235D00275AFC /* ViewController.swift */,
 				D331836619B22A8300936FBB /* Resources */,
@@ -281,10 +298,13 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D331837319B2378B00936FBB /* Artist.swift in Sources */,
 				D373F72119B2235D00275AFC /* ViewController.swift in Sources */,
 				D373F75819B2241900275AFC /* Comment.swift in Sources */,
 				D373F71F19B2235D00275AFC /* AppDelegate.swift in Sources */,
+				D3432A9E19B2380100CED9E7 /* Song.swift in Sources */,
 				D373F75A19B2241900275AFC /* User.swift in Sources */,
+				D3432A9B19B237CB00CED9E7 /* Album.swift in Sources */,
 				D373F75919B2241900275AFC /* Post.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

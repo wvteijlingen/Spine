@@ -20,29 +20,6 @@ class ViewController: UIViewController {
 		spine.registerType(User.self, resourceType: "users")
 		spine.registerType(Comment.self, resourceType: "comments")
 		
-		//		let comment = Comment()
-		//		comment.resourceID = "50"
-		//
-		//		let comment2 = Comment()
-		//		comment2.resourceID = "100"
-		//
-		//		let user = User()
-		//		user.resourceID = "20"
-		//		user.username = "Ward"
-		//
-		//		let post = Post()
-		//		post.resourceID = "10"
-		//		post.title = "Ik ben Ward"
-		//		post.body = "Gozeeeer"
-		////		post.author = user
-		////		post.comments = [comment, comment2]
-		//
-		//		spine.saveResource(post, success: {
-		//			//
-		//		}) { (error) in
-		//			println(error)
-		//		}
-		
 		let user = User()
 		
 		// Querying
