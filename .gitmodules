@@ -1,0 +1,6 @@
+[submodule "Spine/Alamofire"]
+	path = Spine/Alamofire
+	url = https://github.com/Alamofire/Alamofire.git
+[submodule "Spine/SwifyJSON"]
+	path = Spine/SwifyJSON
+	url = https://github.com/lingoer/SwiftyJSON.git
