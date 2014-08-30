@@ -50,7 +50,7 @@ public protocol ResourceClass {
 	/// Array of attributes that must be mapped by Spine.
 	var persistentAttributes: [String: ResourceAttribute] { get }
 	
-	func setValue(value: AnyObject, forAttribute attribute: String)
+	func setValue(value: AnyObject!, forAttribute attribute: String)
 	func valueForAttribute(attribute: String) -> AnyObject!
 }
 
@@ -80,7 +80,7 @@ public class Resource: NSObject, ResourceClass, Printable {
 		self.resourceID = resourceID
 	}
 
-	public func setValue(value: AnyObject, forAttribute attribute: String) {
+	public func setValue(value: AnyObject!, forAttribute attribute: String) {
 		super.setValue(value, forKey: attribute)
 	}
 	
