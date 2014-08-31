@@ -9,12 +9,11 @@
 import Foundation
 import SwiftyJSON
 
+typealias ResourceRepresentation = [String: AnyObject]
+
 public class Mapper {
 	
 	var registeredClasses: [String: Resource.Type] = [:]
-	
-	
-	// MARK: Custom classes
 	
 	public func registerType(type: Resource.Type, resourceType: String) {
 		self.registeredClasses[resourceType] = type
@@ -24,16 +23,6 @@ public class Mapper {
 		return self.registeredClasses[resourceType]!
 	}
 
-	
-	// MARK: Response mapping
-	
-	/**
-	Maps the response data into a resource store.
-	
-	:param: data The JSON data to map.
-	
-	:returns: The resource store containing the populated resources.
-	*/
 	func mapResponseData(data: JSONValue) -> ResourceStore {
 		let mappingOperation = ResponseMappingOperation(responseData: data, mapper: self)
 		mappingOperation.start()
@@ -46,73 +35,265 @@ public class Mapper {
 		return mappingOperation.mappingResult!
 	}
 
+	func mapResourcesToDictionary(resources: [Resource]) -> [String: [ResourceRepresentation]] {
+		let mappingOperation = RequestMappingOperation(resources: resources)
+		mappingOperation.start()
+		return mappingOperation.mappingResult!
+	}
+}
 
-	// MARK: Request mapping
 
-	func mapResourcesToDictionary(resources: [Resource]) -> [String: [NSMutableDictionary]] {
-		var dictionary: [String: [NSMutableDictionary]] = [:]
+// MARK: -
+
+class ResponseMappingOperation: NSOperation {
+	
+	private var responseData: JSONValue
+	private var store: ResourceStore
+	private var mapper: Mapper
+	
+	private lazy var formatter = {
+		Formatter()
+	}()
+	
+	var mappingResult: ResourceStore?
+	
+	init(responseData: JSONValue, mapper: Mapper) {
+		self.responseData = responseData
+		self.mapper = mapper
+		self.store = ResourceStore()
+		super.init()
+	}
+	
+	init(responseData: JSONValue, store: ResourceStore, mapper: Mapper) {
+		self.responseData = responseData
+		self.mapper = mapper
+		self.store = store
+		super.init()
+	}
+	
+	override func main() {
+		assert(self.responseData.object != nil, "The given JSON representation was not of type 'object' (dictionary).")
+		
+		for(resourceType: String, resourcesData: JSONValue) in self.responseData.object! {
+			if resourceType == "linked" {
+				for (linkedResourceType, linkedResources) in resourcesData.object! {
+					for representation in linkedResources.array! {
+						self.mapSingleRepresentation(representation, withResourceType: linkedResourceType)
+					}
+				}
+			} else if let resources = resourcesData.array {
+				for representation in resources {
+					self.mapSingleRepresentation(representation, withResourceType: resourceType)
+				}
+			}
+		}
+		
+		self.resolveRelations()
+		
+		self.mappingResult = self.store
+	}
+
+	/**
+	Maps a single resource representation into a resource object of the given type.
+	
+	:param: representation The JSON representation of a single resource.
+	:param: resourceType   The type of resource onto which to map the representation.
+	*/
+	private func mapSingleRepresentation(representation: JSONValue, withResourceType resourceType: String) {
+		if let existingResource = self.store.resource(resourceType, identifier: representation["id"].string!) {
+			self.mapJSONRepresentation(representation, intoResource: existingResource)
+		} else {
+			let resource: Resource = self.mapper.classNameForResourceType(resourceType)() as Resource
+			self.mapJSONRepresentation(representation, intoResource: resource)
+			self.store.add(resource)
+		}
+	}
+	
+	/**
+	Maps the given JSON representation into the given resource object.
+	
+	:param: representation JSON representation to map. This must be JSONValue of case 'object'.
+	:param: resource       The resource object into which to map the representation.
+	*/
+	private func mapJSONRepresentation(representation: JSONValue, intoResource resource: Resource) {
+		assert(representation.object != nil, "The given JSON representation was not of type 'object' (dictionary).")
+		
+		let attributes = resource.persistentAttributes
+		
+		for (key, value) in representation.object! {
+			if key == "links" {
+				if let links = value.object {
+					for (linkName, linkData) in links {
+						if let id = linkData["id"].string {
+							let relationship = ResourceRelationship.ToOne(href: linkData["href"].string!, ID: id, type: linkData["type"].string!)
+							resource.relationships[linkName] = relationship
+						}
+						
+						if let ids = linkData["ids"].array {
+							let stringIDs: [String] = ids.map({ value in
+								return value.string!
+							})
+							let relationship = ResourceRelationship.ToMany(href: linkData["href"].string!, IDs: stringIDs, type: linkData["type"].string!)
+							resource.relationships[linkName] = relationship
+						}
+					}
+				}
+				
+			} else if key == "id" {
+				resource.resourceID = value.string
+			} else if key == "href" {
+				resource.resourceLocation = value.string
+			} else {
+				if let attribute = attributes[key] {
+					switch attribute {
+					case .Date:
+						resource.setValue(self.formatter.extractDate(value.string!), forKey: key)
+					default:
+						resource.setValue(value.any, forKey: key)
+					}
+				} else {
+					resource.setValue(value.any, forKey: key)
+				}
+			}
+		}
+	}
+	
+	/**
+	Resolves the relations of the given resource by looking up related target resources in the store.
+	
+	:param: resources Array of resources for which to resolve the relations.
+	:param: store     Resource store in which to look up related target resources.
+	*/
+	private func resolveRelations() {
+		for resource in self.store.allResources() {
+			
+			for (relationshipName: String, relation: ResourceRelationship) in resource.relationships {
+				
+				switch relation {
+				case .ToOne(let href, let ID, let type):
+					// Find target of relation in store
+					if let targetResource = store.resource(type, identifier: ID) {
+						resource.setValue(targetResource, forKey: relationshipName)
+					} else {
+						// Target resource was not found in store, create a placeholder
+						let placeholderResource = self.mapper.classNameForResourceType(type)() as Resource
+						placeholderResource.resourceID = ID
+						resource.setValue(placeholderResource, forKey: relationshipName)
+					}
+					
+				case .ToMany(let href, let IDs, let type):
+					var targetResources: [Resource] = []
+					
+					// Find targets of relation in store
+					for ID in IDs {
+						if let targetResource = store.resource(type, identifier: ID) {
+							targetResources.append(targetResource)
+						} else {
+							// Target resource was not found in store, create a placeholder
+							let placeholderResource = self.mapper.classNameForResourceType(type)() as Resource
+							placeholderResource.resourceID = ID
+							targetResources.append(placeholderResource)
+						}
+						
+						resource.setValue(targetResources, forKey: relationshipName)
+					}
+				}
+			}
+		}
+	}
+}
+
+
+// MARK: -
+
+class RequestMappingOperation: NSOperation {
+	
+	private let resources: [Resource]
+	private let formatter = Formatter()
+	
+	var mappingResult: [String: [ResourceRepresentation]]?
+	
+	init(resources: [Resource]) {
+		self.resources = resources
+	}
+	
+	override func main() {
+		var dictionary: [String: [ResourceRepresentation]] = [:]
 		
 		//Loop through all resources
 		for resource in resources {
+			var properties: ResourceRepresentation = [:]
+			var links: [String: AnyObject] = [:]
 			
-			//Create a root resource key in the mapped dictionary
-			let resourceType = resource.resourceType
-			if dictionary[resourceType] == nil {
-				dictionary[resourceType] = []
-			}
-			
-			var resourceRepresentation: NSMutableDictionary = NSMutableDictionary()
-			var resourceLinks: NSMutableDictionary = NSMutableDictionary()
-			
-			//Add the ID to the representation
+			// Special attributes
 			if let ID = resource.resourceID {
-				resourceRepresentation.setValue(ID, forKey: "id")
+				properties["id"] = ID
 			}
 			
 			//Add the other persistent attributes to the representation
 			for (attributeName, attribute) in resource.persistentAttributes {
 				switch attribute {
-				//The attribute is a plain property, add it to the representation
 				case .Property:
-					resourceRepresentation.setValue(resource.valueForKey(attributeName), forKey: attributeName)
-
-				//The attribute is a date, format it as ISO-8601
-				case .Date:
-					let formatter = NSDateFormatter()
-					formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ssZZZZZ"
-					resourceRepresentation.setValue(formatter.stringFromDate(resource.valueForKey(attributeName) as NSDate), forKey: attributeName)
+					properties[attributeName] = resource.valueForKey(attributeName)
 					
-				//The attribute is a to-one relationship, add related ID, or null if no resource is related
+				case .Date:
+					properties[attributeName] = self.formatter.formatDate(resource.valueForKey(attributeName) as NSDate)
+					
 				case .ToOne:
 					if let relatedResource = resource.valueForKey(attributeName) as? Resource {
-						resourceLinks.setValue(relatedResource.resourceID, forKey: attributeName)
+						links[attributeName] = relatedResource.resourceID
 					} else {
-						resourceLinks.setValue(NSNull(), forKey: attributeName)
+						links[attributeName] = NSNull()
 					}
 					
-				//The attribute is a to-many relationship, add related IDs, or an empty array if no resources are related
 				case .ToMany:
 					if let relatedResources = resource.valueForKey(attributeName) as? [Resource] {
 						let IDs: [String] = relatedResources.map { (resource) in
 							assert(resource.resourceID != nil, "Related resources must be saved before saving their parent resource.")
 							return resource.resourceID!
 						}
-						resourceLinks.setValue(IDs, forKey: attributeName)
+						links[attributeName] = IDs
 					} else {
-						resourceLinks.setValue([], forKey: attributeName)
+						links[attributeName] = []
 					}
 				}
 			}
 			
 			//If links were found, add them to the representation
-			if resourceLinks.allKeys.count != 0 {
-				resourceRepresentation.setValue(resourceLinks, forKey: "links")
+			if links.count != 0 {
+				properties["links"] = links
 			}
 			
-			//Add the resoruce respresentation to the root dictionary
-			dictionary[resourceType]!.append(resourceRepresentation)
+			//Add the resource representation to the root dictionary
+			if dictionary[resource.resourceType] == nil {
+				dictionary[resource.resourceType] = [properties]
+			} else {
+				dictionary[resource.resourceType]!.append(properties)
+			}
 		}
 		
-		return dictionary
+		self.mappingResult = dictionary
+	}
+}
+
+// MARK: - Formatters
+class Formatter {
+
+	private lazy var dateFormatter: NSDateFormatter = {
+		let formatter = NSDateFormatter()
+		formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ssZZZZZ"
+		return formatter
+	}()
+
+	func formatDate(date: NSDate) -> String {
+		return self.dateFormatter.stringFromDate(date)
+	}
+
+	func extractDate(value: String) -> NSDate {
+		if let date = self.dateFormatter.dateFromString(value) {
+			return date
+		}
+		
+		return NSDate()
 	}
 }
