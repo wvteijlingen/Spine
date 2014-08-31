@@ -8,29 +8,29 @@
 
 import Foundation
 
-public class Query {
+private struct QueryFilter {
+	var key: String
+	var value: String
+	var comparator: String
 	
-	private struct QueryFilter {
-		var key: String
-		var value: String
-		var comparator: String
-		
-		var rhs: String {
-			get {
-				if self.comparator == "=" {
-					return self.value
-				} else {
-					return self.comparator + self.value
-				}
+	var rhs: String {
+		get {
+			if self.comparator == "=" {
+				return self.value
+			} else {
+				return self.comparator + self.value
 			}
 		}
-		
-		init(property: String, value: String, comparator: String) {
-			self.key = property
-			self.value = value
-			self.comparator = comparator
-		}
 	}
+	
+	init(property: String, value: String, comparator: String) {
+		self.key = property
+		self.value = value
+		self.comparator = comparator
+	}
+}
+
+public class Query {
 	
 	var URL: NSURL
 	var resourceType: String
@@ -38,6 +38,9 @@ public class Query {
 	private var includes: [String] = []
 	private var filters: [QueryFilter] = []
 	private var fields: [String: [String]] = [:]
+	
+	
+	//MARK: Init
 	
 	/**
 	Inits a new query for the given resource type.
@@ -74,6 +77,8 @@ public class Query {
 			self.URL = NSURL(string: href)
 		}
 	}
+	
+	// MARK: Sideloading
 	
 	/**
 	Includes the given relation in the query. This will fetch resources that are in that relationship.
@@ -113,6 +118,9 @@ public class Query {
 		return self
 	}
 	
+	
+	// MARK: Where filtering
+	
 	/**
 	Adds a filter where the given property should be equal to the given value.
 	
@@ -123,24 +131,6 @@ public class Query {
 	*/
 	public func whereProperty(property: String, equals: String) -> Self {
 		self.filters.append(QueryFilter(property: property, value: equals, comparator: "="))
-		return self
-	}
-	
-	/**
-	Adds a filter where the given relationship should point to the given resource, or the given
-	resource should be present in the related resources.
-	
-	:param: relationship The name of the relationship.
-	:param: resource     The resource that should be related.
-	
-	:returns: The query
-	*/
-	public func whereRelationship(relationship: String, isOrContains resource: Resource) -> Self {
-		if let resourceID = resource.resourceID {
-			self.filters.append(QueryFilter(property: relationship, value: resourceID, comparator: "="))
-		} else {
-			println("Warning: Attempt to add a where filter on a relationship, but the target resource does not contain a resource ID.")
-		}
 		return self
 	}
 	
@@ -170,6 +160,24 @@ public class Query {
 		return self
 	}
 	
+	/**
+	Adds a filter where the given relationship should point to the given resource, or the given
+	resource should be present in the related resources.
+	
+	:param: relationship The name of the relationship.
+	:param: resource     The resource that should be related.
+	
+	:returns: The query
+	*/
+	public func whereRelationship(relationship: String, isOrContains resource: Resource) -> Self {
+		assert(resource.resourceID != nil, "Attempt to add a where filter on a relationship, but the target resource does not contain a resource ID.")
+		self.filters.append(QueryFilter(property: relationship, value: resource.resourceID!, comparator: "="))
+		return self
+	}
+	
+	
+	// MARK: Sparse fieldsets
+	
 	public func restrictProperties(properties: [String]) -> Self {
 		self.restrictProperties(properties, ofResourceType: self.resourceType)
 		return self
@@ -184,6 +192,9 @@ public class Query {
 		
 		return self
 	}
+	
+	
+	// MARK: URL building
 	
 	/**
 	Returns the URL string of this query, relative to the given base URL.
