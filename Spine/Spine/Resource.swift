@@ -31,44 +31,24 @@ public enum ResourceRelationship {
 }
 
 /**
- *  The protocol that all resource classes must implement.
- *  You can implement this protocol yourself or use the Resource class as base for your custom classes.
+ *  A base recource class that provides some defaults for resources.
+ *  You must create custom resource classes by subclassing from Resource.
  */
-public protocol ResourceClass {
-	/// The unique identifier of this resource
-	var resourceID: String? { get set }
-	
-	/// The resource type of this resource. Must be plural.
-	var resourceType: String { get }
-	
-	/// The location (URL) of this resource.
-	var resourceLocation: String? { get set }
-	
-	/// Links to other resources.
-	var relationships: [String: ResourceRelationship] { get set }
-	
-	/// Array of attributes that must be mapped by Spine.
-	var persistentAttributes: [String: ResourceAttribute] { get }
-	
-	func setValue(value: AnyObject!, forAttribute attribute: String)
-	func valueForAttribute(attribute: String) -> AnyObject!
-}
+public class Resource: NSObject, Printable {
 
-/**
- *  A base recource class that provides some defaults for the variables and functions in the ResourceClass protocol.
- *  You can create custom classes by subclassing from Resource, or you can implement the ResourceClass yourself.
- */
-public class Resource: NSObject, ResourceClass, Printable {
-	
-	// Identification properties
+	/// The unique identifier of this resource. If this is nil, the resource hasn't been saved yet.
 	public var resourceID: String?
+
+	/// The type of this resource in plural form. For example: 'posts', 'users'.
 	public var resourceType: String { return "_undefined" }
+
+	/// The location (URL) of this resource.
 	public var resourceLocation: String?
 
-	// Relationships
+	/// Links to other resources.
 	public var relationships: [String: ResourceRelationship] = [:]
 
-	// Mapping configuration
+	/// Array of attributes that must be mapped by Spine.
 	public var persistentAttributes: [String: ResourceAttribute] { return [:] }
 	
 	required override public init() {
@@ -77,14 +57,6 @@ public class Resource: NSObject, ResourceClass, Printable {
 	
 	public init(resourceID: String) {
 		self.resourceID = resourceID
-	}
-
-	public func setValue(value: AnyObject!, forAttribute attribute: String) {
-		super.setValue(value, forKey: attribute)
-	}
-	
-	public func valueForAttribute(attribute: String) -> AnyObject! {
-		return super.valueForKey(attribute)
 	}
 	
 	// Printable
