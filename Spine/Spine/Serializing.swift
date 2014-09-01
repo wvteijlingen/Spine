@@ -11,27 +11,56 @@ import SwiftyJSON
 
 typealias ResourceRepresentation = [String: AnyObject]
 
-public class Serializer {
+class ResourceClassMap {
+	private var registeredClasses: [String: Resource.Type] = [:]
 	
-	var registeredClasses: [String: Resource.Type] = [:]
-	
-	public func registerType(type: Resource.Type) {
+	func registerClass(type: Resource.Type) {
 		let instance = type()
 		self.registeredClasses[instance.resourceType] = type
 	}
 	
-	private func classNameForResourceType(resourceType: String) -> Resource.Type {
-		return self.registeredClasses[resourceType]!
+	func unregisterClass(type: Resource.Type) {
+		let instance = type()
+		self.registeredClasses[instance.resourceType] = nil
 	}
+	
+	func classForResourceType(resourceType: String) -> Resource.Type {
+		return registeredClasses[resourceType]!
+	}
+}
+
+
+// MARK: -
+
+class Serializer {
+	private var classMap: ResourceClassMap = ResourceClassMap()
+	
+	
+	//MARK: Class mapping
+	
+	func registerClass(type: Resource.Type) {
+		self.classMap.registerClass(type)
+	}
+	
+	func unregisterClass(type: Resource.Type) {
+		self.classMap.unregisterClass(type)
+	}
+	
+	func classNameForResourceType(resourceType: String) -> Resource.Type {
+		return self.classMap.classForResourceType(resourceType)
+	}
+	
+	
+	// MARK: Serializing
 
 	func unserializeData(data: JSONValue) -> ResourceStore {
-		let mappingOperation = UnserializeOperation(data: data, serializer: self)
+		let mappingOperation = UnserializeOperation(data: data, classMap: self.classMap)
 		mappingOperation.start()
 		return mappingOperation.result!
 	}
 
 	func unserializeData(data: JSONValue, usingStore store: ResourceStore) -> ResourceStore {
-		let mappingOperation = UnserializeOperation(data: data, store: store, serializer: self)
+		let mappingOperation = UnserializeOperation(data: data, store: store, classMap: self.classMap)
 		mappingOperation.start()
 		return mappingOperation.result!
 	}
@@ -50,7 +79,7 @@ class UnserializeOperation: NSOperation {
 	
 	private var data: JSONValue
 	private var store: ResourceStore
-	private var serializer: Serializer
+	private var classMap: ResourceClassMap
 	
 	private lazy var formatter = {
 		Formatter()
@@ -58,16 +87,16 @@ class UnserializeOperation: NSOperation {
 	
 	var result: ResourceStore?
 	
-	init(data: JSONValue, serializer: Serializer) {
+	init(data: JSONValue, classMap: ResourceClassMap) {
 		self.data = data
-		self.serializer = serializer
+		self.classMap = classMap
 		self.store = ResourceStore()
 		super.init()
 	}
 	
-	init(data: JSONValue, store: ResourceStore, serializer: Serializer) {
+	init(data: JSONValue, store: ResourceStore, classMap: ResourceClassMap) {
 		self.data = data
-		self.serializer = serializer
+		self.classMap = classMap
 		self.store = store
 		super.init()
 	}
@@ -111,7 +140,7 @@ class UnserializeOperation: NSOperation {
 			resource = existingResource
 			isExistingResource = true
 		} else {
-			resource = self.serializer.classNameForResourceType(resourceType)() as Resource
+			resource = self.classMap.classForResourceType(resourceType)() as Resource
 			isExistingResource = false
 		}
 
@@ -170,7 +199,7 @@ class UnserializeOperation: NSOperation {
 						resource.setValue(targetResource, forKey: relationshipName)
 					} else {
 						// Target resource was not found in store, create a placeholder
-						let placeholderResource = self.serializer.classNameForResourceType(type)() as Resource
+						let placeholderResource = self.classMap.classForResourceType(type)() as Resource
 						placeholderResource.resourceID = ID
 						resource.setValue(placeholderResource, forKey: relationshipName)
 					}
@@ -184,7 +213,7 @@ class UnserializeOperation: NSOperation {
 							targetResources.append(targetResource)
 						} else {
 							// Target resource was not found in store, create a placeholder
-							let placeholderResource = self.serializer.classNameForResourceType(type)() as Resource
+							let placeholderResource = self.classMap.classForResourceType(type)() as Resource
 							placeholderResource.resourceID = ID
 							targetResources.append(placeholderResource)
 						}
@@ -270,10 +299,12 @@ class SerializeOperation: NSOperation {
 	}
 }
 
-// MARK: - Formatters
+
+// MARK:
+
 class Formatter {
 
-	func unformatJSONValue(value: JSONValue, ofType type: ResourceAttribute) -> AnyObject {
+	private func unformatJSONValue(value: JSONValue, ofType type: ResourceAttribute) -> AnyObject {
 		switch type {
 		case .Date:
 			return self.unformatDate(value.string!)

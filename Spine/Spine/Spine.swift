@@ -42,7 +42,7 @@ public class Spine {
 	:param: type The class type.
 	*/
 	public func registerType(type: Resource.Type) {
-		self.serializer.registerType(type)
+		self.serializer.registerClass(type)
 	}
 	
 	
