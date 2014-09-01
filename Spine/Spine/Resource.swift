@@ -103,10 +103,9 @@ extension Resource {
 		Spine.sharedInstance.deleteResource(self, success: {}, failure: {(error) in })
 	}
 
-	public class func findOne(ID: String, success: ([Resource]) -> Void, failure: (NSError) -> Void) {
+	public class func findOne(ID: String, success: (Resource) -> Void, failure: (NSError) -> Void) {
 		let instance = self()
-		let query = Query(resourceType: instance.resourceType, resourceIDs: [ID])
-		Spine.sharedInstance.fetchResourcesForQuery(query, success, failure)
+		Spine.sharedInstance.fetchResourceWithType(instance.resourceType, ID: ID, success: success, failure: failure)
 	}
 
 	public class func find(IDs: [String], success: ([Resource]) -> Void, failure: (NSError) -> Void) {

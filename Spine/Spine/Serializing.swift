@@ -11,7 +11,7 @@ import SwiftyJSON
 
 typealias ResourceRepresentation = [String: AnyObject]
 
-public class Mapper {
+public class Serializer {
 	
 	var registeredClasses: [String: Resource.Type] = [:]
 	
@@ -24,74 +24,74 @@ public class Mapper {
 		return self.registeredClasses[resourceType]!
 	}
 
-	func mapResponseData(data: JSONValue) -> ResourceStore {
-		let mappingOperation = ResponseMappingOperation(responseData: data, mapper: self)
+	func unserializeData(data: JSONValue) -> ResourceStore {
+		let mappingOperation = UnserializeOperation(data: data, serializer: self)
 		mappingOperation.start()
-		return mappingOperation.mappingResult!
+		return mappingOperation.result!
 	}
 
-	func mapResponseData(data: JSONValue, usingStore store: ResourceStore) -> ResourceStore {
-		let mappingOperation = ResponseMappingOperation(responseData: data, store: store, mapper: self)
+	func unserializeData(data: JSONValue, usingStore store: ResourceStore) -> ResourceStore {
+		let mappingOperation = UnserializeOperation(data: data, store: store, serializer: self)
 		mappingOperation.start()
-		return mappingOperation.mappingResult!
+		return mappingOperation.result!
 	}
 
-	func mapResourcesToDictionary(resources: [Resource]) -> [String: [ResourceRepresentation]] {
-		let mappingOperation = RequestMappingOperation(resources: resources)
+	func serializeResources(resources: [Resource]) -> [String: [ResourceRepresentation]] {
+		let mappingOperation = SerializeOperation(resources: resources)
 		mappingOperation.start()
-		return mappingOperation.mappingResult!
+		return mappingOperation.result!
 	}
 }
 
 
 // MARK: -
 
-class ResponseMappingOperation: NSOperation {
+class UnserializeOperation: NSOperation {
 	
-	private var responseData: JSONValue
+	private var data: JSONValue
 	private var store: ResourceStore
-	private var mapper: Mapper
+	private var serializer: Serializer
 	
 	private lazy var formatter = {
 		Formatter()
 	}()
 	
-	var mappingResult: ResourceStore?
+	var result: ResourceStore?
 	
-	init(responseData: JSONValue, mapper: Mapper) {
-		self.responseData = responseData
-		self.mapper = mapper
+	init(data: JSONValue, serializer: Serializer) {
+		self.data = data
+		self.serializer = serializer
 		self.store = ResourceStore()
 		super.init()
 	}
 	
-	init(responseData: JSONValue, store: ResourceStore, mapper: Mapper) {
-		self.responseData = responseData
-		self.mapper = mapper
+	init(data: JSONValue, store: ResourceStore, serializer: Serializer) {
+		self.data = data
+		self.serializer = serializer
 		self.store = store
 		super.init()
 	}
 	
 	override func main() {
-		assert(self.responseData.object != nil, "The given JSON representation was not of type 'object' (dictionary).")
+		assert(self.data.object != nil, "The given JSON representation was not of type 'object' (dictionary).")
 		
-		for(resourceType: String, resourcesData: JSONValue) in self.responseData.object! {
+		for(resourceType: String, resourcesData: JSONValue) in self.data.object! {
 			if resourceType == "linked" {
 				for (linkedResourceType, linkedResources) in resourcesData.object! {
 					for representation in linkedResources.array! {
-						self.mapSingleRepresentation(representation, withResourceType: linkedResourceType)
+						self.unserializeSingleRepresentation(representation, withResourceType: linkedResourceType)
 					}
 				}
 			} else if let resources = resourcesData.array {
 				for representation in resources {
-					self.mapSingleRepresentation(representation, withResourceType: resourceType)
+					self.unserializeSingleRepresentation(representation, withResourceType: resourceType)
 				}
 			}
 		}
 		
 		self.resolveRelations()
 		
-		self.mappingResult = self.store
+		self.result = self.store
 	}
 
 	/**
@@ -100,27 +100,22 @@ class ResponseMappingOperation: NSOperation {
 	:param: representation The JSON representation of a single resource.
 	:param: resourceType   The type of resource onto which to map the representation.
 	*/
-	private func mapSingleRepresentation(representation: JSONValue, withResourceType resourceType: String) {
-		if let existingResource = self.store.resource(resourceType, identifier: representation["id"].string!) {
-			self.mapJSONRepresentation(representation, intoResource: existingResource)
-		} else {
-			let resource: Resource = self.mapper.classNameForResourceType(resourceType)() as Resource
-			self.mapJSONRepresentation(representation, intoResource: resource)
-			self.store.add(resource)
-		}
-	}
-	
-	/**
-	Maps the given JSON representation into the given resource object.
-	
-	:param: representation JSON representation to map. This must be JSONValue of case 'object'.
-	:param: resource       The resource object into which to map the representation.
-	*/
-	private func mapJSONRepresentation(representation: JSONValue, intoResource resource: Resource) {
+	private func unserializeSingleRepresentation(representation: JSONValue, withResourceType resourceType: String) {
 		assert(representation.object != nil, "The given JSON representation was not of type 'object' (dictionary).")
 		
-		let attributes = resource.persistentAttributes
+		// Find existing resource in the store, or create a new resource.
+		var resource: Resource
+		var isExistingResource: Bool
 		
+		if let existingResource = self.store.resource(resourceType, identifier: representation["id"].string!) {
+			resource = existingResource
+			isExistingResource = true
+		} else {
+			resource = self.serializer.classNameForResourceType(resourceType)() as Resource
+			isExistingResource = false
+		}
+
+		// Unserialize the representation into the resource object
 		for (key, value) in representation.object! {
 			if key == "links" {
 				if let links = value.object {
@@ -142,28 +137,26 @@ class ResponseMappingOperation: NSOperation {
 				
 			} else if key == "id" {
 				resource.resourceID = value.string
+				
 			} else if key == "href" {
 				resource.resourceLocation = value.string
+				
 			} else {
-				if let attribute = attributes[key] {
-					switch attribute {
-					case .Date:
-						resource.setValue(self.formatter.extractDate(value.string!), forKey: key)
-					default:
-						resource.setValue(value.any, forKey: key)
-					}
+				if let attribute = resource.persistentAttributes[key] {
+					resource.setValue(self.formatter.unformatJSONValue(value, ofType: attribute), forKey: key)
 				} else {
 					resource.setValue(value.any, forKey: key)
 				}
 			}
 		}
+		
+		if !isExistingResource {
+			self.store.add(resource)
+		}
 	}
 	
 	/**
-	Resolves the relations of the given resource by looking up related target resources in the store.
-	
-	:param: resources Array of resources for which to resolve the relations.
-	:param: store     Resource store in which to look up related target resources.
+	Resolves the relations of the resources in the store.
 	*/
 	private func resolveRelations() {
 		for resource in self.store.allResources() {
@@ -177,7 +170,7 @@ class ResponseMappingOperation: NSOperation {
 						resource.setValue(targetResource, forKey: relationshipName)
 					} else {
 						// Target resource was not found in store, create a placeholder
-						let placeholderResource = self.mapper.classNameForResourceType(type)() as Resource
+						let placeholderResource = self.serializer.classNameForResourceType(type)() as Resource
 						placeholderResource.resourceID = ID
 						resource.setValue(placeholderResource, forKey: relationshipName)
 					}
@@ -191,7 +184,7 @@ class ResponseMappingOperation: NSOperation {
 							targetResources.append(targetResource)
 						} else {
 							// Target resource was not found in store, create a placeholder
-							let placeholderResource = self.mapper.classNameForResourceType(type)() as Resource
+							let placeholderResource = self.serializer.classNameForResourceType(type)() as Resource
 							placeholderResource.resourceID = ID
 							targetResources.append(placeholderResource)
 						}
@@ -207,12 +200,12 @@ class ResponseMappingOperation: NSOperation {
 
 // MARK: -
 
-class RequestMappingOperation: NSOperation {
+class SerializeOperation: NSOperation {
 	
 	private let resources: [Resource]
 	private let formatter = Formatter()
 	
-	var mappingResult: [String: [ResourceRepresentation]]?
+	var result: [String: [ResourceRepresentation]]?
 	
 	init(resources: [Resource]) {
 		self.resources = resources
@@ -273,24 +266,35 @@ class RequestMappingOperation: NSOperation {
 			}
 		}
 		
-		self.mappingResult = dictionary
+		self.result = dictionary
 	}
 }
 
 // MARK: - Formatters
 class Formatter {
 
+	func unformatJSONValue(value: JSONValue, ofType type: ResourceAttribute) -> AnyObject {
+		switch type {
+		case .Date:
+			return self.unformatDate(value.string!)
+		default:
+			return value.any!
+		}
+	}
+	
+	// MARK: Date
+	
 	private lazy var dateFormatter: NSDateFormatter = {
 		let formatter = NSDateFormatter()
 		formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ssZZZZZ"
 		return formatter
 	}()
 
-	func formatDate(date: NSDate) -> String {
+	private func formatDate(date: NSDate) -> String {
 		return self.dateFormatter.stringFromDate(date)
 	}
 
-	func extractDate(value: String) -> NSDate {
+	private func unformatDate(value: String) -> NSDate {
 		if let date = self.dateFormatter.dateFromString(value) {
 			return date
 		}

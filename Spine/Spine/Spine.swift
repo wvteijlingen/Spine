@@ -23,7 +23,7 @@ public class Spine {
     }
 
 	public var endPoint: String
-	private var mapper: Mapper = Mapper()
+	private var serializer: Serializer = Serializer()
 
 	public init() {
 		self.endPoint = ""
@@ -42,7 +42,7 @@ public class Spine {
 	:param: type The class type.
 	*/
 	public func registerType(type: Resource.Type) {
-		self.mapper.registerType(type)
+		self.serializer.registerType(type)
 	}
 	
 	
@@ -117,9 +117,9 @@ public class Spine {
 			if let JSONData: NSData = data as? NSData {
 				let JSON = JSONValue(JSONData as NSData!)
 				
-				if response!.statusCode > 200 && response!.statusCode < 300 {
+				if response!.statusCode >= 200 && response!.statusCode < 300 {
 
-					let mappedResourcesStore = self.mapper.mapResponseData(JSON)
+					let mappedResourcesStore = self.serializer.unserializeData(JSON)
 					if let fetchedResources = mappedResourcesStore.resourcesWithName(query.resourceType) {
 						success(fetchedResources)
 					} else {
@@ -161,7 +161,7 @@ public class Spine {
 			URL = self.URLForResource(resource)
 		}
 
-		let parameters = self.mapper.mapResourcesToDictionary([resource])
+		let parameters = self.serializer.serializeResources([resource])
 
 		let request = Alamofire.request(method, URL, parameters: parameters, encoding: Alamofire.ParameterEncoding.JSON)
 		request.response { (request: NSURLRequest, response: NSHTTPURLResponse?, data: AnyObject?, error: NSError?) -> Void in
@@ -177,7 +177,7 @@ public class Spine {
 			if let JSONData: NSData = data as? NSData {
 				let JSON = JSONValue(JSONData as NSData!)
 				let store = ResourceStore(resources: [resource])
-				let mappedResourcesStore = self.mapper.mapResponseData(JSON, usingStore: store)
+				let mappedResourcesStore = self.serializer.unserializeData(JSON, usingStore: store)
 			}
 
 			success()
