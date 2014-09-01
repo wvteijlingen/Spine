@@ -10,14 +10,60 @@ import Foundation
 import Alamofire
 import SwiftyJSON
 
+let SPINE_ERROR_DOMAIN = "com.wardvanteijlingen.Spine"
+
 public class Spine {
+
+	public class var sharedInstance: Spine {
+        struct Singleton {
+            static let instance = Spine()
+        }
+
+        return Singleton.instance
+    }
 
 	public var endPoint: String
 	private var mapper: Mapper = Mapper()
 
+	public init() {
+		self.endPoint = ""
+	}
+
 	public init(endPoint: String) {
 		self.endPoint = endPoint
 	}
+	
+	
+	// MARK: Mapping
+	
+	/**
+	Registers the given class as a resource class.
+	
+	:param: type The class type.
+	*/
+	public func registerType(type: Resource.Type) {
+		self.mapper.registerType(type)
+	}
+	
+	
+	// MARK: Routing
+	
+	private func URLForCollectionOfResource(resource: Resource) -> String {
+		return "\(self.endPoint)/\(resource.resourceType)"
+	}
+	
+	private func URLForResource(resource: Resource) -> String {
+		if let resourceLocation = resource.resourceLocation {
+			return resourceLocation
+		}
+		
+		return "\(self.endPoint)/\(resource.resourceType)/\(resource.resourceID!)"
+	}
+	
+	private func URLForQuery(query: Query) -> String {
+		return query.URLRelativeToURL(self.endPoint)
+	}
+
 
 	// MARK: Fetching
 
@@ -37,33 +83,6 @@ public class Spine {
 	}
 
 	/**
-	 Fetches resources by executing the given query.
-
-	 :param: query   The query to execute.
-	 :param: success Function to call after success.
-	 :param: failure Function to call after failure.
-	 */
-	public func fetchResourcesForQuery(query: Query, success: ([Resource]) -> Void, failure: (NSError) -> Void) {
-		let URLString = self.URLForQuery(query)
-		Alamofire.request(.GET, URLString).response { (request: NSURLRequest, response: NSHTTPURLResponse?, data: AnyObject?, error: NSError?) -> Void in
-			if let error = error {
-				println("Error: \(error)")
-				return
-			}
-
-			if let JSONData: NSData = data as? NSData {
-				let JSON = JSONValue(JSONData as NSData!)
-				let mappedResourcesStore = self.mapper.mapResponseData(JSON)
-				if let fetchedResources = mappedResourcesStore.resourcesWithName(query.resourceType) {
-					success(fetchedResources)
-				} else {
-					failure(NSError())
-				}
-			}
-		}
-	}
-
-	/**
 	 Fetches resources related to the given resource by a given relationship.
 
 	 :param: relation The name of the relationship.
@@ -80,7 +99,41 @@ public class Spine {
 		}
 	}
 
-	
+	/**
+	 Fetches resources by executing the given query.
+
+	 :param: query   The query to execute.
+	 :param: success Function to call after success.
+	 :param: failure Function to call after failure.
+	 */
+	public func fetchResourcesForQuery(query: Query, success: ([Resource]) -> Void, failure: (NSError) -> Void) {
+		let URLString = self.URLForQuery(query)
+		Alamofire.request(.GET, URLString).response { (request: NSURLRequest, response: NSHTTPURLResponse?, data: AnyObject?, error: NSError?) -> Void in
+			if let error = error {
+				failure(error)
+				return
+			}
+
+			if let JSONData: NSData = data as? NSData {
+				let JSON = JSONValue(JSONData as NSData!)
+				
+				if response!.statusCode > 200 && response!.statusCode < 300 {
+
+					let mappedResourcesStore = self.mapper.mapResponseData(JSON)
+					if let fetchedResources = mappedResourcesStore.resourcesWithName(query.resourceType) {
+						success(fetchedResources)
+					} else {
+						failure(NSError())
+					}
+
+				} else {
+					failure(NSError(domain: SPINE_ERROR_DOMAIN, code: JSON["errors"][0]["id"].integer!, userInfo: [NSLocalizedDescriptionKey: JSON["errors"][0]["title"].string!]))
+				}
+			}
+		}
+	}
+
+
 	// MARK: Saving
 
 	/**
@@ -207,37 +260,5 @@ public class Spine {
 				success()
 			}
 		}
-	}
-}
-
-
-// MARK: - Routing
-extension Spine {
-	func URLForCollectionOfResource(resource: Resource) -> String {
-		return "\(self.endPoint)/\(resource.resourceType)"
-	}
-
-	func URLForResource(resource: Resource) -> String {
-		if let resourceLocation = resource.resourceLocation {
-			return resourceLocation
-		}
-
-		return "\(self.endPoint)/\(resource.resourceType)/\(resource.resourceID!)"
-	}
-
-	func URLForQuery(query: Query) -> String {
-		return query.URLRelativeToURL(self.endPoint)
-	}
-}
-
-
-// MARK: - Mapping
-extension Spine {
-	public func registerType(type: Resource.Type, resourceType: String) {
-		self.mapper.registerType(type, resourceType: resourceType)
-	}
-	
-	public func classNameForResourceType(resourceType: String) -> Resource.Type {
-		return self.mapper.classNameForResourceType(resourceType)
 	}
 }

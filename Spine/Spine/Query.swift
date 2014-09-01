@@ -30,11 +30,15 @@ private struct QueryFilter {
 	}
 }
 
+// MARK: -
+
 public class Query {
 	
-	var URL: NSURL
+	// Base parts
 	var resourceType: String
-	
+	private var URL: NSURL
+
+	// Query parts
 	private var includes: [String] = []
 	private var filters: [QueryFilter] = []
 	private var fields: [String: [String]] = [:]
@@ -129,21 +133,47 @@ public class Query {
 	
 	:returns: The query
 	*/
-	public func whereProperty(property: String, equals: String) -> Self {
-		self.filters.append(QueryFilter(property: property, value: equals, comparator: "="))
+	public func whereProperty(property: String, equalTo: String) -> Self {
+		self.filters.append(QueryFilter(property: property, value: equalTo, comparator: "="))
 		return self
 	}
-	
+
 	/**
-	Adds a filter where the given property should be smaller then the given value.
+	Adds a filter where the given property should not be equal to the given value.
+	
+	:param: property The property to filter on.
+	:param: equals   The value to check for.
+	
+	:returns: The query
+	*/
+	public func whereProperty(property: String, notEqualTo: String) -> Self {
+		self.filters.append(QueryFilter(property: property, value: notEqualTo, comparator: "=!"))
+		return self
+	}
+
+	/**
+	Adds a filter where the given property should be smaller than the given value.
 	
 	:param: property    The property to filter on.
 	:param: smallerThen The value to check for.
 	
 	:returns: The query
 	*/
-	public func whereProperty(property: String, smallerThen: String) -> Self {
-		self.filters.append(QueryFilter(property: property, value: smallerThen, comparator: "<"))
+	public func whereProperty(property: String, lessThan: String) -> Self {
+		self.filters.append(QueryFilter(property: property, value: lessThan, comparator: "<"))
+		return self
+	}
+
+	/**
+	Adds a filter where the given property should be less then or equal to the given value.
+	
+	:param: property    The property to filter on.
+	:param: smallerThen The value to check for.
+	
+	:returns: The query
+	*/
+	public func whereProperty(property: String, lessThanOrEqualTo: String) -> Self {
+		self.filters.append(QueryFilter(property: property, value: lessThanOrEqualTo, comparator: "<="))
 		return self
 	}
 	
@@ -155,8 +185,21 @@ public class Query {
 	
 	:returns: The query
 	*/
-	public func whereProperty(property: String, greaterThen: String) -> Self {
-		self.filters.append(QueryFilter(property: property, value: greaterThen, comparator: ">"))
+	public func whereProperty(property: String, greaterThan: String) -> Self {
+		self.filters.append(QueryFilter(property: property, value: greaterThan, comparator: ">"))
+		return self
+	}
+
+	/**
+	Adds a filter where the given property should be greater than or equal to the given value.
+	
+	:param: property    The property to filter on.
+	:param: greaterThen The value to check for.
+	
+	:returns: The query
+	*/
+	public func whereProperty(property: String, greaterThanOrEqualTo: String) -> Self {
+		self.filters.append(QueryFilter(property: property, value: greaterThanOrEqualTo, comparator: ">="))
 		return self
 	}
 	
@@ -230,5 +273,12 @@ public class Query {
 			URLComponents.queryItems = queryItems
 		}
 		return URLComponents.string
+	}
+}
+
+// MARK: - Convenience functions
+extension Query {
+	public func findResources(success: ([Resource]) -> Void, failure: (NSError) -> Void) {
+		Spine.sharedInstance.fetchResourcesForQuery(self, success, failure)
 	}
 }

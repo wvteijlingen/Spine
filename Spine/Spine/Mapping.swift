@@ -15,11 +15,12 @@ public class Mapper {
 	
 	var registeredClasses: [String: Resource.Type] = [:]
 	
-	public func registerType(type: Resource.Type, resourceType: String) {
-		self.registeredClasses[resourceType] = type
+	public func registerType(type: Resource.Type) {
+		let instance = type()
+		self.registeredClasses[instance.resourceType] = type
 	}
 	
-	public func classNameForResourceType(resourceType: String) -> Resource.Type {
+	private func classNameForResourceType(resourceType: String) -> Resource.Type {
 		return self.registeredClasses[resourceType]!
 	}
 

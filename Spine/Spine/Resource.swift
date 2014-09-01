@@ -54,7 +54,6 @@ public protocol ResourceClass {
 	func valueForAttribute(attribute: String) -> AnyObject!
 }
 
-
 /**
  *  A base recource class that provides some defaults for the variables and functions in the ResourceClass protocol.
  *  You can create custom classes by subclassing from Resource, or you can implement the ResourceClass yourself.
@@ -91,5 +90,34 @@ public class Resource: NSObject, ResourceClass, Printable {
 	// Printable
 	override public var description: String {
 		return "\(self.resourceType)[\(self.resourceID)]"
+	}
+}
+
+// MARK: - Convenience functions
+extension Resource {
+	public func saveInBackground() {
+		Spine.sharedInstance.saveResource(self, success: {}, failure: {(error) in })
+	}
+
+	public func deleteInBackground() {
+		Spine.sharedInstance.deleteResource(self, success: {}, failure: {(error) in })
+	}
+
+	public class func findOne(ID: String, success: ([Resource]) -> Void, failure: (NSError) -> Void) {
+		let instance = self()
+		let query = Query(resourceType: instance.resourceType, resourceIDs: [ID])
+		Spine.sharedInstance.fetchResourcesForQuery(query, success, failure)
+	}
+
+	public class func find(IDs: [String], success: ([Resource]) -> Void, failure: (NSError) -> Void) {
+		let instance = self()
+		let query = Query(resourceType: instance.resourceType, resourceIDs: IDs)
+		Spine.sharedInstance.fetchResourcesForQuery(query, success, failure)
+	}
+
+	public class func findAll(success: ([Resource]) -> Void, failure: (NSError) -> Void) {
+		let instance = self()
+		let query = Query(resourceType: instance.resourceType)
+		Spine.sharedInstance.fetchResourcesForQuery(query, success, failure)
 	}
 }
