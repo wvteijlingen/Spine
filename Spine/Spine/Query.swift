@@ -71,8 +71,10 @@ public class Query {
 		self.resourceType = resourceType
 	}
 	
-	public init(resource: Resource, relationship: ResourceRelationship) {
-		switch relationship {
+	public init(resource: Resource, relationship: String) {
+		assert(resource.relationships[relationship] != nil, "Specified relationship does not exist")
+
+		switch resource.relationships[relationship]! {
 		case .ToOne(let href, let ID, let type):
 			self.resourceType = type
 			self.URL = NSURL(string: href)

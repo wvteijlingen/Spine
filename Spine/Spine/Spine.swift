@@ -91,12 +91,8 @@ public class Spine {
 	 :param: failure  Function to call after failure.
 	 */
 	public func fetchResourcesForRelationship(relationship: String, ofResource resource: Resource, success: ([Resource]) -> Void, failure: (NSError) -> Void) {
-		if let relationship = resource.relationships[relationship] {
-			let query = Query(resource: resource, relationship: relationship)
-			self.fetchResourcesForQuery(query, success, failure)
-		} else {
-			failure(NSError())
-		}
+		let query = Query(resource: resource, relationship: relationship)
+		self.fetchResourcesForQuery(query, success, failure)
 	}
 
 	/**
