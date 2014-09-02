@@ -43,10 +43,10 @@ public class Resource: NSObject, Printable {
 	public var resourceType: String { return "_undefined" }
 
 	/// The location (URL) of this resource.
-	public var resourceLocation: String?
+	var resourceLocation: String?
 
 	/// Links to other resources.
-	public var relationships: [String: ResourceRelationship] = [:]
+	var relationships: [String: ResourceRelationship] = [:]
 
 	/// Array of attributes that must be mapped by Spine.
 	public var persistentAttributes: [String: ResourceAttribute] { return [:] }
