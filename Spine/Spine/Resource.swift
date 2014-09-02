@@ -25,7 +25,7 @@ Represents a relationship to another resource or resources.
 - ToOne:  A to-one relationship.
 - ToMany: A to-many relationship.
 */
-public enum ResourceRelationship {
+enum ResourceRelationship {
 	case ToOne(href: String, ID: String, type: String)
 	case ToMany(href: String, IDs: [String], type: String)
 }
