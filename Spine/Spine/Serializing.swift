@@ -11,21 +11,25 @@ import SwiftyJSON
 
 typealias ResourceRepresentation = [String: AnyObject]
 
-class ResourceClassMap {
+struct ResourceClassMap {
 	private var registeredClasses: [String: Resource.Type] = [:]
 	
-	func registerClass(type: Resource.Type) {
+	mutating func registerClass(type: Resource.Type) {
 		let instance = type()
 		self.registeredClasses[instance.resourceType] = type
 	}
 	
-	func unregisterClass(type: Resource.Type) {
+	mutating func unregisterClass(type: Resource.Type) {
 		let instance = type()
 		self.registeredClasses[instance.resourceType] = nil
 	}
 	
 	func classForResourceType(resourceType: String) -> Resource.Type {
 		return registeredClasses[resourceType]!
+	}
+	
+	subscript(resourceType: String) -> Resource.Type {
+		return self.classForResourceType(resourceType)
 	}
 }
 
@@ -47,7 +51,7 @@ class Serializer {
 	}
 	
 	func classNameForResourceType(resourceType: String) -> Resource.Type {
-		return self.classMap.classForResourceType(resourceType)
+		return self.classMap[resourceType]
 	}
 	
 	
@@ -140,7 +144,7 @@ class UnserializeOperation: NSOperation {
 			resource = existingResource
 			isExistingResource = true
 		} else {
-			resource = self.classMap.classForResourceType(resourceType)() as Resource
+			resource = self.classMap[resourceType]() as Resource
 			isExistingResource = false
 		}
 
@@ -199,7 +203,7 @@ class UnserializeOperation: NSOperation {
 						resource.setValue(targetResource, forKey: relationshipName)
 					} else {
 						// Target resource was not found in store, create a placeholder
-						let placeholderResource = self.classMap.classForResourceType(type)() as Resource
+						let placeholderResource = self.classMap[type]() as Resource
 						placeholderResource.resourceID = ID
 						resource.setValue(placeholderResource, forKey: relationshipName)
 					}
@@ -213,7 +217,7 @@ class UnserializeOperation: NSOperation {
 							targetResources.append(targetResource)
 						} else {
 							// Target resource was not found in store, create a placeholder
-							let placeholderResource = self.classMap.classForResourceType(type)() as Resource
+							let placeholderResource = self.classMap[type]() as Resource
 							placeholderResource.resourceID = ID
 							targetResources.append(placeholderResource)
 						}
