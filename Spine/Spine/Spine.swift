@@ -200,63 +200,7 @@ public class Spine {
 		
 		return promise.future
 	}
-
-
-	/**
-	 Performs a request to relate the given resources to a resource for a certain relationship.
-	 This will fire a POST request to an URL of the form: /{resourceType}/{id}/links/{relationship}/{ids}
-
-	 :param: resources         The resources to relate
-	 :param: toResource        The resource to relate to
-	 :param: relationship      The name of the relationship to relate the resources for
-	 :param: completionHandler Function to call after completion
-	 */
-	func relateResources(resources: [Resource], toResource: Resource, relationship: String, completionHandler: (NSError?) -> Void) {
-		let IDs: [String] = resources.map { (resource) in
-			assert(resource.resourceID != nil, "Attempt to relate resource without ID. Only existing resources can be related.")
-			return resource.resourceID!
-		}
-
-		let requestURL = self.URLForResource(toResource) + "/links/" + relationship
-
-		Alamofire.request(Alamofire.Method.POST, requestURL, parameters: [relationship: IDs], encoding: Alamofire.ParameterEncoding.JSON)
-			.response { (request: NSURLRequest, response: NSHTTPURLResponse?, data: AnyObject?, error: NSError?) -> Void in
-			if let error = error {
-				println("Error processing pending related resources: \(error)")
-				return
-			}
-
-			println("Pending related resources processed")
-		}
-	}
-
-	/**
-	 Performs a request to unrelate the given resources to a resource for a certain relationship.
-	 This will fire a DELETE request to an URL of the form: /{resourceType}/{id}/links/{relationship}/{ids}
-
-	 :param: resources         The resources to remove from the relation
-	 :param: fromResource      The resource from which to remove the related resources
-	 :param: relationship      The name of the relationship from which to unrelate the resources
-	 :param: completionHandler Function to call after completion
-	 */
-	func unrelateResources(resources: [Resource], fromResource: Resource, relationship: String, completionHandler: (NSError?) -> Void) {
-		let IDs: [String] = resources.map { (resource) in
-			assert(resource.resourceID != nil, "Attempt to unrelate resource without ID. Only existing resources can be unrelated.")
-			return resource.resourceID!
-		}
-
-		let requestURL = self.URLForResource(fromResource) + "/links/" + relationship + "/" + (IDs as NSArray).componentsJoinedByString(",")
-
-		Alamofire.request(Alamofire.Method.DELETE, requestURL).response { (request: NSURLRequest, response: NSHTTPURLResponse?, data: AnyObject?, error: NSError?) -> Void in
-			if let error = error {
-				println("Error processing pending unrelated resources: \(error)")
-				return
-			}
-
-			println("Pending unrelated resources processed")
-		}
-	}
-
+	
 
 	// MARK: Deleting
 
