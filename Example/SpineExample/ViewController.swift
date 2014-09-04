@@ -22,15 +22,13 @@ class ViewController: UIViewController {
 		spine.registerType(User.self)
 		spine.registerType(Comment.self)
 		
-		let query = Query(resourceType: "posts").findResources().flatMap { resources -> Future<[Resource]> in
-			return Query(resourceType: "errors", resourceIDs: ["401"]).findResources()
-			
-		}.onSuccess { users in
-			let count = users.count
-			println("Found \(count) posts")
-			
-		}.onFailure { error in
-			println(error)
+		let query = Query(resourceType: "posts", resourceIDs: ["1"])
+			.include(["author", "comments", "comments.author"])
+		
+		query.findResources().onSuccess { resources in
+			let post = resources.first! as Post
+			println(post.title)
+			println(post.author?.username)
 		}
 	}
 

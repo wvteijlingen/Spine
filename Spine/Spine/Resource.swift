@@ -16,8 +16,27 @@ Represents a resource attribute that can be persisted to the server.
 - ToOne:    The attribute is a to-one relationship.
 - ToMany:   The attribute is a to-many relationship.
 */
-public enum ResourceAttribute {
-	case Property, Date, ToOne, ToMany
+//public enum ResourceAttribute {
+//	case Property, Date, ToOne, ToMany
+//}
+
+public struct ResourceAttribute {
+	
+	public enum AttributeType {
+		case Property, Date, ToOne, ToMany
+	}
+	
+	var type: AttributeType
+	var representationName: String?
+	
+	public init(type: AttributeType) {
+		self.type = type
+	}
+	
+	public init(type: AttributeType, representationName: String) {
+		self.type = type
+		self.representationName = representationName
+	}
 }
 
 /**

@@ -20,9 +20,9 @@ class User: Resource {
 	
 	override var persistentAttributes: [String: ResourceAttribute] {
 		return [
-			"username": ResourceAttribute.Property,
-			"comments": ResourceAttribute.ToMany,
-			"posts": ResourceAttribute.ToMany
+			"username": ResourceAttribute(type: .Property),
+			"comments": ResourceAttribute(type: .ToMany),
+			"posts": ResourceAttribute(type: .ToMany)
 		]
 	}
 }

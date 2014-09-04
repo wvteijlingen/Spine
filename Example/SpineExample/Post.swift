@@ -23,10 +23,10 @@ class Post: Resource {
 	
 	override var persistentAttributes: [String: ResourceAttribute] {
 		return [
-			"title": ResourceAttribute.Property,
-			"body": ResourceAttribute.Property,
-			"author": ResourceAttribute.ToOne,
-			"comments": ResourceAttribute.ToMany
+			"title": ResourceAttribute(type: .Property),
+			"body": ResourceAttribute(type: .Property),
+			"author": ResourceAttribute(type: .ToOne),
+			"comments": ResourceAttribute(type: .ToMany)
 		]
 	}
 }

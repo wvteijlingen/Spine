@@ -148,41 +148,37 @@ class UnserializeOperation: NSOperation {
 			isExistingResource = false
 		}
 
-		// Unserialize the representation into the resource object
-		for (key, value) in representation.object! {
-			if key == "links" {
-				if let links = value.object {
-					for (linkName, linkData) in links {
-						if let id = linkData["id"].string {
-							let relationship = ResourceRelationship.ToOne(href: linkData["href"].string!, ID: id, type: linkData["type"].string!)
-							resource.relationships[linkName] = relationship
-						}
-						
-						if let ids = linkData["ids"].array {
-							let stringIDs: [String] = ids.map({ value in
-								return value.string!
-							})
-							let relationship = ResourceRelationship.ToMany(href: linkData["href"].string!, IDs: stringIDs, type: linkData["type"].string!)
-							resource.relationships[linkName] = relationship
-						}
+		// Get the custom attributes and merge them with the default attributes
+		var attributes = resource.persistentAttributes
+		attributes["resourceID"] = ResourceAttribute(type: .Property, representationName: "id")
+		attributes["resourceLocation"] = ResourceAttribute(type: .Property, representationName: "href")
+		
+		// Unserialize the attributes into the resource object
+		for (attributeName, attribute) in attributes {
+			let sourceKey = attribute.representationName ?? attributeName
+			
+			switch attribute.type {
+			case .Property, .Date:
+				if let value: AnyObject = representation[sourceKey].any {
+					resource.setValue(self.formatter.unformatValue(value, ofType: attribute), forKey: attributeName)
+				}
+			case .ToOne:
+				if let linkData = representation["links"][sourceKey].object {
+					if let ID = linkData["id"]?.string {
+						let relationship = ResourceRelationship.ToOne(href: linkData["href"]!.string!, ID: ID, type: linkData["type"]!.string!)
+						resource.relationships[attributeName] = relationship
 					}
 				}
-				
-			} else if key == "id" {
-				resource.resourceID = value.string
-				
-			} else if key == "href" {
-				resource.resourceLocation = value.string
-				
-			} else {
-				if let attribute = resource.persistentAttributes[key] {
-					resource.setValue(self.formatter.unformatJSONValue(value, ofType: attribute), forKey: key)
-				} else {
-					resource.setValue(value.any, forKey: key)
+			case .ToMany:
+				if let linkData = representation["links"][sourceKey].object {
+					if let IDs = linkData["ids"]?.array {
+						let relationship = ResourceRelationship.ToMany(href: linkData["href"]!.string!, IDs: IDs.map { return $0.string! }, type: linkData["type"]!.string!)
+						resource.relationships[attributeName] = relationship
+					}
 				}
 			}
 		}
-		
+
 		if !isExistingResource {
 			self.store.add(resource)
 		}
@@ -259,18 +255,20 @@ class SerializeOperation: NSOperation {
 			
 			//Add the other persistent attributes to the representation
 			for (attributeName, attribute) in resource.persistentAttributes {
-				switch attribute {
+				let targetKey = attribute.representationName ?? attributeName
+				
+				switch attribute.type {
 				case .Property:
-					properties[attributeName] = resource.valueForKey(attributeName)
+					properties[targetKey] = resource.valueForKey(attributeName)
 					
 				case .Date:
-					properties[attributeName] = self.formatter.formatDate(resource.valueForKey(attributeName) as NSDate)
+					properties[targetKey] = self.formatter.formatDate(resource.valueForKey(attributeName) as NSDate)
 					
 				case .ToOne:
 					if let relatedResource = resource.valueForKey(attributeName) as? Resource {
-						links[attributeName] = relatedResource.resourceID
+						links[targetKey] = relatedResource.resourceID
 					} else {
-						links[attributeName] = NSNull()
+						links[targetKey] = NSNull()
 					}
 					
 				case .ToMany:
@@ -279,9 +277,9 @@ class SerializeOperation: NSOperation {
 							assert(resource.resourceID != nil, "Related resources must be saved before saving their parent resource.")
 							return resource.resourceID!
 						}
-						links[attributeName] = IDs
+						links[targetKey] = IDs
 					} else {
-						links[attributeName] = []
+						links[targetKey] = []
 					}
 				}
 			}
@@ -308,12 +306,12 @@ class SerializeOperation: NSOperation {
 
 class Formatter {
 
-	private func unformatJSONValue(value: JSONValue, ofType type: ResourceAttribute) -> AnyObject {
-		switch type {
+	private func unformatValue(value: AnyObject, ofType type: ResourceAttribute) -> AnyObject {
+		switch type.type {
 		case .Date:
-			return self.unformatDate(value.string!)
+			return self.unformatDate(value as String)
 		default:
-			return value.any!
+			return value
 		}
 	}
 	

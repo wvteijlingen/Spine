@@ -20,9 +20,9 @@ class Comment: Resource {
 	
 	override var persistentAttributes: [String: ResourceAttribute] {
 		return [
-			"body": ResourceAttribute.Property,
-			"user": ResourceAttribute.ToOne,
-			"post": ResourceAttribute.ToOne,
+			"body": ResourceAttribute(type: .Property),
+			"user": ResourceAttribute(type: .ToOne),
+			"post": ResourceAttribute(type: .ToOne)
 		]
 	}
 }
