@@ -1,0 +1,22 @@
+{
+  "person": [
+    {
+      "name": "Dilbert",
+      "appearances": 3457
+    },
+    {
+      "name": "Wally",
+      "appearances": 1934
+    }
+  ],
+  "pet": [
+    {
+      "name": "Dogbert",
+      "appearances": 1903
+    },
+    {
+      "name": "Ratbert",
+      "appearances": 509
+    }
+  ]
+}

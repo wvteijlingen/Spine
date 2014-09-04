@@ -8,45 +8,34 @@
 
 import UIKit
 import Spine
+import BrightFutures
 
 class ViewController: UIViewController {
                             
 	override func viewDidLoad() {
 		super.viewDidLoad()
 		
-		let spine = Spine(endPoint: "http://spine1.apiary-mock.com")
+		let spine = Spine.sharedInstance
+		spine.endPoint = "http://spine1.apiary-mock.com"
 		
-		spine.registerType(Post.self, resourceType: "posts")
-		spine.registerType(User.self, resourceType: "users")
-		spine.registerType(Comment.self, resourceType: "comments")
+		spine.registerType(Post.self)
+		spine.registerType(User.self)
+		spine.registerType(Comment.self)
 		
-		// Querying
-		let query = Query(resourceType: "posts", resourceIDs: ["1"])
-			.whereRelationship("author", isOrContains: User())
-			.include(["author", "comments", "comments.author"])
-		
-		spine.fetchResourcesForQuery(query, success: { fetchedResources in
-			let post = fetchedResources.first as Post
-			println(post.title)
-			println(post.creationDate)
-			println(post.author?.username)
+		let query = Query(resourceType: "posts").findResources().flatMap { resources -> Future<[Resource]> in
+			return Query(resourceType: "errors", resourceIDs: ["401"]).findResources()
 			
-			spine.saveResource(post, success: {
-				
-			}, failure: {
-				(error) in
-			})
+		}.onSuccess { users in
+			let count = users.count
+			println("Found \(count) posts")
 			
-			}, failure: { (error: NSError) in
-				println("Error: \(error)")
-		})
+		}.onFailure { error in
+			println(error)
+		}
 	}
 
 	override func didReceiveMemoryWarning() {
 		super.didReceiveMemoryWarning()
 		// Dispose of any resources that can be recreated.
 	}
-
-
 }
-
