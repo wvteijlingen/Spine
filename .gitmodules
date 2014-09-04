@@ -4,3 +4,6 @@
 [submodule "Spine/SwifyJSON"]
 	path = Spine/SwifyJSON
 	url = https://github.com/lingoer/SwiftyJSON.git
+[submodule "Spine/BrightFutures"]
+	path = Spine/BrightFutures
+	url = https://github.com/Thomvis/BrightFutures.git

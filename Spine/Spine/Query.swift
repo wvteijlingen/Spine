@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import BrightFutures
 
 private struct QueryFilter {
 	var key: String
@@ -274,13 +275,13 @@ public class Query {
 		if queryItems.count != 0 {
 			URLComponents.queryItems = queryItems
 		}
-		return URLComponents.string
+		return URLComponents.string! //TODO: Check forced unwrapping
 	}
 }
 
 // MARK: - Convenience functions
 extension Query {
-	public func findResources(success: ([Resource]) -> Void, failure: (NSError) -> Void) {
-		Spine.sharedInstance.fetchResourcesForQuery(self, success, failure)
+	public func findResources() -> Future<[Resource]> {
+		return Spine.sharedInstance.fetchResourcesForQuery(self)
 	}
 }

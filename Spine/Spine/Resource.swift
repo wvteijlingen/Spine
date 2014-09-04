@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import BrightFutures
 
 /**
 Represents a resource attribute that can be persisted to the server.
@@ -67,28 +68,28 @@ public class Resource: NSObject, Printable {
 
 // MARK: - Convenience functions
 extension Resource {
-	public func saveInBackground() {
-		Spine.sharedInstance.saveResource(self, success: {}, failure: {(error) in })
+	public func saveInBackground() -> Future<Resource> {
+		return Spine.sharedInstance.saveResource(self)
 	}
 
 	public func deleteInBackground() {
 		Spine.sharedInstance.deleteResource(self, success: {}, failure: {(error) in })
 	}
 
-	public class func findOne(ID: String, success: (Resource) -> Void, failure: (NSError) -> Void) {
+	public class func findOne(ID: String) -> Future<Resource> {
 		let instance = self()
-		Spine.sharedInstance.fetchResourceWithType(instance.resourceType, ID: ID, success: success, failure: failure)
+		return Spine.sharedInstance.fetchResourceWithType(instance.resourceType, ID: ID)
 	}
 
-	public class func find(IDs: [String], success: ([Resource]) -> Void, failure: (NSError) -> Void) {
+	public class func find(IDs: [String]) -> Future<[Resource]> {
 		let instance = self()
 		let query = Query(resourceType: instance.resourceType, resourceIDs: IDs)
-		Spine.sharedInstance.fetchResourcesForQuery(query, success, failure)
+		return Spine.sharedInstance.fetchResourcesForQuery(query)
 	}
 
-	public class func findAll(success: ([Resource]) -> Void, failure: (NSError) -> Void) {
+	public class func findAll() -> Future<[Resource]> {
 		let instance = self()
 		let query = Query(resourceType: instance.resourceType)
-		Spine.sharedInstance.fetchResourcesForQuery(query, success, failure)
+		return Spine.sharedInstance.fetchResourcesForQuery(query)
 	}
 }

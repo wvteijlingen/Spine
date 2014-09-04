@@ -9,6 +9,7 @@
 import Foundation
 import Alamofire
 import SwiftyJSON
+import BrightFutures
 
 let SPINE_ERROR_DOMAIN = "com.wardvanteijlingen.Spine"
 
@@ -75,11 +76,18 @@ public class Spine {
 	 :param: success      Function to call after success.
 	 :param: failure      Function to call after failure.
 	 */
-	public func fetchResourceWithType(resourceType: String, ID: String, success: (Resource) -> Void, failure: (NSError) -> Void) {
+	public func fetchResourceWithType(resourceType: String, ID: String) -> Future<Resource> {
+		let promise = Promise<Resource>()
+		
 		let query = Query(resourceType: resourceType, resourceIDs: [ID])
-		self.fetchResourcesForQuery(query, success: { (resources: [Resource]) in
-			success(resources.first!)
-		}, failure)
+		
+		self.fetchResourcesForQuery(query).onSuccess { resources in
+			promise.success(resources.first!)
+		}.onFailure { error in
+			promise.error(error)
+		}
+		
+		return promise.future
 	}
 
 	/**
@@ -90,9 +98,9 @@ public class Spine {
 	 :param: success  Function to call after success.
 	 :param: failure  Function to call after failure.
 	 */
-	public func fetchResourcesForRelationship(relationship: String, ofResource resource: Resource, success: ([Resource]) -> Void, failure: (NSError) -> Void) {
+	public func fetchResourcesForRelationship(relationship: String, ofResource resource: Resource) -> Future<[Resource]> {
 		let query = Query(resource: resource, relationship: relationship)
-		self.fetchResourcesForQuery(query, success, failure)
+		return self.fetchResourcesForQuery(query)
 	}
 
 	/**
@@ -102,11 +110,13 @@ public class Spine {
 	 :param: success Function to call after success.
 	 :param: failure Function to call after failure.
 	 */
-	public func fetchResourcesForQuery(query: Query, success: ([Resource]) -> Void, failure: (NSError) -> Void) {
+	public func fetchResourcesForQuery(query: Query) -> Future<[Resource]> {
+		let promise = Promise<[Resource]>()
+		
 		let URLString = self.URLForQuery(query)
 		Alamofire.request(.GET, URLString).response { (request: NSURLRequest, response: NSHTTPURLResponse?, data: AnyObject?, error: NSError?) -> Void in
 			if let error = error {
-				failure(error)
+				promise.error(error)
 				return
 			}
 
@@ -117,16 +127,23 @@ public class Spine {
 
 					let mappedResourcesStore = self.serializer.unserializeData(JSON)
 					if let fetchedResources = mappedResourcesStore.resourcesWithName(query.resourceType) {
-						success(fetchedResources)
+						promise.success(fetchedResources)
 					} else {
-						failure(NSError())
+						promise.error(NSError())
 					}
 
 				} else {
-					failure(NSError(domain: SPINE_ERROR_DOMAIN, code: JSON["errors"][0]["id"].integer!, userInfo: [NSLocalizedDescriptionKey: JSON["errors"][0]["title"].string!]))
+					let code = JSON["errors"][0]["id"].integer ?? response!.statusCode
+					var userInfo: [String : AnyObject]?
+					if JSON["errors"][0]["title"].string != nil {
+						userInfo = [NSLocalizedDescriptionKey: JSON["errors"][0]["title"].string!]
+					}
+					promise.error(NSError(domain: SPINE_ERROR_DOMAIN, code: code, userInfo: userInfo))
 				}
 			}
 		}
+		
+		return promise.future
 	}
 
 
@@ -141,7 +158,9 @@ public class Spine {
 	 :param: success  Function to call after successful saving.
 	 :param: failure  Function to call after saving failed.
 	 */
-	public func saveResource(resource: Resource, success: () -> Void, failure: (NSError) -> Void) {
+	public func saveResource(resource: Resource) -> Future<Resource> {
+		let promise = Promise<Resource>()
+		
 		var method: Alamofire.Method
 		var URL: String
 
@@ -165,7 +184,7 @@ public class Spine {
 
 			if let error = error {
 				lastError = error
-				failure(error)
+				promise.error(error)
 				return
 			}
 
@@ -176,8 +195,10 @@ public class Spine {
 				let mappedResourcesStore = self.serializer.unserializeData(JSON, usingStore: store)
 			}
 
-			success()
+			promise.success(resource)
 		}
+		
+		return promise.future
 	}
 
 
@@ -247,14 +268,18 @@ public class Spine {
 	 :param: success  Function to call after successful deleting.
 	 :param: failure  Function to call after deleting failed.
 	 */
-	public func deleteResource(resource: Resource, success: () -> Void, failure: (NSError) -> Void) {
+	public func deleteResource(resource: Resource, success: () -> Void, failure: (NSError) -> Void) -> Future<Void> {
+		let promise = Promise<Void>()
+		
 		let URLString = self.URLForResource(resource)
 		Alamofire.request(Alamofire.Method.DELETE, URLString).response { (request: NSURLRequest, response: NSHTTPURLResponse?, data: AnyObject?, error: NSError?) -> Void in
 			if let error = error {
-				failure(error)
+				promise.error(error)
 			} else {
-				success()
+				promise.success()
 			}
 		}
+		
+		return promise.future
 	}
 }

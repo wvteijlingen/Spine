@@ -51,6 +51,27 @@
 			remoteGlobalIDString = 2E4FF00C19575CE600351305;
 			remoteInfo = "SwiftyJSON-OSXTests";
 		};
+		D364D2AD19B7633B00503CBF /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = D364D2A719B7633A00503CBF /* BrightFutures.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = E9DF0815194470060083F7F2;
+			remoteInfo = BrightFutures;
+		};
+		D364D2AF19B7633B00503CBF /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = D364D2A719B7633A00503CBF /* BrightFutures.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = E9DF0820194470060083F7F2;
+			remoteInfo = BrightFuturesTests;
+		};
+		D364D2B419B7643400503CBF /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = D364D2A719B7633A00503CBF /* BrightFutures.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = E9DF0814194470060083F7F2;
+			remoteInfo = BrightFutures;
+		};
 		D373F7AC19B224C400275AFC /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = D373F7A719B224C400275AFC /* Alamofire.xcodeproj */;
@@ -85,6 +106,7 @@
 		D331835719B227AD00936FBB /* SwiftyJSON.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = SwiftyJSON.xcodeproj; path = SwifyJSON/SwiftyJSON.xcodeproj; sourceTree = "<group>"; };
 		D331836B19B2302500936FBB /* Query.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Query.swift; sourceTree = "<group>"; };
 		D331836F19B2312900936FBB /* ResourceStore.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ResourceStore.swift; sourceTree = "<group>"; };
+		D364D2A719B7633A00503CBF /* BrightFutures.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = BrightFutures.xcodeproj; path = BrightFutures/BrightFutures.xcodeproj; sourceTree = "<group>"; };
 		D37366CB19B266850009A693 /* ResourceStoreTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ResourceStoreTests.swift; sourceTree = "<group>"; };
 		D373F78819B2249900275AFC /* Spine.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Spine.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		D373F78C19B2249900275AFC /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -127,6 +149,15 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
+		D364D2A819B7633A00503CBF /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				D364D2AE19B7633B00503CBF /* BrightFutures.framework */,
+				D364D2B019B7633B00503CBF /* BrightFuturesTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
 		D373F77E19B2249900275AFC = {
 			isa = PBXGroup;
 			children = (
@@ -135,6 +166,7 @@
 				D373F78919B2249900275AFC /* Products */,
 				D373F7A719B224C400275AFC /* Alamofire.xcodeproj */,
 				D331835719B227AD00936FBB /* SwiftyJSON.xcodeproj */,
+				D364D2A719B7633A00503CBF /* BrightFutures.xcodeproj */,
 			);
 			sourceTree = "<group>";
 		};
@@ -222,6 +254,7 @@
 			buildRules = (
 			);
 			dependencies = (
+				D364D2B519B7643400503CBF /* PBXTargetDependency */,
 				D3EF9C2619B268EB00068B1B /* PBXTargetDependency */,
 				D373F7D219B224FB00275AFC /* PBXTargetDependency */,
 			);
@@ -280,6 +313,10 @@
 					ProjectRef = D373F7A719B224C400275AFC /* Alamofire.xcodeproj */;
 				},
 				{
+					ProductGroup = D364D2A819B7633A00503CBF /* Products */;
+					ProjectRef = D364D2A719B7633A00503CBF /* BrightFutures.xcodeproj */;
+				},
+				{
 					ProductGroup = D331835819B227AD00936FBB /* Products */;
 					ProjectRef = D331835719B227AD00936FBB /* SwiftyJSON.xcodeproj */;
 				},
@@ -319,6 +356,20 @@
 			fileType = wrapper.cfbundle;
 			path = "SwiftyJSON-OSXTests.xctest";
 			remoteRef = D331836419B227AD00936FBB /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		D364D2AE19B7633B00503CBF /* BrightFutures.framework */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.framework;
+			path = BrightFutures.framework;
+			remoteRef = D364D2AD19B7633B00503CBF /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		D364D2B019B7633B00503CBF /* BrightFuturesTests.xctest */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.cfbundle;
+			path = BrightFuturesTests.xctest;
+			remoteRef = D364D2AF19B7633B00503CBF /* PBXContainerItemProxy */;
 			sourceTree = BUILT_PRODUCTS_DIR;
 		};
 		D373F7AD19B224C400275AFC /* Alamofire.framework */ = {
@@ -384,6 +435,11 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		D364D2B519B7643400503CBF /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = BrightFutures;
+			targetProxy = D364D2B419B7643400503CBF /* PBXContainerItemProxy */;
+		};
 		D373F7D219B224FB00275AFC /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			name = Alamofire;
