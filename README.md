@@ -32,8 +32,8 @@ class Post: Resource {
 ### Registering resources
 Each resource class should be registered using the `registerType` function. For example, registering the Post class: `spine.registerType(Post.self)`.
 
-## Promises
-All convienience operations return futures using the `BrightFutures` futures library. This makes it easy to chain requests and respond to success or failure. See the `BrightFutures` documentation and the examples below on how to use futures.
+## Asynchronous futures
+All operations that communicate with the server are asynchronous and return futures using the `BrightFutures` futures library. This makes it easy to chain requests and respond to success or failure. See the `BrightFutures` documentation on how to use futures.
 
 ## Fetching resources
 *The following functions are convenience functions that proxy to the global Spine singleton. Therefore, you can only use them if you use Spine as a singleton.*
@@ -111,3 +111,4 @@ spine.deleteResource(resource).onSuccess {
 }.onFailure: { error in
     println("Error deleting")
 }
+```
