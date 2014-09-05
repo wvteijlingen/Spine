@@ -20,6 +20,7 @@
 		D373F7A419B224BB00275AFC /* Serializing.swift in Sources */ = {isa = PBXBuildFile; fileRef = D373F7A119B224BB00275AFC /* Serializing.swift */; };
 		D373F7A519B224BB00275AFC /* Resource.swift in Sources */ = {isa = PBXBuildFile; fileRef = D373F7A219B224BB00275AFC /* Resource.swift */; };
 		D373F7A619B224BB00275AFC /* Spine.swift in Sources */ = {isa = PBXBuildFile; fileRef = D373F7A319B224BB00275AFC /* Spine.swift */; };
+		D3DFBB6519B9DC64009785BE /* Networking.swift in Sources */ = {isa = PBXBuildFile; fileRef = D37FB17E19B9D7F10073A888 /* Networking.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -118,6 +119,7 @@
 		D373F7A219B224BB00275AFC /* Resource.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Resource.swift; sourceTree = "<group>"; };
 		D373F7A319B224BB00275AFC /* Spine.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Spine.swift; sourceTree = "<group>"; };
 		D373F7A719B224C400275AFC /* Alamofire.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = Alamofire.xcodeproj; path = Alamofire/Alamofire.xcodeproj; sourceTree = "<group>"; };
+		D37FB17E19B9D7F10073A888 /* Networking.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Networking.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -187,6 +189,7 @@
 				D373F7A219B224BB00275AFC /* Resource.swift */,
 				D331836B19B2302500936FBB /* Query.swift */,
 				D373F7A119B224BB00275AFC /* Serializing.swift */,
+				D37FB17E19B9D7F10073A888 /* Networking.swift */,
 				D331836F19B2312900936FBB /* ResourceStore.swift */,
 				D373F78B19B2249900275AFC /* Supporting Files */,
 			);
@@ -413,6 +416,7 @@
 				D331836C19B2302500936FBB /* Query.swift in Sources */,
 				D373F7A619B224BB00275AFC /* Spine.swift in Sources */,
 				D373F7A419B224BB00275AFC /* Serializing.swift in Sources */,
+				D3DFBB6519B9DC64009785BE /* Networking.swift in Sources */,
 				D373F7A519B224BB00275AFC /* Resource.swift in Sources */,
 				D331837019B2312900936FBB /* ResourceStore.swift in Sources */,
 			);

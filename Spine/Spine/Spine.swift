@@ -7,7 +7,6 @@
 //
 
 import Foundation
-import Alamofire
 import SwiftyJSON
 import BrightFutures
 
@@ -24,7 +23,8 @@ public class Spine {
     }
 
 	public var endPoint: String
-	private var serializer: Serializer = Serializer()
+	private let serializer = Serializer()
+	private var HTTPClient: HTTPClientProtocol = AlamofireClient()
 
 	public init() {
 		self.endPoint = ""
@@ -32,6 +32,11 @@ public class Spine {
 
 	public init(endPoint: String) {
 		self.endPoint = endPoint
+	}
+	
+	public init(endPoint: String, HTTPClient: HTTPClientProtocol) {
+		self.endPoint = endPoint
+		self.HTTPClient = HTTPClient
 	}
 	
 	
@@ -116,22 +121,23 @@ public class Spine {
 		let promise = Promise<[Resource]>()
 		
 		let URLString = self.URLForQuery(query)
-		Alamofire.request(.GET, URLString).response { request, response, data, error in
+		
+		self.HTTPClient.get(URLString, callback: { responseStatus, responseData, error in
 			if let error = error {
 				promise.error(error)
 				
-			} else if let JSONData: NSData = data as? NSData {
+			} else if let JSONData = responseData {
 				let JSON = JSONValue(JSONData as NSData!)
 				
-				if 200 ... 299 ~= response!.statusCode {
+				if 200 ... 299 ~= responseStatus! {
 					let mappedResourcesStore = self.serializer.unserializeData(JSON)
 					promise.success(mappedResourcesStore.resourcesWithName(query.resourceType))
 				} else {
-					let error = self.serializer.unserializeError(JSON, withResonseStatus: response!.statusCode)
+					let error = self.serializer.unserializeError(JSON, withResonseStatus: responseStatus!)
 					promise.error(error)
 				}
 			}
-		}
+		})
 		
 		return promise.future
 	}
@@ -151,40 +157,32 @@ public class Spine {
 	public func saveResource(resource: Resource) -> Future<Resource> {
 		let promise = Promise<Resource>()
 		
-		var method: Alamofire.Method
-		var URL: String
-
-		// POST
-		if resource.resourceID == nil {
-			resource.resourceID = NSUUID().UUIDString
-			method = Alamofire.Method.POST
-			URL = self.URLForCollectionOfResource(resource)
-
-		// PUT
-		} else {
-			method = Alamofire.Method.PUT
-			URL = self.URLForResource(resource)
-		}
-
 		let parameters = self.serializer.serializeResources([resource])
 
-		Alamofire.request(method, URL, parameters: parameters, encoding: Alamofire.ParameterEncoding.JSON).response { request, response, data, error in
-			var lastError: NSError? = nil
-
+		let callback: (Int?, NSData?, NSError?) -> Void = { responseStatus, responseData, error in
 			if let error = error {
-				lastError = error
 				promise.error(error)
 				return
 			}
-
+			
 			// Map the response back onto the resource
-			if let JSONData: NSData = data as? NSData {
-				let JSON = JSONValue(JSONData as NSData!)
+			if let JSONData = responseData {
+				let JSON = JSONValue(JSONData)
 				let store = ResourceStore(resources: [resource])
 				let mappedResourcesStore = self.serializer.unserializeData(JSON, usingStore: store)
 			}
-
+			
 			promise.success(resource)
+		}
+		
+		// Create resource
+		if resource.resourceID == nil {
+			resource.resourceID = NSUUID().UUIDString
+			self.HTTPClient.post(self.URLForCollectionOfResource(resource), json: parameters, callback: callback)
+
+		// Update resource
+		} else {
+			self.HTTPClient.put(self.URLForResource(resource), json: parameters, callback: callback)
 		}
 		
 		return promise.future
@@ -205,13 +203,14 @@ public class Spine {
 		let promise = Promise<Void>()
 		
 		let URLString = self.URLForResource(resource)
-		Alamofire.request(Alamofire.Method.DELETE, URLString).response { request, response, data, error in
+		
+		self.HTTPClient.delete(URLString, callback: { responseStatus, responseData, error in
 			if let error = error {
 				promise.error(error)
 			} else {
 				promise.success()
 			}
-		}
+		})
 		
 		return promise.future
 	}
