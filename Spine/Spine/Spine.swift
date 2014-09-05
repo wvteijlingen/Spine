@@ -24,7 +24,7 @@ public class Spine {
 
 	public var endPoint: String
 	private let serializer = Serializer()
-	private var HTTPClient: HTTPClientProtocol = AlamofireClient()
+	private let HTTPClient: HTTPClientProtocol = AlamofireClient()
 
 	public init() {
 		self.endPoint = ""
