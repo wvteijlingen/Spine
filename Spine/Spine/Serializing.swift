@@ -68,6 +68,18 @@ class Serializer {
 		mappingOperation.start()
 		return mappingOperation.result!
 	}
+	
+	func unserializeError(data: JSONValue, withResonseStatus responseStatus: Int) -> NSError {
+		let code = data["errors"][0]["id"].integer ?? responseStatus
+		
+		var userInfo: [String : AnyObject]?
+		
+		if let errorTitle = data["errors"][0]["title"].string {
+			userInfo = [NSLocalizedDescriptionKey: errorTitle]
+		}
+		
+		return NSError(domain: SPINE_ERROR_DOMAIN, code: code, userInfo: userInfo)
+	}
 
 	func serializeResources(resources: [Resource]) -> [String: [ResourceRepresentation]] {
 		let mappingOperation = SerializeOperation(resources: resources)

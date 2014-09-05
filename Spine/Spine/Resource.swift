@@ -16,10 +16,6 @@ Represents a resource attribute that can be persisted to the server.
 - ToOne:    The attribute is a to-one relationship.
 - ToMany:   The attribute is a to-many relationship.
 */
-//public enum ResourceAttribute {
-//	case Property, Date, ToOne, ToMany
-//}
-
 public struct ResourceAttribute {
 	
 	public enum AttributeType {
@@ -62,18 +58,16 @@ public class Resource: NSObject, Printable {
 	/// The type of this resource in plural form. For example: 'posts', 'users'.
 	public var resourceType: String { return "_undefined" }
 
+	/// Array of attributes that must be mapped by Spine.
+	public var persistentAttributes: [String: ResourceAttribute] { return [:] }
+	
 	/// The location (URL) of this resource.
 	var resourceLocation: String?
 
 	/// Links to other resources.
 	var relationships: [String: ResourceRelationship] = [:]
-
-	/// Array of attributes that must be mapped by Spine.
-	public var persistentAttributes: [String: ResourceAttribute] { return [:] }
 	
-	required override public init() {
-		// This is needed for the dynamic instantiation based on the metatype
-	}
+	required override public init() {} // This is needed for the dynamic instantiation based on the metatype
 	
 	public init(resourceID: String) {
 		self.resourceID = resourceID
@@ -87,12 +81,12 @@ public class Resource: NSObject, Printable {
 
 // MARK: - Convenience functions
 extension Resource {
-	public func saveInBackground() -> Future<Resource> {
+	public func save() -> Future<Resource> {
 		return Spine.sharedInstance.saveResource(self)
 	}
 
-	public func deleteInBackground() {
-		Spine.sharedInstance.deleteResource(self, success: {}, failure: {(error) in })
+	public func delete() -> Future<Void> {
+		return Spine.sharedInstance.deleteResource(self)
 	}
 
 	public class func findOne(ID: String) -> Future<Resource> {
@@ -109,6 +103,11 @@ extension Resource {
 	public class func findAll() -> Future<[Resource]> {
 		let instance = self()
 		let query = Query(resourceType: instance.resourceType)
+		return Spine.sharedInstance.fetchResourcesForQuery(query)
+	}
+	
+	public func findRelated(relationship: String) -> Future<[Resource]> {
+		let query = Query(resource: self, relationship: relationship)
 		return Spine.sharedInstance.fetchResourcesForQuery(query)
 	}
 }

@@ -59,18 +59,16 @@ class ResourceStore: Printable {
 		return false
 	}
 	
-	func resourcesWithName(resourceType: String) -> [Resource]? {
+	func resourcesWithName(resourceType: String) -> [Resource] {
 		var resources: [Resource] = []
 		
 		if let resourcesByID: [String: Resource] = self.resources[resourceType] {
 			for value in resourcesByID.values {
 				resources.append(value)
 			}
-			
-			return resources
 		}
 		
-		return nil
+		return resources
 	}
 	
 	func allResources() -> [Resource] {

@@ -58,6 +58,8 @@ public class Spine {
 			return resourceLocation
 		}
 		
+		assert(resource.resourceID != nil, "Resource does not have an href, nor a resource ID.")
+		
 		return "\(self.endPoint)/\(resource.resourceType)/\(resource.resourceID!)"
 	}
 	
@@ -114,31 +116,19 @@ public class Spine {
 		let promise = Promise<[Resource]>()
 		
 		let URLString = self.URLForQuery(query)
-		Alamofire.request(.GET, URLString).response { (request: NSURLRequest, response: NSHTTPURLResponse?, data: AnyObject?, error: NSError?) -> Void in
+		Alamofire.request(.GET, URLString).response { request, response, data, error in
 			if let error = error {
 				promise.error(error)
-				return
-			}
-
-			if let JSONData: NSData = data as? NSData {
+				
+			} else if let JSONData: NSData = data as? NSData {
 				let JSON = JSONValue(JSONData as NSData!)
 				
-				if response!.statusCode >= 200 && response!.statusCode < 300 {
-
+				if 200 ... 299 ~= response!.statusCode {
 					let mappedResourcesStore = self.serializer.unserializeData(JSON)
-					if let fetchedResources = mappedResourcesStore.resourcesWithName(query.resourceType) {
-						promise.success(fetchedResources)
-					} else {
-						promise.error(NSError())
-					}
-
+					promise.success(mappedResourcesStore.resourcesWithName(query.resourceType))
 				} else {
-					let code = JSON["errors"][0]["id"].integer ?? response!.statusCode
-					var userInfo: [String : AnyObject]?
-					if JSON["errors"][0]["title"].string != nil {
-						userInfo = [NSLocalizedDescriptionKey: JSON["errors"][0]["title"].string!]
-					}
-					promise.error(NSError(domain: SPINE_ERROR_DOMAIN, code: code, userInfo: userInfo))
+					let error = self.serializer.unserializeError(JSON, withResonseStatus: response!.statusCode)
+					promise.error(error)
 				}
 			}
 		}
@@ -178,8 +168,7 @@ public class Spine {
 
 		let parameters = self.serializer.serializeResources([resource])
 
-		let request = Alamofire.request(method, URL, parameters: parameters, encoding: Alamofire.ParameterEncoding.JSON)
-		request.response { (request: NSURLRequest, response: NSHTTPURLResponse?, data: AnyObject?, error: NSError?) -> Void in
+		Alamofire.request(method, URL, parameters: parameters, encoding: Alamofire.ParameterEncoding.JSON).response { request, response, data, error in
 			var lastError: NSError? = nil
 
 			if let error = error {
@@ -212,11 +201,11 @@ public class Spine {
 	 :param: success  Function to call after successful deleting.
 	 :param: failure  Function to call after deleting failed.
 	 */
-	public func deleteResource(resource: Resource, success: () -> Void, failure: (NSError) -> Void) -> Future<Void> {
+	public func deleteResource(resource: Resource) -> Future<Void> {
 		let promise = Promise<Void>()
 		
 		let URLString = self.URLForResource(resource)
-		Alamofire.request(Alamofire.Method.DELETE, URLString).response { (request: NSURLRequest, response: NSHTTPURLResponse?, data: AnyObject?, error: NSError?) -> Void in
+		Alamofire.request(Alamofire.Method.DELETE, URLString).response { request, response, data, error in
 			if let error = error {
 				promise.error(error)
 			} else {
