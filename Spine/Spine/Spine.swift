@@ -98,25 +98,25 @@ public class Spine {
 	}
 
 	/**
-	 Fetches resources related to the given resource by a given relationship.
-
-	 :param: relation The name of the relationship.
-	 :param: resource The resource that contains the relationship.
-	 :param: success  Function to call after success.
-	 :param: failure  Function to call after failure.
-	 */
+	Fetches resources related to the given resource by a given relationship
+	
+	:param: relationship The name of the relationship.
+	:param: resource     The resource that contains the relationship.
+	
+	:returns: Future of an array of resources.
+	*/
 	public func fetchResourcesForRelationship(relationship: String, ofResource resource: Resource) -> Future<[Resource]> {
 		let query = Query(resource: resource, relationship: relationship)
 		return self.fetchResourcesForQuery(query)
 	}
 
 	/**
-	 Fetches resources by executing the given query.
-
-	 :param: query   The query to execute.
-	 :param: success Function to call after success.
-	 :param: failure Function to call after failure.
-	 */
+	Fetches resources by executing the given query.
+	
+	:param: query The query to execute.
+	
+	:returns: Future of an array of resources.
+	*/
 	public func fetchResourcesForQuery(query: Query) -> Future<[Resource]> {
 		let promise = Promise<[Resource]>()
 		
@@ -146,14 +146,14 @@ public class Spine {
 	// MARK: Saving
 
 	/**
-	 Saves a resource to the server.
-	 This will also relate and unrelate any pending related and unrelated resource.
-	 Related resources will not be saved automatically. You must ensure that related resources are saved before saving any parent resource.
-
-	 :param: resource The resource to save.
-	 :param: success  Function to call after successful saving.
-	 :param: failure  Function to call after saving failed.
-	 */
+	Saves a resource to the server.
+	This will also relate and unrelate any pending related and unrelated resource.
+	Related resources will not be saved automatically. You must ensure that related resources are saved before saving any parent resource.
+	
+	:param: resource The resource to save.
+	
+	:returns: Future of the resource saved.
+	*/
 	public func saveResource(resource: Resource) -> Future<Resource> {
 		let promise = Promise<Resource>()
 		
@@ -192,13 +192,13 @@ public class Spine {
 	// MARK: Deleting
 
 	/**
-	 Deletes the resource from the server.
-     This will fire a DELETE request to an URL of the form: /{resourceType}/{id}
-
-	 :param: resource The resource to delete.
-	 :param: success  Function to call after successful deleting.
-	 :param: failure  Function to call after deleting failed.
-	 */
+	Deletes the resource from the server.
+	This will fire a DELETE request to an URL of the form: /{resourceType}/{id}.
+	
+	:param: resource The resource to delete.
+	
+	:returns: Void future.
+	*/
 	public func deleteResource(resource: Resource) -> Future<Void> {
 		let promise = Promise<Void>()
 		

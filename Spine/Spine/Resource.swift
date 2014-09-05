@@ -10,19 +10,27 @@ import Foundation
 import BrightFutures
 
 /**
-Represents a resource attribute that can be persisted to the server.
-
-- Property: The attribute is a plain property.
-- ToOne:    The attribute is a to-one relationship.
-- ToMany:   The attribute is a to-many relationship.
+*  Describes a resource attribute that can be persisted to the server.
 */
 public struct ResourceAttribute {
 	
+	/**
+	The type of attribute.
+	
+	- Property: A plain property.
+	- Date:     A formatted date property.
+	- ToOne:    A to-one relationship.
+	- ToMany:   A to-many relationship.
+	*/
 	public enum AttributeType {
 		case Property, Date, ToOne, ToMany
 	}
 	
+	/// The type of attribute.
 	var type: AttributeType
+	
+	/// The name of the attribute in the JSON representation.
+	/// This can be empty, in which case the same name as the attribute is used.
 	var representationName: String?
 	
 	public init(type: AttributeType) {
@@ -81,31 +89,68 @@ public class Resource: NSObject, Printable {
 
 // MARK: - Convenience functions
 extension Resource {
+	
+	/**
+	Saves this resource asynchronously.
+	
+	:returns: A future of this resource.
+	*/
 	public func save() -> Future<Resource> {
 		return Spine.sharedInstance.saveResource(self)
 	}
 
+	/**
+	Deletes this resource asynchronously.
+	
+	:returns: A void future.
+	*/
 	public func delete() -> Future<Void> {
 		return Spine.sharedInstance.deleteResource(self)
 	}
 
+	/**
+	Finds one resource of this type with a given ID.
+	
+	:param: ID The ID of the resource to find.
+	
+	:returns: A future of Resource.
+	*/
 	public class func findOne(ID: String) -> Future<Resource> {
 		let instance = self()
 		return Spine.sharedInstance.fetchResourceWithType(instance.resourceType, ID: ID)
 	}
 
+	/**
+	Finds multiple resources of this type by given IDs.
+	
+	:param: IDs The IDs of the resources to find.
+	
+	:returns: A future of an array of resources.
+	*/
 	public class func find(IDs: [String]) -> Future<[Resource]> {
 		let instance = self()
 		let query = Query(resourceType: instance.resourceType, resourceIDs: IDs)
 		return Spine.sharedInstance.fetchResourcesForQuery(query)
 	}
 
+	/**
+	Finds all resources of this type.
+	
+	:returns: A future of an array of resources.
+	*/
 	public class func findAll() -> Future<[Resource]> {
 		let instance = self()
 		let query = Query(resourceType: instance.resourceType)
 		return Spine.sharedInstance.fetchResourcesForQuery(query)
 	}
 	
+	/**
+	Finds resources related to this resource by the given relationship.
+	
+	:param: relationship Name of the relationship.
+	
+	:returns: A future of an array of resources.
+	*/
 	public func findRelated(relationship: String) -> Future<[Resource]> {
 		let query = Query(resource: self, relationship: relationship)
 		return Spine.sharedInstance.fetchResourcesForQuery(query)
