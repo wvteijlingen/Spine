@@ -25,7 +25,7 @@ class AlamofireClient: HTTPClientProtocol {
 	}
 	
 	func post(URL: String, json: [String: AnyObject], callback:  (Int?, NSData?, NSError?) -> Void) {
-		Alamofire.request(Alamofire.Method.GET, URL, parameters: json, encoding: Alamofire.ParameterEncoding.JSON).response { request, response, data, error in
+		Alamofire.request(Alamofire.Method.POST, URL, parameters: json, encoding: Alamofire.ParameterEncoding.JSON).response { request, response, data, error in
 			callback(response?.statusCode, data as? NSData, error)
 		}
 	}

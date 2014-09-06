@@ -7,9 +7,10 @@
 //
 
 import Foundation
+import UIKit
 import SwiftyJSON
 
-typealias ResourceRepresentation = [String: AnyObject]
+//typealias [String: AnyObject] = [String: AnyObject]
 
 struct ResourceClassMap {
 	private var registeredClasses: [String: Resource.Type] = [:]
@@ -81,7 +82,7 @@ class Serializer {
 		return NSError(domain: SPINE_ERROR_DOMAIN, code: code, userInfo: userInfo)
 	}
 
-	func serializeResources(resources: [Resource]) -> [String: [ResourceRepresentation]] {
+	func serializeResources(resources: [Resource]) -> [String: [[String: AnyObject]]] {
 		let mappingOperation = SerializeOperation(resources: resources)
 		mappingOperation.start()
 		return mappingOperation.result!
@@ -172,7 +173,7 @@ class DeserializeOperation: NSOperation {
 			switch attribute.type {
 			case .Property, .Date:
 				if let value: AnyObject = representation[sourceKey].any {
-					resource.setValue(self.formatter.unformatValue(value, ofType: attribute), forKey: attributeName)
+					resource.setValue(self.formatter.deserialize(value, ofType: attribute.type), forKey: attributeName)
 				}
 			case .ToOne:
 				if let linkData = representation["links"][sourceKey].object {
@@ -246,89 +247,174 @@ class SerializeOperation: NSOperation {
 	private let resources: [Resource]
 	private let formatter = Formatter()
 	
-	var result: [String: [ResourceRepresentation]]?
+	var result: [String: [[String: AnyObject]]]?
 	
 	init(resources: [Resource]) {
 		self.resources = resources
 	}
 	
 	override func main() {
-		var dictionary: [String: [ResourceRepresentation]] = [:]
+		var dictionary: [String: [[String: AnyObject]]] = [:]
 		
 		//Loop through all resources
 		for resource in resources {
-			var properties: ResourceRepresentation = [:]
-			var links: [String: AnyObject] = [:]
+			var serializedData: [String: AnyObject] = [:]
 			
 			// Special attributes
 			if let ID = resource.resourceID {
-				self.addID(&properties, ID: ID)
+				self.addID(&serializedData, ID: ID)
 			}
 			
-			//Add the other persistent attributes to the representation
-			for (attributeName, attribute) in resource.persistentAttributes {
-				if attribute.isRelationship() {
-					self.addAttribute(&properties, resource: resource, attributeName: attributeName, attribute: attribute)
-				} else {
-					self.addRelationship(&links, resource: resource, attributeName: attributeName, attribute: attribute)
-				}
-			}
-			
-			//If links were found, add them to the representation
-			if links.count != 0 {
-				properties["links"] = links
-			}
+			self.addAttributes(&serializedData, resource: resource)
+			self.addRelationships(&serializedData, resource: resource)
 			
 			//Add the resource representation to the root dictionary
 			if dictionary[resource.resourceType] == nil {
-				dictionary[resource.resourceType] = [properties]
+				dictionary[resource.resourceType] = [serializedData]
 			} else {
-				dictionary[resource.resourceType]!.append(properties)
+				dictionary[resource.resourceType]!.append(serializedData)
 			}
 		}
 		
 		self.result = dictionary
 	}
 	
-	func addID(inout serializedData: ResourceRepresentation, ID: String) {
+	// MARK: Special attributes
+	
+	/**
+	Adds the given ID to the passed serialized data.
+	
+	:param: serializedData The data to add the ID to.
+	:param: ID             The ID to add.
+	*/
+	private func addID(inout serializedData: [String: AnyObject], ID: String) {
 		serializedData["id"] = ID
 	}
 	
-	func addAttribute(inout serializedData: ResourceRepresentation, resource: Resource, attributeName: String, attribute: ResourceAttribute) {
-		let key = attribute.representationName ?? attributeName
-		
-		switch attribute.type {
-			case .Property:
-				serializedData[key] = resource.valueForKey(attributeName)
-			case .Date:
-				serializedData[key] = self.formatter.formatDate(resource.valueForKey(attributeName) as NSDate)
-			default: ()
+	// MARK: Attributes
+	
+	/**
+	Adds the attributes of the the given resource to the passed serialized data.
+	
+	This method loops over all the attributes in the passed resource, maps the attribute name
+	to the key for the serialized form and formats the value of the attribute. It then passes
+	the key and value to the addAttribute method.
+	
+	:param: serializedData The data to add the attributes to.
+	:param: resource       The resource whose attributes to add.
+	*/
+	private func addAttributes(inout serializedData: [String: AnyObject], resource: Resource) {
+		for (attributeName, attribute) in resource.persistentAttributes {
+			if attribute.isRelationship() {
+				continue
+			}
+			
+			let key = attribute.representationName ?? attributeName
+			
+			if let unformattedValue: AnyObject = resource.valueForKey(attributeName) {
+				self.addAttribute(&serializedData, key: key, value: self.formatter.serialize(unformattedValue, ofType: attribute.type))
+			} else {
+				self.addAttribute(&serializedData, key: key, value: NSNull())
+			}
 		}
 	}
 	
-	func addRelationship(inout linkData: [String: AnyObject], resource: Resource, attributeName: String, attribute: ResourceAttribute) {
-		let key = attribute.representationName ?? attributeName
-		
-		switch attribute.type {
-			case .ToOne:
-				if let relatedResource = resource.valueForKey(attributeName) as? Resource {
-					linkData[key] = relatedResource.resourceID
-				} else {
-					linkData[key] = NSNull()
-				}
-				
-			case .ToMany:
-				if let relatedResources = resource.valueForKey(attributeName) as? [Resource] {
-					let IDs: [String] = relatedResources.map { (resource) in
-						assert(resource.resourceID != nil, "Related resources must be saved before saving their parent resource.")
-						return resource.resourceID!
-					}
-					linkData[key] = IDs
-				} else {
-					linkData[key] = []
-				}
+	/**
+	Adds the given key/value pair to the passed serialized data.
+	
+	:param: serializedData The data to add the key/value pair to.
+	:param: key            The key to add to the serialized data.
+	:param: value          The value to add to the serialized data.
+	*/
+	private func addAttribute(inout serializedData: [String: AnyObject], key: String, value: AnyObject) {
+		serializedData[key] = value
+	}
+	
+	// MARK: Relationships
+	
+	/**
+	Adds the relationships of the the given resource to the passed serialized data.
+	
+	This method loops over all the relationships in the passed resource, maps the attribute name
+	to the key for the serialized form and gets the related attributes It then passes the key and
+	related resources to either the addToOneRelationship or addToManyRelationship method.
+	
+	
+	:param: serializedData The data to add the relationships to.
+	:param: resource       The resource whose relationships to add.
+	*/
+	private func addRelationships(inout serializedData: [String: AnyObject], resource: Resource) {
+		for (attributeName, attribute) in resource.persistentAttributes {
+			if !attribute.isRelationship() {
+				continue
+			}
 			
-			default: ()
+			let key = attribute.representationName ?? attributeName
+
+			switch attribute.type {
+				case .ToOne:
+					self.addToOneRelationship(&serializedData, key: key, relatedResource: resource.valueForKey(attributeName) as? Resource)
+				case .ToMany:
+					self.addToManyRelationship(&serializedData, key: key, relatedResources: resource.valueForKey(attributeName) as? [Resource])
+				default: ()
+			}
+		}
+	}
+	
+	/**
+	Adds the given resource as a to to-one relationship to the serialized data.
+	
+	:param: serializedData  The data to add the related resource to.
+	:param: key             The key to add to the serialized data.
+	:param: relatedResource The related resource to add to the serialized data.
+	*/
+	private func addToOneRelationship(inout serializedData: [String: AnyObject], key: String, relatedResource: Resource?) {
+		var linkData: AnyObject
+		
+		if let ID = relatedResource?.resourceID {
+			linkData = ID
+		} else {
+			linkData = NSNull()
+		}
+		
+		if serializedData["links"] == nil {
+			serializedData["links"] = [key: linkData]
+		} else {
+			var links: [String: AnyObject] = serializedData["links"]! as [String: AnyObject]
+			links[key] = linkData
+			serializedData["links"] = links
+		}
+	}
+	
+	/**
+	Adds the given resources as a to to-many relationship to the serialized data.
+	
+	:param: serializedData   The data to add the related resources to.
+	:param: key              The key to add to the serialized data.
+	:param: relatedResources The related resources to add to the serialized data.
+	*/
+	private func addToManyRelationship(inout serializedData: [String: AnyObject], key: String, relatedResources: [Resource]?) {
+		var linkData: AnyObject
+		
+		if let resources = relatedResources {
+			let IDs: [String] = resources.filter { resource in
+				return resource.resourceID != nil
+			}.map { resource in
+				return resource.resourceID!
+			}
+			
+			linkData = IDs
+			
+		} else {
+			linkData = []
+		}
+		
+		if serializedData["links"] == nil {
+			serializedData["links"] = [key: linkData]
+		} else {
+			var links: [String: AnyObject] = serializedData["links"]! as [String: AnyObject]
+			links[key] = linkData
+			serializedData["links"] = links
 		}
 	}
 }
@@ -338,10 +424,19 @@ class SerializeOperation: NSOperation {
 
 class Formatter {
 
-	private func unformatValue(value: AnyObject, ofType type: ResourceAttribute) -> AnyObject {
-		switch type.type {
+	private func deserialize(value: AnyObject, ofType type: ResourceAttribute.AttributeType) -> AnyObject {
+		switch type {
 		case .Date:
-			return self.unformatDate(value as String)
+			return self.deserializeDate(value as String)
+		default:
+			return value
+		}
+	}
+	
+	private func serialize(value: AnyObject, ofType type: ResourceAttribute.AttributeType) -> AnyObject {
+		switch type {
+		case .Date:
+			return self.serializeDate(value as NSDate)
 		default:
 			return value
 		}
@@ -355,11 +450,11 @@ class Formatter {
 		return formatter
 	}()
 
-	private func formatDate(date: NSDate) -> String {
+	private func serializeDate(date: NSDate) -> String {
 		return self.dateFormatter.stringFromDate(date)
 	}
 
-	private func unformatDate(value: String) -> NSDate {
+	private func deserializeDate(value: String) -> NSDate {
 		if let date = self.dateFormatter.dateFromString(value) {
 			return date
 		}

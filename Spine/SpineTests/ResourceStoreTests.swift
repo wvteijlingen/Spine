@@ -83,7 +83,7 @@ class ResourceStoreTests: XCTestCase {
 		store.add(otherResource)
 		
 		XCTAssertNotNil(store.resourcesWithName("fooResource"), "Nil value encountered, expected array.")
-		XCTAssertEqual([secondResource, firstResource], store.resourcesWithName("fooResource")!, "Wrong value.")
+		XCTAssertEqual([secondResource, firstResource], store.resourcesWithName("fooResource"), "Wrong value.")
 	}
 	
 	func testAllResources() {

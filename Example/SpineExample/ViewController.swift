@@ -22,14 +22,28 @@ class ViewController: UIViewController {
 		spine.registerType(User.self)
 		spine.registerType(Comment.self)
 		
-		let query = Query(resourceType: "posts", resourceIDs: ["1"])
-			.include(["author", "comments", "comments.author"])
+		let author = User()
+		author.username = "Ward"
 		
-		query.findResources().onSuccess { resources in
-			let post = resources.first! as Post
-			println(post.title)
-			println(post.author?.username)
+		let post = Post()
+		post.title = "A title"
+		post.body = "A text"
+		post.author = author
+		
+		post.save().onSuccess { resource in
+			println("Save succesful")
+		}.onFailure { error in
+			println("Error")
 		}
+		
+//		author.save().flatMap { resource -> Future<Resource> in
+//			post.author = author
+//			return post.save()
+//		}.onSuccess { resource in
+//			println("Save succesful")
+//		}.onFailure { error in
+//			println("Error")
+//		}
 	}
 
 	override func didReceiveMemoryWarning() {

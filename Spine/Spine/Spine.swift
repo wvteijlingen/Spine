@@ -156,8 +156,6 @@ public class Spine {
 	*/
 	public func saveResource(resource: Resource) -> Future<Resource> {
 		let promise = Promise<Resource>()
-		
-		let parameters = self.serializer.serializeResources([resource])
 
 		let callback: (Int?, NSData?, NSError?) -> Void = { responseStatus, responseData, error in
 			if let error = error {
@@ -178,11 +176,11 @@ public class Spine {
 		// Create resource
 		if resource.resourceID == nil {
 			resource.resourceID = NSUUID().UUIDString
-			self.HTTPClient.post(self.URLForCollectionOfResource(resource), json: parameters, callback: callback)
+			self.HTTPClient.post(self.URLForCollectionOfResource(resource), json: self.serializer.serializeResources([resource]), callback: callback)
 
 		// Update resource
 		} else {
-			self.HTTPClient.put(self.URLForResource(resource), json: parameters, callback: callback)
+			self.HTTPClient.put(self.URLForResource(resource), json: self.serializer.serializeResources([resource]), callback: callback)
 		}
 		
 		return promise.future
