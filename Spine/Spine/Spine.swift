@@ -7,7 +7,6 @@
 //
 
 import Foundation
-import SwiftyJSON
 import BrightFutures
 
 let SPINE_ERROR_DOMAIN = "com.wardvanteijlingen.Spine"
@@ -126,14 +125,12 @@ public class Spine {
 			if let error = error {
 				promise.error(error)
 				
-			} else if let JSONData = responseData {
-				let JSON = JSONValue(JSONData as NSData!)
-				
+			} else if let data = responseData {
 				if 200 ... 299 ~= responseStatus! {
-					let mappedResourcesStore = self.serializer.deserializeData(JSON)
+					let mappedResourcesStore = self.serializer.deserializeData(data)
 					promise.success(mappedResourcesStore.resourcesWithName(query.resourceType))
 				} else {
-					let error = self.serializer.deserializeError(JSON, withResonseStatus: responseStatus!)
+					let error = self.serializer.deserializeError(data, withResonseStatus: responseStatus!)
 					promise.error(error)
 				}
 			}
@@ -164,10 +161,9 @@ public class Spine {
 			}
 			
 			// Map the response back onto the resource
-			if let JSONData = responseData {
-				let JSON = JSONValue(JSONData)
+			if let data = responseData {
 				let store = ResourceStore(resources: [resource])
-				let mappedResourcesStore = self.serializer.deserializeData(JSON, usingStore: store)
+				let mappedResourcesStore = self.serializer.deserializeData(data, usingStore: store)
 			}
 			
 			promise.success(resource)

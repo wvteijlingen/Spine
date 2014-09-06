@@ -58,24 +58,26 @@ class Serializer {
 	
 	// MARK: Serializing
 
-	func deserializeData(data: JSONValue) -> ResourceStore {
+	func deserializeData(data: NSData) -> ResourceStore {
 		let mappingOperation = DeserializeOperation(data: data, classMap: self.classMap)
 		mappingOperation.start()
 		return mappingOperation.result!
 	}
 
-	func deserializeData(data: JSONValue, usingStore store: ResourceStore) -> ResourceStore {
+	func deserializeData(data: NSData, usingStore store: ResourceStore) -> ResourceStore {
 		let mappingOperation = DeserializeOperation(data: data, store: store, classMap: self.classMap)
 		mappingOperation.start()
 		return mappingOperation.result!
 	}
 	
-	func deserializeError(data: JSONValue, withResonseStatus responseStatus: Int) -> NSError {
-		let code = data["errors"][0]["id"].integer ?? responseStatus
+	func deserializeError(data: NSData, withResonseStatus responseStatus: Int) -> NSError {
+		let JSON = JSONValue(data as NSData!)
+		
+		let code = JSON["errors"][0]["id"].integer ?? responseStatus
 		
 		var userInfo: [String : AnyObject]?
 		
-		if let errorTitle = data["errors"][0]["title"].string {
+		if let errorTitle = JSON["errors"][0]["title"].string {
 			userInfo = [NSLocalizedDescriptionKey: errorTitle]
 		}
 		
@@ -104,15 +106,15 @@ class DeserializeOperation: NSOperation {
 	
 	var result: ResourceStore?
 	
-	init(data: JSONValue, classMap: ResourceClassMap) {
-		self.data = data
+	init(data: NSData, classMap: ResourceClassMap) {
+		self.data = JSONValue(data as NSData!)
 		self.classMap = classMap
 		self.store = ResourceStore()
 		super.init()
 	}
 	
-	init(data: JSONValue, store: ResourceStore, classMap: ResourceClassMap) {
-		self.data = data
+	init(data: NSData, store: ResourceStore, classMap: ResourceClassMap) {
+		self.data = JSONValue(data as NSData!)
 		self.classMap = classMap
 		self.store = store
 		super.init()
