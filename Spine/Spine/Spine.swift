@@ -130,10 +130,10 @@ public class Spine {
 				let JSON = JSONValue(JSONData as NSData!)
 				
 				if 200 ... 299 ~= responseStatus! {
-					let mappedResourcesStore = self.serializer.unserializeData(JSON)
+					let mappedResourcesStore = self.serializer.deserializeData(JSON)
 					promise.success(mappedResourcesStore.resourcesWithName(query.resourceType))
 				} else {
-					let error = self.serializer.unserializeError(JSON, withResonseStatus: responseStatus!)
+					let error = self.serializer.deserializeError(JSON, withResonseStatus: responseStatus!)
 					promise.error(error)
 				}
 			}
@@ -169,7 +169,7 @@ public class Spine {
 			if let JSONData = responseData {
 				let JSON = JSONValue(JSONData)
 				let store = ResourceStore(resources: [resource])
-				let mappedResourcesStore = self.serializer.unserializeData(JSON, usingStore: store)
+				let mappedResourcesStore = self.serializer.deserializeData(JSON, usingStore: store)
 			}
 			
 			promise.success(resource)

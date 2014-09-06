@@ -57,19 +57,19 @@ class Serializer {
 	
 	// MARK: Serializing
 
-	func unserializeData(data: JSONValue) -> ResourceStore {
-		let mappingOperation = UnserializeOperation(data: data, classMap: self.classMap)
+	func deserializeData(data: JSONValue) -> ResourceStore {
+		let mappingOperation = DeserializeOperation(data: data, classMap: self.classMap)
 		mappingOperation.start()
 		return mappingOperation.result!
 	}
 
-	func unserializeData(data: JSONValue, usingStore store: ResourceStore) -> ResourceStore {
-		let mappingOperation = UnserializeOperation(data: data, store: store, classMap: self.classMap)
+	func deserializeData(data: JSONValue, usingStore store: ResourceStore) -> ResourceStore {
+		let mappingOperation = DeserializeOperation(data: data, store: store, classMap: self.classMap)
 		mappingOperation.start()
 		return mappingOperation.result!
 	}
 	
-	func unserializeError(data: JSONValue, withResonseStatus responseStatus: Int) -> NSError {
+	func deserializeError(data: JSONValue, withResonseStatus responseStatus: Int) -> NSError {
 		let code = data["errors"][0]["id"].integer ?? responseStatus
 		
 		var userInfo: [String : AnyObject]?
@@ -91,7 +91,7 @@ class Serializer {
 
 // MARK: -
 
-class UnserializeOperation: NSOperation {
+class DeserializeOperation: NSOperation {
 	
 	private var data: JSONValue
 	private var store: ResourceStore
@@ -124,12 +124,12 @@ class UnserializeOperation: NSOperation {
 			if resourceType == "linked" {
 				for (linkedResourceType, linkedResources) in resourcesData.object! {
 					for representation in linkedResources.array! {
-						self.unserializeSingleRepresentation(representation, withResourceType: linkedResourceType)
+						self.deserializeSingleRepresentation(representation, withResourceType: linkedResourceType)
 					}
 				}
 			} else if let resources = resourcesData.array {
 				for representation in resources {
-					self.unserializeSingleRepresentation(representation, withResourceType: resourceType)
+					self.deserializeSingleRepresentation(representation, withResourceType: resourceType)
 				}
 			}
 		}
@@ -145,7 +145,7 @@ class UnserializeOperation: NSOperation {
 	:param: representation The JSON representation of a single resource.
 	:param: resourceType   The type of resource onto which to map the representation.
 	*/
-	private func unserializeSingleRepresentation(representation: JSONValue, withResourceType resourceType: String) {
+	private func deserializeSingleRepresentation(representation: JSONValue, withResourceType resourceType: String) {
 		assert(representation.object != nil, "The given JSON representation was not of type 'object' (dictionary).")
 		
 		// Find existing resource in the store, or create a new resource.
@@ -165,7 +165,7 @@ class UnserializeOperation: NSOperation {
 		attributes["resourceID"] = ResourceAttribute(type: .Property, representationName: "id")
 		attributes["resourceLocation"] = ResourceAttribute(type: .Property, representationName: "href")
 		
-		// Unserialize the attributes into the resource object
+		// Deserialize the attributes into the resource object
 		for (attributeName, attribute) in attributes {
 			let sourceKey = attribute.representationName ?? attributeName
 			
