@@ -262,37 +262,15 @@ class SerializeOperation: NSOperation {
 			
 			// Special attributes
 			if let ID = resource.resourceID {
-				properties["id"] = ID
+				self.addID(&properties, ID: ID)
 			}
 			
 			//Add the other persistent attributes to the representation
 			for (attributeName, attribute) in resource.persistentAttributes {
-				let targetKey = attribute.representationName ?? attributeName
-				
-				switch attribute.type {
-				case .Property:
-					properties[targetKey] = resource.valueForKey(attributeName)
-					
-				case .Date:
-					properties[targetKey] = self.formatter.formatDate(resource.valueForKey(attributeName) as NSDate)
-					
-				case .ToOne:
-					if let relatedResource = resource.valueForKey(attributeName) as? Resource {
-						links[targetKey] = relatedResource.resourceID
-					} else {
-						links[targetKey] = NSNull()
-					}
-					
-				case .ToMany:
-					if let relatedResources = resource.valueForKey(attributeName) as? [Resource] {
-						let IDs: [String] = relatedResources.map { (resource) in
-							assert(resource.resourceID != nil, "Related resources must be saved before saving their parent resource.")
-							return resource.resourceID!
-						}
-						links[targetKey] = IDs
-					} else {
-						links[targetKey] = []
-					}
+				if attribute.isRelationship() {
+					self.addAttribute(&properties, resource: resource, attributeName: attributeName, attribute: attribute)
+				} else {
+					self.addRelationship(&links, resource: resource, attributeName: attributeName, attribute: attribute)
 				}
 			}
 			
@@ -310,6 +288,48 @@ class SerializeOperation: NSOperation {
 		}
 		
 		self.result = dictionary
+	}
+	
+	func addID(inout serializedData: ResourceRepresentation, ID: String) {
+		serializedData["id"] = ID
+	}
+	
+	func addAttribute(inout serializedData: ResourceRepresentation, resource: Resource, attributeName: String, attribute: ResourceAttribute) {
+		let key = attribute.representationName ?? attributeName
+		
+		switch attribute.type {
+			case .Property:
+				serializedData[key] = resource.valueForKey(attributeName)
+			case .Date:
+				serializedData[key] = self.formatter.formatDate(resource.valueForKey(attributeName) as NSDate)
+			default: ()
+		}
+	}
+	
+	func addRelationship(inout linkData: [String: AnyObject], resource: Resource, attributeName: String, attribute: ResourceAttribute) {
+		let key = attribute.representationName ?? attributeName
+		
+		switch attribute.type {
+			case .ToOne:
+				if let relatedResource = resource.valueForKey(attributeName) as? Resource {
+					linkData[key] = relatedResource.resourceID
+				} else {
+					linkData[key] = NSNull()
+				}
+				
+			case .ToMany:
+				if let relatedResources = resource.valueForKey(attributeName) as? [Resource] {
+					let IDs: [String] = relatedResources.map { (resource) in
+						assert(resource.resourceID != nil, "Related resources must be saved before saving their parent resource.")
+						return resource.resourceID!
+					}
+					linkData[key] = IDs
+				} else {
+					linkData[key] = []
+				}
+			
+			default: ()
+		}
 	}
 }
 

@@ -41,6 +41,10 @@ public struct ResourceAttribute {
 		self.type = type
 		self.representationName = representationName
 	}
+	
+	func isRelationship() -> Bool {
+		return (self.type == .ToOne || self.type == .ToMany)
+	}
 }
 
 /**
