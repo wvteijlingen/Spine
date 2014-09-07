@@ -16,25 +16,25 @@ class ViewController: UIViewController {
 		super.viewDidLoad()
 		
 		let spine = Spine.sharedInstance
-		spine.endPoint = "http://spine1.apiary-mock.com"
+		spine.baseURL = "http://spine1.apiary-mock.com"
 		
 		spine.registerType(Post.self)
 		spine.registerType(User.self)
 		spine.registerType(Comment.self)
 		
-		let author = User()
-		author.username = "Ward"
-		
-		let post = Post()
-		post.title = "A title"
-		post.body = "A text"
-		post.author = author
-		
-		post.save().onSuccess { resource in
-			println("Save succesful")
-		}.onFailure { error in
-			println("Error")
-		}
+//		let author = User()
+//		author.username = "Ward"
+//		
+//		let post = Post()
+//		post.title = "A title"
+//		post.body = "A text"
+//		post.author = author
+//		
+//		post.save().onSuccess { resource in
+//			println("Save succesful")
+//		}.onFailure { error in
+//			println("Error")
+//		}
 		
 //		author.save().flatMap { resource -> Future<Resource> in
 //			post.author = author
@@ -44,6 +44,14 @@ class ViewController: UIViewController {
 //		}.onFailure { error in
 //			println("Error")
 //		}
+		
+		Post.findOne("1").onSuccess { resource in
+			let post = resource as Post
+			println(post.title)
+			println(post.body)
+		}.onFailure { error in
+			println(error.localizedDescription)
+		}
 	}
 
 	override func didReceiveMemoryWarning() {

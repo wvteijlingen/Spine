@@ -120,8 +120,8 @@ class DeserializeOperation: NSOperation {
 		super.init()
 	}
 	
-	override func main() {
-		if (self.data.object != nil) {
+	override func main() {		
+		if (self.data.object == nil) {
 			let error = NSError(domain: SPINE_ERROR_DOMAIN, code: 0, userInfo: [NSLocalizedDescriptionKey: "The given JSON representation was not as expected."])
 			self.result = DeserializationResult(nil, error)
 			return
@@ -167,40 +167,97 @@ class DeserializeOperation: NSOperation {
 			isExistingResource = false
 		}
 
-		// Get the custom attributes and merge them with the default attributes
-		var attributes = resource.persistentAttributes
-		attributes["resourceID"] = ResourceAttribute(type: .Property, representationName: "id")
-		attributes["resourceLocation"] = ResourceAttribute(type: .Property, representationName: "href")
-		
-		// Deserialize the attributes into the resource object
-		for (attributeName, attribute) in attributes {
-			let sourceKey = attribute.representationName ?? attributeName
-			
-			switch attribute.type {
-			case .Property, .Date:
-				if let value: AnyObject = representation[sourceKey].any {
-					resource.setValue(self.formatter.deserialize(value, ofType: attribute.type), forKey: attributeName)
-				}
-			case .ToOne:
-				if let linkData = representation["links"][sourceKey].object {
-					if let ID = linkData["id"]?.string {
-						let relationship = ResourceRelationship.ToOne(href: linkData["href"]!.string!, ID: ID, type: linkData["type"]!.string!)
-						resource.relationships[attributeName] = relationship
-					}
-				}
-			case .ToMany:
-				if let linkData = representation["links"][sourceKey].object {
-					if let IDs = linkData["ids"]?.array {
-						let relationship = ResourceRelationship.ToMany(href: linkData["href"]!.string!, IDs: IDs.map { return $0.string! }, type: linkData["type"]!.string!)
-						resource.relationships[attributeName] = relationship
-					}
-				}
-			}
-		}
+		// Extract data into resource
+		self.extractID(representation, intoResource: resource)
+		self.extractHref(representation, intoResource: resource)
+		self.extractAttributes(representation, intoResource: resource)
+		self.extractRelationships(representation, intoResource: resource)
 
+		// Add resource to store if needed
 		if !isExistingResource {
 			self.store.add(resource)
 		}
+	}
+	
+	
+	// MARK: Special attributes
+	
+	private func extractID(serializedData: JSONValue, intoResource resource: Resource) {
+		if let ID = serializedData["id"].string {
+			resource.resourceID = ID
+		}
+	}
+	
+	private func extractHref(serializedData: JSONValue, intoResource resource: Resource) {
+		if let href = serializedData["href"].string {
+			resource.resourceLocation = href
+		}
+	}
+	
+	
+	// MARK: Attributes
+	
+	private func extractAttributes(serializedData: JSONValue, intoResource resource: Resource) {
+		for (attributeName, attribute) in resource.persistentAttributes {
+			if attribute.isRelationship() {
+				continue
+			}
+			
+			let key = attribute.representationName ?? attributeName
+			if let extractedValue: AnyObject = self.extractAttribute(serializedData, key: key) {
+				let formattedValue: AnyObject = self.formatter.deserialize(extractedValue, ofType: attribute.type)
+				resource.setValue(formattedValue, forKey: attributeName)
+			}
+		}
+	}
+	
+	private func extractAttribute(serializedData: JSONValue, key: String) -> AnyObject? {
+		if let value: AnyObject = serializedData[key].any {
+			return value
+		}
+		
+		return nil
+	}
+	
+	
+	// MARK: Relationships
+	
+	private func extractRelationships(serializedData: JSONValue, intoResource resource: Resource) {
+		for (attributeName, attribute) in resource.persistentAttributes {
+			if !attribute.isRelationship() {
+				continue
+			}
+			
+			let key = attribute.representationName ?? attributeName
+			
+			switch attribute.type {
+			case .ToOne:
+				if let extractedRelationship = self.extractToOneRelationship(serializedData, key: key) {
+					resource.relationships[attributeName] = extractedRelationship
+				}
+			case .ToMany:
+				if let extractedRelationship = self.extractToManyRelationship(serializedData, key: key) {
+					resource.relationships[attributeName] = extractedRelationship
+				}
+			default: ()
+			}
+		}
+	}
+	
+	private func extractToOneRelationship(serializedData: JSONValue, key: String) -> ResourceRelationship? {
+		if let ID = serializedData["links"][key]["id"].string {
+			return ResourceRelationship.ToOne(href: serializedData["links"][key]["href"].string!, ID: ID, type: serializedData["links"][key]["type"].string!)
+		}
+		
+		return nil
+	}
+	
+	private func extractToManyRelationship(serializedData: JSONValue, key: String) -> ResourceRelationship? {
+		if let IDs = serializedData["links"][key]["ids"].array {
+			return ResourceRelationship.ToMany(href: serializedData["links"][key]["href"].string!, IDs: IDs.map { return $0.string! }, type: serializedData["links"][key]["type"].string!)
+		}
+		
+		return nil
 	}
 	
 	/**
@@ -285,6 +342,7 @@ class SerializeOperation: NSOperation {
 		self.result = dictionary
 	}
 	
+	
 	// MARK: Special attributes
 	
 	/**
@@ -296,6 +354,7 @@ class SerializeOperation: NSOperation {
 	private func addID(inout serializedData: [String: AnyObject], ID: String) {
 		serializedData["id"] = ID
 	}
+	
 	
 	// MARK: Attributes
 	
@@ -335,6 +394,7 @@ class SerializeOperation: NSOperation {
 	private func addAttribute(inout serializedData: [String: AnyObject], key: String, value: AnyObject) {
 		serializedData[key] = value
 	}
+	
 	
 	// MARK: Relationships
 	
