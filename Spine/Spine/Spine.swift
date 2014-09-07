@@ -21,20 +21,25 @@ public class Spine {
         return Singleton.instance
     }
 
-	public var endPoint: String
+	/// The base URL of the API. All other URLs will be made absolute to this URL.
+	public var baseURL: String
+	
+	/// The serializer to use for serializing and deserializing of JSON representations.
 	private let serializer = Serializer()
+	
+	/// The HTTPClient that performs the HTTP requests.
 	private let HTTPClient: HTTPClientProtocol = AlamofireClient()
 
 	public init() {
-		self.endPoint = ""
+		self.baseURL = ""
 	}
 
 	public init(endPoint: String) {
-		self.endPoint = endPoint
+		self.baseURL = endPoint
 	}
 	
 	public init(endPoint: String, HTTPClient: HTTPClientProtocol) {
-		self.endPoint = endPoint
+		self.baseURL = endPoint
 		self.HTTPClient = HTTPClient
 	}
 	
@@ -54,7 +59,7 @@ public class Spine {
 	// MARK: Routing
 	
 	private func URLForCollectionOfResource(resource: Resource) -> String {
-		return "\(self.endPoint)/\(resource.resourceType)"
+		return "\(self.baseURL)/\(resource.resourceType)"
 	}
 	
 	private func URLForResource(resource: Resource) -> String {
@@ -64,11 +69,11 @@ public class Spine {
 		
 		assert(resource.resourceID != nil, "Resource does not have an href, nor a resource ID.")
 		
-		return "\(self.endPoint)/\(resource.resourceType)/\(resource.resourceID!)"
+		return "\(self.baseURL)/\(resource.resourceType)/\(resource.resourceID!)"
 	}
 	
 	private func URLForQuery(query: Query) -> String {
-		return query.URLRelativeToURL(self.endPoint)
+		return query.URLRelativeToURL(self.baseURL)
 	}
 
 
