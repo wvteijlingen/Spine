@@ -10,7 +10,7 @@ import Foundation
 import UIKit
 import SwiftyJSON
 
-//typealias [String: AnyObject] = [String: AnyObject]
+typealias DeserializationResult = (store: ResourceStore?, error: NSError?)
 
 struct ResourceClassMap {
 	private var registeredClasses: [String: Resource.Type] = [:]
@@ -58,13 +58,13 @@ class Serializer {
 	
 	// MARK: Serializing
 
-	func deserializeData(data: NSData) -> ResourceStore {
+	func deserializeData(data: NSData) -> DeserializationResult {
 		let mappingOperation = DeserializeOperation(data: data, classMap: self.classMap)
 		mappingOperation.start()
 		return mappingOperation.result!
 	}
 
-	func deserializeData(data: NSData, usingStore store: ResourceStore) -> ResourceStore {
+	func deserializeData(data: NSData, usingStore store: ResourceStore) -> DeserializationResult {
 		let mappingOperation = DeserializeOperation(data: data, store: store, classMap: self.classMap)
 		mappingOperation.start()
 		return mappingOperation.result!
@@ -104,7 +104,7 @@ class DeserializeOperation: NSOperation {
 		Formatter()
 	}()
 	
-	var result: ResourceStore?
+	var result: DeserializationResult?
 	
 	init(data: NSData, classMap: ResourceClassMap) {
 		self.data = JSONValue(data as NSData!)
@@ -121,7 +121,11 @@ class DeserializeOperation: NSOperation {
 	}
 	
 	override func main() {
-		assert(self.data.object != nil, "The given JSON representation was not of type 'object' (dictionary).")
+		if (self.data.object != nil) {
+			let error = NSError(domain: SPINE_ERROR_DOMAIN, code: 0, userInfo: [NSLocalizedDescriptionKey: "The given JSON representation was not as expected."])
+			self.result = DeserializationResult(nil, error)
+			return
+		}
 		
 		for(resourceType: String, resourcesData: JSONValue) in self.data.object! {
 			if resourceType == "linked" {
@@ -139,7 +143,7 @@ class DeserializeOperation: NSOperation {
 		
 		self.resolveRelations()
 		
-		self.result = self.store
+		self.result = DeserializationResult(self.store, nil)
 	}
 
 	/**

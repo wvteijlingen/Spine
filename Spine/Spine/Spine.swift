@@ -127,8 +127,14 @@ public class Spine {
 				
 			} else if let data = responseData {
 				if 200 ... 299 ~= responseStatus! {
-					let mappedResourcesStore = self.serializer.deserializeData(data)
-					promise.success(mappedResourcesStore.resourcesWithName(query.resourceType))
+					let deserializationResult = self.serializer.deserializeData(data)
+					
+					if let store = deserializationResult.store {
+						promise.success(store.resourcesWithName(query.resourceType))
+					} else {
+						promise.error(deserializationResult.error!)
+					}
+					
 				} else {
 					let error = self.serializer.deserializeError(data, withResonseStatus: responseStatus!)
 					promise.error(error)
