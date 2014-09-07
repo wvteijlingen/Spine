@@ -12,23 +12,53 @@ import SwiftyJSON
 
 typealias DeserializationResult = (store: ResourceStore?, error: NSError?)
 
+/**
+ *  A ResourceClassMap contains information about how resource types
+ *  should be mapped to Resource classes.
+
+ *  Each resource type is mapped to one specific Resource subclass.
+ */
 struct ResourceClassMap {
+
+	/// The registered resource type/class pairs.
 	private var registeredClasses: [String: Resource.Type] = [:]
 	
+	/**
+	 Register a Resource subclass.
+	 Example: `classMap.register(User.self)`
+
+	 :param: type The Type of the subclass to register.
+	 */
 	mutating func registerClass(type: Resource.Type) {
 		let instance = type()
 		self.registeredClasses[instance.resourceType] = type
 	}
 	
+	/**
+	 Unregister a Resource subclass. If the type was not prevously registered, nothing happens.
+	 Example: `classMap.unregister(User.self)`
+
+	 :param: type The Type of the subclass to unregister.
+	 */
 	mutating func unregisterClass(type: Resource.Type) {
 		let instance = type()
 		self.registeredClasses[instance.resourceType] = nil
 	}
 	
+	/**
+	 Returns the Resource.Type into which a resource with the given type should be mapped.
+
+	 :param: resourceType The resource type for which to return the matching class.
+
+	 :returns: The Resource.Type that matches the given resource type.
+	 */
 	func classForResourceType(resourceType: String) -> Resource.Type {
 		return registeredClasses[resourceType]!
 	}
 	
+	/**
+	 *  Returns the Resource.Type into which a resource with the given type should be mapped.
+	 */
 	subscript(resourceType: String) -> Resource.Type {
 		return self.classForResourceType(resourceType)
 	}
@@ -37,20 +67,46 @@ struct ResourceClassMap {
 
 // MARK: -
 
+/**
+ *  The serializer is responsible for serializing and deserialing resources.
+ *  It stores information about the Resource classes using a ResourceClassMap
+ *  and uses SerializationOperations and DeserialisationOperations for (de)serializing.
+ */
 class Serializer {
+
+	/// The class map that holds information about resource type/class mapping.
 	private var classMap: ResourceClassMap = ResourceClassMap()
 	
 	
 	//MARK: Class mapping
 	
+	/**
+	 Register a Resource subclass with this serializer.
+	 Example: `classMap.register(User.self)`
+
+	 :param: type The Type of the subclass to register.
+	 */
 	func registerClass(type: Resource.Type) {
 		self.classMap.registerClass(type)
 	}
 	
+	/**
+	 Unregister a Resource subclass from this serializer. If the type was not prevously registered, nothing happens.
+	 Example: `classMap.unregister(User.self)`
+
+	 :param: type The Type of the subclass to unregister.
+	 */
 	func unregisterClass(type: Resource.Type) {
 		self.classMap.unregisterClass(type)
 	}
 	
+	/**
+	 Returns the Resource.Type into which a resource with the given type should be mapped.
+
+	 :param: resourceType The resource type for which to return the matching class.
+
+	 :returns: The Resource.Type that matches the given resource type.
+	 */
 	func classNameForResourceType(resourceType: String) -> Resource.Type {
 		return self.classMap[resourceType]
 	}
@@ -58,11 +114,32 @@ class Serializer {
 	
 	// MARK: Serializing
 
+	/**
+	 Deserializes the given data into a SerializationResult. This is a thin wrapper around
+	 a DeserializeOperation that does the actual deserialization.
+
+	 :param: data The data to deserialize.
+
+	 :returns: A DeserializationResult that contains either a ResourceStore or an error.
+	 */
 	func deserializeData(data: NSData) -> DeserializationResult {
 		let mappingOperation = DeserializeOperation(data: data, classMap: self.classMap)
 		mappingOperation.start()
 		return mappingOperation.result!
 	}
+
+	/**
+	 Deserializes the given data into a SerializationResult. This is a thin wrapper around
+	 a DeserializeOperation that does the actual deserialization.
+
+	 Use this method if you want to deserialize onto existing Resource instances. Otherwise, use
+	 the regular `deserializeData` method.
+
+	 :param: data  The data to deserialize.
+	 :param: store A ResourceStore that contains Resource instances onto which data will be deserialize.
+
+	 :returns: A DeserializationResult that contains either a ResourceStore or an error.
+	 */
 
 	func deserializeData(data: NSData, usingStore store: ResourceStore) -> DeserializationResult {
 		let mappingOperation = DeserializeOperation(data: data, store: store, classMap: self.classMap)
@@ -70,6 +147,20 @@ class Serializer {
 		return mappingOperation.result!
 	}
 	
+
+	/**
+	 Deserializes the given data into an NSError. Use this method if the server response is not in the
+	 200 successful range.
+
+	 The error returned will contain the error code specified in the `error` section of the response.
+	 If no error code is available, the given HTTP response status code will be used instead.
+	 If the `error` section contains a `title` key, it's value will be used for the NSLocalizedDescriptionKey.
+
+	 :param: data           The data to deserialize.
+	 :param: responseStatus The HTTP response status which will be used when an error code is absent in the data.
+
+	 :returns: A NSError deserialized from the given data.
+	 */
 	func deserializeError(data: NSData, withResonseStatus responseStatus: Int) -> NSError {
 		let JSON = JSONValue(data as NSData!)
 		
@@ -84,6 +175,14 @@ class Serializer {
 		return NSError(domain: SPINE_ERROR_DOMAIN, code: code, userInfo: userInfo)
 	}
 
+	/**
+	 Serializes the given Resources into a multidimensional dictionary/array structure
+	 that can be passed to NSJSONSerialization.
+
+	 :param: resources The resources to serialize.
+
+	 :returns: A multidimensional dictionary/array structure.
+	 */
 	func serializeResources(resources: [Resource]) -> [String: [[String: AnyObject]]] {
 		let mappingOperation = SerializeOperation(resources: resources)
 		mappingOperation.start()
@@ -94,6 +193,12 @@ class Serializer {
 
 // MARK: -
 
+/**
+ *  A DeserializeOperation is responsible for deserializing a single server response.
+ *  The serialized data is converted into Resource instances using a layered process.
+ *
+ *  This process is the inverse of that of the SerializeOperation.
+ */
 class DeserializeOperation: NSOperation {
 	
 	private var data: JSONValue
@@ -305,6 +410,12 @@ class DeserializeOperation: NSOperation {
 
 // MARK: -
 
+/**
+ *  A SerializeOperation is responsible for serializing resource into a multidimensional dictionary/array structure.
+ *  The resouces are converted to their serialized form using a layered process.
+ *
+ *  This process is the inverse of that of the DeserializeOperation.
+ */
 class SerializeOperation: NSOperation {
 	
 	private let resources: [Resource]
