@@ -18,6 +18,10 @@ public protocol HTTPClientProtocol {
 
 class AlamofireClient: HTTPClientProtocol {
 	
+	init() {
+		Alamofire.Manager.sharedInstance.defaultHeaders.updateValue("application/vnd.api+json", forKey: "Content-Type")
+	}
+	
 	func get(URL: String, callback:  (Int?, NSData?, NSError?) -> Void) {
 		Alamofire.request(Alamofire.Method.GET, URL).response { request, response, data, error in
 			callback(response?.statusCode, data as? NSData, error)
