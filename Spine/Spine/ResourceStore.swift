@@ -83,12 +83,10 @@ class ResourceStore: Printable {
 	
 	var description: String {
 		var string = ""
-			for (resourceType, resources) in self.resources {
-				for (resourceID, resource) in resources {
-					string += "\(resourceType)[\(resourceID)]\n"
-				}
-			}
-			
-			return string
+		for resource in self.allResources() {
+			string += "\(resource.resourceType)[\(resource.resourceID)]\n"
+		}
+		
+		return string
 	}
 }
