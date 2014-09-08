@@ -7,6 +7,7 @@
 //
 
 import UIKit
+import Spine
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -16,6 +17,13 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
 	func application(application: UIApplication!, didFinishLaunchingWithOptions launchOptions: NSDictionary!) -> Bool {
 		// Override point for customization after application launch.
+		let spine = Spine.sharedInstance
+		spine.baseURL = "http://restpack-serializer-sample.herokuapp.com/api/v1/"
+		
+		spine.registerType(Album.self)
+		spine.registerType(Artist.self)
+		spine.registerType(Song.self)
+		
 		return true
 	}
 

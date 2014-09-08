@@ -7,6 +7,11 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		D366677319BDDB3100E0383B /* Album.swift in Sources */ = {isa = PBXBuildFile; fileRef = D366677019BDDB3100E0383B /* Album.swift */; };
+		D366677419BDDB3100E0383B /* Artist.swift in Sources */ = {isa = PBXBuildFile; fileRef = D366677119BDDB3100E0383B /* Artist.swift */; };
+		D366677519BDDB3100E0383B /* Song.swift in Sources */ = {isa = PBXBuildFile; fileRef = D366677219BDDB3100E0383B /* Song.swift */; };
+		D366677719BDEBEA00E0383B /* ArtistsTableViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D366677619BDEBEA00E0383B /* ArtistsTableViewController.swift */; };
+		D366677919BDEE3E00E0383B /* AlbumsTableViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D366677819BDEE3E00E0383B /* AlbumsTableViewController.swift */; };
 		D373F71F19B2235D00275AFC /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = D373F71E19B2235D00275AFC /* AppDelegate.swift */; };
 		D373F72119B2235D00275AFC /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D373F72019B2235D00275AFC /* ViewController.swift */; };
 		D373F72419B2235D00275AFC /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = D373F72219B2235D00275AFC /* Main.storyboard */; };
@@ -50,6 +55,11 @@
 
 /* Begin PBXFileReference section */
 		D331833919B225A900936FBB /* Spine.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = Spine.xcodeproj; path = ../Spine/Spine.xcodeproj; sourceTree = "<group>"; };
+		D366677019BDDB3100E0383B /* Album.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Album.swift; sourceTree = "<group>"; };
+		D366677119BDDB3100E0383B /* Artist.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Artist.swift; sourceTree = "<group>"; };
+		D366677219BDDB3100E0383B /* Song.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Song.swift; sourceTree = "<group>"; };
+		D366677619BDEBEA00E0383B /* ArtistsTableViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ArtistsTableViewController.swift; sourceTree = "<group>"; };
+		D366677819BDEE3E00E0383B /* AlbumsTableViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AlbumsTableViewController.swift; sourceTree = "<group>"; };
 		D373F71919B2235D00275AFC /* SpineExample.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SpineExample.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		D373F71D19B2235D00275AFC /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		D373F71E19B2235D00275AFC /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -101,6 +111,16 @@
 			name = Resources;
 			sourceTree = "<group>";
 		};
+		D366676E19BDDB1D00E0383B /* RestPack */ = {
+			isa = PBXGroup;
+			children = (
+				D366677119BDDB3100E0383B /* Artist.swift */,
+				D366677019BDDB3100E0383B /* Album.swift */,
+				D366677219BDDB3100E0383B /* Song.swift */,
+			);
+			name = RestPack;
+			sourceTree = "<group>";
+		};
 		D373F71019B2235D00275AFC = {
 			isa = PBXGroup;
 			children = (
@@ -123,9 +143,12 @@
 		D373F71B19B2235D00275AFC /* SpineExample */ = {
 			isa = PBXGroup;
 			children = (
+				D366676E19BDDB1D00E0383B /* RestPack */,
 				D331836619B22A8300936FBB /* Resources */,
 				D373F71E19B2235D00275AFC /* AppDelegate.swift */,
 				D373F72019B2235D00275AFC /* ViewController.swift */,
+				D366677619BDEBEA00E0383B /* ArtistsTableViewController.swift */,
+				D366677819BDEE3E00E0383B /* AlbumsTableViewController.swift */,
 				D373F72219B2235D00275AFC /* Main.storyboard */,
 				D373F72519B2235D00275AFC /* Images.xcassets */,
 				D373F71C19B2235D00275AFC /* Supporting Files */,
@@ -285,7 +308,12 @@
 				D373F75819B2241900275AFC /* Comment.swift in Sources */,
 				D373F71F19B2235D00275AFC /* AppDelegate.swift in Sources */,
 				D373F75A19B2241900275AFC /* User.swift in Sources */,
+				D366677719BDEBEA00E0383B /* ArtistsTableViewController.swift in Sources */,
+				D366677519BDDB3100E0383B /* Song.swift in Sources */,
 				D373F75919B2241900275AFC /* Post.swift in Sources */,
+				D366677319BDDB3100E0383B /* Album.swift in Sources */,
+				D366677419BDDB3100E0383B /* Artist.swift in Sources */,
+				D366677919BDEE3E00E0383B /* AlbumsTableViewController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
