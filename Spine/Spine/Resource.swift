@@ -47,13 +47,22 @@ public struct ResourceAttribute {
 	}
 }
 
-public struct ResourceLink {
+/**
+ *  Represents a link to one or multiple other resources
+ */
+struct ResourceLink {
 	
-	public var href: String?
-	public var IDs: [String]?
-	public var type: String?
+	/// The URL of the link
+	var href: String?
 	
-	public var joinedIDs: String {
+	/// The IDs of the linked resources
+	var IDs: [String]?
+	
+	/// The type of the linked resources
+	var type: String?
+	
+	/// The IDs of the linked resources, as as string joined by commas
+	var joinedIDs: String {
 		if let IDs = self.IDs {
 			return (IDs as NSArray).componentsJoinedByString(",")
 		}
@@ -101,7 +110,7 @@ public class Resource: NSObject, Printable {
 	var resourceLocation: String?
 
 	/// Links to other resources.
-	public var links: [String: ResourceLink] = [:]
+	var links: [String: ResourceLink] = [:]
 	
 	required override public init() {} // This is needed for the dynamic instantiation based on the metatype
 	
