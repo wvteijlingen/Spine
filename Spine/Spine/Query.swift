@@ -273,9 +273,13 @@ public class Query {
 		}
 		
 		let URLComponents = NSURLComponents(URL: URL, resolvingAgainstBaseURL: true)
-		if queryItems.count != 0 {
+		
+		if URLComponents.queryItems != nil {
+			URLComponents.queryItems! += queryItems
+		} else {
 			URLComponents.queryItems = queryItems
 		}
+		
 		return URLComponents.string! //TODO: Check forced unwrapping
 	}
 }
