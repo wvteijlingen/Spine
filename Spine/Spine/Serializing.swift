@@ -267,7 +267,7 @@ class DeserializeOperation: NSOperation {
 		super.init()
 	}
 	
-	override func main() {		
+	override func main() {
 		if (self.data.object == nil) {
 			let error = NSError(domain: SPINE_ERROR_DOMAIN, code: 0, userInfo: [NSLocalizedDescriptionKey: "The given JSON representation was not as expected."])
 			self.result = DeserializationResult(nil, error)
@@ -289,6 +289,7 @@ class DeserializeOperation: NSOperation {
 		}
 		
 		self.extractLinks(self.data)
+	
 		self.resolveRelations()
 		
 		self.result = DeserializationResult(self.store, nil)
@@ -474,7 +475,13 @@ class DeserializeOperation: NSOperation {
 	 :returns: The extracted relationship or nil if no relationship with the given key was found in the data.
 	*/
 	private func extractToOneRelationship(serializedData: JSONValue, key: String, resource: Resource) -> ResourceLink? {
-		if let linkData = serializedData["links"][key].object {
+		// Single ID form
+		if let ID = serializedData["links"][key].string {
+			return ResourceLink(href: nil, ID: ID, type: nil)
+		}
+		
+		// Resource object form
+		else if let linkData = serializedData["links"][key].object {
 			var href: String?, ID: String?, type: String?
 			
 			if linkData["href"] != nil {
@@ -504,7 +511,13 @@ class DeserializeOperation: NSOperation {
 	 :returns: The extracted relationship or nil if no relationship with the given key was found in the data.
 	*/
 	private func extractToManyRelationship(serializedData: JSONValue, key: String, resource: Resource) -> ResourceLink? {
-		if let linkData = serializedData["links"][key].object {
+		// ID array form
+		if let IDs = serializedData["links"][key].array {
+			return ResourceLink(href: nil, IDs: IDs.map { return $0.string! }, type: nil)
+		}
+		
+		// Resource object form
+		else if let linkData = serializedData["links"][key].object {
 			var href: String?, IDs: [String]?, type: String?
 			
 			if linkData["href"] != nil {
