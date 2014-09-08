@@ -73,15 +73,16 @@ public class Query {
 	}
 	
 	public init(resource: Resource, relationship: String) {
-		assert(resource.relationships[relationship] != nil, "Specified relationship does not exist")
+		assert(resource.links[relationship] != nil, "Specified relationship does not exist")
+		
+		let link = resource.links[relationship]
+		
+		self.resourceType = link!.type ?? relationship
 
-		switch resource.relationships[relationship]! {
-		case .ToOne(let href, let ID, let type):
-			self.resourceType = type
+		if let href = link!.href {
 			self.URL = NSURL(string: href)
-		case .ToMany(let href, let IDs, let type):
-			self.resourceType = type
-			self.URL = NSURL(string: href)
+		} else {
+			self.URL = NSURL(string: self.resourceType).URLByAppendingPathComponent(link!.joinedIDs)
 		}
 	}
 	

@@ -47,16 +47,40 @@ public struct ResourceAttribute {
 	}
 }
 
-/**
-Represents a relationship to another resource or resources.
-
-- ToOne:  A to-one relationship.
-- ToMany: A to-many relationship.
-*/
-enum ResourceRelationship {
-	case ToOne(href: String, ID: String, type: String)
-	case ToMany(href: String, IDs: [String], type: String)
+public struct ResourceLink {
+	
+	public var href: String?
+	public var IDs: [String]?
+	public var type: String?
+	
+	public var joinedIDs: String {
+		if let IDs = self.IDs {
+			return (IDs as NSArray).componentsJoinedByString(",")
+		}
+		return ""
+	}
+	
+	init() {
+		
+	}
+	
+	init(href: String?, IDs: [String]? = nil, type: String? = nil) {
+		self.href = href
+		self.IDs = IDs
+		self.type = type
+	}
+	
+	init(href: String?, ID: String? = nil, type: String? = nil) {
+		self.href = href
+		
+		if ID != nil {
+			self.IDs = [ID!]
+		}
+		
+		self.type = type
+	}
 }
+
 
 /**
  *  A base recource class that provides some defaults for resources.
@@ -77,7 +101,7 @@ public class Resource: NSObject, Printable {
 	var resourceLocation: String?
 
 	/// Links to other resources.
-	var relationships: [String: ResourceRelationship] = [:]
+	public var links: [String: ResourceLink] = [:]
 	
 	required override public init() {} // This is needed for the dynamic instantiation based on the metatype
 	
