@@ -200,6 +200,10 @@ class Serializer {
  */
 class DeserializeOperation: NSOperation {
 	
+	/**
+	 *  A LinkTemplate represents a top level link template.
+	 *  It can be used to interpolate the href template with given values.
+	 */
 	struct LinkTemplate {
 		var resourceType: String
 		var key: String
@@ -218,6 +222,21 @@ class DeserializeOperation: NSOperation {
 			self.type = type
 		}
 		
+		/**
+		Interpolates the href template with the given data.
+		
+		The data are key/value pairs. The resource type must NOT be included in the key,
+		it is inferred from the resourceType stored in the struct.
+		
+		Example:
+			href before interpolation: /albums?artist_id={artists.id}
+			given interpolation data:  data: ["id": "6"]
+			href after interpolation:  /albums?artist_id=6
+		
+		:param: data The data to use for the interpolation.
+		
+		:returns: The href after interpolation.
+		*/
 		func interpolatedURL(data: [String: String]) -> String {
 			if let template = self.href {
 				var interpolated: NSString = template as NSString
@@ -231,15 +250,6 @@ class DeserializeOperation: NSOperation {
 			}
 			
 			return ""
-		}
-		
-		func interpolatedURL(data: [String: [String]]) -> String {
-			var mappedData: [String: String] = [:]
-			for (key, value) in data {
-				mappedData[key] = (value as NSArray).componentsJoinedByString(",")
-			}
-			
-			return self.interpolatedURL(mappedData)
 		}
 	}
 	
@@ -274,6 +284,7 @@ class DeserializeOperation: NSOperation {
 			return
 		}
 		
+		// Extract resources
 		for(resourceType: String, resourcesData: JSONValue) in self.data.object! {
 			if resourceType == "linked" {
 				for (linkedResourceType, linkedResources) in resourcesData.object! {
@@ -288,8 +299,10 @@ class DeserializeOperation: NSOperation {
 			}
 		}
 		
-		self.extractLinks(self.data)
-	
+		// Extract top level links
+		self.extractLinks()
+		
+		// Resolve relations in the store
 		self.resolveRelations()
 		
 		self.result = DeserializationResult(self.store, nil)
@@ -352,38 +365,6 @@ class DeserializeOperation: NSOperation {
 	private func extractHref(serializedData: JSONValue, intoResource resource: Resource) {
 		if let href = serializedData["href"].string {
 			resource.resourceLocation = href
-		}
-	}
-	
-	
-	// MARK: Links
-	
-	private func extractLinks(serializedData: JSONValue) {
-		if let links = serializedData["links"].object {
-
-			// Loop through all links in the serialized data
-			for (linkName, linkData) in links {
-				let linkTemplate = LinkTemplate(compoundKey: linkName, href: linkData["href"].string, type: linkData["type"].string)
-				
-				// Loop through all resources for which this is a link
-				for resource in self.store.resourcesWithName(linkTemplate.resourceType) {
-					
-					// Find existing link to augment or create a new link
-					var augmentedLink = resource.links[linkTemplate.key] ?? ResourceLink()
-					
-					// Assign the interpolated href if a href wasn't specified already
-					if augmentedLink.href == nil {
-						augmentedLink.href = linkTemplate.interpolatedURL(["id": resource.resourceID!, linkTemplate.key: augmentedLink.joinedIDs])
-					}
-					
-					// Assign the type if the a type wasn't specified already
-					if augmentedLink.type == nil {
-						augmentedLink.type = linkTemplate.type
-					}
-					
-					resource.links[linkTemplate.key] = augmentedLink
-				}
-			}
 		}
 	}
 	
@@ -468,6 +449,8 @@ class DeserializeOperation: NSOperation {
 	
 	/**
 	 Extracts the to-one relationship for the given key from the passed serialized data.
+	 
+	 This method supports both the single ID form and the resource object forms.
 	
 	 :param: serializedData The data from which to extract the relationship.
 	 :param: key            The key for which to extract the relationship from the data.
@@ -504,6 +487,8 @@ class DeserializeOperation: NSOperation {
 	
 	/**
 	 Extracts the to-many relationship for the given key from the passed serialized data.
+	
+	 This method supports both the array of IDs form and the resource object forms.
 	
 	 :param: serializedData The data from which to extract the relationship.
 	 :param: key            The key for which to extract the relationship from the data.
@@ -583,6 +568,48 @@ class DeserializeOperation: NSOperation {
 							resource.setValue(targetResources, forKey: linkName)
 						}
 					}
+				}
+			}
+		}
+	}
+	
+	
+	// MARK: Links
+	
+	/**
+	Extracts the top level links from the serialized data.
+	
+	Each extracted link is added the associated resources in on the following ways:
+	- If the associated resource already contains a link for the given relation,
+	the existing link is interpolated and merged with data from the top level link.
+	Data on the existing link has precedence over the top level data.
+	- If the ssociated resource does not contain a link for the given relation,
+	the top level link is added to the resource after interpolation.
+	*/
+	private func extractLinks() {
+		if let links = self.data["links"].object {
+			
+			// Loop through all links in the serialized data
+			for (linkName, linkData) in links {
+				let linkTemplate = LinkTemplate(compoundKey: linkName, href: linkData["href"].string, type: linkData["type"].string)
+				
+				// Loop through all resources for which this is a link
+				for resource in self.store.resourcesWithName(linkTemplate.resourceType) {
+					
+					// Find existing link to augment or create a new link
+					var augmentedLink = resource.links[linkTemplate.key] ?? ResourceLink()
+					
+					// Assign the interpolated href if a href wasn't specified already
+					if augmentedLink.href == nil {
+						augmentedLink.href = linkTemplate.interpolatedURL(["id": resource.resourceID!, linkTemplate.key: augmentedLink.joinedIDs])
+					}
+					
+					// Assign the type if the a type wasn't specified already
+					if augmentedLink.type == nil {
+						augmentedLink.type = linkTemplate.type
+					}
+					
+					resource.links[linkTemplate.key] = augmentedLink
 				}
 			}
 		}
