@@ -9,7 +9,7 @@
 import UIKit
 import SwiftyJSON
 
-typealias DeserializationResult = (store: ResourceStore?, error: NSError?)
+typealias DeserializationResult = (store: ResourceStore?, meta: [String: Meta]?, error: NSError?)
 
 /**
  *  A ResourceClassMap contains information about how resource types
@@ -253,9 +253,14 @@ class DeserializeOperation: NSOperation {
 		}
 	}
 	
-	private var data: JSONValue
-	private var store: ResourceStore
+	// Input
 	private var classMap: ResourceClassMap
+	private var data: JSONValue
+	
+	// Output
+	private var store: ResourceStore
+	private var meta: [String: Meta] = [:]
+	
 	
 	private lazy var formatter = {
 		Formatter()
@@ -278,9 +283,10 @@ class DeserializeOperation: NSOperation {
 	}
 	
 	override func main() {
+		// Check if the given data is in the expected format
 		if (self.data.object == nil) {
 			let error = NSError(domain: SPINE_ERROR_DOMAIN, code: 0, userInfo: [NSLocalizedDescriptionKey: "The given JSON representation was not as expected."])
-			self.result = DeserializationResult(nil, error)
+			self.result = DeserializationResult(nil, nil, error)
 			return
 		}
 		
@@ -302,10 +308,14 @@ class DeserializeOperation: NSOperation {
 		// Extract top level links
 		self.extractLinks()
 		
+		// Extract meta
+		self.extractMeta()
+		
 		// Resolve relations in the store
 		self.resolveRelations()
 		
-		self.result = DeserializationResult(self.store, nil)
+		// Create a result
+		self.result = DeserializationResult(self.store, self.meta, nil)
 	}
 
 	/**
@@ -581,10 +591,10 @@ class DeserializeOperation: NSOperation {
 	
 	Each extracted link is added the associated resources in on the following ways:
 	- If the associated resource already contains a link for the given relation,
-	the existing link is interpolated and merged with data from the top level link.
-	Data on the existing link has precedence over the top level data.
+	  the existing link is interpolated and merged with data from the top level link.
+	  Data on the existing link has precedence over the top level data.
 	- If the ssociated resource does not contain a link for the given relation,
-	the top level link is added to the resource after interpolation.
+	  the top level link is added to the resource after interpolation.
 	*/
 	private func extractLinks() {
 		if let links = self.data["links"].object {
@@ -613,6 +623,23 @@ class DeserializeOperation: NSOperation {
 				}
 			}
 		}
+	}
+	
+	
+	// MARK: Meta
+	
+	private func extractMeta() {
+		var metaObjects: [String: Meta] = [:]
+		
+		if let meta = self.data["meta"].object {
+			for (metaKey, metaData) in meta {
+				let meta = self.classMap["_meta"]() as Meta
+				self.extractAttributes(metaData, intoResource: meta)
+				metaObjects[metaKey] = meta
+			}
+		}
+		
+		self.meta = metaObjects
 	}
 }
 

@@ -124,7 +124,9 @@ public class Resource: NSObject, Printable {
 	}
 }
 
+
 // MARK: - Convenience functions
+
 extension Resource {
 	
 	/**
@@ -152,7 +154,7 @@ extension Resource {
 	
 	:returns: A future of Resource.
 	*/
-	public class func findOne(ID: String) -> Future<Resource> {
+	public class func findOne(ID: String) -> Future<(Resource, Meta?)> {
 		let instance = self()
 		return Spine.sharedInstance.fetchResourceWithType(instance.resourceType, ID: ID)
 	}
@@ -164,7 +166,7 @@ extension Resource {
 	
 	:returns: A future of an array of resources.
 	*/
-	public class func find(IDs: [String]) -> Future<[Resource]> {
+	public class func find(IDs: [String]) -> Future<([Resource], Meta?)> {
 		let instance = self()
 		let query = Query(resourceType: instance.resourceType, resourceIDs: IDs)
 		return Spine.sharedInstance.fetchResourcesForQuery(query)
@@ -175,7 +177,7 @@ extension Resource {
 	
 	:returns: A future of an array of resources.
 	*/
-	public class func findAll() -> Future<[Resource]> {
+	public class func findAll() -> Future<([Resource], Meta?)> {
 		let instance = self()
 		let query = Query(resourceType: instance.resourceType)
 		return Spine.sharedInstance.fetchResourcesForQuery(query)
@@ -188,8 +190,15 @@ extension Resource {
 	
 	:returns: A future of an array of resources.
 	*/
-	public func findRelated(relationship: String) -> Future<[Resource]> {
+	public func findRelated(relationship: String) -> Future<([Resource], Meta?)> {
 		let query = Query(resource: self, relationship: relationship)
 		return Spine.sharedInstance.fetchResourcesForQuery(query)
 	}
+}
+
+
+//MARK: - Meta
+
+public class Meta: Resource {
+	override public var resourceType: String { return "_meta" }
 }

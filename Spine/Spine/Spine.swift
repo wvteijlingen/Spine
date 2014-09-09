@@ -87,13 +87,13 @@ public class Spine {
 	 :param: success      Function to call after success.
 	 :param: failure      Function to call after failure.
 	 */
-	public func fetchResourceWithType(resourceType: String, ID: String) -> Future<Resource> {
-		let promise = Promise<Resource>()
+	public func fetchResourceWithType(resourceType: String, ID: String) -> Future<(Resource, Meta?)> {
+		let promise = Promise<(Resource, Meta?)>()
 		
 		let query = Query(resourceType: resourceType, resourceIDs: [ID])
 		
-		self.fetchResourcesForQuery(query).onSuccess { resources in
-			promise.success(resources.first!)
+		self.fetchResourcesForQuery(query).onSuccess { resources, meta in
+			promise.success(resources.first!, meta)
 		}.onFailure { error in
 			promise.error(error)
 		}
@@ -109,7 +109,7 @@ public class Spine {
 	
 	:returns: Future of an array of resources.
 	*/
-	public func fetchResourcesForRelationship(relationship: String, ofResource resource: Resource) -> Future<[Resource]> {
+	public func fetchResourcesForRelationship(relationship: String, ofResource resource: Resource) -> Future<([Resource], Meta?)> {
 		let query = Query(resource: resource, relationship: relationship)
 		return self.fetchResourcesForQuery(query)
 	}
@@ -121,8 +121,8 @@ public class Spine {
 	
 	:returns: Future of an array of resources.
 	*/
-	public func fetchResourcesForQuery(query: Query) -> Future<[Resource]> {
-		let promise = Promise<[Resource]>()
+	public func fetchResourcesForQuery(query: Query) -> Future<([Resource], Meta?)> {
+		let promise = Promise<([Resource], Meta?)>()
 		
 		let URLString = self.URLForQuery(query)
 		
@@ -141,7 +141,7 @@ public class Spine {
 					let deserializationResult = self.serializer.deserializeData(data)
 					
 					if let store = deserializationResult.store {
-						promise.success(store.resourcesWithName(query.resourceType))
+						promise.success(store.resourcesWithName(query.resourceType), deserializationResult.meta?[query.resourceType])
 					} else {
 						promise.error(deserializationResult.error!)
 					}

@@ -44,6 +44,10 @@ public class Query {
 	private var filters: [QueryFilter] = []
 	private var fields: [String: [String]] = [:]
 	
+	// Pagination parts. These are scoped internal so they can be accessed by the Paginator class.
+	internal var page: Int?
+	internal var pageSize: Int?
+	
 	
 	//MARK: Init
 	
@@ -241,6 +245,19 @@ public class Query {
 	}
 	
 	
+	// MARK: Paginating
+	
+	public func limit(pageSize: Int) -> Self {
+		self.pageSize = pageSize
+		return self
+	}
+	
+	public func startAtPage(page: Int) -> Self {
+		self.page = page
+		return self
+	}
+	
+	
 	// MARK: URL building
 	
 	/**
@@ -272,6 +289,17 @@ public class Query {
 			queryItems.append(item)
 		}
 		
+		// Pagination
+		if let page = self.page {
+			var item = NSURLQueryItem(name: "page", value: String(page))
+			queryItems.append(item)
+		}
+		
+		if let pageSize = self.pageSize {
+			var item = NSURLQueryItem(name: "page_size", value: String(pageSize))
+			queryItems.append(item)
+		}
+		
 		let URLComponents = NSURLComponents(URL: URL, resolvingAgainstBaseURL: true)
 		
 		if URLComponents.queryItems != nil {
@@ -286,7 +314,7 @@ public class Query {
 
 // MARK: - Convenience functions
 extension Query {
-	public func findResources() -> Future<[Resource]> {
+	public func findResources() -> Future<([Resource], Meta?)> {
 		return Spine.sharedInstance.fetchResourcesForQuery(self)
 	}
 }

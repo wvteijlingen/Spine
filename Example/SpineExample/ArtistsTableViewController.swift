@@ -19,7 +19,7 @@ class ArtistsTableViewController: UITableViewController {
     }
 	
 	func loadData() {
-		Artist.findAll().onSuccess { resources in
+		Artist.findAll().onSuccess { resources, meta in
 			self.artists = resources as [Artist]
 			self.tableView.reloadData()
 		}.onFailure { error in

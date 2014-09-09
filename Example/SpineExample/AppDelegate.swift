@@ -23,6 +23,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 		spine.registerType(Album.self)
 		spine.registerType(Artist.self)
 		spine.registerType(Song.self)
+		spine.registerType(ResponseMeta.self)		
 		
 		return true
 	}

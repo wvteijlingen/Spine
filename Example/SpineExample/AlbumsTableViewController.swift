@@ -23,7 +23,7 @@ class AlbumsTableViewController: UITableViewController {
 	func loadData() {
 		let query = Query(resource: self.artist, relationship: "albums").include("songs")
 		
-		query.findResources().onSuccess { resources in
+		query.findResources().onSuccess { resources, meta in
 			self.albums = resources as [Album]
 			self.tableView.reloadData()
 		}.onFailure { error in
