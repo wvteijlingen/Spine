@@ -229,11 +229,29 @@ public class Query {
 	
 	// MARK: Sparse fieldsets
 	
+	/**
+	Restricts the properties that should be fetched. When not set, all properties will be fetched.
+	
+	:param: properties Array of properties to fetch.
+	
+	:returns: The query
+	*/
 	public func restrictProperties(properties: [String]) -> Self {
 		self.restrictProperties(properties, ofResourceType: self.resourceType)
 		return self
 	}
 	
+	/**
+	Restricts the properties of a specific resource type that should be fetched.
+	This method can be used to restrict properties of included resources. When not set,
+	all properties will be fetched.
+	
+	
+	:param: properties Array of properties to fetch.
+	:param: type       The resource type for which to restrict the properties.
+	
+	:returns: The query
+	*/
 	public func restrictProperties(properties: [String], ofResourceType type: String) -> Self {
 		if var fields = self.fields[type] {
 			fields += properties
@@ -247,11 +265,25 @@ public class Query {
 	
 	// MARK: Paginating
 	
+	/**
+	Limits the returned resources to the given page size.
+	
+	:param: pageSize How many resources to fetch.
+	
+	:returns: The query
+	*/
 	public func limit(pageSize: Int) -> Self {
 		self.pageSize = pageSize
 		return self
 	}
 	
+	/**
+	The page to return on limited responses.
+	
+	:param: page The index of the page to fetch.
+	
+	:returns: The query
+	*/
 	public func startAtPage(page: Int) -> Self {
 		self.page = page
 		return self
