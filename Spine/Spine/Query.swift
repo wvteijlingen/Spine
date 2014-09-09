@@ -43,6 +43,7 @@ public class Query {
 	private var includes: [String] = []
 	private var filters: [QueryFilter] = []
 	private var fields: [String: [String]] = [:]
+	private var sortOrders: [String] = []
 	
 	// Pagination parts. These are scoped internal so they can be accessed by the Paginator class.
 	internal var page: Int?
@@ -290,6 +291,33 @@ public class Query {
 	}
 	
 	
+	// MARK: Sorting
+	
+	/**
+	Sort in ascending order by the the given property. Previously added properties precedence over this property.
+	
+	:param: property The property which to order by.
+	
+	:returns: The query
+	*/
+	public func addAscendingOrder(property: String) -> Self {
+		self.sortOrders.append(property)
+		return self
+	}
+	
+	/**
+	Sort in descending order by the the given property. Previously added properties precedence over this property.
+	
+	:param: property The property which to order by.
+	
+	:returns: The query
+	*/
+	public func addDescendingOrder(property: String) -> Self {
+		self.sortOrders.append("-\(property)")
+		return self
+	}
+	
+	
 	// MARK: URL building
 	
 	/**
@@ -318,6 +346,12 @@ public class Query {
 		// Fields
 		for (resourceType, fields) in self.fields {
 			var item = NSURLQueryItem(name: "fields[\(resourceType)]", value: (fields as NSArray).componentsJoinedByString(","))
+			queryItems.append(item)
+		}
+		
+		// Sorting
+		if self.sortOrders.count != 0 {
+			var item = NSURLQueryItem(name: "sort", value: (self.sortOrders as NSArray).componentsJoinedByString(","))
 			queryItems.append(item)
 		}
 		
