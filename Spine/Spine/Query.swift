@@ -77,6 +77,14 @@ public class Query {
 		self.resourceType = resourceType
 	}
 	
+	/**
+	Inits a new query to fetch related resources related by a relationship.
+	
+	:param: resource     The resource that links to the related resources.
+	:param: relationship The name of the relationship.
+	
+	:returns: Query
+	*/
 	public init(resource: Resource, relationship: String) {
 		assert(resource.links[relationship] != nil, "Specified relationship does not exist")
 		
@@ -90,6 +98,7 @@ public class Query {
 			self.URL = NSURL(string: self.resourceType).URLByAppendingPathComponent(link!.joinedIDs)
 		}
 	}
+	
 	
 	// MARK: Sideloading
 	
