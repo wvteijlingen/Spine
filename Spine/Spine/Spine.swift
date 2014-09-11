@@ -126,18 +126,13 @@ public class Spine {
 		
 		let URLString = self.URLForQuery(query)
 		
-		println("GET: " + URLString)
-		
 		self.HTTPClient.get(URLString, callback: { responseStatus, responseData, error in
 			if let error = error {
-				println("     └─ Network error: \(error.localizedDescription)")
 				promise.error(error)
 				
 			} else if let data = responseData {
-				println("     └─ Response: \(responseStatus!)")
 				
 				if 200 ... 299 ~= responseStatus! {
-					println("     └─ Success")
 					let deserializationResult = self.serializer.deserializeData(data)
 					
 					if let store = deserializationResult.store {
@@ -148,7 +143,6 @@ public class Spine {
 					
 				} else {
 					let error = self.serializer.deserializeError(data, withResonseStatus: responseStatus!)
-					println("     └─ API error: \(error.localizedDescription)")
 					promise.error(error)
 				}
 			}

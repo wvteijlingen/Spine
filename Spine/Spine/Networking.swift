@@ -10,6 +10,8 @@ import Foundation
 import Alamofire
 
 public protocol HTTPClientProtocol {
+	var traceEnabled: Bool { get set }
+	
 	func get(URL: String, callback:  (Int?, NSData?, NSError?) -> Void)
 	func post(URL: String, json: [String: AnyObject], callback:  (Int?, NSData?, NSError?) -> Void)
 	func put(URL: String, json: [String: AnyObject], callback:  (Int?, NSData?, NSError?) -> Void)
@@ -18,31 +20,49 @@ public protocol HTTPClientProtocol {
 
 class AlamofireClient: HTTPClientProtocol {
 	
+	var traceEnabled = true
+	
 	init() {
 		Alamofire.Manager.sharedInstance.defaultHeaders.updateValue("application/vnd.api+json", forKey: "Content-Type")
 	}
 	
 	func get(URL: String, callback:  (Int?, NSData?, NSError?) -> Void) {
-		Alamofire.request(Alamofire.Method.GET, URL).response { request, response, data, error in
-			callback(response?.statusCode, data as? NSData, error)
-		}
+		trace("GET:      " + URL)
+		self.performRequest(Alamofire.request(Alamofire.Method.GET, URL), callback: callback)
 	}
 	
 	func post(URL: String, json: [String: AnyObject], callback:  (Int?, NSData?, NSError?) -> Void) {
-		Alamofire.request(Alamofire.Method.POST, URL, parameters: json, encoding: Alamofire.ParameterEncoding.JSON).response { request, response, data, error in
-			callback(response?.statusCode, data as? NSData, error)
-		}
+		trace("POST:     " + URL)
+		self.performRequest(Alamofire.request(Alamofire.Method.POST, URL, parameters: json, encoding: Alamofire.ParameterEncoding.JSON), callback: callback)
 	}
 	
 	func put(URL: String, json: [String: AnyObject], callback:  (Int?, NSData?, NSError?) -> Void) {
-		Alamofire.request(Alamofire.Method.PUT, URL, parameters: json, encoding: Alamofire.ParameterEncoding.JSON).response { request, response, data, error in
+		trace("PUT:      " + URL)
+		self.performRequest(Alamofire.request(Alamofire.Method.PUT, URL, parameters: json, encoding: Alamofire.ParameterEncoding.JSON), callback: callback)
+	}
+	
+	func delete(URL: String, callback: (Int?, NSData?, NSError?) -> Void) {
+		trace("DELETE:   " + URL)
+		self.performRequest(Alamofire.request(Alamofire.Method.DELETE, URL), callback: callback)
+	}
+	
+	private func performRequest(request: Request, callback: (Int?, NSData?, NSError?) -> Void) {
+		request.response { request, response, data, error in
+			self.trace("RESPONSE: \(request.URL)")
+			
+			if let error = error {
+				self.trace("          └─ Network error: \(error.localizedDescription)")
+			} else {
+				self.trace("          └─ HTTP status: \(response!.statusCode)")
+			}
+			
 			callback(response?.statusCode, data as? NSData, error)
 		}
 	}
 	
-	func delete(URL: String, callback:  (Int?, NSData?, NSError?) -> Void) {
-		Alamofire.request(Alamofire.Method.DELETE, URL).response { request, response, data, error in
-			callback(response?.statusCode, data as? NSData, error)
+	private func trace<T>(object: T) {
+		if self.traceEnabled {
+			println(object)
 		}
 	}
 }
