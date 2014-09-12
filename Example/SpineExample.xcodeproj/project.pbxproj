@@ -16,9 +16,6 @@
 		D373F72419B2235D00275AFC /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = D373F72219B2235D00275AFC /* Main.storyboard */; };
 		D373F72619B2235D00275AFC /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = D373F72519B2235D00275AFC /* Images.xcassets */; };
 		D373F73219B2235D00275AFC /* SpineExampleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D373F73119B2235D00275AFC /* SpineExampleTests.swift */; };
-		D373F75819B2241900275AFC /* Comment.swift in Sources */ = {isa = PBXBuildFile; fileRef = D373F75519B2241900275AFC /* Comment.swift */; };
-		D373F75919B2241900275AFC /* Post.swift in Sources */ = {isa = PBXBuildFile; fileRef = D373F75619B2241900275AFC /* Post.swift */; };
-		D373F75A19B2241900275AFC /* User.swift in Sources */ = {isa = PBXBuildFile; fileRef = D373F75719B2241900275AFC /* User.swift */; };
 		D3AC61E419BF392C004AC73E /* Meta.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3AC61E319BF392C004AC73E /* Meta.swift */; };
 		D3ADDFC719BF85CF004C45AA /* SongsTableViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3ADDFC619BF85CF004C45AA /* SongsTableViewController.swift */; };
 /* End PBXBuildFile section */
@@ -69,9 +66,6 @@
 		D373F72B19B2235D00275AFC /* SpineExampleTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SpineExampleTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		D373F73019B2235D00275AFC /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		D373F73119B2235D00275AFC /* SpineExampleTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpineExampleTests.swift; sourceTree = "<group>"; };
-		D373F75519B2241900275AFC /* Comment.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Comment.swift; sourceTree = "<group>"; };
-		D373F75619B2241900275AFC /* Post.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Post.swift; sourceTree = "<group>"; };
-		D373F75719B2241900275AFC /* User.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = User.swift; sourceTree = "<group>"; };
 		D3AC61E319BF392C004AC73E /* Meta.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Meta.swift; sourceTree = "<group>"; };
 		D3ADDFC619BF85CF004C45AA /* SongsTableViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SongsTableViewController.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -101,16 +95,6 @@
 				D331834319B225A900936FBB /* SpineTests.xctest */,
 			);
 			name = Products;
-			sourceTree = "<group>";
-		};
-		D331836619B22A8300936FBB /* Resources */ = {
-			isa = PBXGroup;
-			children = (
-				D373F75619B2241900275AFC /* Post.swift */,
-				D373F75719B2241900275AFC /* User.swift */,
-				D373F75519B2241900275AFC /* Comment.swift */,
-			);
-			name = Resources;
 			sourceTree = "<group>";
 		};
 		D366676E19BDDB1D00E0383B /* RestPack */ = {
@@ -147,7 +131,6 @@
 			isa = PBXGroup;
 			children = (
 				D366676E19BDDB1D00E0383B /* RestPack */,
-				D331836619B22A8300936FBB /* Resources */,
 				D373F71E19B2235D00275AFC /* AppDelegate.swift */,
 				D366677619BDEBEA00E0383B /* ArtistsTableViewController.swift */,
 				D366677819BDEE3E00E0383B /* AlbumsTableViewController.swift */,
@@ -307,12 +290,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				D373F75819B2241900275AFC /* Comment.swift in Sources */,
 				D373F71F19B2235D00275AFC /* AppDelegate.swift in Sources */,
-				D373F75A19B2241900275AFC /* User.swift in Sources */,
 				D366677719BDEBEA00E0383B /* ArtistsTableViewController.swift in Sources */,
 				D366677519BDDB3100E0383B /* Song.swift in Sources */,
-				D373F75919B2241900275AFC /* Post.swift in Sources */,
 				D366677319BDDB3100E0383B /* Album.swift in Sources */,
 				D366677419BDDB3100E0383B /* Artist.swift in Sources */,
 				D3ADDFC719BF85CF004C45AA /* SongsTableViewController.swift in Sources */,
