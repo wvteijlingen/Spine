@@ -545,7 +545,7 @@ class DeserializeOperation: NSOperation {
 	*/
 	private func extractLinks() {
 		if let links = self.data["links"].object {
-			
+
 			// Loop through all links in the serialized data
 			for (linkName, linkData) in links {
 				

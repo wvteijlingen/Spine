@@ -64,7 +64,7 @@ struct ResourceLink {
 	/// The IDs of the linked resources, as as string joined by commas
 	var joinedIDs: String {
 		if let IDs = self.IDs {
-			return (IDs as NSArray).componentsJoinedByString(",")
+			return ",".join(IDs)
 		}
 		return ""
 	}

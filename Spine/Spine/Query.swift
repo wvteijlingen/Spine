@@ -73,7 +73,7 @@ public class Query {
 	:returns: Query
 	*/
 	public init(resourceType: String, resourceIDs: [String]) {
-		self.URL = NSURL(string: resourceType).URLByAppendingPathComponent((resourceIDs as NSArray).componentsJoinedByString(","))
+		self.URL = NSURL(string: resourceType).URLByAppendingPathComponent(",".join(resourceIDs))
 		self.resourceType = resourceType
 	}
 	
@@ -342,7 +342,7 @@ public class Query {
 		
 		// Includes
 		if self.includes.count != 0 {
-			var item = NSURLQueryItem(name: "include", value: (self.includes as NSArray).componentsJoinedByString(","))
+			var item = NSURLQueryItem(name: "include", value: ",".join(self.includes))
 			queryItems.append(item)
 		}
 		
@@ -354,13 +354,13 @@ public class Query {
 		
 		// Fields
 		for (resourceType, fields) in self.fields {
-			var item = NSURLQueryItem(name: "fields[\(resourceType)]", value: (fields as NSArray).componentsJoinedByString(","))
+			var item = NSURLQueryItem(name: "fields[\(resourceType)]", value: ",".join(fields))
 			queryItems.append(item)
 		}
 		
 		// Sorting
 		if self.sortOrders.count != 0 {
-			var item = NSURLQueryItem(name: "sort", value: (self.sortOrders as NSArray).componentsJoinedByString(","))
+			var item = NSURLQueryItem(name: "sort", value: ",".join(self.sortOrders))
 			queryItems.append(item)
 		}
 		
