@@ -76,7 +76,7 @@ class SerializingTests: XCTestCase {
 		XCTAssertNotNil(serialized["fooResources"], "Serialization does not contain root element 'fooResources'.")
 		XCTAssertEqual(serialized["fooResources"]!.count, 2, "Serialization does not contain two resources.")
 		
-		let serializedResources: [ResourceRepresentation] = serialized["fooResources"]!
+		let serializedResources: [[String: AnyObject]] = serialized["fooResources"]!
 		
 		self.compareFooResource(firstResource, withSerialization: serializedResources[0])
 		self.compareFooResource(firstResource, withSerialization: serializedResources[1])
@@ -102,7 +102,7 @@ class SerializingTests: XCTestCase {
 	}
 	*/
 	
-	private func compareFooResource(resource: FooResource, withSerialization serialization: ResourceRepresentation) {
+	private func compareFooResource(resource: FooResource, withSerialization serialization: [String: AnyObject]) {
 		let serializedStringAttribute = (serialization["stringAttribute"]! as String)
 		let serializedIntegerAttribute = (serialization["integerAttribute"]! as Int)
 		let serializedFloatAttribute = (serialization["floatAttribute"]! as Float)
