@@ -3,7 +3,7 @@
 	url = https://github.com/Alamofire/Alamofire.git
 [submodule "Spine/SwifyJSON"]
 	path = Spine/SwifyJSON
-	url = https://github.com/lingoer/SwiftyJSON.git
+	url = https://github.com/wvteijlingen/SwiftyJSON.git
 [submodule "Spine/BrightFutures"]
 	path = Spine/BrightFutures
 	url = https://github.com/Thomvis/BrightFutures.git
