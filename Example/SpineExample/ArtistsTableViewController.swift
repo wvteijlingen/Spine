@@ -15,7 +15,13 @@ class ArtistsTableViewController: UITableViewController {
 	
     override func viewDidLoad() {
         super.viewDidLoad()
-		self.loadData()
+//		self.loadData()
+		
+		Artist.findOne("1").onSuccess { resource, meta in
+			let artist = resource as Artist
+			artist.name = "Steely Dan"
+			artist.save()
+		}
     }
 	
 	func loadData() {
@@ -58,6 +64,4 @@ class ArtistsTableViewController: UITableViewController {
 			(segue.destinationViewController as AlbumsTableViewController).artist = self.artists[self.tableView.indexPathForSelectedRow()!.row]
 		}
     }
-
-
 }

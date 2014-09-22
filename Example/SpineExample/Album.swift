@@ -10,10 +10,10 @@ import Spine
 
 class Album: Resource {
 	
-	var title: String?
-	var year: NSNumber?
-	var artist: Artist?
-	var songs: [Song]?
+	dynamic var title: String?
+	dynamic var year: NSNumber?
+	dynamic var artist: Artist?
+	dynamic var songs: [Song]?
 	
 	override var resourceType: String {
 		return "albums"

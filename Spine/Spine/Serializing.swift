@@ -63,7 +63,6 @@ struct ResourceClassMap {
 	}
 }
 
-
 // MARK: -
 
 /**
@@ -72,6 +71,17 @@ struct ResourceClassMap {
  *  and uses SerializationOperations and DeserialisationOperations for (de)serializing.
  */
 class Serializer {
+	
+	/**
+	The serialization mode.
+	
+	- AllAttributes:	Serialize all attributes including relationships.
+	- DirtyAttributes:	Serialize only dirty attributes and all relationships.
+	*/
+	enum SerializationMode {
+		case AllAttributes, DirtyAttributes
+	}
+	
 
 	/// The class map that holds information about resource type/class mapping.
 	private var classMap: ResourceClassMap = ResourceClassMap()
@@ -179,11 +189,12 @@ class Serializer {
 	 that can be passed to NSJSONSerialization.
 
 	 :param: resources The resources to serialize.
+	 :param: mode      The serialization mode to use.
 
 	 :returns: A multidimensional dictionary/array structure.
 	 */
-	func serializeResources(resources: [Resource]) -> [String: AnyObject] {
-		let mappingOperation = SerializeOperation(resources: resources)
+	func serializeResources(resources: [Resource], mode: Serializer.SerializationMode) -> [String: AnyObject] {
+		let mappingOperation = SerializeOperation(resources: resources, mode: mode)
 		mappingOperation.start()
 		return mappingOperation.result!
 	}
@@ -236,7 +247,7 @@ class DeserializeOperation: NSOperation {
 			self.result = DeserializationResult(nil, nil, error)
 			return
 		}
-		
+
 		// Extract resources
 		for(key: String, data: JSONValue) in self.data.object! {
 			// Linked resources for compound documents
@@ -246,20 +257,18 @@ class DeserializeOperation: NSOperation {
 						self.deserializeSingleRepresentation(representation, withResourceType: linkedResourceType)
 					}
 				}
-				
-			// Top level link templates
-			} else if key == "links" {
-				// Links are extracted later using the `extractLinks` method
-				
-			// Multiple resources in an array
-			} else if let representations = data.array {
-				for representation in representations {
-					self.deserializeSingleRepresentation(representation, withResourceType: key)
+			
+			} else if key != "links" && key != "meta" {
+				// Multiple resources
+				if let representations = data.array {
+					for representation in representations {
+						self.deserializeSingleRepresentation(representation, withResourceType: key)
+					}
+					
+				// Single resource
+				} else {
+					self.deserializeSingleRepresentation(data, withResourceType: key)
 				}
-				
-			// Single resource
-			} else {
-				self.deserializeSingleRepresentation(data, withResourceType: key)
 			}
 		}
 		
@@ -271,6 +280,11 @@ class DeserializeOperation: NSOperation {
 		
 		// Resolve relations in the store
 		self.resolveRelations()
+		
+		// Start dirty observing for all resources
+		for resource in self.store.allResources() {
+			resource.dirtyObservingActive = true
+		}
 		
 		// Create a result
 		self.result = DeserializationResult(self.store, self.meta, nil)
@@ -296,6 +310,8 @@ class DeserializeOperation: NSOperation {
 			resource = self.classMap[resourceType]() as Resource
 			isExistingResource = false
 		}
+		
+		resource.dirtyObservingActive = false
 
 		// Extract data into resource
 		self.extractID(representation, intoResource: resource)
@@ -625,11 +641,13 @@ class SerializeOperation: NSOperation {
 	
 	private let resources: [Resource]
 	private let formatter = Formatter()
+	private let mode: Serializer.SerializationMode
 	
 	var result: [String: AnyObject]?
 	
-	init(resources: [Resource]) {
+	init(resources: [Resource], mode: Serializer.SerializationMode) {
 		self.resources = resources
+		self.mode = mode
 	}
 	
 	override func main() {
@@ -696,9 +714,14 @@ class SerializeOperation: NSOperation {
 	:param: serializedData The data to add the attributes to.
 	:param: resource       The resource whose attributes to add.
 	*/
-	private func addAttributes(inout serializedData: [String: AnyObject], resource: Resource) {
+	private func addAttributes(inout serializedData: [String: AnyObject], resource: Resource) {		
 		for (attributeName, attribute) in resource.persistentAttributes {
 			if attribute.isRelationship() {
+				continue
+			}
+			
+			if self.mode == .DirtyAttributes && !resource.isDirty(attributeName) {
+				// Attribute is not dirty, skip serialization.
 				continue
 			}
 			

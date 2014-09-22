@@ -15,34 +15,26 @@ public class Spine {
 
 	public class var sharedInstance: Spine {
         struct Singleton {
-            static let instance = Spine()
+			static let instance = Spine()
         }
 
         return Singleton.instance
     }
 
 	/// The base URL of the API. All other URLs will be made absolute to this URL.
-	public var baseURL: String
+	public var baseURL: String = ""
 	
 	/// The serializer to use for serializing and deserializing of JSON representations.
 	private let serializer = Serializer()
 	
 	/// The HTTPClient that performs the HTTP requests.
-	private let HTTPClient: HTTPClientProtocol = AlamofireClient()
-
-	public init() {
-		self.baseURL = ""
-	}
-
-	public init(endPoint: String) {
-		self.baseURL = endPoint
-	}
+	private var HTTPClient: HTTPClientProtocol!
 	
-	public init(endPoint: String, HTTPClient: HTTPClientProtocol) {
-		self.baseURL = endPoint
+	
+	public init(baseURL: String = "", HTTPClient: HTTPClientProtocol = AlamofireClient() ) {
+		self.baseURL = baseURL
 		self.HTTPClient = HTTPClient
 	}
-	
 	
 	// MARK: Mapping
 	
@@ -184,11 +176,11 @@ public class Spine {
 		// Create resource
 		if resource.resourceID == nil {
 			resource.resourceID = NSUUID().UUIDString
-			self.HTTPClient.post(self.URLForCollectionOfResource(resource), json: self.serializer.serializeResources([resource]), callback: callback)
+			self.HTTPClient.post(self.URLForCollectionOfResource(resource), json: self.serializer.serializeResources([resource], mode: .AllAttributes), callback: callback)
 
 		// Update resource
 		} else {
-			self.HTTPClient.put(self.URLForResource(resource), json: self.serializer.serializeResources([resource]), callback: callback)
+			self.HTTPClient.put(self.URLForResource(resource), json: self.serializer.serializeResources([resource], mode: .DirtyAttributes), callback: callback)
 		}
 		
 		return promise.future

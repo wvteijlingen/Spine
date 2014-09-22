@@ -47,6 +47,7 @@ public struct ResourceAttribute {
 	}
 }
 
+
 /**
  *  Represents a link to one or multiple other resources
  */
@@ -90,15 +91,32 @@ struct ResourceLink {
 	}
 }
 
+var ResourceDirtyCheckingKVOContext = "ResourceDirtyCheckingKVOContext"
 
 /**
  *  A base recource class that provides some defaults for resources.
  *  You must create custom resource classes by subclassing from Resource.
  */
 public class Resource: NSObject, Printable {
-
+	
+	// MARK: Bookkeeping
+	
 	/// The unique identifier of this resource. If this is nil, the resource hasn't been saved yet.
 	public var resourceID: String?
+
+	/// The location (URL) of this resource.
+	internal var resourceLocation: String?
+	
+	/// Links to other resources.
+	internal var links: [String: ResourceLink] = [:]
+	
+	/// Attributes that are dirty
+	private var dirtyAttributes: [String] = []
+	
+	internal var dirtyObservingActive: Bool = false
+	
+	
+	// MARK: Resource type configuration
 
 	/// The type of this resource in plural form. For example: 'posts', 'users'.
 	public var resourceType: String { return "_undefined" }
@@ -106,21 +124,74 @@ public class Resource: NSObject, Printable {
 	/// Array of attributes that must be mapped by Spine.
 	public var persistentAttributes: [String: ResourceAttribute] { return [:] }
 	
-	/// The location (URL) of this resource.
-	var resourceLocation: String?
-
-	/// Links to other resources.
-	var links: [String: ResourceLink] = [:]
 	
-	required override public init() {} // This is needed for the dynamic instantiation based on the metatype
+	
+	// MARK: Initializers
+	
+	 // This is needed for the dynamic instantiation based on the metatype
+	required override public init() {
+		super.init()
+		self.startDirtyObserving()
+	}
 	
 	public init(resourceID: String) {
 		self.resourceID = resourceID
+		super.init()
+		self.startDirtyObserving()
 	}
 	
-	// Printable
+	deinit {
+		self.stopDirtyObserving()
+	}
+	
+	
+	// MARK: Printable protocol
+
 	override public var description: String {
 		return "\(self.resourceType)[\(self.resourceID)]"
+	}
+	
+	
+	
+	// MARK: Dirty checking
+	
+	private func startDirtyObserving() {
+		for (attributeName, attribute) in self.persistentAttributes {
+			if attribute.isRelationship() {
+				continue
+			}
+			self.addObserver(self, forKeyPath: attributeName, options: nil, context: &ResourceDirtyCheckingKVOContext)
+		}
+		
+		self.dirtyObservingActive = true
+	}
+	
+	private func stopDirtyObserving() {
+		for (attributeName, attribute) in self.persistentAttributes {
+			if attribute.isRelationship() {
+				continue
+			}
+			
+			self.removeObserver(self, forKeyPath: attributeName, context: &ResourceDirtyCheckingKVOContext)
+		}
+	}
+	
+	override public func observeValueForKeyPath(keyPath: String!, ofObject object: AnyObject!, change: [NSObject : AnyObject]!, context: UnsafeMutablePointer<Void>) {
+		if context == &ResourceDirtyCheckingKVOContext {
+			if self.dirtyObservingActive && !contains(self.dirtyAttributes, keyPath) {
+				self.dirtyAttributes.append(keyPath)
+			}
+		} else {
+			super.observeValueForKeyPath(keyPath, ofObject: object, change: change, context: context)
+		}
+	}
+	
+	internal func isDirty(attributeName: String) -> Bool {
+		return contains(self.dirtyAttributes, attributeName)
+	}
+	
+	internal func resetDirtyStatus() {
+		self.dirtyAttributes = []
 	}
 }
 
@@ -201,4 +272,7 @@ extension Resource {
 
 public class Meta: Resource {
 	override public var resourceType: String { return "_meta" }
+	
+	override internal func startDirtyObserving() { }
+	override internal func stopDirtyObserving() { }
 }
