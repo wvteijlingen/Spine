@@ -9,7 +9,8 @@
 import Foundation
 
 class ResourceStore: Printable {
-	var resources: [String : [String: Resource]] = [:]
+	private var orderedResources: [String : [Resource]] = [:]
+	private var resources: [String : [String: Resource]] = [:]
 	
 	init() {
 		
@@ -25,17 +26,31 @@ class ResourceStore: Printable {
 		assert(resource.resourceID != nil, "ResourceStore can only store resources with a resourceID.")
 		
 		let resourceType = resource.resourceType
+		
 		if (self.resources[resourceType] == nil) {
 			self.resources[resourceType] = [:]
 		}
 		self.resources[resourceType]![resource.resourceID!] = resource
+		
+		if (self.orderedResources[resourceType] == nil) {
+			self.orderedResources[resourceType] = []
+		}
+		self.orderedResources[resourceType]!.append(resource)
 	}
 	
 	func remove(resource: Resource) {
 		assert(resource.resourceID != nil, "ResourceStore can only store resources with a resourceID.")
 		
-		if self.resources[resource.resourceType] != nil {
-			self.resources[resource.resourceType]![resource.resourceID!] = nil
+		let resourceType = resource.resourceType
+		
+		if self.resources[resourceType] != nil {
+			self.resources[resourceType]![resource.resourceID!] = nil
+		}
+		
+		if (self.orderedResources[resourceType] != nil) {
+			self.orderedResources[resourceType] = self.orderedResources[resourceType]!.filter { orderedResource in
+				return orderedResource.resourceID == resource.resourceID
+			}
 		}
 	}
 	
@@ -60,25 +75,17 @@ class ResourceStore: Printable {
 	}
 	
 	func resourcesWithName(resourceType: String) -> [Resource] {
-		var resources: [Resource] = []
-		
-		if let resourcesByID: [String: Resource] = self.resources[resourceType] {
-			for value in resourcesByID.values {
-				resources.append(value)
-			}
-		}
-		
-		return resources
+		return self.orderedResources[resourceType] ?? []
 	}
 	
 	func allResources() -> [Resource] {
-		var resources: [Resource] = []
+		var allResources: [Resource] = []
 		
-		for (resourceType, resourcesByID) in self.resources {
-			resources += resourcesByID.values
+		for (resourceType, resources) in self.orderedResources {
+			allResources += resources
 		}
 		
-		return resources
+		return allResources
 	}
 	
 	var description: String {

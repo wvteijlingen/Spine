@@ -128,7 +128,7 @@ public class Resource: NSObject, Printable {
 	
 	// MARK: Initializers
 	
-	 // This is needed for the dynamic instantiation based on the metatype
+	// This is needed for the dynamic instantiation based on the metatype
 	required override public init() {
 		super.init()
 		self.startDirtyObserving()
