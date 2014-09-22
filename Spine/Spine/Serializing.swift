@@ -182,7 +182,7 @@ class Serializer {
 
 	 :returns: A multidimensional dictionary/array structure.
 	 */
-	func serializeResources(resources: [Resource]) -> [String: [[String: AnyObject]]] {
+	func serializeResources(resources: [Resource]) -> [String: AnyObject] {
 		let mappingOperation = SerializeOperation(resources: resources)
 		mappingOperation.start()
 		return mappingOperation.result!
@@ -238,17 +238,28 @@ class DeserializeOperation: NSOperation {
 		}
 		
 		// Extract resources
-		for(resourceType: String, resourcesData: JSONValue) in self.data.object! {
-			if resourceType == "linked" {
-				for (linkedResourceType, linkedResources) in resourcesData.object! {
+		for(key: String, data: JSONValue) in self.data.object! {
+			// Linked resources for compound documents
+			if key == "linked" {
+				for (linkedResourceType, linkedResources) in data.object! {
 					for representation in linkedResources.array! {
 						self.deserializeSingleRepresentation(representation, withResourceType: linkedResourceType)
 					}
 				}
-			} else if let resources = resourcesData.array {
-				for representation in resources {
-					self.deserializeSingleRepresentation(representation, withResourceType: resourceType)
+				
+			// Top level link templates
+			} else if key == "links" {
+				// Links are extracted later using the `extractLinks` method
+				
+			// Multiple resources in an array
+			} else if let representations = data.array {
+				for representation in representations {
+					self.deserializeSingleRepresentation(representation, withResourceType: key)
 				}
+				
+			// Single resource
+			} else {
+				self.deserializeSingleRepresentation(data, withResourceType: key)
 			}
 		}
 		
@@ -615,36 +626,48 @@ class SerializeOperation: NSOperation {
 	private let resources: [Resource]
 	private let formatter = Formatter()
 	
-	var result: [String: [[String: AnyObject]]]?
+	var result: [String: AnyObject]?
 	
 	init(resources: [Resource]) {
 		self.resources = resources
 	}
 	
 	override func main() {
-		var dictionary: [String: [[String: AnyObject]]] = [:]
+		if self.resources.count == 1 {
+			let resource = self.resources.first!
+			let serializedData = self.serializeResource(resource)
+			self.result = [resource.resourceType: serializedData]
+			
+		} else  {
+			var dictionary: [String: [[String: AnyObject]]] = [:]
+			
+			for resource in resources {
+				var serializedData = self.serializeResource(resource)
+				
+				//Add the resource representation to the root dictionary
+				if dictionary[resource.resourceType] == nil {
+					dictionary[resource.resourceType] = [serializedData]
+				} else {
+					dictionary[resource.resourceType]!.append(serializedData)
+				}
+			}
+			
+			self.result = dictionary
+		}
+	}
+	
+	private func serializeResource(resource: Resource) -> [String: AnyObject] {
+		var serializedData: [String: AnyObject] = [:]
 		
-		//Loop through all resources
-		for resource in resources {
-			var serializedData: [String: AnyObject] = [:]
-			
-			// Special attributes
-			if let ID = resource.resourceID {
-				self.addID(&serializedData, ID: ID)
-			}
-			
-			self.addAttributes(&serializedData, resource: resource)
-			self.addRelationships(&serializedData, resource: resource)
-			
-			//Add the resource representation to the root dictionary
-			if dictionary[resource.resourceType] == nil {
-				dictionary[resource.resourceType] = [serializedData]
-			} else {
-				dictionary[resource.resourceType]!.append(serializedData)
-			}
+		// Special attributes
+		if let ID = resource.resourceID {
+			self.addID(&serializedData, ID: ID)
 		}
 		
-		self.result = dictionary
+		self.addAttributes(&serializedData, resource: resource)
+		self.addRelationships(&serializedData, resource: resource)
+		
+		return serializedData
 	}
 	
 	
