@@ -48,15 +48,17 @@ let query = Query(resourceType: "posts")
 query.findResources() // Execute the query
 
 // Fetch related resources
+post.findRelated("author")
+// or
 let query = Query(resource: post, relationship: "author")
 query.findResources()
 ```
 
 ## 4. Saving resources
-A resource can be saved by calling the `saveInBackground` function on a resource instance. Extra care MUST be taken regarding related resources. Saving does not automatically save any related resources. You must explicitly save these yourself beforehand. If you added a new create resource to a parent resource, you must first save the child resource (to obtain an ID), before saving the parent resource.
+A resource can be saved by calling the `save` method on a resource instance. Extra care MUST be taken regarding related resources. Saving does not automatically save any related resources. You must explicitly save these yourself beforehand. If you added a new create resource to a parent resource, you must first save the child resource (to obtain an ID), before saving the parent resource.
 
 ## 5. Deleting resources
-A resource can be deleted by calling the `deleteInBackground` function on a resource instance. Deleting does not cascade on the client.
+A resource can be deleted by calling the `delete` method on a resource instance. Deleting does not cascade on the client.
 
 ## 6. Read the wiki
 The wiki contains much more information about using Spine. Godspeed, and remember, respect is everything.
