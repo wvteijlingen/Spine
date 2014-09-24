@@ -8,7 +8,7 @@
 
 import Foundation
 
-class ResourceStore: Printable {
+public class ResourceStore: Printable {
 	private var orderedResources: [String : [Resource]] = [:]
 	private var resources: [String : [String: Resource]] = [:]
 	
@@ -88,7 +88,7 @@ class ResourceStore: Printable {
 		return allResources
 	}
 	
-	var description: String {
+	public var description: String {
 		var string = ""
 		for resource in self.allResources() {
 			string += "\(resource.resourceType)[\(resource.resourceID)]\n"

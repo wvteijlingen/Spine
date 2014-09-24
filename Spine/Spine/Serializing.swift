@@ -9,7 +9,7 @@
 import UIKit
 import SwiftyJSON
 
-typealias DeserializationResult = (store: ResourceStore?, meta: [String: Meta]?, error: NSError?)
+public typealias DeserializationResult = (store: ResourceStore?, meta: [String: Meta]?, error: NSError?)
 
 /**
  *  A ResourceClassMap contains information about how resource types
@@ -66,22 +66,38 @@ struct ResourceClassMap {
 // MARK: -
 
 /**
+The serialization mode.
+
+- AllAttributes:	Serialize all attributes including relationships.
+- DirtyAttributes:	Serialize only dirty attributes and all relationships.
+*/
+public enum SerializationMode {
+	case AllAttributes, DirtyAttributes
+}
+
+// MARK: -
+
+public protocol SerializerProtocol {
+	// Class mapping
+	func registerClass(type: Resource.Type)
+	func unregisterClass(type: Resource.Type)
+	func classNameForResourceType(resourceType: String) -> Resource.Type
+	
+	// Deserializing
+	func deserializeData(data: NSData) -> DeserializationResult
+	func deserializeData(data: NSData, usingStore store: ResourceStore) -> DeserializationResult
+	func deserializeError(data: NSData, withResonseStatus responseStatus: Int) -> NSError
+	
+	// Serializing
+	func serializeResources(resources: [Resource], mode: SerializationMode) -> [String: AnyObject]
+}
+
+/**
  *  The serializer is responsible for serializing and deserialing resources.
  *  It stores information about the Resource classes using a ResourceClassMap
  *  and uses SerializationOperations and DeserialisationOperations for (de)serializing.
  */
-class Serializer {
-	
-	/**
-	The serialization mode.
-	
-	- AllAttributes:	Serialize all attributes including relationships.
-	- DirtyAttributes:	Serialize only dirty attributes and all relationships.
-	*/
-	enum SerializationMode {
-		case AllAttributes, DirtyAttributes
-	}
-	
+class JSONAPISerializer: SerializerProtocol {
 
 	/// The class map that holds information about resource type/class mapping.
 	private var classMap: ResourceClassMap = ResourceClassMap()
@@ -193,7 +209,7 @@ class Serializer {
 
 	 :returns: A multidimensional dictionary/array structure.
 	 */
-	func serializeResources(resources: [Resource], mode: Serializer.SerializationMode) -> [String: AnyObject] {
+	func serializeResources(resources: [Resource], mode: SerializationMode) -> [String: AnyObject] {
 		let mappingOperation = SerializeOperation(resources: resources, mode: mode)
 		mappingOperation.start()
 		return mappingOperation.result!
@@ -641,11 +657,11 @@ class SerializeOperation: NSOperation {
 	
 	private let resources: [Resource]
 	private let formatter = Formatter()
-	private let mode: Serializer.SerializationMode
+	private let mode: SerializationMode
 	
 	var result: [String: AnyObject]?
 	
-	init(resources: [Resource], mode: Serializer.SerializationMode) {
+	init(resources: [Resource], mode: SerializationMode) {
 		self.resources = resources
 		self.mode = mode
 	}
