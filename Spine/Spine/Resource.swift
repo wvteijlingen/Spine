@@ -271,8 +271,8 @@ extension Resource {
 //MARK: - Meta
 
 public class Meta: Resource {
-	override public var resourceType: String { return "_meta" }
+	final override public var resourceType: String { return "_meta" }
 	
-	override internal func startDirtyObserving() { }
-	override internal func stopDirtyObserving() { }
+	final override internal func startDirtyObserving() { }
+	final override internal func stopDirtyObserving() { }
 }
