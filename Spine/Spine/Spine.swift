@@ -22,19 +22,33 @@ public class Spine {
     }
 
 	/// The base URL of the API. All other URLs will be made absolute to this URL.
-	public var baseURL: String = ""
+	public var baseURL: String {
+		get {
+			return self.router.baseURL
+		}
+		set(newValue) {
+			self.router.baseURL = newValue
+		}
+	}
 	
-	/// The serializer to use for serializing and deserializing of JSON representations.
-	private let serializer = Serializer()
+	/// The router that builds the URLs for requests.
+	private var router: RouterProtocol!
 	
 	/// The HTTPClient that performs the HTTP requests.
 	private var HTTPClient: HTTPClientProtocol!
 	
+	/// The serializer to use for serializing and deserializing of JSON representations.
+	private let serializer = Serializer()
 	
-	public init(baseURL: String = "", HTTPClient: HTTPClientProtocol = AlamofireClient() ) {
-		self.baseURL = baseURL
+	
+	// MARK: Intializers
+	
+	public init(baseURL: String = "", HTTPClient: HTTPClientProtocol = AlamofireClient(), router: RouterProtocol = JSONAPIRouter()) {
 		self.HTTPClient = HTTPClient
+		self.router = router
+		self.baseURL = baseURL
 	}
+	
 	
 	// MARK: Mapping
 	
@@ -45,27 +59,6 @@ public class Spine {
 	*/
 	public func registerType(type: Resource.Type) {
 		self.serializer.registerClass(type)
-	}
-	
-	
-	// MARK: Routing
-	
-	private func URLForCollectionOfResource(resource: Resource) -> String {
-		return "\(self.baseURL)/\(resource.resourceType)"
-	}
-	
-	private func URLForResource(resource: Resource) -> String {
-		if let resourceLocation = resource.resourceLocation {
-			return resourceLocation
-		}
-		
-		assert(resource.resourceID != nil, "Resource does not have an href, nor a resource ID.")
-		
-		return "\(self.baseURL)/\(resource.resourceType)/\(resource.resourceID!)"
-	}
-	
-	private func URLForQuery(query: Query) -> String {
-		return query.URLRelativeToURL(self.baseURL)
 	}
 
 
@@ -116,7 +109,7 @@ public class Spine {
 	public func fetchResourcesForQuery(query: Query) -> Future<([Resource], Meta?)> {
 		let promise = Promise<([Resource], Meta?)>()
 		
-		let URLString = self.URLForQuery(query)
+		let URLString = self.router.URLForQuery(query)
 		
 		self.HTTPClient.get(URLString, callback: { responseStatus, responseData, error in
 			if let error = error {
@@ -176,11 +169,11 @@ public class Spine {
 		// Create resource
 		if resource.resourceID == nil {
 			resource.resourceID = NSUUID().UUIDString
-			self.HTTPClient.post(self.URLForCollectionOfResource(resource), json: self.serializer.serializeResources([resource], mode: .AllAttributes), callback: callback)
+			self.HTTPClient.post(self.router.URLForCollectionOfResourceType(resource.resourceType), json: self.serializer.serializeResources([resource], mode: .AllAttributes), callback: callback)
 
 		// Update resource
 		} else {
-			self.HTTPClient.put(self.URLForResource(resource), json: self.serializer.serializeResources([resource], mode: .DirtyAttributes), callback: callback)
+			self.HTTPClient.put(self.router.URLForResource(resource), json: self.serializer.serializeResources([resource], mode: .DirtyAttributes), callback: callback)
 		}
 		
 		return promise.future
@@ -200,7 +193,7 @@ public class Spine {
 	public func deleteResource(resource: Resource) -> Future<Void> {
 		let promise = Promise<Void>()
 		
-		let URLString = self.URLForResource(resource)
+		let URLString = self.router.URLForResource(resource)
 		
 		self.HTTPClient.delete(URLString, callback: { responseStatus, responseData, error in
 			if let error = error {

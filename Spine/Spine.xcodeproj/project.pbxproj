@@ -11,6 +11,7 @@
 		D312E30219BB8822004BB3E0 /* Networking.swift in Sources */ = {isa = PBXBuildFile; fileRef = D37FB17E19B9D7F10073A888 /* Networking.swift */; };
 		D331836C19B2302500936FBB /* Query.swift in Sources */ = {isa = PBXBuildFile; fileRef = D331836B19B2302500936FBB /* Query.swift */; };
 		D331837019B2312900936FBB /* ResourceStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = D331836F19B2312900936FBB /* ResourceStore.swift */; };
+		D341907719D30BA4007B38D6 /* Routing.swift in Sources */ = {isa = PBXBuildFile; fileRef = D341907619D30BA4007B38D6 /* Routing.swift */; };
 		D35CE46C19B276DB002B358E /* ResourceStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = D331836F19B2312900936FBB /* ResourceStore.swift */; };
 		D35CE46D19B276E4002B358E /* Spine.swift in Sources */ = {isa = PBXBuildFile; fileRef = D373F7A319B224BB00275AFC /* Spine.swift */; };
 		D35CE46E19B276E4002B358E /* Query.swift in Sources */ = {isa = PBXBuildFile; fileRef = D331836B19B2302500936FBB /* Query.swift */; };
@@ -111,6 +112,7 @@
 		D331835719B227AD00936FBB /* SwiftyJSON.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = SwiftyJSON.xcodeproj; path = SwifyJSON/SwiftyJSON.xcodeproj; sourceTree = "<group>"; };
 		D331836B19B2302500936FBB /* Query.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Query.swift; sourceTree = "<group>"; };
 		D331836F19B2312900936FBB /* ResourceStore.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ResourceStore.swift; sourceTree = "<group>"; };
+		D341907619D30BA4007B38D6 /* Routing.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Routing.swift; sourceTree = "<group>"; };
 		D364D2A719B7633A00503CBF /* BrightFutures.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = BrightFutures.xcodeproj; path = BrightFutures/BrightFutures.xcodeproj; sourceTree = "<group>"; };
 		D366677A19BE6F8900E0383B /* Paginator.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Paginator.swift; sourceTree = "<group>"; };
 		D37366CB19B266850009A693 /* ResourceStoreTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ResourceStoreTests.swift; sourceTree = "<group>"; };
@@ -195,6 +197,7 @@
 				D331836B19B2302500936FBB /* Query.swift */,
 				D373F7A119B224BB00275AFC /* Serializing.swift */,
 				D37FB17E19B9D7F10073A888 /* Networking.swift */,
+				D341907619D30BA4007B38D6 /* Routing.swift */,
 				D331836F19B2312900936FBB /* ResourceStore.swift */,
 				D366677A19BE6F8900E0383B /* Paginator.swift */,
 				D373F78B19B2249900275AFC /* Supporting Files */,
@@ -420,6 +423,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D341907719D30BA4007B38D6 /* Routing.swift in Sources */,
 				D331836C19B2302500936FBB /* Query.swift in Sources */,
 				D373F7A619B224BB00275AFC /* Spine.swift in Sources */,
 				D373F7A419B224BB00275AFC /* Serializing.swift in Sources */,
