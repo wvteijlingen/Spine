@@ -11,10 +11,11 @@ The easiest way to use Spine is via a singleton. Spine exposes a singleton via `
 ### 1. Configure the API baseURL
 ```swift
 Spine.sharedInstance.baseURL = "http://api.example.com/v1"
-```swift
+```
 
 ### 2. Register your resource classes
 Every resource should have a class, subclassed from `Resource`. This class should override the public variables `resourceType` and `persistentAttributes`. The `resourceType` should contain the type of resource in plural form. The `persistentAttributes` should contain an array of attributes that must be persisted by Spine. Attributes that are not in this array are ignored by Spine.
+
 ```swift
 class Post: Resource {
     var title: String?
