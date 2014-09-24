@@ -18,17 +18,17 @@ Every resource should have a class, subclassed from `Resource`. This class shoul
 
 ```swift
 class Post: Resource {
-    var title: String?
-    var body: String?
-    var author: User?
-    override var resourceType: String {
-        return "posts"
-    }
-    override var persistentAttributes: [String: ResourceAttribute] {
-        return ["title": ResourceAttribute.Property,
-                "body": ResourceAttribute.Property,
-                "author": ResourceAttribute.ToOne]
-    }
+	dynamic var title: String?
+	dynamic var body: String?
+	dynamic var author: User?
+	override var resourceType: String {
+		return "posts"
+	}
+	override var persistentAttributes: [String: ResourceAttribute] {
+		return ["title": ResourceAttribute(type: .Property),
+		        "body": ResourceAttribute(type: .Property, representationName: "content"),
+		        "author": ResourceAttribute(type: .ToOne)]
+	}
 }
 ```
 
