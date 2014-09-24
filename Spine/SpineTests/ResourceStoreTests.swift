@@ -35,10 +35,11 @@ class ResourceStoreTests: XCTestCase {
 	func testInitWithResources() {
 		let firstResource = FooResource(resourceID: "1")
 		let secondResource = FooResource(resourceID: "2")
+		let thirdResource = FooResource(resourceID: "3")
 		
-		let store = ResourceStore(resources: [firstResource, secondResource])
+		let store = ResourceStore(resources: [firstResource, secondResource, thirdResource])
 		
-		XCTAssertEqual([secondResource, firstResource], store.allResources(), "Wrong value.")
+		XCTAssertEqual([firstResource, secondResource, thirdResource], store.resourcesWithName("fooResource"), "Wrong value.")
 	}
 	
     func testAddResource() {
@@ -66,10 +67,10 @@ class ResourceStoreTests: XCTestCase {
 		let resource = FooResource(resourceID: "1")
 		
 		store.add(resource)
-		XCTAssertTrue(store.containsResourceWithType("fooResource", identifier: "1"), "Expected true")
+		XCTAssertTrue(store.containsResourceWithType("fooResource", identifier: "1"), "Expected true.")
 		
 		store.remove(resource)
-		XCTAssertFalse(store.containsResourceWithType("fooResource", identifier: "1"), "Expected false")
+		XCTAssertFalse(store.containsResourceWithType("fooResource", identifier: "1"), "Expected false.")
 	}
 	
 	func testResourcesWithName() {
@@ -82,8 +83,8 @@ class ResourceStoreTests: XCTestCase {
 		store.add(secondResource)
 		store.add(otherResource)
 		
-		XCTAssertNotNil(store.resourcesWithName("fooResource"), "Nil value encountered, expected array.")
-		XCTAssertEqual([secondResource, firstResource], store.resourcesWithName("fooResource"), "Wrong value.")
+		XCTAssertEqual([firstResource, secondResource], store.resourcesWithName("fooResource"), "Wrong value.")
+		XCTAssertEqual([otherResource], store.resourcesWithName("barResource"), "Wrong value.")
 	}
 	
 	func testAllResources() {
@@ -96,7 +97,10 @@ class ResourceStoreTests: XCTestCase {
 		store.add(secondResource)
 		store.add(otherResource)
 		
-		XCTAssertEqual([otherResource, secondResource, firstResource], store.allResources(), "Wrong value.")
+		let allResources = store.allResources()
+		XCTAssertTrue(contains(allResources, firstResource), "Expected true.")
+		XCTAssertTrue(contains(allResources, secondResource), "Expected true.")
+		XCTAssertTrue(contains(allResources, otherResource), "Expected true.")
 	}
 
 }

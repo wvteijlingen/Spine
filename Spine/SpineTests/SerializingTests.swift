@@ -9,16 +9,18 @@
 import Foundation
 import XCTest
 import Spine
+import SwiftyJSON
 
 class SerializingTests: XCTestCase {
 
 	class FooResource: Resource {
-		var stringAttribute = "stringAttributeValue"
-		var integerAttribute: Int = 10
-		var floatAttribute: Float = 5.5
-		var nilAttribute: AnyObject? = nil
-		var dateAttribute = NSDate(timeIntervalSince1970: 0)
-		var toOneAttribute = BarResource(resourceID: "2")
+		dynamic var stringAttribute = "stringAttributeValue"
+		dynamic var integerAttribute: NSNumber? = 10
+		dynamic var floatAttribute: NSNumber? = 5.5
+		dynamic var nilAttribute: AnyObject? = nil
+		dynamic var dateAttribute = NSDate(timeIntervalSince1970: 0)
+		dynamic var toOneAttribute = BarResource(resourceID: "2")
+		dynamic var toManyAttribute = [BarResource(resourceID: "3"), BarResource(resourceID: "4")]
 		
 		override var resourceType: String {
 			return "fooResources"
@@ -31,8 +33,9 @@ class SerializingTests: XCTestCase {
 				"floatAttribute": ResourceAttribute(type: .Property),
 				"nilAttribute": ResourceAttribute(type: .Property),
 				"dateAttribute": ResourceAttribute(type: .Date),
-				"toOneAttribute": ResourceAttribute(type: .ToOne)
-			]
+				"toOneAttribute": ResourceAttribute(type: .ToOne),
+				"toManyAttribute": ResourceAttribute(type: .ToMany)
+				]
 		}
 	}
 	
@@ -46,74 +49,56 @@ class SerializingTests: XCTestCase {
 		}
 	}
 	
-	let serializer = Serializer()
+	
+	let serializer = JSONAPISerializer()
+	
 	
 	override func setUp() {
 		super.setUp()
 		serializer.registerClass(FooResource.self)
-	}
-	
-	override func tearDown() {
-		// Put teardown code here. This method is called after the invocation of each test method in the class.
-		super.tearDown()
+		serializer.registerClass(BarResource.self)
 	}
 
 	func testSerializeSingleResource() {
 		let resource = FooResource(resourceID: "1")
-		let serialized = self.serializer.serializeResources([resource])
 		
-		XCTAssertNotNil(serialized["fooResources"], "Serialization does not contain root element 'fooResources'.")
-		XCTAssertEqual(serialized["fooResources"]!.count, 1, "Serialization does not contain one resource.")
+		let serializedDocument = self.serializer.serializeResources([resource], mode: .AllAttributes)
+		let JSON = JSONValue(serializedDocument)
 		
-		self.compareFooResource(resource, withSerialization: serialized["fooResources"]!.first!)
+		self.compareFooResource(resource, withSerialization: JSON["fooResources"])
 	}
+	
 	
 	func testSerializeMultipleResources() {
 		let firstResource = FooResource(resourceID: "1")
-		let secondResource = FooResource(resourceID: "1")
-		let serialized = self.serializer.serializeResources([firstResource, secondResource])
+		let secondResource = FooResource(resourceID: "2")
 		
-		XCTAssertNotNil(serialized["fooResources"], "Serialization does not contain root element 'fooResources'.")
-		XCTAssertEqual(serialized["fooResources"]!.count, 2, "Serialization does not contain two resources.")
-		
-		let serializedResources: [[String: AnyObject]] = serialized["fooResources"]!
-		
-		self.compareFooResource(firstResource, withSerialization: serializedResources[0])
-		self.compareFooResource(firstResource, withSerialization: serializedResources[1])
+		let serializedDocument = self.serializer.serializeResources([firstResource, secondResource], mode: .AllAttributes)
+		let JSON = JSONValue(serializedDocument)
+
+		self.compareFooResource(firstResource, withSerialization: JSON["fooResources"][0])
+		self.compareFooResource(secondResource, withSerialization: JSON["fooResources"][1])
 	}
-	
-	/*
-	 * FIXME: This crashes Xcode 7 beta 7
-	 *
-	func testSerializeToOneRelationship() {
-		let resource = FooResource(resourceID: "1")
-		let serialized = self.serializer.serializeResources([resource])
+
+	private func compareFooResource(resource: FooResource, withSerialization serialization: JSONValue) {
+		XCTAssertNotNil(serialization["stringAttribute"].string, "Serialization does not contain string attribute")
+		XCTAssertEqual(serialization["stringAttribute"].string!, resource.stringAttribute, "Serialized string attribute is not equal.")
 		
-		XCTAssertNotNil(serialized["fooResources"], "Serialization does not contain root element 'fooResources'.")
-		XCTAssertEqual(serialized["fooResources"]!.count, 1, "Serialization does not contain one resource.")
+		XCTAssertNotNil(serialization["integerAttribute"].number, "Serialization does not contain integer attribute")
+		XCTAssertEqual(serialization["integerAttribute"].number!, resource.integerAttribute!, "Serialized integer attribute is not equal.")
 		
-		if let serializedResources = serialized["fooResources"] {
-			if let serializedLinks = serializedResources[0]["links"] {
-				if let serializedToOneAttribute = serializedLinks["toOneAttribute"] {
-					XCTAssertEqual(serializedToOneAttribute as [Int], ["2"], "Serialized to-one attribute is not equal.")
-				}
-			}
-		}
-	}
-	*/
-	
-	private func compareFooResource(resource: FooResource, withSerialization serialization: [String: AnyObject]) {
-		let serializedStringAttribute = (serialization["stringAttribute"]! as String)
-		let serializedIntegerAttribute = (serialization["integerAttribute"]! as Int)
-		let serializedFloatAttribute = (serialization["floatAttribute"]! as Float)
-		let serializedNilAttribute = (serialization["nilAttribute"]! as NSNull)
-		let serializedDateAttribute = (serialization["dateAttribute"]! as String)
+		XCTAssertNotNil(serialization["floatAttribute"].number, "Serialization does not contain float attribute")
+		XCTAssertEqual(serialization["floatAttribute"].number!, resource.floatAttribute!, "Serialized float attribute is not equal.")
 		
-		XCTAssertEqual(serializedStringAttribute, resource.stringAttribute, "Serialized string attribute is not equal.")
-		XCTAssertEqual(serializedIntegerAttribute, resource.integerAttribute, "Serialized integer attribute is not equal.")
-		XCTAssertEqual(serializedFloatAttribute, resource.floatAttribute, "Serialized float attribute is not equal.")
-		XCTAssertEqual(serializedNilAttribute, NSNull(), "Serialized nil attribute is not equal.")
-		XCTAssertEqual(serializedDateAttribute, "1970-01-01T01:00:00+01:00", "Serialized date attribute is not equal.")
+		XCTAssertNil(serialization["nilAttribute"].any, "Serialized nil attribute is not equal.")
+		
+		XCTAssertNotNil(serialization["dateAttribute"].string, "Serialization does not contain date attribute")
+		XCTAssertEqual(serialization["dateAttribute"].string!, "1970-01-01T01:00:00+01:00", "Serialized date attribute is not equal.")
+
+		XCTAssertNotNil(serialization["links"]["toOneAttribute"].string, "Serialization does not contain to one relationship")
+		XCTAssertEqual(serialization["links"]["toOneAttribute"].string!, resource.toOneAttribute.resourceID!, "Serialized to one relationship is not equal.")
+		
+		// TODO: Check toManyAttribute
 	}
 
 }
