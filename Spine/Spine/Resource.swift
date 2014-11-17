@@ -176,7 +176,7 @@ public class Resource: NSObject, Printable {
 		}
 	}
 	
-	override public func observeValueForKeyPath(keyPath: String!, ofObject object: AnyObject!, change: [NSObject : AnyObject]!, context: UnsafeMutablePointer<Void>) {
+	override public func observeValueForKeyPath(keyPath: String, ofObject object: AnyObject, change: [NSObject : AnyObject], context: UnsafeMutablePointer<Void>) {
 		if context == &ResourceDirtyCheckingKVOContext {
 			if self.dirtyObservingActive && !contains(self.dirtyAttributes, keyPath) {
 				self.dirtyAttributes.append(keyPath)
