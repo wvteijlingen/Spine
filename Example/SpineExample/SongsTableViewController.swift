@@ -46,7 +46,7 @@ class SongsTableViewController: UITableViewController {
 		
 		let song = self.paginator.fetchedResources[indexPath.row] as Song
 		
-		cell.textLabel?.text = song.title
+		cell.textLabel.text = song.title
 		
 		return cell
 	}

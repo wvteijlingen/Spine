@@ -60,7 +60,7 @@ public class Query {
 	:returns: Query
 	*/
 	public init(resourceType: String) {
-		self.URL = NSURL(string: resourceType)
+		self.URL = NSURL(string: resourceType)!
 		self.resourceType = resourceType
 	}
 	
@@ -73,7 +73,7 @@ public class Query {
 	:returns: Query
 	*/
 	public init(resourceType: String, resourceIDs: [String]) {
-		self.URL = NSURL(string: resourceType).URLByAppendingPathComponent(",".join(resourceIDs))
+		self.URL = NSURL(string: resourceType)!.URLByAppendingPathComponent(",".join(resourceIDs))
 		self.resourceType = resourceType
 	}
 	
@@ -93,9 +93,9 @@ public class Query {
 		self.resourceType = link!.type ?? relationship
 
 		if let href = link!.href {
-			self.URL = NSURL(string: href)
+			self.URL = NSURL(string: href)!
 		} else {
-			self.URL = NSURL(string: self.resourceType).URLByAppendingPathComponent(link!.joinedIDs)
+			self.URL = NSURL(string: self.resourceType)!.URLByAppendingPathComponent(link!.joinedIDs)
 		}
 	}
 	
@@ -375,7 +375,7 @@ public class Query {
 			queryItems.append(item)
 		}
 		
-		let URLComponents = NSURLComponents(URL: URL, resolvingAgainstBaseURL: true)
+		let URLComponents = NSURLComponents(URL: URL!, resolvingAgainstBaseURL: true)!
 		
 		if URLComponents.queryItems != nil {
 			URLComponents.queryItems! += queryItems

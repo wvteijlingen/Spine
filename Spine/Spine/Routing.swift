@@ -8,20 +8,7 @@
 
 import Foundation
 
-public protocol RouterProtocol {
-	var baseURL: String { get set }
-	
-	func URLForCollectionOfResourceType(resourceType: String) -> String
-	
-	func URLForResourceWithType(resourceType: String, ID: String) -> String
-	func URLForResourcesWithType(resourceType: String, IDs: [String]) -> String
-	
-	func URLForResource(resource: Resource) -> String
-	
-	func URLForQuery(query: Query) -> String
-}
-
-class JSONAPIRouter: RouterProtocol {
+class JSONAPIRouter {
 	var baseURL: String = ""
 	
 	func URLForCollectionOfResourceType(resourceType: String) -> String {

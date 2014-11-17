@@ -12,8 +12,6 @@ import BrightFutures
 /// The domain used for errors
 let SPINE_ERROR_DOMAIN = "com.wardvanteijlingen.Spine"
 
-public typealias SpineAdapter = (router: RouterProtocol, serializer: SerializerProtocol)
-
 /**
  What this framework is all about ;)
  */
@@ -26,16 +24,6 @@ public class Spine {
 
         return Singleton.instance
     }
-	
-	public var adapter: SpineAdapter {
-		get {
-			return SpineAdapter(router: self.router, serializer: self.serializer)
-		}
-		set(newValue) {
-			self.router = newValue.router
-			self.serializer = newValue.serializer
-		}
-	}
 
 	/// The base URL of the API. All other URLs will be made absolute to this URL.
 	public var baseURL: String {
@@ -48,27 +36,23 @@ public class Spine {
 	}
 	
 	/// The router that builds the URLs for requests.
-	private var router: RouterProtocol!
+	private var router: JSONAPIRouter
 	
 	/// The HTTPClient that performs the HTTP requests.
-	private var HTTPClient: HTTPClientProtocol!
+	private var HTTPClient: AlamofireClient
 	
 	/// The serializer to use for serializing and deserializing of JSON representations.
-	private var serializer: SerializerProtocol!
+	private var serializer: JSONAPISerializer
 	
 	
 	// MARK: Initializers
 	
-	public init(baseURL: String, HTTPClient: HTTPClientProtocol, router: RouterProtocol, serializer: SerializerProtocol) {
-		self.HTTPClient = HTTPClient
-		self.router = router
-		self.serializer = serializer
+	public init(baseURL: String = "") {
+		self.HTTPClient = AlamofireClient()
+		self.router = JSONAPIRouter()
+		self.serializer = JSONAPISerializer()
 		
 		self.baseURL = baseURL
-	}
-	
-	convenience public init(baseURL: String = "", adapter: SpineAdapter = (router: JSONAPIRouter(), serializer: JSONAPISerializer() ) ) {
-		self.init(baseURL: baseURL, HTTPClient: AlamofireClient(), router: adapter.router, serializer: adapter.serializer)
 	}
 	
 	

@@ -187,13 +187,13 @@ class JSONAPISerializer: SerializerProtocol {
 	 :returns: A NSError deserialized from the given data.
 	 */
 	func deserializeError(data: NSData, withResonseStatus responseStatus: Int) -> NSError {
-		let JSON = JSONValue(data as NSData!)
+		let json = JSON(data as NSData!)
 		
-		let code = JSON["errors"][0]["id"].integer ?? responseStatus
+		let code = json["errors"][0]["id"].int ?? responseStatus
 		
 		var userInfo: [String : AnyObject]?
 		
-		if let errorTitle = JSON["errors"][0]["title"].string {
+		if let errorTitle = json["errors"][0]["title"].string {
 			userInfo = [NSLocalizedDescriptionKey: errorTitle]
 		}
 		
@@ -229,7 +229,7 @@ class DeserializeOperation: NSOperation {
 	
 	// Input
 	private var classMap: ResourceClassMap
-	private var data: JSONValue
+	private var data: JSON
 	
 	// Output
 	private var store: ResourceStore
@@ -243,14 +243,14 @@ class DeserializeOperation: NSOperation {
 	var result: DeserializationResult?
 	
 	init(data: NSData, classMap: ResourceClassMap) {
-		self.data = JSONValue(data as NSData!)
+		self.data = JSON(data: data)
 		self.classMap = classMap
 		self.store = ResourceStore()
 		super.init()
 	}
 	
 	init(data: NSData, store: ResourceStore, classMap: ResourceClassMap) {
-		self.data = JSONValue(data as NSData!)
+		self.data = JSON(data: data)
 		self.classMap = classMap
 		self.store = store
 		super.init()
@@ -258,17 +258,17 @@ class DeserializeOperation: NSOperation {
 	
 	override func main() {
 		// Check if the given data is in the expected format
-		if (self.data.object == nil) {
+		if (self.data.dictionary == nil) {
 			let error = NSError(domain: SPINE_ERROR_DOMAIN, code: 0, userInfo: [NSLocalizedDescriptionKey: "The given JSON representation was not as expected."])
 			self.result = DeserializationResult(nil, nil, error)
 			return
 		}
 
 		// Extract resources
-		for(key: String, data: JSONValue) in self.data.object! {
+		for(key: String, data: JSON) in self.data.dictionaryValue {
 			// Linked resources for compound documents
 			if key == "linked" {
-				for (linkedResourceType, linkedResources) in data.object! {
+				for (linkedResourceType, linkedResources) in data.dictionaryValue {
 					for representation in linkedResources.array! {
 						self.deserializeSingleRepresentation(representation, withResourceType: linkedResourceType)
 					}
@@ -312,8 +312,8 @@ class DeserializeOperation: NSOperation {
 	:param: representation The JSON representation of a single resource.
 	:param: resourceType   The type of resource onto which to map the representation.
 	*/
-	private func deserializeSingleRepresentation(representation: JSONValue, withResourceType resourceType: String) {
-		assert(representation.object != nil, "The given JSON representation was not of type 'object' (dictionary).")
+	private func deserializeSingleRepresentation(representation: JSON, withResourceType resourceType: String) {
+		assert(representation.dictionary != nil, "The given JSON representation was not of type 'object' (dictionary).")
 		
 		// Find existing resource in the store, or create a new resource.
 		var resource: Resource
@@ -350,7 +350,7 @@ class DeserializeOperation: NSOperation {
 	 :param: serializedData The data from which to extract the ID.
 	 :param: resource       The resource into which to extract the ID.
 	 */
-	private func extractID(serializedData: JSONValue, intoResource resource: Resource) {
+	private func extractID(serializedData: JSON, intoResource resource: Resource) {
 		if let ID = serializedData["id"].string {
 			resource.resourceID = ID
 		}
@@ -362,7 +362,7 @@ class DeserializeOperation: NSOperation {
 	 :param: serializedData The data from which to extract the href.
 	 :param: resource       The resource into which to extract the href.
 	 */
-	private func extractHref(serializedData: JSONValue, intoResource resource: Resource) {
+	private func extractHref(serializedData: JSON, intoResource resource: Resource) {
 		if let href = serializedData["href"].string {
 			resource.resourceLocation = href
 		}
@@ -381,7 +381,7 @@ class DeserializeOperation: NSOperation {
 	 :param: serializedData The data from which to extract the attributes.
 	 :param: resource       The resource into which to extract the attributes.
 	 */
-	private func extractAttributes(serializedData: JSONValue, intoResource resource: Resource) {
+	private func extractAttributes(serializedData: JSON, intoResource resource: Resource) {
 		for (attributeName, attribute) in resource.persistentAttributes {
 			if attribute.isRelationship() {
 				continue
@@ -404,12 +404,14 @@ class DeserializeOperation: NSOperation {
 
 	 :returns: The extracted value or nil if no attribute with the given key was found in the data.
 	 */
-	private func extractAttribute(serializedData: JSONValue, key: String) -> AnyObject? {
-		if let value: AnyObject = serializedData[key].any {
-			return value
-		}
+	private func extractAttribute(serializedData: JSON, key: String) -> AnyObject? {
+		let value = serializedData[key]
 		
-		return nil
+		if let nullValue = value.null {
+			return nil
+		} else {
+			return value.rawValue
+		}
 	}
 	
 	
@@ -425,7 +427,7 @@ class DeserializeOperation: NSOperation {
 	 :param: serializedData The data from which to extract the relationships.
 	 :param: resource       The resource into which to extract the relationships.
 	 */
-	private func extractRelationships(serializedData: JSONValue, intoResource resource: Resource) {
+	private func extractRelationships(serializedData: JSON, intoResource resource: Resource) {
 		for (attributeName, attribute) in resource.persistentAttributes {
 			if !attribute.isRelationship() {
 				continue
@@ -457,14 +459,14 @@ class DeserializeOperation: NSOperation {
 	
 	 :returns: The extracted relationship or nil if no relationship with the given key was found in the data.
 	*/
-	private func extractToOneRelationship(serializedData: JSONValue, key: String, resource: Resource) -> ResourceLink? {
+	private func extractToOneRelationship(serializedData: JSON, key: String, resource: Resource) -> ResourceLink? {
 		// Single ID form
 		if let ID = serializedData["links"][key].string {
 			return ResourceLink(href: nil, ID: ID, type: nil)
 		}
 		
 		// Resource object form
-		else if let linkData = serializedData["links"][key].object {
+		else if let linkData = serializedData["links"][key].dictionary {
 			var href: String?, ID: String?, type: String?
 			
 			if linkData["href"] != nil {
@@ -495,14 +497,14 @@ class DeserializeOperation: NSOperation {
 	
 	 :returns: The extracted relationship or nil if no relationship with the given key was found in the data.
 	*/
-	private func extractToManyRelationship(serializedData: JSONValue, key: String, resource: Resource) -> ResourceLink? {
+	private func extractToManyRelationship(serializedData: JSON, key: String, resource: Resource) -> ResourceLink? {
 		// ID array form
 		if let IDs = serializedData["links"][key].array {
 			return ResourceLink(href: nil, IDs: IDs.map { return $0.string! }, type: nil)
 		}
 		
 		// Resource object form
-		else if let linkData = serializedData["links"][key].object {
+		else if let linkData = serializedData["links"][key].dictionary {
 			var href: String?, IDs: [String]?, type: String?
 			
 			if linkData["href"] != nil {
@@ -587,7 +589,7 @@ class DeserializeOperation: NSOperation {
 	  the top level link is added to the resource after interpolation.
 	*/
 	private func extractLinks() {
-		if let links = self.data["links"].object {
+		if let links = self.data["links"].dictionary {
 
 			// Loop through all links in the serialized data
 			for (linkName, linkData) in links {
@@ -632,7 +634,7 @@ class DeserializeOperation: NSOperation {
 	private func extractMeta() {
 		var metaObjects: [String: Meta] = [:]
 		
-		if let meta = self.data["meta"].object {
+		if let meta = self.data["meta"].dictionary {
 			for (metaKey, metaData) in meta {
 				let meta = self.classMap["_meta"]() as Meta
 				self.extractAttributes(metaData, intoResource: meta)
