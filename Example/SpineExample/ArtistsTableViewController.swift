@@ -19,8 +19,8 @@ class ArtistsTableViewController: UITableViewController {
     }
 	
 	func loadData() {
-		Artist.findAll().onSuccess { resources, meta in
-			self.artists = resources as [Artist]
+		Artist.findAll().onSuccess { resourceCollection, meta in
+			self.artists = resourceCollection.resources! as [Artist]
 			self.tableView.reloadData()
 		}.onFailure { error in
 			var alert = UIAlertController(title: "Error loading artists", message: error.localizedDescription, preferredStyle: UIAlertControllerStyle.Alert)

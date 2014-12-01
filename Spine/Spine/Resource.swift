@@ -223,8 +223,8 @@ public class LinkedResource: NSObject, Printable {
 		} else {
 			let query = Query(linkedResource: self)
 			
-			query.findResources().onSuccess { resources, meta in
-				if let firstResource = resources.first {
+			query.findResources().onSuccess { resourceCollection, meta in
+				if let firstResource = resourceCollection.resources!.first {
 					self.fulfill(firstResource)
 				}
 				promise.success(self.resource!)
@@ -383,8 +383,8 @@ public class ResourceCollection: NSObject, ArrayLiteralConvertible, Printable, P
 		if self.isLoaded {
 			promise.success(self.resources!)
 		} else {
-			query.findResources().onSuccess { resources, meta in
-				self.fulfill(resources)
+			query.findResources().onSuccess { resourceCollection, meta in
+				self.fulfill(resourceCollection.resources!)
 				promise.success(self.resources!)
 			}.onFailure { error in
 				promise.error(error)
@@ -508,7 +508,7 @@ extension Resource {
 	
 	:returns: A future of an array of resources.
 	*/
-	public class func find(IDs: [String]) -> Future<([Resource], Meta?)> {
+	public class func find(IDs: [String]) -> Future<(ResourceCollection, Meta?)> {
 		let instance = self()
 		let query = Query(resourceType: instance.type, resourceIDs: IDs)
 		return Spine.sharedInstance.fetchResourcesForQuery(query)
@@ -519,7 +519,7 @@ extension Resource {
 	
 	:returns: A future of an array of resources.
 	*/
-	public class func findAll() -> Future<([Resource], Meta?)> {
+	public class func findAll() -> Future<(ResourceCollection, Meta?)> {
 		let instance = self()
 		let query = Query(resourceType: instance.type)
 		return Spine.sharedInstance.fetchResourcesForQuery(query)

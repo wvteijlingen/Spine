@@ -117,15 +117,17 @@ public class Paginator {
 	private func performFetch() -> Future<([Resource], Meta?)> {
 		let promise = Promise<([Resource], Meta?)>()
 		
-		self.spine.fetchResourcesForQuery(self.query).onSuccess { resources, meta in
+		self.spine.fetchResourcesForQuery(self.query).onSuccess { resourceCollection, meta in
 			assert(meta != nil, "No meta recieved. Paginator requires pagination data to be present in a meta section.")
 			assert(meta!.conformsToProtocol(Paginatable), "The registered meta class does not conform to the Paginatable protocol.")
-			self.paginationData = (meta as Paginatable)
 			
+			let resources = resourceCollection.resources!
+			self.paginationData = (meta as Paginatable)
 			self.fetchedResources += resources
+			
 			promise.success(resources, meta)
-			}.onFailure { error in
-				promise.error(error)
+		}.onFailure { error in
+			promise.error(error)
 		}
 		
 		return promise.future
