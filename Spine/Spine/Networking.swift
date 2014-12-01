@@ -9,7 +9,16 @@
 import Foundation
 import Alamofire
 
-class AlamofireClient {
+protocol HTTPClientProtocol {
+	var traceEnabled: Bool { get set }
+	
+	func get(URL: String, callback:  (Int?, NSData?, NSError?) -> Void)
+	func post(URL: String, json: [String: AnyObject], callback:  (Int?, NSData?, NSError?) -> Void)
+	func put(URL: String, json: [String: AnyObject], callback:  (Int?, NSData?, NSError?) -> Void)
+	func delete(URL: String, callback:  (Int?, NSData?, NSError?) -> Void)
+}
+
+class AlamofireClient: HTTPClientProtocol {
 	
 	var traceEnabled = true
 	

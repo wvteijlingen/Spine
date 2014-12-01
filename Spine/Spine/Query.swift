@@ -35,9 +35,14 @@ internal struct QueryFilter {
 
 public class Query {
 	
-	// Base parts
+	/// The type of resource to fetch.
 	var resourceType: String
-	private var URL: NSURL
+	
+	/// The specific IDs the fetch.
+	var resourceIDs: [String]?
+	
+	/// The optional base URL
+	internal var URL: NSURL?
 
 	// Query parts
 	internal var includes: [String] = []
@@ -46,24 +51,12 @@ public class Query {
 	internal var sortOrders: [String] = []
 	internal var queryParts: [String: String] = [:]
 	
-	// Pagination parts. These are scoped internal so they can be accessed by the Paginator class.
+	// Pagination parts
 	internal var page: Int?
 	internal var pageSize: Int?
 	
 	
 	//MARK: Init
-	
-	/**
-	Inits a new query for the given resource type.
-	
-	:param: resourceType The type of resource to query.
-	
-	:returns: Query
-	*/
-	public init(resourceType: String) {
-		self.URL = NSURL(string: resourceType)!
-		self.resourceType = resourceType
-	}
 	
 	/**
 	Inits a new query for the given resource type and resource IDs
@@ -73,9 +66,15 @@ public class Query {
 	
 	:returns: Query
 	*/
-	public init(resourceType: String, resourceIDs: [String]) {
-		self.URL = NSURL(string: resourceType)!.URLByAppendingPathComponent(",".join(resourceIDs))
+	public init(resourceType: String, resourceIDs: [String]? = nil) {
 		self.resourceType = resourceType
+		self.resourceIDs = resourceIDs
+	}
+	
+	public init(resource: Resource) {
+		assert(resource.uniqueIdentifier != nil, "Cannot instantiate query for resource, unique identifier is nil")
+		self.resourceType = resource.uniqueIdentifier!.type
+		self.resourceIDs = [resource.uniqueIdentifier!.id]
 	}
 
 	public init(linkedResource: LinkedResource) {
@@ -315,66 +314,6 @@ public class Query {
 	public func addDescendingOrder(property: String) -> Self {
 		self.sortOrders.append("-\(property)")
 		return self
-	}
-	
-	
-	// MARK: URL building
-	
-	/**
-	Returns the URL string of this query, relative to the given base URL.
-	
-	:param: baseURL The base URL string of the API.
-	
-	:returns: The URL string for this query.
-	*/
-	public func URLRelativeToURL(baseURL: String) -> String {
-		var URL = NSURL(string: self.URL.absoluteString!, relativeToURL: NSURL(string: baseURL))
-		var queryItems: [AnyObject] = []
-		
-		// Includes
-		if self.includes.count != 0 {
-			var item = NSURLQueryItem(name: "include", value: ",".join(self.includes))
-			queryItems.append(item)
-		}
-		
-		// Filters
-		for filter in self.filters {
-			var item = NSURLQueryItem(name: filter.key, value: filter.rhs)
-			queryItems.append(item)
-		}
-		
-		// Fields
-		for (resourceType, fields) in self.fields {
-			var item = NSURLQueryItem(name: "fields[\(resourceType)]", value: ",".join(fields))
-			queryItems.append(item)
-		}
-		
-		// Sorting
-		if self.sortOrders.count != 0 {
-			var item = NSURLQueryItem(name: "sort", value: ",".join(self.sortOrders))
-			queryItems.append(item)
-		}
-		
-		// Pagination
-		if let page = self.page {
-			var item = NSURLQueryItem(name: "page", value: String(page))
-			queryItems.append(item)
-		}
-		
-		if let pageSize = self.pageSize {
-			var item = NSURLQueryItem(name: "page_size", value: String(pageSize))
-			queryItems.append(item)
-		}
-		
-		let URLComponents = NSURLComponents(URL: URL!, resolvingAgainstBaseURL: true)!
-		
-		if URLComponents.queryItems != nil {
-			URLComponents.queryItems! += queryItems
-		} else {
-			URLComponents.queryItems = queryItems
-		}
-		
-		return URLComponents.string! //TODO: Check forced unwrapping
 	}
 }
 

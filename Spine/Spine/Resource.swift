@@ -27,7 +27,7 @@ protocol Identifiable {
 	/// The resource type in plural form.
 	var type: String { get }
 	
-	/// The resource's unique identifier. If this is nil, the resource cannot be uniqually identified.
+	/// The resource's unique identifier. If this is nil, the resource cannot be uniquely identified.
 	var uniqueIdentifier: ResourceIdentifier? { get }
 	
 	/// The location (URL) of this resource.
@@ -524,21 +524,6 @@ extension Resource {
 		let query = Query(resourceType: instance.type)
 		return Spine.sharedInstance.fetchResourcesForQuery(query)
 	}
-	
-
-	// TODO: Fix
-	
-	/**
-	Finds resources related to this resource by the given relationship.
-	
-	:param: relationship Name of the relationship.
-	
-	:returns: A future of an array of resources.
-	*/
-//	public func findRelated(relationship: String) -> Future<([Resource], Meta?)> {
-//		let query = Query(resource: self, relationship: relationship)
-//		return Spine.sharedInstance.fetchResourcesForQuery(query)
-//	}
 }
 
 
