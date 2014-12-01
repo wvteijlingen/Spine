@@ -23,39 +23,39 @@ public class ResourceStore: Printable {
 	}
 	
 	func add(resource: Resource) {
-		assert(resource.resourceID != nil, "ResourceStore can only store resources with a resourceID.")
+		assert(resource.id != nil, "ResourceStore can only store resources with a id.")
 		
-		let resourceType = resource.resourceType
+		let type = resource.type
 		
-		if (self.resources[resourceType] == nil) {
-			self.resources[resourceType] = [:]
+		if (self.resources[type] == nil) {
+			self.resources[type] = [:]
 		}
-		self.resources[resourceType]![resource.resourceID!] = resource
+		self.resources[type]![resource.id!] = resource
 		
-		if (self.orderedResources[resourceType] == nil) {
-			self.orderedResources[resourceType] = []
+		if (self.orderedResources[type] == nil) {
+			self.orderedResources[type] = []
 		}
-		self.orderedResources[resourceType]!.append(resource)
+		self.orderedResources[type]!.append(resource)
 	}
 	
 	func remove(resource: Resource) {
-		assert(resource.resourceID != nil, "ResourceStore can only store resources with a resourceID.")
+		assert(resource.id != nil, "ResourceStore can only store resources with a id.")
 		
-		let resourceType = resource.resourceType
+		let type = resource.type
 		
-		if self.resources[resourceType] != nil {
-			self.resources[resourceType]![resource.resourceID!] = nil
+		if self.resources[type] != nil {
+			self.resources[type]![resource.id!] = nil
 		}
 		
-		if (self.orderedResources[resourceType] != nil) {
-			self.orderedResources[resourceType] = self.orderedResources[resourceType]!.filter { orderedResource in
-				return orderedResource.resourceID == resource.resourceID
+		if (self.orderedResources[type] != nil) {
+			self.orderedResources[type] = self.orderedResources[type]!.filter { orderedResource in
+				return orderedResource.id == resource.id
 			}
 		}
 	}
 	
-	func resource(resourceType: String, identifier: String) -> Resource? {
-		if let resources = self.resources[resourceType] {
+	func resource(type: String, identifier: String) -> Resource? {
+		if let resources = self.resources[type] {
 			if let resource = resources[identifier] {
 				return resource
 			}
@@ -64,8 +64,8 @@ public class ResourceStore: Printable {
 		return nil
 	}
 	
-	func containsResourceWithType(resourceType: String, identifier: String) -> Bool {
-		if let resources = self.resources[resourceType] {
+	func containsResourceWithType(type: String, identifier: String) -> Bool {
+		if let resources = self.resources[type] {
 			if let resource = resources[identifier] {
 				return true
 			}
@@ -74,14 +74,14 @@ public class ResourceStore: Printable {
 		return false
 	}
 	
-	func resourcesWithName(resourceType: String) -> [Resource] {
-		return self.orderedResources[resourceType] ?? []
+	func resourcesWithName(type: String) -> [Resource] {
+		return self.orderedResources[type] ?? []
 	}
 	
 	func allResources() -> [Resource] {
 		var allResources: [Resource] = []
 		
-		for (resourceType, resources) in self.orderedResources {
+		for (type, resources) in self.orderedResources {
 			allResources += resources
 		}
 		
@@ -91,7 +91,7 @@ public class ResourceStore: Printable {
 	public var description: String {
 		var string = ""
 		for resource in self.allResources() {
-			string += "\(resource.resourceType)[\(resource.resourceID)]\n"
+			string += "\(resource.type)[\(resource.id)]\n"
 		}
 		
 		return string

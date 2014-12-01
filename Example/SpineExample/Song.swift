@@ -10,11 +10,11 @@ import Spine
 
 class Song: Resource {
 
-	dynamic var title: String?
-	dynamic var artist: Artist?
-	dynamic var album: Album?
+	var title: String?
+	var artist: LinkedResource?
+	var album: LinkedResource?
 	
-	override var resourceType: String {
+	override var type: String {
 		return "songs"
 	}
 	

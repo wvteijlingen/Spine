@@ -9,9 +9,125 @@
 import Foundation
 import BrightFutures
 
+
+//MARK: - Protocols
+
 /**
-*  Describes a resource attribute that can be persisted to the server.
+*  An identifier that uniquely identifies a resource.
+*
+*  @param type The resource type in plural form.
+*  @param id   The id of the resource. This must be unique amongst its type.
 */
+public typealias ResourceIdentifier = (type: String, id: String)
+
+protocol Identifiable {
+	/// The resource id. If this is nil, the resource hasn't been saved yet.
+	var id: String? { get set }
+	
+	/// The resource type in plural form.
+	var type: String { get }
+	
+	/// The resource's unique identifier. If this is nil, the resource cannot be uniqually identified.
+	var uniqueIdentifier: ResourceIdentifier? { get }
+	
+	/// The location (URL) of this resource.
+	var href: String? { get set }
+}
+
+protocol Mappable {
+	/// Array of attributes that must be mapped by Spine.
+	var persistentAttributes: [String: ResourceAttribute] { get }
+}
+
+protocol Paginatable2 {
+	var beforeCursor: String? { get set }
+	var afterCursor: String? { get set }
+	var pageSize: Int? { get set }
+	var canFetchNextPage: Bool { get }
+	var canFetchPreviousPage: Bool { get }
+	func fetchNextPage()
+	func fetchPreviousPage()
+}
+
+
+// MARK: - Base resource
+
+/**
+*  A base recource class that provides some defaults for resources.
+*  You must create custom resource classes by subclassing from Resource.
+*/
+public class Resource: NSObject, Identifiable, Printable {
+	
+	// MARK: Initializers
+	
+	// This is needed for the dynamic instantiation based on the metatype
+	required override public init() {
+		super.init()
+	}
+	
+	public init(id: String) {
+		super.init()
+		self.id = id
+	}
+	
+	
+	// MARK: Mappable protocol
+	
+	public var persistentAttributes: [String: ResourceAttribute] {
+		return [:]
+	}
+	
+	
+	// MARK: Identifiable protocol
+	
+	private var _id: String?
+	public var id: String? {
+		get {
+			return self._id
+		}
+		set (newValue) {
+			self._id = newValue
+		}
+	}
+	
+	private var _href: String?
+	public var href: String? {
+		get {
+			return self._href
+		}
+		set (newValue) {
+			self._href = newValue
+		}
+	}
+	
+	public var type: String {
+		return "_unknown_type"
+	}
+	
+	public var uniqueIdentifier: ResourceIdentifier? {
+		get {
+			if let id = self.id {
+				return (type: self.type, id: id)
+			}
+			
+			return nil
+		}
+	}
+	
+	
+	// MARK: Printable protocol
+	
+	override public var description: String {
+		return "\(self.type)[\(self.id)]"
+	}
+}
+
+
+//MARK: -
+
+/**
+ *  Describes a resource attribute that can be persisted to the server.
+ */
 public struct ResourceAttribute {
 	
 	/**
@@ -48,151 +164,306 @@ public struct ResourceAttribute {
 }
 
 
-/**
- *  Represents a link to one or multiple other resources
- */
-struct ResourceLink {
-	
-	/// The URL of the link
-	var href: String?
-	
-	/// The IDs of the linked resources
-	var IDs: [String]?
-	
-	/// The type of the linked resources
-	var type: String?
-	
-	/// The IDs of the linked resources, as as string joined by commas
-	var joinedIDs: String {
-		if let IDs = self.IDs {
-			return ",".join(IDs)
-		}
-		return ""
-	}
-	
-	init() {
-		
-	}
-	
-	init(href: String?, IDs: [String]? = nil, type: String? = nil) {
-		self.href = href
-		self.IDs = IDs
-		self.type = type
-	}
-	
-	init(href: String?, ID: String? = nil, type: String? = nil) {
-		self.href = href
-		
-		if ID != nil {
-			self.IDs = [ID!]
-		}
-		
-		self.type = type
-	}
-}
+//MARK: -
 
-var ResourceDirtyCheckingKVOContext = "ResourceDirtyCheckingKVOContext"
-
-/**
- *  A base recource class that provides some defaults for resources.
- *  You must create custom resource classes by subclassing from Resource.
- */
-public class Resource: NSObject, Printable {
-	
-	// MARK: Bookkeeping
-	
-	/// The unique identifier of this resource. If this is nil, the resource hasn't been saved yet.
-	public var resourceID: String?
-
-	/// The location (URL) of this resource.
-	internal var resourceLocation: String?
-	
-	/// Links to other resources.
-	internal var links: [String: ResourceLink] = [:]
-	
-	/// Attributes that are dirty
-	private var dirtyAttributes: [String] = []
-	
-	internal var dirtyObservingActive: Bool = false
-	
-	
-	// MARK: Resource type configuration
-
-	/// The type of this resource in plural form. For example: 'posts', 'users'.
-	public var resourceType: String { return "_undefined" }
-
-	/// Array of attributes that must be mapped by Spine.
-	public var persistentAttributes: [String: ResourceAttribute] { return [:] }
-	
-	
+public class LinkedResource: NSObject, Printable {
+	public var isLoaded: Bool
+	public var link: (href: NSURL, type: String, id: String?)?
+	public var resource: Resource?
 	
 	// MARK: Initializers
 	
-	// This is needed for the dynamic instantiation based on the metatype
-	required override public init() {
-		super.init()
-		self.startDirtyObserving()
+	init(href: NSURL, type: String, id: String? = nil) {
+		self.link = (href, type, id)
+		self.isLoaded = false
 	}
 	
-	public init(resourceID: String) {
-		self.resourceID = resourceID
-		super.init()
-		self.startDirtyObserving()
+	init(href: NSURL) {
+		if let type = href.pathComponents.last as? String {
+			self.link = (href, type, nil)
+			self.isLoaded = false
+		} else {
+			assertionFailure("The type could not be inferred from the given URL.")
+		}
 	}
 	
-	deinit {
-		self.stopDirtyObserving()
+	init(_ resource: Resource) {
+		self.resource = resource
+		self.isLoaded = true
 	}
 	
+	// MARK: Printable
 	
-	// MARK: Printable protocol
-
 	override public var description: String {
-		return "\(self.resourceType)[\(self.resourceID)]"
-	}
-	
-	
-	
-	// MARK: Dirty checking
-	
-	private func startDirtyObserving() {
-		for (attributeName, attribute) in self.persistentAttributes {
-			if attribute.isRelationship() {
-				continue
-			}
-			self.addObserver(self, forKeyPath: attributeName, options: nil, context: &ResourceDirtyCheckingKVOContext)
-		}
-		
-		self.dirtyObservingActive = true
-	}
-	
-	private func stopDirtyObserving() {
-		for (attributeName, attribute) in self.persistentAttributes {
-			if attribute.isRelationship() {
-				continue
-			}
-			
-			self.removeObserver(self, forKeyPath: attributeName, context: &ResourceDirtyCheckingKVOContext)
-		}
-	}
-	
-	override public func observeValueForKeyPath(keyPath: String, ofObject object: AnyObject, change: [NSObject : AnyObject], context: UnsafeMutablePointer<Void>) {
-		if context == &ResourceDirtyCheckingKVOContext {
-			if self.dirtyObservingActive && !contains(self.dirtyAttributes, keyPath) {
-				self.dirtyAttributes.append(keyPath)
+		if self.isLoaded {
+			if let resource = self.resource {
+				return resource.description
+			} else {
+				return "(unidentifiable resource)"
 			}
 		} else {
-			super.observeValueForKeyPath(keyPath, ofObject: object, change: change, context: context)
+			return self.link!.href.absoluteString!
 		}
 	}
 	
-	internal func isDirty(attributeName: String) -> Bool {
-		return contains(self.dirtyAttributes, attributeName)
+	// MARK: Mutators
+	
+	public func fulfill(resource: Resource) {
+		self.resource = resource
+		self.isLoaded = true
 	}
 	
-	internal func resetDirtyStatus() {
-		self.dirtyAttributes = []
+	// MARK: Fetching
+	
+	public func ensureResource() -> Future<(Resource)> {
+		let promise = Promise<(Resource)>()
+		
+		if self.isLoaded {
+			promise.success(self.resource!)
+		} else {
+			let query = Query(linkedResource: self)
+			
+			query.findResources().onSuccess { resources, meta in
+				if let firstResource = resources.first {
+					self.fulfill(firstResource)
+				}
+				promise.success(self.resource!)
+			}.onFailure { error in
+				promise.error(error)
+			}
+		}
+		
+		return promise.future
 	}
+	
+	public func query() -> Query {
+		return Query(linkedResource: self)
+	}
+	
+	// MARK: ifLoaded
+	
+	public func ifLoaded(callback: (Resource) -> Void) -> Self {
+		if self.isLoaded {
+			callback(self.resource!)
+		}
+		
+		return self
+	}
+	
+	public func ifNotLoaded(callback: () -> Void) -> Self {
+		if !self.isLoaded {
+			callback()
+		}
+		
+		return self
+	}
+}
+
+public class ResourceCollection: NSObject, ArrayLiteralConvertible, Printable, Paginatable2 {
+	/// Whether the resources for this collection are loaded
+	public var isLoaded: Bool
+	
+	/// The link for this collection
+	public var link: (href: NSURL, type: String, ids: [String]?)?
+	
+	/// The loaded resources
+	public var resources: [Resource]?
+	
+	public var count: Int {
+		return self.resources?.count ?? 0
+	}
+	
+	/// Resources that are added to this collection
+	var addedResources: [Resource] = []
+	
+	// MARK: Initializers
+	
+	public init(href: NSURL, type: String, ids: [String]? = nil) {
+		self.link = (href, type, ids)
+		self.isLoaded = false
+	}
+	
+	public init(_ resources: [Resource]) {
+		self.resources = resources
+		self.isLoaded = true
+	}
+	
+	public required init(arrayLiteral elements: Resource...) {
+		self.resources = elements
+		self.isLoaded = true
+	}
+	
+	// MARK: Printable
+	
+	override public var description: String {
+		if self.isLoaded {
+			if let resources = self.resources {
+				return "[" + ", ".join(resources.map { $0.description }) + "]"
+			}
+			return "(empty collection)"
+		} else {
+			return self.link!.href.absoluteString!
+		}
+	}
+
+	// MARK: Mutators
+	
+	/**
+	Adds a new resource to this collection.
+	
+	:param: newResource The resource to add.
+	
+	:returns: This collection.
+	*/
+	public func append(newResource: Resource) -> ResourceCollection {
+		if self.resources == nil {
+			self.resources = []
+		}
+		
+		self.resources!.append(newResource)
+		self.addedResources.append(newResource)
+		return self
+	}
+	
+	/**
+	Sets the passed resources as the loaded resources and sets the isLoaded property to true.
+	
+	:param: resources The loaded resources.
+	*/
+	public func fulfill(resources: [Resource]) {
+		self.resources = resources
+		self.isLoaded = true
+	}
+	
+	// MARK: Fetching
+	
+	/**
+	Returns a query for this resource collection.
+	
+	:returns: The query
+	*/
+	public func query() -> Query {
+		return Query(linkedResourceCollection: self)
+	}
+	
+	/**
+	Loads the resources if they are not yet loaded.
+	
+	:returns: A future promising an array of Resource objects.
+	*/
+	public func ensureResources() -> Future<([Resource])> {
+		return self.ensureWithQuery(self.query())
+	}
+	
+	/**
+	Loads the resources if they are not yet loaded.
+	The callback is passed a Query object that will be used to load the resources. In this callback, you can alter the query.
+	For example, you could include related resources or change the sparse fieldset.
+	
+	:param: queryCallback The query callback.
+	
+	:returns: A future promising an array of Resource objects.
+	*/
+	public func ensureResourcesUsingQuery(queryCallback: (Query) -> Void) -> Future<([Resource])> {
+		let query = self.query()
+		queryCallback(query)
+		return self.ensureWithQuery(query)
+	}
+	
+	/**
+	Loads the resources using a given query if they are not yet loaded.
+	
+	:param: query The query to load the resources.
+	
+	:returns: A future promising an array of Resource objects.
+	*/
+	private func ensureWithQuery(query: Query)  -> Future<([Resource])> {
+		let promise = Promise<([Resource])>()
+		
+		if self.isLoaded {
+			promise.success(self.resources!)
+		} else {
+			query.findResources().onSuccess { resources, meta in
+				self.fulfill(resources)
+				promise.success(self.resources!)
+			}.onFailure { error in
+				promise.error(error)
+			}
+		}
+		
+		return promise.future
+	}
+	
+	// MARK: ifLoaded
+	
+	/**
+	Calls the passed callback if the resources are loaded.
+	
+	:param: callback A function taking an array of Resource objects.
+	
+	:returns: This collection.
+	*/
+	public func ifLoaded(callback: ([Resource]) -> Void) -> Self {
+		if self.isLoaded {
+			callback(self.resources!)
+		}
+		
+		return self
+	}
+	
+	/**
+	Calls the passed callback if the resources are not loaded.
+	
+	:param: callback A function
+	
+	:returns: This collection
+	*/
+	public func ifNotLoaded(callback: () -> Void) -> Self {
+		if !self.isLoaded {
+			callback()
+		}
+		
+		return self
+	}
+	
+	// MARK: Paginatable
+	
+	public var beforeCursor: String?
+	public var afterCursor: String?
+	public var pageSize: Int?
+	
+	public var canFetchNextPage: Bool {
+		return self.afterCursor != nil
+	}
+	
+	public var canFetchPreviousPage: Bool {
+		return self.beforeCursor != nil
+	}
+	
+	public func fetchNextPage() {
+		assert(self.canFetchNextPage, "Cannot fetch the next page.")
+	}
+	
+	public func fetchPreviousPage() {
+		assert(self.canFetchPreviousPage, "Cannot fetch the previous page.")
+	}
+	
+	private func nextPageURL() -> NSURL? {
+		if let cursor = self.beforeCursor {
+			let queryParts = "limit=\(self.pageSize)&before=\(cursor)"
+		}
+		
+		return nil
+	}
+	
+	private func previousPageURL() -> NSURL? {
+		if let cursor = self.afterCursor {
+			let queryParts = "limit=\(self.pageSize)&after=\(cursor)"
+		}
+		
+		return nil
+	}
+	
 }
 
 
@@ -227,7 +498,7 @@ extension Resource {
 	*/
 	public class func findOne(ID: String) -> Future<(Resource, Meta?)> {
 		let instance = self()
-		return Spine.sharedInstance.fetchResourceWithType(instance.resourceType, ID: ID)
+		return Spine.sharedInstance.fetchResourceWithType(instance.type, ID: ID)
 	}
 
 	/**
@@ -239,7 +510,7 @@ extension Resource {
 	*/
 	public class func find(IDs: [String]) -> Future<([Resource], Meta?)> {
 		let instance = self()
-		let query = Query(resourceType: instance.resourceType, resourceIDs: IDs)
+		let query = Query(resourceType: instance.type, resourceIDs: IDs)
 		return Spine.sharedInstance.fetchResourcesForQuery(query)
 	}
 
@@ -250,9 +521,12 @@ extension Resource {
 	*/
 	public class func findAll() -> Future<([Resource], Meta?)> {
 		let instance = self()
-		let query = Query(resourceType: instance.resourceType)
+		let query = Query(resourceType: instance.type)
 		return Spine.sharedInstance.fetchResourcesForQuery(query)
 	}
+	
+
+	// TODO: Fix
 	
 	/**
 	Finds resources related to this resource by the given relationship.
@@ -261,18 +535,17 @@ extension Resource {
 	
 	:returns: A future of an array of resources.
 	*/
-	public func findRelated(relationship: String) -> Future<([Resource], Meta?)> {
-		let query = Query(resource: self, relationship: relationship)
-		return Spine.sharedInstance.fetchResourcesForQuery(query)
-	}
+//	public func findRelated(relationship: String) -> Future<([Resource], Meta?)> {
+//		let query = Query(resource: self, relationship: relationship)
+//		return Spine.sharedInstance.fetchResourcesForQuery(query)
+//	}
 }
 
 
 //MARK: - Meta
 
 public class Meta: Resource {
-	final override public var resourceType: String { return "_meta" }
-	
-	final override internal func startDirtyObserving() { }
-	final override internal func stopDirtyObserving() { }
+	final override public var type: String {
+		return "_meta"
+	}
 }

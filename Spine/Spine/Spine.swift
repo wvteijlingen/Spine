@@ -84,7 +84,7 @@ public class Spine {
 		let query = Query(resourceType: resourceType, resourceIDs: [ID])
 		
 		self.fetchResourcesForQuery(query).onSuccess { resources, meta in
-			promise.success(resources.first!, meta)
+			promise.success(resources.resources!.first!, meta)
 		}.onFailure { error in
 			promise.error(error)
 		}
@@ -92,6 +92,9 @@ public class Spine {
 		return promise.future
 	}
 
+	
+	// TODO: Fix
+	
 	/**
 	Fetches resources related to the given resource by a given relationship
 	
@@ -100,10 +103,10 @@ public class Spine {
 	
 	:returns: Future of an array of resources.
 	*/
-	public func fetchResourcesForRelationship(relationship: String, ofResource resource: Resource) -> Future<([Resource], Meta?)> {
-		let query = Query(resource: resource, relationship: relationship)
-		return self.fetchResourcesForQuery(query)
-	}
+//	public func fetchResourcesForRelationship(relationship: String, ofResource resource: Resource) -> Future<([Resource], Meta?)> {
+//		let query = Query(resource: resource, relationship: relationship)
+//		return self.fetchResourcesForQuery(query)
+//	}
 
 	/**
 	Fetches resources by executing the given query.
@@ -112,8 +115,8 @@ public class Spine {
 	
 	:returns: Future of an array of resources.
 	*/
-	public func fetchResourcesForQuery(query: Query) -> Future<([Resource], Meta?)> {
-		let promise = Promise<([Resource], Meta?)>()
+	public func fetchResourcesForQuery(query: Query) -> Future<(ResourceCollection, Meta?)> {
+		let promise = Promise<(ResourceCollection, Meta?)>()
 		
 		let URLString = self.router.URLForQuery(query)
 		
@@ -127,7 +130,8 @@ public class Spine {
 					let deserializationResult = self.serializer.deserializeData(data)
 					
 					if let store = deserializationResult.store {
-						promise.success(store.resourcesWithName(query.resourceType), deserializationResult.meta?[query.resourceType])
+						let collection = ResourceCollection(store.resourcesWithName(query.resourceType))
+						promise.success(collection, deserializationResult.meta?[query.resourceType])
 					} else {
 						promise.error(deserializationResult.error!)
 					}
@@ -172,16 +176,14 @@ public class Spine {
 			promise.success(resource)
 		}
 		
-		// Create resource
-		if resource.resourceID == nil {
-			resource.resourceID = NSUUID().UUIDString
-			self.HTTPClient.post(self.router.URLForCollectionOfResourceType(resource.resourceType), json: self.serializer.serializeResources([resource], mode: .AllAttributes), callback: callback)
-
-		// Update resource
-		} else {
+		// Create or update resource
+		if let uniqueIdentifier = resource.uniqueIdentifier {
 			self.HTTPClient.put(self.router.URLForResource(resource), json: self.serializer.serializeResources([resource], mode: .DirtyAttributes), callback: callback)
+		} else {
+			resource.id = NSUUID().UUIDString
+			self.HTTPClient.post(self.router.URLForCollectionOfResourceType(resource.type), json: self.serializer.serializeResources([resource], mode: .AllAttributes), callback: callback)
 		}
-		
+
 		return promise.future
 	}
 	

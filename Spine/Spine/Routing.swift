@@ -25,13 +25,13 @@ class JSONAPIRouter {
 	}
 	
 	func URLForResource(resource: Resource) -> String {
-		if let resourceLocation = resource.resourceLocation {
+		if let resourceLocation = resource.href {
 			return resourceLocation
 		}
 		
-		assert(resource.resourceID != nil, "Resource does not have an href, nor a resource ID.")
+		assert(resource.uniqueIdentifier != nil, "Resource does not have an href, nor a unique identifier.")
 		
-		return "\(self.baseURL)/\(resource.resourceType)/\(resource.resourceID!)"
+		return "\(self.baseURL)/\(resource.uniqueIdentifier!.type)/\(resource.uniqueIdentifier!.id)"
 	}
 	
 	func URLForQuery(query: Query) -> String {

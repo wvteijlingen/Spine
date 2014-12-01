@@ -9,7 +9,7 @@
 import Foundation
 import BrightFutures
 
-private struct QueryFilter {
+internal struct QueryFilter {
 	var key: String
 	var value: String
 	var comparator: String
@@ -40,10 +40,11 @@ public class Query {
 	private var URL: NSURL
 
 	// Query parts
-	private var includes: [String] = []
-	private var filters: [QueryFilter] = []
-	private var fields: [String: [String]] = [:]
-	private var sortOrders: [String] = []
+	internal var includes: [String] = []
+	internal var filters: [QueryFilter] = []
+	internal var fields: [String: [String]] = [:]
+	internal var sortOrders: [String] = []
+	internal var queryParts: [String: String] = [:]
 	
 	// Pagination parts. These are scoped internal so they can be accessed by the Paginator class.
 	internal var page: Int?
@@ -76,27 +77,17 @@ public class Query {
 		self.URL = NSURL(string: resourceType)!.URLByAppendingPathComponent(",".join(resourceIDs))
 		self.resourceType = resourceType
 	}
-	
-	/**
-	Inits a new query to fetch related resources related by a relationship.
-	
-	:param: resource     The resource that links to the related resources.
-	:param: relationship The name of the relationship.
-	
-	:returns: Query
-	*/
-	public init(resource: Resource, relationship: String) {
-		assert(resource.links[relationship] != nil, "Specified relationship does not exist")
-		
-		let link = resource.links[relationship]
-		
-		self.resourceType = link!.type ?? relationship
 
-		if let href = link!.href {
-			self.URL = NSURL(string: href)!
-		} else {
-			self.URL = NSURL(string: self.resourceType)!.URLByAppendingPathComponent(link!.joinedIDs)
-		}
+	public init(linkedResource: LinkedResource) {
+		assert(linkedResource.link != nil, "Linked resources does not contain a link")
+		self.URL = linkedResource.link!.href
+		self.resourceType = linkedResource.link!.type
+	}
+	
+	public init(linkedResourceCollection: ResourceCollection) {
+		assert(linkedResourceCollection.link != nil, "Linked resources collection does not contain a link")
+		self.URL = linkedResourceCollection.link!.href
+		self.resourceType = linkedResourceCollection.link!.type
 	}
 	
 	
@@ -110,7 +101,7 @@ public class Query {
 	
 	:returns: The query.
 	*/
-	public func include(relation: String)  -> Self {
+	public func include(relation: String) -> Self {
 		self.includes.append(relation)
 		return self
 	}
@@ -231,8 +222,8 @@ public class Query {
 	:returns: The query
 	*/
 	public func whereRelationship(relationship: String, isOrContains resource: Resource) -> Self {
-		assert(resource.resourceID != nil, "Attempt to add a where filter on a relationship, but the target resource does not contain a resource ID.")
-		self.filters.append(QueryFilter(property: relationship, value: resource.resourceID!, comparator: "="))
+		assert(resource.uniqueIdentifier != nil, "Attempt to add a where filter on a relationship, but the target resource does not have a unique identifier.")
+		self.filters.append(QueryFilter(property: relationship, value: resource.uniqueIdentifier!.id, comparator: "="))
 		return self
 	}
 	
@@ -389,7 +380,7 @@ public class Query {
 
 // MARK: - Convenience functions
 extension Query {
-	public func findResources() -> Future<([Resource], Meta?)> {
+	public func findResources() -> Future<(ResourceCollection, Meta?)> {
 		return Spine.sharedInstance.fetchResourcesForQuery(self)
 	}
 }

@@ -30,7 +30,7 @@ struct ResourceClassMap {
 	 */
 	mutating func registerClass(type: Resource.Type) {
 		let instance = type()
-		self.registeredClasses[instance.resourceType] = type
+		self.registeredClasses[instance.type] = type
 	}
 	
 	/**
@@ -41,7 +41,7 @@ struct ResourceClassMap {
 	 */
 	mutating func unregisterClass(type: Resource.Type) {
 		let instance = type()
-		self.registeredClasses[instance.resourceType] = nil
+		self.registeredClasses[instance.type] = nil
 	}
 	
 	/**
@@ -51,15 +51,15 @@ struct ResourceClassMap {
 
 	 :returns: The Resource.Type that matches the given resource type.
 	 */
-	func classForResourceType(resourceType: String) -> Resource.Type {
-		return registeredClasses[resourceType]!
+	func classForResourceType(type: String) -> Resource.Type {
+		return registeredClasses[type]!
 	}
 	
 	/**
 	 *  Returns the Resource.Type into which a resource with the given type should be mapped.
 	 */
-	subscript(resourceType: String) -> Resource.Type {
-		return self.classForResourceType(resourceType)
+	subscript(type: String) -> Resource.Type {
+		return self.classForResourceType(type)
 	}
 }
 
@@ -263,44 +263,44 @@ class DeserializeOperation: NSOperation {
 			self.result = DeserializationResult(nil, nil, error)
 			return
 		}
+		
+		// Extract link templates
+		let linkTemplates: JSON? = self.data.dictionaryValue["links"]
 
 		// Extract resources
 		for(key: String, data: JSON) in self.data.dictionaryValue {
 			// Linked resources for compound documents
 			if key == "linked" {
 				for (linkedResourceType, linkedResources) in data.dictionaryValue {
+					println("Deserializing linked: " + linkedResourceType)
 					for representation in linkedResources.array! {
-						self.deserializeSingleRepresentation(representation, withResourceType: linkedResourceType)
+						self.deserializeSingleRepresentation(representation, withResourceType: linkedResourceType, linkTemplates: linkTemplates)
 					}
 				}
 			
 			} else if key != "links" && key != "meta" {
+				println("Deserializing main: " + key)
 				// Multiple resources
 				if let representations = data.array {
 					for representation in representations {
-						self.deserializeSingleRepresentation(representation, withResourceType: key)
+						self.deserializeSingleRepresentation(representation, withResourceType: key, linkTemplates: linkTemplates)
 					}
 					
 				// Single resource
 				} else {
-					self.deserializeSingleRepresentation(data, withResourceType: key)
+					self.deserializeSingleRepresentation(data, withResourceType: key, linkTemplates: linkTemplates)
 				}
 			}
 		}
 		
 		// Extract top level links
-		self.extractLinks()
+//		self.extractLinks()
 		
 		// Extract meta
 		self.extractMeta()
 		
 		// Resolve relations in the store
 		self.resolveRelations()
-		
-		// Start dirty observing for all resources
-		for resource in self.store.allResources() {
-			resource.dirtyObservingActive = true
-		}
 		
 		// Create a result
 		self.result = DeserializationResult(self.store, self.meta, nil)
@@ -312,7 +312,7 @@ class DeserializeOperation: NSOperation {
 	:param: representation The JSON representation of a single resource.
 	:param: resourceType   The type of resource onto which to map the representation.
 	*/
-	private func deserializeSingleRepresentation(representation: JSON, withResourceType resourceType: String) {
+	private func deserializeSingleRepresentation(representation: JSON, withResourceType resourceType: String, linkTemplates: JSON? = nil) {
 		assert(representation.dictionary != nil, "The given JSON representation was not of type 'object' (dictionary).")
 		
 		// Find existing resource in the store, or create a new resource.
@@ -326,14 +326,12 @@ class DeserializeOperation: NSOperation {
 			resource = self.classMap[resourceType]() as Resource
 			isExistingResource = false
 		}
-		
-		resource.dirtyObservingActive = false
 
 		// Extract data into resource
 		self.extractID(representation, intoResource: resource)
 		self.extractHref(representation, intoResource: resource)
 		self.extractAttributes(representation, intoResource: resource)
-		self.extractRelationships(representation, intoResource: resource)
+		self.extractRelationships(representation, intoResource: resource, linkTemplates: linkTemplates)
 
 		// Add resource to store if needed
 		if !isExistingResource {
@@ -352,7 +350,7 @@ class DeserializeOperation: NSOperation {
 	 */
 	private func extractID(serializedData: JSON, intoResource resource: Resource) {
 		if let ID = serializedData["id"].string {
-			resource.resourceID = ID
+			resource.id = ID
 		}
 	}
 	
@@ -364,7 +362,7 @@ class DeserializeOperation: NSOperation {
 	 */
 	private func extractHref(serializedData: JSON, intoResource resource: Resource) {
 		if let href = serializedData["href"].string {
-			resource.resourceLocation = href
+			resource.href = href
 		}
 	}
 	
@@ -427,7 +425,7 @@ class DeserializeOperation: NSOperation {
 	 :param: serializedData The data from which to extract the relationships.
 	 :param: resource       The resource into which to extract the relationships.
 	 */
-	private func extractRelationships(serializedData: JSON, intoResource resource: Resource) {
+	private func extractRelationships(serializedData: JSON, intoResource resource: Resource, linkTemplates: JSON? = nil) {
 		for (attributeName, attribute) in resource.persistentAttributes {
 			if !attribute.isRelationship() {
 				continue
@@ -437,12 +435,12 @@ class DeserializeOperation: NSOperation {
 			
 			switch attribute.type {
 			case .ToOne:
-				if let extractedRelationship = self.extractToOneRelationship(serializedData, key: key, resource: resource) {
-					resource.links[attributeName] = extractedRelationship
+				if let linkedResource = self.extractToOneRelationship(serializedData, key: key, resource: resource, linkTemplates: linkTemplates) {
+					resource.setValue(linkedResource, forKey: attributeName)
 				}
 			case .ToMany:
-				if let extractedRelationship = self.extractToManyRelationship(serializedData, key: key, resource: resource) {
-					resource.links[attributeName] = extractedRelationship
+				if let linkedResources = self.extractToManyRelationship(serializedData, key: key, resource: resource, linkTemplates: linkTemplates) {
+					resource.setValue(linkedResources, forKey: attributeName)
 				}
 			default: ()
 			}
@@ -459,14 +457,9 @@ class DeserializeOperation: NSOperation {
 	
 	 :returns: The extracted relationship or nil if no relationship with the given key was found in the data.
 	*/
-	private func extractToOneRelationship(serializedData: JSON, key: String, resource: Resource) -> ResourceLink? {
-		// Single ID form
-		if let ID = serializedData["links"][key].string {
-			return ResourceLink(href: nil, ID: ID, type: nil)
-		}
-		
-		// Resource object form
-		else if let linkData = serializedData["links"][key].dictionary {
+	private func extractToOneRelationship(serializedData: JSON, key: String, resource: Resource, linkTemplates: JSON? = nil) -> LinkedResource? {
+		// Resource level link
+		if let linkData = serializedData["links"][key].dictionary {
 			var href: String?, ID: String?, type: String?
 			
 			if linkData["href"] != nil {
@@ -481,7 +474,22 @@ class DeserializeOperation: NSOperation {
 				type = linkData["type"]!.string
 			}
 			
-			return ResourceLink(href: href, ID: ID, type: type)
+			return LinkedResource(href: NSURL(string: href!)!, type: type!, id: ID!)
+		}
+		
+		// Document level link template
+		if let linkData = linkTemplates?[resource.type + "." + key].dictionary {
+			var href: String?, type: String?
+			
+			if let hrefTemplate = linkData["href"]?.string {
+				href = hrefTemplate.interpolate(serializedData.dictionaryObject! as NSDictionary, rootKeyPath: resource.type)
+			}
+			
+			if linkData["type"] != nil {
+				type = linkData["type"]!.string
+			}
+			
+			return LinkedResource(href: NSURL(string: href!)!, type: type!)
 		}
 		
 		return nil
@@ -497,29 +505,43 @@ class DeserializeOperation: NSOperation {
 	
 	 :returns: The extracted relationship or nil if no relationship with the given key was found in the data.
 	*/
-	private func extractToManyRelationship(serializedData: JSON, key: String, resource: Resource) -> ResourceLink? {
-		// ID array form
-		if let IDs = serializedData["links"][key].array {
-			return ResourceLink(href: nil, IDs: IDs.map { return $0.string! }, type: nil)
-		}
-		
-		// Resource object form
-		else if let linkData = serializedData["links"][key].dictionary {
+	private func extractToManyRelationship(serializedData: JSON, key: String, resource: Resource, linkTemplates: JSON? = nil) -> ResourceCollection? {
+		// Resource level link
+		if let resourceLink = serializedData["links"][key].dictionary {
 			var href: String?, IDs: [String]?, type: String?
 			
-			if linkData["href"] != nil {
-				href = linkData["href"]!.string
+			if resourceLink["href"] != nil {
+				href = resourceLink["href"]!.string
 			}
 			
-			if linkData["ids"] != nil {
-				IDs = linkData["ids"]!.array!.map { return $0.string! }
+			if resourceLink["ids"] != nil {
+				IDs = resourceLink["ids"]!.array!.map { return $0.string! }
 			}
 			
-			if linkData["type"] != nil {
-				type = linkData["type"]!.string
+			if resourceLink["type"] != nil {
+				type = resourceLink["type"]!.string
 			}
 		
-			return ResourceLink(href: href, IDs: IDs, type: type)
+			return ResourceCollection(href: NSURL(string: href!)!, type: type!, ids: IDs)
+		}
+		
+		// Document level link template
+		if let documentLink = linkTemplates?[resource.type + "." + key].dictionary {
+			var href: String?, IDs: [String]?, type: String?
+				
+			if let hrefTemplate = documentLink["href"]?.string {
+				href = hrefTemplate.interpolate(serializedData.dictionaryObject! as NSDictionary, rootKeyPath: resource.type)
+			}
+			
+			if serializedData["links"][key].array != nil {
+				IDs = serializedData["links"][key].array!.map { return $0.string! }
+			}
+			
+			if documentLink["type"] != nil {
+				type = documentLink["type"]!.string
+			}
+			
+			return ResourceCollection(href: NSURL(string: href!)!, type: type!, ids: IDs)
 		}
 		
 		return nil
@@ -531,98 +553,48 @@ class DeserializeOperation: NSOperation {
 	private func resolveRelations() {
 		for resource in self.store.allResources() {
 			
-			for (linkName: String, link: ResourceLink) in resource.links {
-				let type = link.type ?? linkName
+			for (attributeName, attribute) in resource.persistentAttributes {
+				if !attribute.isRelationship() {
+					continue
+				}
 				
-				if resource.persistentAttributes[linkName]!.type == ResourceAttribute.AttributeType.ToOne {
-					
-					// We can only resolve if an ID is known
-					if let ID = link.IDs?.first {
-
-						// Find target of relation in store
-						if let targetResource = store.resource(type, identifier: ID) {
-							resource.setValue(targetResource, forKey: linkName)
-						} else {
-							// Target resource was not found in store, create a placeholder
-							let placeholderResource = self.classMap[type]() as Resource
-							placeholderResource.resourceID = ID
-							resource.setValue(placeholderResource, forKey: linkName)
-						}
-					}
-				
-				} else if resource.persistentAttributes[linkName]!.type == ResourceAttribute.AttributeType.ToMany {
-					var targetResources: [Resource] = []
-					
-					// We can only resolve if IDs are known
-					if let IDs = link.IDs {
-
-						for ID in IDs {
+				if attribute.type == .ToOne {
+					if let linkedResource = resource.valueForKey(attributeName) as? LinkedResource {
+						
+						// We can only resolve if an ID is known
+						if let id = linkedResource.link?.id {
 							// Find target of relation in store
-							if let targetResource = store.resource(type, identifier: ID) {
-								targetResources.append(targetResource)
-							} else {
-								// Target resource was not found in store, create a placeholder
-								let placeholderResource = self.classMap[type]() as Resource
-								placeholderResource.resourceID = ID
-								targetResources.append(placeholderResource)
+							if let targetResource = store.resource(linkedResource.link!.type, identifier: id) {
+								linkedResource.fulfill(targetResource)
+							}
+						} else {
+							println("Cannot resolve to-one link '\(attributeName)' because the foreign ID is not known or the related resource was not included.")
+						}
+					} else {
+						println("Cannot resolve to-one link '\(attributeName)' because the link data is not fetched.")
+					}
+					
+				} else if attribute.type == .ToMany {
+					if let linkedResource = resource.valueForKey(attributeName) as? ResourceCollection {
+						var targetResources: [Resource] = []
+						
+						// We can only resolve if IDs are known
+						if let ids = linkedResource.link?.ids {
+							
+							for id in ids {
+								// Find target of relation in store
+								if let targetResource = store.resource(linkedResource.link!.type, identifier: id) {
+									targetResources.append(targetResource)
+								}
 							}
 							
-							resource.setValue(targetResources, forKey: linkName)
+							linkedResource.fulfill(targetResources)
+						} else {
+							println("Cannot resolve to-many link '\(attributeName)' because the foreign IDs are not known or the related resources were not included.")
 						}
+					} else {
+						println("Cannot resolve to-many link '\(attributeName)' because the link data is not fetched.")
 					}
-				}
-			}
-		}
-	}
-	
-	
-	// MARK: Links
-	
-	/**
-	Extracts the top level links from the serialized data.
-	
-	Each extracted link is added the associated resources in on the following ways:
-	- If the associated resource already contains a link for the given relation,
-	  the existing link is interpolated and merged with data from the top level link.
-	  Data on the existing link has precedence over the top level data.
-	- If the ssociated resource does not contain a link for the given relation,
-	  the top level link is added to the resource after interpolation.
-	*/
-	private func extractLinks() {
-		if let links = self.data["links"].dictionary {
-
-			// Loop through all links in the serialized data
-			for (linkName, linkData) in links {
-				
-				// Explode compound template name
-				let templateNameComponents = linkName.componentsSeparatedByString(".")
-				let templateResourceType = templateNameComponents[0]
-				let templateResourceKey = templateNameComponents[1]
-				
-				// Find all resources to which to apply this template
-				for resource in self.store.resourcesWithName(templateResourceType) {
-					
-					// Find existing link to augment or create a new link
-					var augmentedLink = resource.links[templateResourceKey] ?? ResourceLink()
-					
-					// Assign the interpolated href if a href wasn't specified already
-					if augmentedLink.href == nil {
-						
-						// Interpolate URL
-						if let templateHref = linkData["href"].string {
-							var interpolated: NSString = templateHref as NSString
-							interpolated = (interpolated as NSString).stringByReplacingOccurrencesOfString("{\(templateResourceType).id}", withString: resource.resourceID!)
-							interpolated = (interpolated as NSString).stringByReplacingOccurrencesOfString("{\(templateResourceType).\(templateResourceKey)}", withString: augmentedLink.joinedIDs)
-							augmentedLink.href = interpolated
-						}
-					}
-					
-					// Assign the type if the type wasn't specified already
-					if augmentedLink.type == nil {
-						augmentedLink.type = linkData["type"].string
-					}
-					
-					resource.links[templateResourceKey] = augmentedLink
 				}
 			}
 		}
@@ -672,7 +644,7 @@ class SerializeOperation: NSOperation {
 		if self.resources.count == 1 {
 			let resource = self.resources.first!
 			let serializedData = self.serializeResource(resource)
-			self.result = [resource.resourceType: serializedData]
+			self.result = [resource.type: serializedData]
 			
 		} else  {
 			var dictionary: [String: [[String: AnyObject]]] = [:]
@@ -681,10 +653,10 @@ class SerializeOperation: NSOperation {
 				var serializedData = self.serializeResource(resource)
 				
 				//Add the resource representation to the root dictionary
-				if dictionary[resource.resourceType] == nil {
-					dictionary[resource.resourceType] = [serializedData]
+				if dictionary[resource.type] == nil {
+					dictionary[resource.type] = [serializedData]
 				} else {
-					dictionary[resource.resourceType]!.append(serializedData)
+					dictionary[resource.type]!.append(serializedData)
 				}
 			}
 			
@@ -696,7 +668,7 @@ class SerializeOperation: NSOperation {
 		var serializedData: [String: AnyObject] = [:]
 		
 		// Special attributes
-		if let ID = resource.resourceID {
+		if let ID = resource.id {
 			self.addID(&serializedData, ID: ID)
 		}
 		
@@ -737,11 +709,8 @@ class SerializeOperation: NSOperation {
 			if attribute.isRelationship() {
 				continue
 			}
-			
-			if self.mode == .DirtyAttributes && !resource.isDirty(attributeName) {
-				// Attribute is not dirty, skip serialization.
-				continue
-			}
+
+			//TODO: Dirty checking
 			
 			let key = attribute.representationName ?? attributeName
 			
@@ -806,7 +775,7 @@ class SerializeOperation: NSOperation {
 	private func addToOneRelationship(inout serializedData: [String: AnyObject], key: String, relatedResource: Resource?) {
 		var linkData: AnyObject
 		
-		if let ID = relatedResource?.resourceID {
+		if let ID = relatedResource?.id {
 			linkData = ID
 		} else {
 			linkData = NSNull()
@@ -833,9 +802,9 @@ class SerializeOperation: NSOperation {
 		
 		if let resources = relatedResources {
 			let IDs: [String] = resources.filter { resource in
-				return resource.resourceID != nil
+				return resource.id != nil
 			}.map { resource in
-				return resource.resourceID!
+				return resource.id!
 			}
 			
 			linkData = IDs
@@ -855,7 +824,7 @@ class SerializeOperation: NSOperation {
 }
 
 
-// MARK:
+// MARK: -
 
 class Formatter {
 
@@ -895,5 +864,82 @@ class Formatter {
 		}
 		
 		return NSDate()
+	}
+}
+
+
+// MARK: -
+
+extension String {
+	func interpolate(callback: (key: String) -> String?) -> String {
+		var interpolatedString = ""
+		let scanner = NSScanner(string: self)
+		
+		while(scanner.atEnd == false) {
+			var scannedPart: NSString?
+			var scannedKey: NSString?
+			
+			scanner.scanUpToString("{", intoString: &scannedPart)
+			scanner.scanString("{", intoString: nil)
+			scanner.scanUpToString("}", intoString: &scannedKey)
+			
+			if let part = scannedPart {
+				interpolatedString = interpolatedString + part
+			}
+			
+			if let key = scannedKey {
+				if let value = callback(key: key) {
+					interpolatedString = interpolatedString + value
+				}
+				scanner.scanString("}", intoString: nil)
+			}
+		}
+		
+		return interpolatedString
+	}
+	
+	func interpolate(values: NSObject, rootKeyPath: String? = nil) -> String? {
+		let fallbackPrefix = "links"
+		let fallbackPostfix = "id"
+		
+		func formatValue(value: AnyObject?) -> String? {
+			if value == nil {
+				return nil
+			}
+			
+			switch value {
+			case let stringValue as String:
+				return stringValue
+			case let intValue as Int:
+				return "\(intValue)"
+			case let doubleValue as Double:
+				return "\(doubleValue)"
+			case let stringArrayValue as [String]:
+				return ",".join(stringArrayValue)
+			default:
+				return nil
+			}
+		}
+		
+		return self.interpolate { key in
+			var keyPath = key
+			
+			if let prefix = rootKeyPath {
+				if keyPath.hasPrefix(prefix) {
+					let stringToRemove = prefix + "."
+					keyPath = keyPath.substringFromIndex(stringToRemove.endIndex)
+				}
+			}
+			
+			if let value1 = formatValue(values.valueForKeyPath(keyPath)) {
+				return value1
+			} else if let value2 = formatValue(values.valueForKeyPath("\(keyPath).\(fallbackPostfix)")) {
+				return value2
+			} else if let value3 = formatValue(values.valueForKeyPath("\(fallbackPrefix).\(keyPath)")) {
+				return value3
+			}
+			
+			return nil
+		}
 	}
 }

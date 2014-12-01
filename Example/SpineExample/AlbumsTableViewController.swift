@@ -17,21 +17,43 @@ class AlbumsTableViewController: UITableViewController {
 	override func viewDidLoad() {
 		super.viewDidLoad()
 		self.title = self.artist.name
-		self.loadData()
+		self.refreshData()
+	}
+	
+	func refreshData() {
+		self.artist.albums?.ifLoaded { resources in
+			self.albums = resources as [Album]
+			self.tableView.reloadData()
+		}.ifNotLoaded {
+			self.loadData()
+		}
 	}
 	
 	func loadData() {
-		let query = Query(resource: self.artist, relationship: "albums").include("songs")
-		
-		query.findResources().onSuccess { resources, meta in
+		self.artist.albums!.ensureResourcesUsingQuery { query in
+			query.include("songs")
+			return
+		}.onSuccess { resources in
 			self.albums = resources as [Album]
-			self.tableView.reloadData()
+			self.artist.albums!.fulfill(resources)
+			self.refreshData()
 		}.onFailure { error in
 			var alert = UIAlertController(title: "Error loading albums", message: error.localizedDescription, preferredStyle: UIAlertControllerStyle.Alert)
 			alert.addAction(UIAlertAction(title: "Ok", style: UIAlertActionStyle.Default, handler: nil))
 			self.presentViewController(alert, animated: true, completion: nil)
 		}
+
+//		self.artist.albums!.ensureResources().onSuccess { resources in
+//			self.albums = resources as [Album]
+//			self.tableView.reloadData()
+//		}.onFailure { error in
+//			var alert = UIAlertController(title: "Error loading albums", message: error.localizedDescription, preferredStyle: UIAlertControllerStyle.Alert)
+//			alert.addAction(UIAlertAction(title: "Ok", style: UIAlertActionStyle.Default, handler: nil))
+//			self.presentViewController(alert, animated: true, completion: nil)
+//		}
 	}
+	
+	
 	
 	// MARK: - Table view data source
 	
@@ -40,13 +62,7 @@ class AlbumsTableViewController: UITableViewController {
 	}
 	
 	override func tableView(tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-		var album = self.albums[section]
-		
-		if let songs = self.albums[section].songs {
-			return songs.count
-		} else {
-			return 0
-		}
+		return self.albums[section].songs!.count
 	}
 	
 	override func tableView(tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
@@ -58,9 +74,9 @@ class AlbumsTableViewController: UITableViewController {
 		let cell = tableView.dequeueReusableCellWithIdentifier("SongCell", forIndexPath: indexPath) as UITableViewCell
 		
 		let album = self.albums[indexPath.section]
-		let song = album.songs![indexPath.row]
+		let song = album.songs?.resources![indexPath.row] as? Song
 		
-		cell.textLabel.text = song.title
+		cell.textLabel.text = song!.title
 		
 		return cell
 	}
