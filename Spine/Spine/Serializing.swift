@@ -9,7 +9,7 @@
 import UIKit
 import SwiftyJSON
 
-public typealias DeserializationResult = (store: ResourceStore?, meta: [String: Meta]?, error: NSError?)
+typealias DeserializationResult = (store: Store<Resource>?, meta: [String: Meta]?, error: NSError?)
 
 /**
  *  A ResourceClassMap contains information about how resource types
@@ -77,7 +77,7 @@ public enum SerializationMode {
 
 // MARK: -
 
-public protocol SerializerProtocol {
+protocol SerializerProtocol {
 	// Class mapping
 	func registerClass(type: Resource.Type)
 	func unregisterClass(type: Resource.Type)
@@ -85,7 +85,7 @@ public protocol SerializerProtocol {
 	
 	// Deserializing
 	func deserializeData(data: NSData) -> DeserializationResult
-	func deserializeData(data: NSData, usingStore store: ResourceStore) -> DeserializationResult
+	func deserializeData(data: NSData, usingStore store: Store<Resource>) -> DeserializationResult
 	func deserializeError(data: NSData, withResonseStatus responseStatus: Int) -> NSError
 	
 	// Serializing
@@ -145,7 +145,7 @@ class JSONAPISerializer: SerializerProtocol {
 
 	 :param: data The data to deserialize.
 
-	 :returns: A DeserializationResult that contains either a ResourceStore or an error.
+	 :returns: A DeserializationResult that contains either a Store or an error.
 	 */
 	func deserializeData(data: NSData) -> DeserializationResult {
 		let mappingOperation = DeserializeOperation(data: data, classMap: self.classMap)
@@ -161,12 +161,12 @@ class JSONAPISerializer: SerializerProtocol {
 	 the regular `deserializeData` method.
 
 	 :param: data  The data to deserialize.
-	 :param: store A ResourceStore that contains Resource instances onto which data will be deserialize.
+	 :param: store A Store that contains Resource instances onto which data will be deserialize.
 
-	 :returns: A DeserializationResult that contains either a ResourceStore or an error.
+	 :returns: A DeserializationResult that contains either a Store or an error.
 	 */
 
-	func deserializeData(data: NSData, usingStore store: ResourceStore) -> DeserializationResult {
+	func deserializeData(data: NSData, usingStore store: Store<Resource>) -> DeserializationResult {
 		let mappingOperation = DeserializeOperation(data: data, store: store, classMap: self.classMap)
 		mappingOperation.start()
 		return mappingOperation.result!
@@ -232,7 +232,7 @@ class DeserializeOperation: NSOperation {
 	private var data: JSON
 	
 	// Output
-	private var store: ResourceStore
+	private var store: Store<Resource>
 	private var meta: [String: Meta] = [:]
 	
 	
@@ -245,11 +245,11 @@ class DeserializeOperation: NSOperation {
 	init(data: NSData, classMap: ResourceClassMap) {
 		self.data = JSON(data: data)
 		self.classMap = classMap
-		self.store = ResourceStore()
+		self.store = Store()
 		super.init()
 	}
 	
-	init(data: NSData, store: ResourceStore, classMap: ResourceClassMap) {
+	init(data: NSData, store: Store<Resource>, classMap: ResourceClassMap) {
 		self.data = JSON(data: data)
 		self.classMap = classMap
 		self.store = store
@@ -293,9 +293,6 @@ class DeserializeOperation: NSOperation {
 			}
 		}
 		
-		// Extract top level links
-//		self.extractLinks()
-		
 		// Extract meta
 		self.extractMeta()
 		
@@ -319,7 +316,7 @@ class DeserializeOperation: NSOperation {
 		var resource: Resource
 		var isExistingResource: Bool
 		
-		if let existingResource = self.store.resource(resourceType, identifier: representation["id"].string!) {
+		if let existingResource = self.store.objectWithType(resourceType, identifier: representation["id"].string!) {
 			resource = existingResource
 			isExistingResource = true
 		} else {
@@ -551,7 +548,7 @@ class DeserializeOperation: NSOperation {
 	 Resolves the relations of the resources in the store.
 	*/
 	private func resolveRelations() {
-		for resource in self.store.allResources() {
+		for resource in self.store {
 			
 			for (attributeName, attribute) in resource.persistentAttributes {
 				if !attribute.isRelationship() {
@@ -564,7 +561,7 @@ class DeserializeOperation: NSOperation {
 						// We can only resolve if an ID is known
 						if let id = linkedResource.link?.id {
 							// Find target of relation in store
-							if let targetResource = store.resource(linkedResource.link!.type, identifier: id) {
+							if let targetResource = store.objectWithType(linkedResource.link!.type, identifier: id) {
 								linkedResource.fulfill(targetResource)
 							}
 						} else {
@@ -583,7 +580,7 @@ class DeserializeOperation: NSOperation {
 							
 							for id in ids {
 								// Find target of relation in store
-								if let targetResource = store.resource(linkedResource.link!.type, identifier: id) {
+								if let targetResource = store.objectWithType(linkedResource.link!.type, identifier: id) {
 									targetResources.append(targetResource)
 								}
 							}

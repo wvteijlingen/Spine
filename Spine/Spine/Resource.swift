@@ -259,22 +259,42 @@ public class LinkedResource: NSObject, Printable {
 	}
 }
 
-public class ResourceCollection: NSObject, ArrayLiteralConvertible, Printable, Paginatable2 {
+public class ResourceCollection: NSObject, ArrayLiteralConvertible, SequenceType, Printable, Paginatable2 {
 	/// Whether the resources for this collection are loaded
 	public var isLoaded: Bool
 	
 	/// The link for this collection
 	public var link: (href: NSURL, type: String, ids: [String]?)?
 	
-	/// The loaded resources
-	public var resources: [Resource]?
-	
+	/// The count of the loaded resources
 	public var count: Int {
 		return self.resources?.count ?? 0
 	}
 	
+	/// The loaded resources
+	public var resources: [Resource]? {
+		didSet {
+			let previousItems: [Resource] = oldValue ?? []
+			let newItems: [Resource] = self.resources ?? []
+			
+			let addedItems = newItems.filter { item in
+				return !contains(previousItems, item)
+			}
+			
+			let removedItems = previousItems.filter { item in
+				return !contains(newItems, item)
+			}
+			
+			self.addedResources += addedItems
+			self.removedResources += removedResources
+		}
+	}
+	
 	/// Resources that are added to this collection
 	var addedResources: [Resource] = []
+	
+	/// Resources that are removed from this collection
+	var removedResources: [Resource] = []
 	
 	// MARK: Initializers
 	
@@ -293,7 +313,7 @@ public class ResourceCollection: NSObject, ArrayLiteralConvertible, Printable, P
 		self.isLoaded = true
 	}
 	
-	// MARK: Printable
+	// MARK: Printable protocol
 	
 	override public var description: String {
 		if self.isLoaded {
@@ -303,6 +323,23 @@ public class ResourceCollection: NSObject, ArrayLiteralConvertible, Printable, P
 			return "(empty collection)"
 		} else {
 			return self.link!.href.absoluteString!
+		}
+	}
+	
+	// MARK: SequenceType protocol
+	
+	public func generate() -> GeneratorOf<Resource> {
+		let allObjects: [Resource] = self.resources ?? []
+		var index = -1
+		
+		return GeneratorOf<Resource> {
+			index++
+			
+			if (index > allObjects.count - 1) {
+				return nil
+			}
+			
+			return allObjects[index]
 		}
 	}
 
@@ -364,7 +401,7 @@ public class ResourceCollection: NSObject, ArrayLiteralConvertible, Printable, P
 	
 	:returns: A future promising an array of Resource objects.
 	*/
-	public func ensureResourcesUsingQuery(queryCallback: (Query) -> Void) -> Future<([Resource])> {
+	public func ensureResources(queryCallback: (Query) -> Void) -> Future<([Resource])> {
 		let query = self.query()
 		queryCallback(query)
 		return self.ensureWithQuery(query)

@@ -20,6 +20,7 @@ class AlbumsTableViewController: UITableViewController {
 		self.refreshData()
 	}
 	
+	/// Refresh the table view if the data is loaded, otherwise load the data.
 	func refreshData() {
 		self.artist.albums?.ifLoaded { resources in
 			self.albums = resources as [Album]
@@ -29,12 +30,12 @@ class AlbumsTableViewController: UITableViewController {
 		}
 	}
 	
+	/// Load the data and call `refreshData` on success.
 	func loadData() {
-		self.artist.albums!.ensureResourcesUsingQuery { query in
+		self.artist.albums!.ensureResources { query in
 			query.include("songs")
 			return
 		}.onSuccess { resources in
-			self.albums = resources as [Album]
 			self.artist.albums!.fulfill(resources)
 			self.refreshData()
 		}.onFailure { error in
@@ -42,15 +43,6 @@ class AlbumsTableViewController: UITableViewController {
 			alert.addAction(UIAlertAction(title: "Ok", style: UIAlertActionStyle.Default, handler: nil))
 			self.presentViewController(alert, animated: true, completion: nil)
 		}
-
-//		self.artist.albums!.ensureResources().onSuccess { resources in
-//			self.albums = resources as [Album]
-//			self.tableView.reloadData()
-//		}.onFailure { error in
-//			var alert = UIAlertController(title: "Error loading albums", message: error.localizedDescription, preferredStyle: UIAlertControllerStyle.Alert)
-//			alert.addAction(UIAlertAction(title: "Ok", style: UIAlertActionStyle.Default, handler: nil))
-//			self.presentViewController(alert, animated: true, completion: nil)
-//		}
 	}
 	
 	

@@ -116,7 +116,7 @@ public class Spine {
 					let deserializationResult = self.serializer.deserializeData(data)
 					
 					if let store = deserializationResult.store {
-						let collection = ResourceCollection(store.resourcesWithName(query.resourceType))
+						let collection = ResourceCollection(store.allObjectsWithType(query.resourceType))
 						promise.success(collection, deserializationResult.meta?[query.resourceType])
 					} else {
 						promise.error(deserializationResult.error!)
@@ -155,7 +155,7 @@ public class Spine {
 			
 			// Map the response back onto the resource
 			if let data = responseData {
-				let store = ResourceStore(resources: [resource])
+				let store = Store(objects: [resource])
 				let mappedResourcesStore = self.serializer.deserializeData(data, usingStore: store)
 			}
 			

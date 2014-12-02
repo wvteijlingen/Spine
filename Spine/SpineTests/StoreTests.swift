@@ -1,5 +1,5 @@
 //
-//  ResourceStoreTests.swift
+//  StoreTests.swift
 //  Spine
 //
 //  Created by Ward van Teijlingen on 30-08-14.
@@ -10,7 +10,7 @@ import Foundation
 import XCTest
 import Spine
 
-class ResourceStoreTests: XCTestCase {
+class StoreTests: XCTestCase {
 	
 	class FooResource: Resource {
 		override var resourceType: String {
@@ -37,13 +37,13 @@ class ResourceStoreTests: XCTestCase {
 		let secondResource = FooResource(resourceID: "2")
 		let thirdResource = FooResource(resourceID: "3")
 		
-		let store = ResourceStore(resources: [firstResource, secondResource, thirdResource])
+		let store = Store(resources: [firstResource, secondResource, thirdResource])
 		
 		XCTAssertEqual([firstResource, secondResource, thirdResource], store.resourcesWithName("fooResource"), "Wrong value.")
 	}
 	
     func testAddResource() {
-		let store = ResourceStore()
+		let store = Store()
 		let resource = FooResource(resourceID: "1")
 
 		store.add(resource)
@@ -52,7 +52,7 @@ class ResourceStoreTests: XCTestCase {
     }
 	
 	func testRemoveResource() {
-		let store = ResourceStore()
+		let store = Store()
 		let resource = FooResource(resourceID: "1")
 		
 		store.add(resource)
@@ -63,7 +63,7 @@ class ResourceStoreTests: XCTestCase {
 	}
 	
 	func testContainsResource() {
-		let store = ResourceStore()
+		let store = Store()
 		let resource = FooResource(resourceID: "1")
 		
 		store.add(resource)
@@ -74,7 +74,7 @@ class ResourceStoreTests: XCTestCase {
 	}
 	
 	func testResourcesWithName() {
-		let store = ResourceStore()
+		let store = Store()
 		let firstResource = FooResource(resourceID: "1")
 		let secondResource = FooResource(resourceID: "2")
 		let otherResource = BarResource(resourceID: "1")
@@ -88,7 +88,7 @@ class ResourceStoreTests: XCTestCase {
 	}
 	
 	func testAllResources() {
-		let store = ResourceStore()
+		let store = Store()
 		let firstResource = FooResource(resourceID: "1")
 		let secondResource = FooResource(resourceID: "2")
 		let otherResource = BarResource(resourceID: "1")

@@ -19,10 +19,10 @@ class SerializingTests: XCTestCase {
 		dynamic var floatAttribute: NSNumber? = 5.5
 		dynamic var nilAttribute: AnyObject? = nil
 		dynamic var dateAttribute = NSDate(timeIntervalSince1970: 0)
-		dynamic var toOneAttribute = BarResource(resourceID: "2")
-		dynamic var toManyAttribute = [BarResource(resourceID: "3"), BarResource(resourceID: "4")]
+		dynamic var toOneAttribute = BarResource(id: "2")
+		dynamic var toManyAttribute = [BarResource(id: "3"), BarResource(id: "4")]
 		
-		override var resourceType: String {
+		var type: String {
 			return "fooResources"
 		}
 		
