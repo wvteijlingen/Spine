@@ -9,7 +9,7 @@
 import UIKit
 import SwiftyJSON
 
-typealias DeserializationResult = (store: Store<Resource>?, meta: [String: Meta]?, error: NSError?)
+typealias DeserializationResult = (store: Store<Resource>?, pagination: PaginationData?, error: NSError?)
 
 /**
  *  A ResourceClassMap contains information about how resource types
@@ -233,7 +233,7 @@ class DeserializeOperation: NSOperation {
 	
 	// Output
 	private var store: Store<Resource>
-	private var meta: [String: Meta] = [:]
+	private var paginationData: PaginationData?
 	
 	
 	private lazy var formatter = {
@@ -300,7 +300,7 @@ class DeserializeOperation: NSOperation {
 		self.resolveRelations()
 		
 		// Create a result
-		self.result = DeserializationResult(self.store, self.meta, nil)
+		self.result = DeserializationResult(self.store, self.paginationData, nil)
 	}
 
 	/**
@@ -601,17 +601,26 @@ class DeserializeOperation: NSOperation {
 	// MARK: Meta
 	
 	private func extractMeta() {
-		var metaObjects: [String: Meta] = [:]
-		
 		if let meta = self.data["meta"].dictionary {
-			for (metaKey, metaData) in meta {
-				let meta = self.classMap["_meta"]() as Meta
-				self.extractAttributes(metaData, intoResource: meta)
-				metaObjects[metaKey] = meta
+			var paginationData = PaginationData(
+				count: meta["count"]?.int,
+				limit: meta["limit"]?.int,
+				beforeCursor: meta["before_cursor"]?.string,
+				afterCursor: meta["after_cursor"]?.string,
+				nextHref: nil,
+				previousHref: nil
+			)
+
+			if let nextHref = meta["after_cursor"]?.string {
+				paginationData.nextHref = NSURL(string: nextHref)
 			}
+			
+			if let previousHref = meta["previous_cursor"]?.string {
+				paginationData.previousHref = NSURL(string: previousHref)
+			}
+			
+			self.paginationData = paginationData
 		}
-		
-		self.meta = metaObjects
 	}
 }
 

@@ -19,7 +19,7 @@ class ArtistsTableViewController: UITableViewController {
     }
 	
 	func loadData() {
-		Artist.findAll().onSuccess { resourceCollection, meta in
+		Artist.findAll().onSuccess { resourceCollection in
 			self.artists = resourceCollection.resources! as [Artist]
 			self.tableView.reloadData()
 		}.onFailure { error in
@@ -43,7 +43,7 @@ class ArtistsTableViewController: UITableViewController {
 		let cell = tableView.dequeueReusableCellWithIdentifier("ArtistCell", forIndexPath: indexPath) as UITableViewCell
 		let artist = self.artists[indexPath.row]
 		
-		cell.textLabel.text = artist.name
+		cell.textLabel?.text = artist.name
 		cell.detailTextLabel?.text = artist.website
 		
 		return cell

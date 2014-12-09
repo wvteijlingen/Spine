@@ -68,7 +68,7 @@ class AlbumsTableViewController: UITableViewController {
 		let album = self.albums[indexPath.section]
 		let song = album.songs?.resources![indexPath.row] as? Song
 		
-		cell.textLabel.text = song!.title
+		cell.textLabel?.text = song!.title
 		
 		return cell
 	}

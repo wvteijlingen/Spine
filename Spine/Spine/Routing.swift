@@ -10,11 +10,23 @@ import Foundation
 
 protocol Router {
 	var baseURL: NSURL! { get set }
+	func URLForRelationship(relationship: String, ofResource resource: Resource) -> NSURL
+	func URLForRelationship(relationship: String, ofResource resource: Resource, ids: [String]) -> NSURL
 	func URLForQuery(query: Query) -> NSURL
 }
 
 class JSONAPIRouter: Router {
 	var baseURL: NSURL! = nil
+	
+	func URLForRelationship(relationship: String, ofResource resource: Resource) -> NSURL {
+		let query = Query(resource: resource)
+		return self.URLForQuery(query).URLByAppendingPathComponent("links").URLByAppendingPathComponent(relationship)
+	}
+	
+	func URLForRelationship(relationship: String, ofResource resource: Resource, ids: [String]) -> NSURL {
+		var URL = self.URLForRelationship(relationship, ofResource: resource)
+		return URL.URLByAppendingPathComponent(",".join(ids))
+	}
 	
 	func URLForQuery(query: Query) -> NSURL {
 		var URL: NSURL!

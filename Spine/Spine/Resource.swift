@@ -39,24 +39,72 @@ protocol Mappable {
 	var persistentAttributes: [String: ResourceAttribute] { get }
 }
 
-protocol Paginatable2 {
-	var beforeCursor: String? { get set }
-	var afterCursor: String? { get set }
-	var pageSize: Int? { get set }
+protocol Paginatable {
+	var paginationData: PaginationData? { get set }
 	var canFetchNextPage: Bool { get }
 	var canFetchPreviousPage: Bool { get }
-	func fetchNextPage()
-	func fetchPreviousPage()
+	func fetchNextPage() -> Future<Void>
+	func fetchPreviousPage() -> Future<Void>
+}
+
+struct PaginationData {
+	var count: Int?
+	var limit: Int?
+	var beforeCursor: String?
+	var afterCursor: String?
+	var nextHref: NSURL?
+	var previousHref: NSURL?
 }
 
 
-// MARK: - Base resource
+//MARK: -
+
+/**
+*  Describes a resource attribute that can be persisted to the server.
+*/
+public struct ResourceAttribute {
+	
+	/**
+	The type of attribute.
+	
+	- Property: A plain property.
+	- Date:     A formatted date property.
+	- ToOne:    A to-one relationship.
+	- ToMany:   A to-many relationship.
+	*/
+	public enum AttributeType {
+		case Property, Date, ToOne, ToMany
+	}
+	
+	/// The type of attribute.
+	var type: AttributeType
+	
+	/// The name of the attribute in the JSON representation.
+	/// This can be empty, in which case the same name as the attribute is used.
+	var representationName: String?
+	
+	public init(type: AttributeType) {
+		self.type = type
+	}
+	
+	public init(type: AttributeType, representationName: String) {
+		self.type = type
+		self.representationName = representationName
+	}
+	
+	func isRelationship() -> Bool {
+		return (self.type == .ToOne || self.type == .ToMany)
+	}
+}
+
+
+// MARK: -
 
 /**
 *  A base recource class that provides some defaults for resources.
 *  You must create custom resource classes by subclassing from Resource.
 */
-public class Resource: NSObject, Identifiable, Printable {
+public class Resource: NSObject, Identifiable, Mappable, Printable {
 	
 	// MARK: Initializers
 	
@@ -125,47 +173,6 @@ public class Resource: NSObject, Identifiable, Printable {
 
 //MARK: -
 
-/**
- *  Describes a resource attribute that can be persisted to the server.
- */
-public struct ResourceAttribute {
-	
-	/**
-	The type of attribute.
-	
-	- Property: A plain property.
-	- Date:     A formatted date property.
-	- ToOne:    A to-one relationship.
-	- ToMany:   A to-many relationship.
-	*/
-	public enum AttributeType {
-		case Property, Date, ToOne, ToMany
-	}
-	
-	/// The type of attribute.
-	var type: AttributeType
-	
-	/// The name of the attribute in the JSON representation.
-	/// This can be empty, in which case the same name as the attribute is used.
-	var representationName: String?
-	
-	public init(type: AttributeType) {
-		self.type = type
-	}
-	
-	public init(type: AttributeType, representationName: String) {
-		self.type = type
-		self.representationName = representationName
-	}
-	
-	func isRelationship() -> Bool {
-		return (self.type == .ToOne || self.type == .ToMany)
-	}
-}
-
-
-//MARK: -
-
 public class LinkedResource: NSObject, Printable {
 	public var isLoaded: Bool
 	public var link: (href: NSURL, type: String, id: String?)?
@@ -176,15 +183,6 @@ public class LinkedResource: NSObject, Printable {
 	init(href: NSURL, type: String, id: String? = nil) {
 		self.link = (href, type, id)
 		self.isLoaded = false
-	}
-	
-	init(href: NSURL) {
-		if let type = href.pathComponents.last as? String {
-			self.link = (href, type, nil)
-			self.isLoaded = false
-		} else {
-			assertionFailure("The type could not be inferred from the given URL.")
-		}
 	}
 	
 	init(_ resource: Resource) {
@@ -223,7 +221,7 @@ public class LinkedResource: NSObject, Printable {
 		} else {
 			let query = Query(linkedResource: self)
 			
-			query.findResources().onSuccess { resourceCollection, meta in
+			query.findResources().onSuccess { resourceCollection in
 				if let firstResource = resourceCollection.resources!.first {
 					self.fulfill(firstResource)
 				}
@@ -259,7 +257,10 @@ public class LinkedResource: NSObject, Printable {
 	}
 }
 
-public class ResourceCollection: NSObject, ArrayLiteralConvertible, SequenceType, Printable, Paginatable2 {
+
+//MARK: -
+
+public class ResourceCollection: NSObject, ArrayLiteralConvertible, SequenceType, Printable, Paginatable {
 	/// Whether the resources for this collection are loaded
 	public var isLoaded: Bool
 	
@@ -274,6 +275,10 @@ public class ResourceCollection: NSObject, ArrayLiteralConvertible, SequenceType
 	/// The loaded resources
 	public var resources: [Resource]? {
 		didSet {
+			if !observeResources {
+				return
+			}
+			
 			let previousItems: [Resource] = oldValue ?? []
 			let newItems: [Resource] = self.resources ?? []
 			
@@ -289,6 +294,8 @@ public class ResourceCollection: NSObject, ArrayLiteralConvertible, SequenceType
 			self.removedResources += removedResources
 		}
 	}
+	
+	var observeResources: Bool = true
 	
 	/// Resources that are added to this collection
 	var addedResources: [Resource] = []
@@ -346,30 +353,18 @@ public class ResourceCollection: NSObject, ArrayLiteralConvertible, SequenceType
 	// MARK: Mutators
 	
 	/**
-	Adds a new resource to this collection.
-	
-	:param: newResource The resource to add.
-	
-	:returns: This collection.
-	*/
-	public func append(newResource: Resource) -> ResourceCollection {
-		if self.resources == nil {
-			self.resources = []
-		}
-		
-		self.resources!.append(newResource)
-		self.addedResources.append(newResource)
-		return self
-	}
-	
-	/**
 	Sets the passed resources as the loaded resources and sets the isLoaded property to true.
+	The resources array will not be observed during fulfilling.
 	
 	:param: resources The loaded resources.
 	*/
 	public func fulfill(resources: [Resource]) {
+		self.observeResources = false
+		
 		self.resources = resources
 		self.isLoaded = true
+		
+		self.observeResources = true
 	}
 	
 	// MARK: Fetching
@@ -420,7 +415,7 @@ public class ResourceCollection: NSObject, ArrayLiteralConvertible, SequenceType
 		if self.isLoaded {
 			promise.success(self.resources!)
 		} else {
-			query.findResources().onSuccess { resourceCollection, meta in
+			query.findResources().onSuccess { resourceCollection in
 				self.fulfill(resourceCollection.resources!)
 				promise.success(self.resources!)
 			}.onFailure { error in
@@ -465,37 +460,39 @@ public class ResourceCollection: NSObject, ArrayLiteralConvertible, SequenceType
 	
 	// MARK: Paginatable
 	
-	public var beforeCursor: String?
-	public var afterCursor: String?
-	public var pageSize: Int?
+	var paginationData: PaginationData?
 	
 	public var canFetchNextPage: Bool {
-		return self.afterCursor != nil
+		return self.paginationData?.afterCursor != nil
 	}
 	
 	public var canFetchPreviousPage: Bool {
-		return self.beforeCursor != nil
+		return self.paginationData?.beforeCursor != nil
 	}
 	
-	public func fetchNextPage() {
+	public func fetchNextPage() -> Future<Void> {
 		assert(self.canFetchNextPage, "Cannot fetch the next page.")
+		let promise = Promise<(Void)>()
+		return promise.future
 	}
 	
-	public func fetchPreviousPage() {
+	public func fetchPreviousPage() -> Future<Void> {
 		assert(self.canFetchPreviousPage, "Cannot fetch the previous page.")
+		let promise = Promise<(Void)>()
+		return promise.future
 	}
 	
 	private func nextPageURL() -> NSURL? {
-		if let cursor = self.beforeCursor {
-			let queryParts = "limit=\(self.pageSize)&before=\(cursor)"
+		if let cursor = self.paginationData?.afterCursor {
+			let queryParts = "limit=\(self.paginationData?.limit)&after=\(cursor)"
 		}
 		
 		return nil
 	}
 	
 	private func previousPageURL() -> NSURL? {
-		if let cursor = self.afterCursor {
-			let queryParts = "limit=\(self.pageSize)&after=\(cursor)"
+		if let cursor = self.paginationData?.beforeCursor {
+			let queryParts = "limit=\(self.paginationData?.limit)&before=\(cursor)"
 		}
 		
 		return nil
@@ -533,9 +530,10 @@ extension Resource {
 	
 	:returns: A future of Resource.
 	*/
-	public class func findOne(ID: String) -> Future<(Resource, Meta?)> {
+	public class func findOne(ID: String) -> Future<Resource> {
 		let instance = self()
-		return Spine.sharedInstance.fetchResourceWithType(instance.type, ID: ID)
+		let query = Query(resourceType: instance.type, resourceIDs: [ID])
+		return Spine.sharedInstance.fetchResourceForQuery(query)
 	}
 
 	/**
@@ -545,7 +543,7 @@ extension Resource {
 	
 	:returns: A future of an array of resources.
 	*/
-	public class func find(IDs: [String]) -> Future<(ResourceCollection, Meta?)> {
+	public class func find(IDs: [String]) -> Future<ResourceCollection> {
 		let instance = self()
 		let query = Query(resourceType: instance.type, resourceIDs: IDs)
 		return Spine.sharedInstance.fetchResourcesForQuery(query)
@@ -556,7 +554,7 @@ extension Resource {
 	
 	:returns: A future of an array of resources.
 	*/
-	public class func findAll() -> Future<(ResourceCollection, Meta?)> {
+	public class func findAll() -> Future<ResourceCollection> {
 		let instance = self()
 		let query = Query(resourceType: instance.type)
 		return Spine.sharedInstance.fetchResourcesForQuery(query)

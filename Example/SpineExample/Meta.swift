@@ -8,7 +8,7 @@
 
 import Spine
 
-class ResponseMeta: Meta, Paginatable {
+class ResponseMeta: Meta {
 	var page: NSNumber?
 	var pageSize: NSNumber?
 	var count: NSNumber?

@@ -11,21 +11,22 @@ import Spine
 
 class SongsTableViewController: UITableViewController {
 	
-	var paginator: Paginator!
+	var songs: ResourceCollection?
 	
 	override func viewDidLoad() {
 		super.viewDidLoad()
 		
-		let query = Query(resourceType: "songs").limit(5)
-		
-		self.paginator = Paginator(query: query)
-		
-		self.loadNextPage()
+		Query(resourceType: "songs").limit(5).findResources().onSuccess { resourceCollection in
+			self.songs = resourceCollection
+			self.tableView.reloadData()
+		}.onFailure { error in
+			println(error)
+		}
 	}
 	
 	func loadNextPage() {
-		if self.paginator.canFetchNextPage {
-			self.paginator.fetchNextPage().onSuccess { resources, meta in
+		if self.songs?.canFetchNextPage == true {
+			self.songs?.fetchNextPage().onSuccess {
 				self.tableView.reloadData()
 			}
 		}
@@ -38,22 +39,24 @@ class SongsTableViewController: UITableViewController {
 	}
 	
 	override func tableView(tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-		return self.paginator.fetchedResources.count
+		return self.songs?.resources?.count ?? 0
 	}
 	
 	override func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell {
 		let cell = tableView.dequeueReusableCellWithIdentifier("SongCell", forIndexPath: indexPath) as UITableViewCell
 		
-		let song = self.paginator.fetchedResources[indexPath.row] as Song
+		let song = self.songs?.resources![indexPath.row] as Song
 		
-		cell.textLabel.text = song.title
+		cell.textLabel?.text = song.title
 		
 		return cell
 	}
 	
 	override func tableView(tableView: UITableView, willDisplayCell cell: UITableViewCell, forRowAtIndexPath indexPath: NSIndexPath) {
-		if indexPath.row == self.paginator.fetchedResources.count - 1 {
-			self.loadNextPage()
+		if let count = self.songs?.resources?.count {
+			if indexPath.row == count - 1 {
+				self.loadNextPage()
+			}
 		}
 	}
 }

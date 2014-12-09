@@ -319,7 +319,7 @@ public class Query {
 
 // MARK: - Convenience functions
 extension Query {
-	public func findResources() -> Future<(ResourceCollection, Meta?)> {
+	public func findResources() -> Future<ResourceCollection> {
 		return Spine.sharedInstance.fetchResourcesForQuery(self)
 	}
 }
