@@ -467,7 +467,7 @@ class DeserializeOperation: NSOperation {
 			if let rawType = linkData["type"]?.string {
 				type = rawType
 			} else {
-				type = key
+				type = key + "s" // TODO: Retrieve type from ResourceAttribute
 			}
 			
 			if linkData["id"]?.stringValue != "" {
@@ -480,7 +480,7 @@ class DeserializeOperation: NSOperation {
 		// Resource level link with only an id
 		let ID = serializedData["links"][key].stringValue
 		if ID != "" {
-			return LinkedResource(href: nil, type: key, id: ID)
+			return LinkedResource(href: nil, type: key + "s", id: ID) // TODO: Retrieve type from ResourceAttribute
 		}
 		
 		// Document level link template
@@ -498,7 +498,7 @@ class DeserializeOperation: NSOperation {
 			if let rawType = linkData["type"]?.string {
 				type = rawType
 			} else {
-				type = key
+				type = key + "s"  // TODO: Retrieve type from ResourceAttribute
 			}
 			
 			return LinkedResource(href: href, type: type)
