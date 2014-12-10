@@ -314,7 +314,7 @@ class DeserializeOperation: NSOperation {
 		var resource: Resource
 		var isExistingResource: Bool
 		
-		if let existingResource = self.store.objectWithType(resourceType, identifier: representation["id"].string!) {
+		if let existingResource = self.store.objectWithType(resourceType, identifier: representation["id"].stringValue) {
 			resource = existingResource
 			isExistingResource = true
 		} else if let existingResource = self.store.allObjectsWithType(resourceType).first {
