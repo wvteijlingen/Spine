@@ -272,14 +272,12 @@ class DeserializeOperation: NSOperation {
 			// Linked resources for compound documents
 			if key == "linked" {
 				for (linkedResourceType, linkedResources) in data.dictionaryValue {
-					println("Deserializing linked: " + linkedResourceType)
 					for representation in linkedResources.array! {
 						self.deserializeSingleRepresentation(representation, withResourceType: linkedResourceType, linkTemplates: linkTemplates)
 					}
 				}
 			
 			} else if key != "links" && key != "meta" {
-				println("Deserializing main: " + key)
 				// Multiple resources
 				if let representations = data.array {
 					for representation in representations {
@@ -319,6 +317,9 @@ class DeserializeOperation: NSOperation {
 		if let existingResource = self.store.objectWithType(resourceType, identifier: representation["id"].string!) {
 			resource = existingResource
 			isExistingResource = true
+		} else if let existingResource = self.store.allObjectsWithType(resourceType).first {
+			resource = existingResource
+			isExistingResource = true
 		} else {
 			resource = self.classMap[resourceType]() as Resource
 			isExistingResource = false
@@ -346,8 +347,8 @@ class DeserializeOperation: NSOperation {
 	 :param: resource       The resource into which to extract the ID.
 	 */
 	private func extractID(serializedData: JSON, intoResource resource: Resource) {
-		if let ID = serializedData["id"].string {
-			resource.id = ID
+		if serializedData["id"].stringValue != "" {
+			resource.id = serializedData["id"].stringValue
 		}
 	}
 	
@@ -455,38 +456,52 @@ class DeserializeOperation: NSOperation {
 	 :returns: The extracted relationship or nil if no relationship with the given key was found in the data.
 	*/
 	private func extractToOneRelationship(serializedData: JSON, key: String, resource: Resource, linkTemplates: JSON? = nil) -> LinkedResource? {
-		// Resource level link
+		// Resource level link with href/id/type combo
 		if let linkData = serializedData["links"][key].dictionary {
-			var href: String?, ID: String?, type: String?
+			var href: NSURL?, type: String, ID: String?
 			
-			if linkData["href"] != nil {
-				href = linkData["href"]!.string
+			if let rawHref = linkData["href"]?.string {
+				href = NSURL(string: rawHref)
 			}
 			
-			if linkData["id"] != nil {
-				ID = linkData["id"]!.string
+			if let rawType = linkData["type"]?.string {
+				type = rawType
+			} else {
+				type = key
 			}
 			
-			if linkData["type"] != nil {
-				type = linkData["type"]!.string
+			if linkData["id"]?.stringValue != "" {
+				ID = linkData["id"]!.stringValue
 			}
 			
-			return LinkedResource(href: NSURL(string: href!)!, type: type!, id: ID!)
+			return LinkedResource(href: href, type: type, id: ID)
+		}
+		
+		// Resource level link with only an id
+		let ID = serializedData["links"][key].stringValue
+		if ID != "" {
+			return LinkedResource(href: nil, type: key, id: ID)
 		}
 		
 		// Document level link template
 		if let linkData = linkTemplates?[resource.type + "." + key].dictionary {
-			var href: String?, type: String?
+			var href: NSURL?, type: String
 			
 			if let hrefTemplate = linkData["href"]?.string {
-				href = hrefTemplate.interpolate(serializedData.dictionaryObject! as NSDictionary, rootKeyPath: resource.type)
+				if let interpolatedHref = hrefTemplate.interpolate(serializedData.dictionaryObject! as NSDictionary, rootKeyPath: resource.type) {
+					href = NSURL(string: interpolatedHref)
+				} else {
+					println("Error: Could not interpolate href template: \(hrefTemplate)")
+				}
 			}
 			
-			if linkData["type"] != nil {
-				type = linkData["type"]!.string
+			if let rawType = linkData["type"]?.string {
+				type = rawType
+			} else {
+				type = key
 			}
 			
-			return LinkedResource(href: NSURL(string: href!)!, type: type!)
+			return LinkedResource(href: href, type: type)
 		}
 		
 		return nil
@@ -503,42 +518,59 @@ class DeserializeOperation: NSOperation {
 	 :returns: The extracted relationship or nil if no relationship with the given key was found in the data.
 	*/
 	private func extractToManyRelationship(serializedData: JSON, key: String, resource: Resource, linkTemplates: JSON? = nil) -> ResourceCollection? {
-		// Resource level link
-		if let resourceLink = serializedData["links"][key].dictionary {
-			var href: String?, IDs: [String]?, type: String?
+		// Resource level link with href/id/type combo
+		if let linkData = serializedData["links"][key].dictionary {
+			var href: NSURL?, type: String, IDs: [String]?
 			
-			if resourceLink["href"] != nil {
-				href = resourceLink["href"]!.string
+			if let rawHref = linkData["href"]?.string {
+				href = NSURL(string: rawHref)
 			}
 			
-			if resourceLink["ids"] != nil {
-				IDs = resourceLink["ids"]!.array!.map { return $0.string! }
+			if let rawIDs = linkData["ids"]?.array {
+				IDs = rawIDs.map { $0.stringValue }
+				IDs?.filter { $0 != "" }
 			}
 			
-			if resourceLink["type"] != nil {
-				type = resourceLink["type"]!.string
+			if let rawType = linkData["type"]?.string {
+				type = rawType
+			} else {
+				type = key
 			}
 		
-			return ResourceCollection(href: NSURL(string: href!)!, type: type!, ids: IDs)
+			return ResourceCollection(href: href, type: type, ids: IDs)
 		}
 		
+		// Resource level link with only ids
+		if let rawIDs: [JSON] = serializedData["links"][key].array {
+			let IDs = rawIDs.map { $0.stringValue }
+			IDs.filter { return $0 != "" }
+			return ResourceCollection(href: nil, type: key, ids: IDs)
+		}
+
 		// Document level link template
-		if let documentLink = linkTemplates?[resource.type + "." + key].dictionary {
-			var href: String?, IDs: [String]?, type: String?
-				
-			if let hrefTemplate = documentLink["href"]?.string {
-				href = hrefTemplate.interpolate(serializedData.dictionaryObject! as NSDictionary, rootKeyPath: resource.type)
+		if let linkData = linkTemplates?[resource.type + "." + key].dictionary {
+			var href: NSURL?, type: String, IDs: [String]?
+			
+			if let hrefTemplate = linkData["href"]?.string {
+				if let interpolatedHref = hrefTemplate.interpolate(serializedData.dictionaryObject! as NSDictionary, rootKeyPath: resource.type) {
+					href = NSURL(string: interpolatedHref)
+				} else {
+					println("Error: Could not interpolate href template: \(hrefTemplate)")
+				}
 			}
 			
-			if serializedData["links"][key].array != nil {
-				IDs = serializedData["links"][key].array!.map { return $0.string! }
+			if let rawType = linkData["type"]?.string {
+				type = rawType
+			} else {
+				type = key
 			}
 			
-			if documentLink["type"] != nil {
-				type = documentLink["type"]!.string
+			if let rawIDs = serializedData["links"][key].array {
+				IDs = rawIDs.map { return $0.stringValue }
+				IDs?.filter { return $0 != "" }
 			}
 			
-			return ResourceCollection(href: NSURL(string: href!)!, type: type!, ids: IDs)
+			return ResourceCollection(href: href, type: type, ids: IDs)
 		}
 		
 		return nil

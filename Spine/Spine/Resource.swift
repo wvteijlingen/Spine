@@ -175,12 +175,12 @@ public class Resource: NSObject, Identifiable, Mappable, Printable {
 
 public class LinkedResource: NSObject, Printable {
 	public var isLoaded: Bool
-	public var link: (href: NSURL, type: String, id: String?)?
+	public var link: (href: NSURL?, type: String, id: String?)?
 	public var resource: Resource?
 	
 	// MARK: Initializers
 	
-	init(href: NSURL, type: String, id: String? = nil) {
+	init(href: NSURL?, type: String, id: String? = nil) {
 		self.link = (href, type, id)
 		self.isLoaded = false
 	}
@@ -195,12 +195,14 @@ public class LinkedResource: NSObject, Printable {
 	override public var description: String {
 		if self.isLoaded {
 			if let resource = self.resource {
-				return resource.description
+				return "LinkedResource.loaded<\(self.link!.type)>(\(resource.description))"
 			} else {
-				return "(unidentifiable resource)"
+				return "LinkedResource.loaded<\(self.link!.type)>()"
 			}
+		} else if let URLString = self.link!.href?.absoluteString {
+			return "LinkedResource.link<\(self.link!.type)>(\(URLString))"
 		} else {
-			return self.link!.href.absoluteString!
+			return "LinkedResource.link<\(self.link!.type)>(\(self.link!.id))"
 		}
 	}
 	
@@ -265,7 +267,7 @@ public class ResourceCollection: NSObject, ArrayLiteralConvertible, SequenceType
 	public var isLoaded: Bool
 	
 	/// The link for this collection
-	public var link: (href: NSURL, type: String, ids: [String]?)?
+	public var link: (href: NSURL?, type: String, ids: [String]?)?
 	
 	/// The count of the loaded resources
 	public var count: Int {
@@ -305,7 +307,7 @@ public class ResourceCollection: NSObject, ArrayLiteralConvertible, SequenceType
 	
 	// MARK: Initializers
 	
-	public init(href: NSURL, type: String, ids: [String]? = nil) {
+	public init(href: NSURL?, type: String, ids: [String]? = nil) {
 		self.link = (href, type, ids)
 		self.isLoaded = false
 	}
@@ -325,11 +327,16 @@ public class ResourceCollection: NSObject, ArrayLiteralConvertible, SequenceType
 	override public var description: String {
 		if self.isLoaded {
 			if let resources = self.resources {
-				return "[" + ", ".join(resources.map { $0.description }) + "]"
+				let descriptions = ", ".join(resources.map { $0.description })
+				return "ResourceCollection.loaded<\(self.link!.type)>(\(descriptions))"
+			} else {
+				return "ResourceCollection.loaded<\(self.link!.type)>([])"
 			}
-			return "(empty collection)"
+		} else if let URLString = self.link!.href?.absoluteString {
+			return "ResourceCollection.link<\(self.link!.type)>(\(URLString))"
 		} else {
-			return self.link!.href.absoluteString!
+			let IDs = ", ".join(self.link!.ids!)
+			return "ResourceCollection.link<\(self.link!.type)>(\(IDs))"
 		}
 	}
 	
