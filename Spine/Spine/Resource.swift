@@ -223,7 +223,7 @@ public class LinkedResource: NSObject, Printable {
 		} else {
 			let query = Query(linkedResource: self)
 			
-			query.findResources().onSuccess { resourceCollection in
+			query.find().onSuccess { resourceCollection in
 				if let firstResource = resourceCollection.resources!.first {
 					self.fulfill(firstResource)
 				}
@@ -422,7 +422,7 @@ public class ResourceCollection: NSObject, ArrayLiteralConvertible, SequenceType
 		if self.isLoaded {
 			promise.success(self.resources!)
 		} else {
-			query.findResources().onSuccess { resourceCollection in
+			query.find().onSuccess { resourceCollection in
 				self.fulfill(resourceCollection.resources!)
 				promise.success(self.resources!)
 			}.onFailure { error in
