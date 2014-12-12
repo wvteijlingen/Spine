@@ -79,7 +79,13 @@ public class Query {
 
 	public init(linkedResource: LinkedResource) {
 		assert(linkedResource.link != nil, "Linked resources does not contain a link")
-		self.URL = linkedResource.link!.href
+		
+		self.URL = linkedResource.link?.href
+		
+		if let id = linkedResource.link?.id {
+			self.resourceIDs = [id]
+		}
+		
 		self.resourceType = linkedResource.link!.type
 	}
 	
