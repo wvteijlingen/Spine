@@ -215,18 +215,28 @@ public class LinkedResource: NSObject, Printable {
 	
 	// MARK: Fetching
 	
+	public func query() -> Query {
+		return Query(linkedResource: self)
+	}
+	
 	public func ensureResource() -> Future<(Resource)> {
+		return self.ensureWithQuery(self.query())
+	}
+	
+	public func ensureResource(queryCallback: (Query) -> Void) -> Future<(Resource)> {
+		let query = self.query()
+		queryCallback(query)
+		return self.ensureWithQuery(query)
+	}
+	
+	private func ensureWithQuery(query: Query)  -> Future<(Resource)> {
 		let promise = Promise<(Resource)>()
 		
 		if self.isLoaded {
 			promise.success(self.resource!)
 		} else {
-			let query = Query(linkedResource: self)
-			
-			query.find().onSuccess { resourceCollection in
-				if let firstResource = resourceCollection.resources!.first {
-					self.fulfill(firstResource)
-				}
+			query.findOne().onSuccess { resource in
+				self.fulfill(resource)
 				promise.success(self.resource!)
 			}.onFailure { error in
 				promise.error(error)
@@ -234,10 +244,6 @@ public class LinkedResource: NSObject, Printable {
 		}
 		
 		return promise.future
-	}
-	
-	public func query() -> Query {
-		return Query(linkedResource: self)
 	}
 	
 	// MARK: ifLoaded

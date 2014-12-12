@@ -16,7 +16,7 @@ class SongsTableViewController: UITableViewController {
 	override func viewDidLoad() {
 		super.viewDidLoad()
 		
-		Query(resourceType: "songs").limit(5).findResources().onSuccess { resourceCollection in
+		Query(resourceType: "songs").limit(5).find().onSuccess { resourceCollection in
 			self.songs = resourceCollection
 			self.tableView.reloadData()
 		}.onFailure { error in
