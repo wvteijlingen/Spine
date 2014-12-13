@@ -8,6 +8,7 @@
 
 import UIKit
 import Spine
+import BrightFutures
 
 class SongsTableViewController: UITableViewController {
 	
@@ -16,17 +17,17 @@ class SongsTableViewController: UITableViewController {
 	override func viewDidLoad() {
 		super.viewDidLoad()
 		
-		Query(resourceType: "songs").limit(5).find().onSuccess { resourceCollection in
+		Query(resourceType: "songs").limit(5).find().onSuccess(context: Queue.main) { resourceCollection in
 			self.songs = resourceCollection
 			self.tableView.reloadData()
-		}.onFailure { error in
+		}.onFailure(context: Queue.main) { error in
 			println(error)
 		}
 	}
 	
 	func loadNextPage() {
 		if self.songs?.canFetchNextPage == true {
-			self.songs?.fetchNextPage().onSuccess {
+			self.songs?.fetchNextPage().onSuccess(context: Queue.main) {
 				self.tableView.reloadData()
 			}
 		}

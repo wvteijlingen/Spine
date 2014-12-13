@@ -8,6 +8,7 @@
 
 import UIKit
 import Spine
+import BrightFutures
 
 class ArtistsTableViewController: UITableViewController {
 
@@ -19,10 +20,10 @@ class ArtistsTableViewController: UITableViewController {
     }
 	
 	func loadData() {
-		Artist.findAll().onSuccess { resourceCollection in
+		Artist.findAll().onSuccess(context: Queue.main) { resourceCollection in
 			self.artists = resourceCollection.resources! as [Artist]
 			self.tableView.reloadData()
-		}.onFailure { error in
+		}.onFailure(context: Queue.main) { error in
 			var alert = UIAlertController(title: "Error loading artists", message: error.localizedDescription, preferredStyle: UIAlertControllerStyle.Alert)
 			alert.addAction(UIAlertAction(title: "Ok", style: UIAlertActionStyle.Default, handler: nil))
 			self.presentViewController(alert, animated: true, completion: nil)

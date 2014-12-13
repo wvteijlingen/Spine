@@ -8,6 +8,7 @@
 
 import UIKit
 import Spine
+import BrightFutures
 
 class AlbumsTableViewController: UITableViewController {
 
@@ -35,10 +36,10 @@ class AlbumsTableViewController: UITableViewController {
 		self.artist.albums!.ensureResources { query in
 			query.include("songs")
 			return
-		}.onSuccess { resources in
+		}.onSuccess(context: Queue.main) { resources in
 			self.artist.albums!.fulfill(resources)
 			self.refreshData()
-		}.onFailure { error in
+		}.onFailure(context: Queue.main) { error in
 			var alert = UIAlertController(title: "Error loading albums", message: error.localizedDescription, preferredStyle: UIAlertControllerStyle.Alert)
 			alert.addAction(UIAlertAction(title: "Ok", style: UIAlertActionStyle.Default, handler: nil))
 			self.presentViewController(alert, animated: true, completion: nil)
