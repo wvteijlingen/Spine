@@ -95,6 +95,11 @@ public class Query {
 		self.resourceType = linkedResourceCollection.link!.type
 	}
 	
+	public init(resourceType: String, URLString: String) {
+		self.resourceType = resourceType
+		self.URL = NSURL(string: URLString)
+	}
+	
 	
 	// MARK: Sideloading
 	
