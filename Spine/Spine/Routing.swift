@@ -8,33 +8,97 @@
 
 import Foundation
 
-class JSONAPIRouter {
-	var baseURL: String = ""
+protocol Router {
+	var baseURL: NSURL! { get set }
+	func URLForRelationship(relationship: String, ofResource resource: Resource) -> NSURL
+	func URLForRelationship(relationship: String, ofResource resource: Resource, ids: [String]) -> NSURL
+	func URLForQuery(query: Query) -> NSURL
+}
+
+class JSONAPIRouter: Router {
+	var baseURL: NSURL! = nil
 	
-	func URLForCollectionOfResourceType(resourceType: String) -> String {
-		return "\(self.baseURL)/\(resourceType)"
+	func URLForRelationship(relationship: String, ofResource resource: Resource) -> NSURL {
+		let query = Query(resource: resource)
+		return self.URLForQuery(query).URLByAppendingPathComponent("links").URLByAppendingPathComponent(relationship)
 	}
 	
-	func URLForResourceWithType(resourceType: String, ID: String) -> String {
-		return "\(self.baseURL)/\(resourceType)/\(ID)"
+	func URLForRelationship(relationship: String, ofResource resource: Resource, ids: [String]) -> NSURL {
+		var URL = self.URLForRelationship(relationship, ofResource: resource)
+		return URL.URLByAppendingPathComponent(",".join(ids))
 	}
 	
-	func URLForResourcesWithType(resourceType: String, IDs: [String]) -> String {
-		let joinedIDs = join(",", IDs)
-		return "\(self.baseURL)/\(resourceType)/\(joinedIDs)"
-	}
-	
-	func URLForResource(resource: Resource) -> String {
-		if let resourceLocation = resource.resourceLocation {
-			return resourceLocation
+	func URLForQuery(query: Query) -> NSURL {
+		var URL: NSURL!
+		
+		// Base URL
+		if let baseURL = query.URL {
+			if baseURL.host == nil {
+				URL = NSURL(string: baseURL.absoluteString!, relativeToURL: self.baseURL)
+			} else {
+				URL = baseURL
+			}
+		} else {
+			URL = self.baseURL.URLByAppendingPathComponent(query.resourceType, isDirectory: true)
 		}
 		
-		assert(resource.resourceID != nil, "Resource does not have an href, nor a resource ID.")
+		// Resource IDs
+		if let IDs = query.resourceIDs {
+			URL = URL.URLByAppendingPathComponent(join(",", IDs), isDirectory: false)
+		}
 		
-		return "\(self.baseURL)/\(resource.resourceType)/\(resource.resourceID!)"
+		var URLComponents = NSURLComponents(URL: URL, resolvingAgainstBaseURL: true)!
+		var queryItems: [NSURLQueryItem] = []
+		
+		if let existingQueryItems = URLComponents.queryItems {
+			queryItems = existingQueryItems as [NSURLQueryItem]
+		}
+		
+		// Includes
+		if query.includes.count != 0 {
+			var item = NSURLQueryItem(name: "include", value: ",".join(query.includes))
+			self.setQueryItem(item, forQueryItems: &queryItems)
+		}
+		
+		// Filters
+		for filter in query.filters {
+			var item = NSURLQueryItem(name: filter.key, value: filter.rhs)
+			self.setQueryItem(item, forQueryItems: &queryItems)
+		}
+		
+		// Fields
+		for (resourceType, fields) in query.fields {
+			var item = NSURLQueryItem(name: "fields[\(resourceType)]", value: ",".join(fields))
+			self.setQueryItem(item, forQueryItems: &queryItems)
+		}
+		
+		// Sorting
+		if query.sortOrders.count != 0 {
+			var item = NSURLQueryItem(name: "sort", value: ",".join(query.sortOrders))
+			self.setQueryItem(item, forQueryItems: &queryItems)
+		}
+		
+		// Pagination
+		if let page = query.page {
+			var item = NSURLQueryItem(name: "page", value: String(page))
+			self.setQueryItem(item, forQueryItems: &queryItems)
+		}
+		
+		if let pageSize = query.pageSize {
+			var item = NSURLQueryItem(name: "page_size", value: String(pageSize))
+			self.setQueryItem(item, forQueryItems: &queryItems)
+		}
+		
+		if queryItems.count > 0 {
+			URLComponents.queryItems = queryItems
+		}
+		
+		return URLComponents.URL!
 	}
 	
-	func URLForQuery(query: Query) -> String {
-		return query.URLRelativeToURL(self.baseURL)
+	private func setQueryItem(queryItem: NSURLQueryItem, inout forQueryItems queryItems: [NSURLQueryItem]) {
+		// Remove old item
+		queryItems.filter { return $0.name != queryItem.name }
+		queryItems.append(queryItem)
 	}
 }

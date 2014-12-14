@@ -26,20 +26,20 @@ public class Spine {
     }
 
 	/// The base URL of the API. All other URLs will be made absolute to this URL.
-	public var baseURL: String {
+	public var baseURL: NSURL {
 		get {
 			return self.router.baseURL
 		}
-		set(newValue) {
+		set {
 			self.router.baseURL = newValue
 		}
 	}
 	
 	/// The router that builds the URLs for requests.
-	private var router: JSONAPIRouter
+	private var router: Router
 	
 	/// The HTTPClient that performs the HTTP requests.
-	private var HTTPClient: AlamofireClient
+	private var HTTPClient: HTTPClientProtocol
 	
 	/// The serializer to use for serializing and deserializing of JSON representations.
 	private var serializer: JSONAPISerializer
@@ -47,12 +47,14 @@ public class Spine {
 	
 	// MARK: Initializers
 	
-	public init(baseURL: String = "") {
+	public init(baseURL: NSURL! = nil) {
 		self.HTTPClient = AlamofireClient()
 		self.router = JSONAPIRouter()
 		self.serializer = JSONAPISerializer()
 		
-		self.baseURL = baseURL
+		if baseURL != nil {
+			self.baseURL = baseURL
+		}
 	}
 	
 	
@@ -66,6 +68,13 @@ public class Spine {
 	public func registerType(type: Resource.Type) {
 		self.serializer.registerClass(type)
 	}
+	
+	
+	// MARK: OAuth
+	
+	public func authenticate(URL: String, username: String, password: String, scope: String? = nil) -> Future<Void> {
+		return self.HTTPClient.authenticate(URL, username: username, password: password, scope: scope)
+	}
 
 
 	// MARK: Fetching
@@ -78,31 +87,16 @@ public class Spine {
 	 :param: success      Function to call after success.
 	 :param: failure      Function to call after failure.
 	 */
-	public func fetchResourceWithType(resourceType: String, ID: String) -> Future<(Resource, Meta?)> {
-		let promise = Promise<(Resource, Meta?)>()
+	public func fetchResourceForQuery(query: Query) -> Future<Resource> {
+		let promise = Promise<Resource>()
 		
-		let query = Query(resourceType: resourceType, resourceIDs: [ID])
-		
-		self.fetchResourcesForQuery(query).onSuccess { resources, meta in
-			promise.success(resources.first!, meta)
+		self.fetchResourcesForQuery(query).onSuccess { resources in
+			promise.success(resources.resources!.first!)
 		}.onFailure { error in
 			promise.error(error)
 		}
 		
 		return promise.future
-	}
-
-	/**
-	Fetches resources related to the given resource by a given relationship
-	
-	:param: relationship The name of the relationship.
-	:param: resource     The resource that contains the relationship.
-	
-	:returns: Future of an array of resources.
-	*/
-	public func fetchResourcesForRelationship(relationship: String, ofResource resource: Resource) -> Future<([Resource], Meta?)> {
-		let query = Query(resource: resource, relationship: relationship)
-		return self.fetchResourcesForQuery(query)
 	}
 
 	/**
@@ -112,32 +106,34 @@ public class Spine {
 	
 	:returns: Future of an array of resources.
 	*/
-	public func fetchResourcesForQuery(query: Query) -> Future<([Resource], Meta?)> {
-		let promise = Promise<([Resource], Meta?)>()
+	public func fetchResourcesForQuery(query: Query) -> Future<(ResourceCollection)> {
+		let promise = Promise<ResourceCollection>()
 		
-		let URLString = self.router.URLForQuery(query)
+		let URLString = self.router.URLForQuery(query).absoluteString!
 		
-		self.HTTPClient.get(URLString, callback: { responseStatus, responseData, error in
-			if let error = error {
-				promise.error(error)
+		self.HTTPClient.get(URLString).onSuccess { statusCode, data in
+			
+			if 200 ... 299 ~= statusCode! {
+				let deserializationResult = self.serializer.deserializeData(data!)
 				
-			} else if let data = responseData {
-				
-				if 200 ... 299 ~= responseStatus! {
-					let deserializationResult = self.serializer.deserializeData(data)
+				if let store = deserializationResult.store {
+					let collection = ResourceCollection(store.allObjectsWithType(query.resourceType))
+					collection.paginationData = deserializationResult.pagination
 					
-					if let store = deserializationResult.store {
-						promise.success(store.resourcesWithName(query.resourceType), deserializationResult.meta?[query.resourceType])
-					} else {
-						promise.error(deserializationResult.error!)
-					}
+					promise.success(collection)
 					
 				} else {
-					let error = self.serializer.deserializeError(data, withResonseStatus: responseStatus!)
-					promise.error(error)
+					promise.error(deserializationResult.error!)
 				}
+				
+			} else {
+				let error = self.serializer.deserializeError(data!, withResonseStatus: statusCode!)
+				promise.error(error)
 			}
-		})
+			
+		}.onFailure { error in
+			promise.error(error)
+		}
 		
 		return promise.future
 	}
@@ -156,30 +152,138 @@ public class Spine {
 	*/
 	public func saveResource(resource: Resource) -> Future<Resource> {
 		let promise = Promise<Resource>()
-
-		let callback: (Int?, NSData?, NSError?) -> Void = { responseStatus, responseData, error in
-			if let error = error {
-				promise.error(error)
-				return
-			}
-			
-			// Map the response back onto the resource
-			if let data = responseData {
-				let store = ResourceStore(resources: [resource])
-				let mappedResourcesStore = self.serializer.deserializeData(data, usingStore: store)
-			}
-			
-			promise.success(resource)
+	
+		var future: Future<(Int?, NSData?)>
+	
+		// Create or update the main resource
+		if let uniqueIdentifier = resource.uniqueIdentifier {
+			let URLString = self.router.URLForQuery(Query(resource: resource)).absoluteString!
+			future = self.HTTPClient.put(URLString, json: self.serializer.serializeResources([resource], mode: .DirtyAttributes))
+		} else {
+			resource.id = NSUUID().UUIDString
+			let URLString = self.router.URLForQuery(Query(resourceType: resource.type)).absoluteString!
+			future = self.HTTPClient.post(URLString, json: self.serializer.serializeResources([resource], mode: .AllAttributes))
 		}
 		
-		// Create resource
-		if resource.resourceID == nil {
-			resource.resourceID = NSUUID().UUIDString
-			self.HTTPClient.post(self.router.URLForCollectionOfResourceType(resource.resourceType), json: self.serializer.serializeResources([resource], mode: .AllAttributes), callback: callback)
+		// Act on the future
+		future.onSuccess { statusCode, data in
+			// Map the response back onto the resource
+			if let data = data {
+				let store = Store(objects: [resource])
+				let mappedResourcesStore = self.serializer.deserializeData(data, usingStore: store)
+			}
 
-		// Update resource
+			self.updateResourceRelationships(resource).onSuccess {
+				// Resolve the promise
+				promise.success(resource)
+			}.onFailure { error in
+				println("Error updating resource relationships: \(error)")
+			}
+			
+		}.onFailure { error in
+			promise.error(error)
+		}
+		
+		// Return the outer future
+		return promise.future
+	}
+	
+	private func updateResourceRelationships(resource: Resource) -> Future<Void> {
+		let promise = Promise<Void>()
+		
+		// Check if we have any new linked resources and link them
+		for (attributeName, attribute) in resource.persistentAttributes {
+			if !attribute.isRelationship() {
+				continue
+			}
+			
+			// TODO: Support ToOne relationships
+			if attribute.type == .ToMany {
+				let linkedResources = resource.valueForKey(attributeName) as ResourceCollection
+				
+				self.relateResources(linkedResources.addedResources, toResource: resource, relationship: attributeName).onSuccess {
+					linkedResources.addedResources = []
+					
+					self.unrelateResources(linkedResources.removedResources, fromResource: resource, relationship: attributeName).onSuccess {
+						linkedResources.removedResources = []
+						promise.success()
+					}.onFailure { error in
+						println("Error unrelating removed resources: \(error)")
+						promise.error(error)
+					}
+					
+				}.onFailure { error in
+					println("Error relating added resources: \(error)")
+					promise.error(error)
+				}
+			}
+		}
+		
+		return promise.future
+	}
+
+	
+	// MARK: Relating
+	
+	/**
+	Performs a request to relate the given resources to a resource for a certain relationship.
+	This will fire a POST request to an URL of the form: /{resourceType}/{id}/links/{relationship}
+	
+	:param: resources         The resources to relate.
+	:param: toResource        The resource to relate to.
+	:param: relationship      The name of the relationship to relate the resources for.
+	:param: completionHandler Function to call after completion.
+	*/
+	private func relateResources(resources: [Resource], toResource: Resource, relationship: String) -> Future<Void> {
+		let promise = Promise<Void>()
+		
+		if resources.count > 0 {
+			let ids: [String] = resources.map { resource in
+				assert(resource.uniqueIdentifier != nil, "Attempt to relate resource without unique identifier. Only existing resources can be related.")
+				return resource.uniqueIdentifier!.id
+			}
+			
+			let URLString = self.router.URLForRelationship(relationship, ofResource: toResource).absoluteString!
+			
+			self.HTTPClient.post(URLString, json: [relationship: ids]).onSuccess { statusCode, data in
+				promise.success()
+			}.onFailure { error in
+				promise.error(error)
+			}
 		} else {
-			self.HTTPClient.put(self.router.URLForResource(resource), json: self.serializer.serializeResources([resource], mode: .DirtyAttributes), callback: callback)
+			promise.success()
+		}
+		
+		return promise.future
+	}
+	
+	/**
+	Performs a request to unrelate the given resources to a resource for a certain relationship.
+	This will fire a DELETE request to an URL of the form: /{resourceType}/{id}/links/{relationship}/{ids}
+	
+	:param: resources         The resources to remove from the relation
+	:param: fromResource      The resource from which to remove the related resources
+	:param: relationship      The name of the relationship from which to unrelate the resources
+	:param: completionHandler Function to call after completion
+	*/
+	private func unrelateResources(resources: [Resource], fromResource: Resource, relationship: String) -> Future<Void> {
+		let promise = Promise<Void>()
+		
+		if resources.count > 0 {
+			let ids: [String] = resources.map { (resource) in
+				assert(resource.uniqueIdentifier != nil, "Attempt to unrelate resource without unique identifier. Only existing resources can be unrelated.")
+				return resource.uniqueIdentifier!.id
+			}
+			
+			let URLString = self.router.URLForRelationship(relationship, ofResource: fromResource, ids: ids).absoluteString!
+			
+			self.HTTPClient.delete(URLString).onSuccess { statusCode, data in
+				promise.success()
+			}.onFailure { error in
+				promise.error(error)
+			}
+		} else {
+			promise.success()
 		}
 		
 		return promise.future
@@ -199,16 +303,14 @@ public class Spine {
 	public func deleteResource(resource: Resource) -> Future<Void> {
 		let promise = Promise<Void>()
 		
-		let URLString = self.router.URLForResource(resource)
+		let URLString = self.router.URLForQuery(Query(resource: resource)).absoluteString!
 		
-		self.HTTPClient.delete(URLString, callback: { responseStatus, responseData, error in
-			if let error = error {
-				promise.error(error)
-			} else {
-				promise.success()
-			}
-		})
-		
+		self.HTTPClient.delete(URLString).onSuccess { statusCode, data in
+			promise.success()
+		}.onFailure { error in
+			promise.error(error)
+		}
+
 		return promise.future
 	}
 }

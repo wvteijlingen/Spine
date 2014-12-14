@@ -10,12 +10,12 @@ import Spine
 
 class Album: Resource {
 	
-	dynamic var title: String?
-	dynamic var year: NSNumber?
-	dynamic var artist: Artist?
-	dynamic var songs: [Song]?
+	var title: String?
+	var year: NSNumber?
+	var artist: LinkedResource?
+	var songs: ResourceCollection?
 	
-	override var resourceType: String {
+	override var type: String {
 		return "albums"
 	}
 	

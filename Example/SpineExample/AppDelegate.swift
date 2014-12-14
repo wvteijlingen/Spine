@@ -18,12 +18,11 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 	func application(application: UIApplication!, didFinishLaunchingWithOptions launchOptions: NSDictionary!) -> Bool {
 		// Override point for customization after application launch.
 		let spine = Spine.sharedInstance
-		spine.baseURL = "http://restpack-serializer-sample.herokuapp.com/api/v1/"
+		spine.baseURL = NSURL(string: "http://restpack-serializer-sample.herokuapp.com/api/v1/")!
 		
 		spine.registerType(Album.self)
 		spine.registerType(Artist.self)
-		spine.registerType(Song.self)
-		spine.registerType(ResponseMeta.self)		
+		spine.registerType(Song.self)	
 		
 		return true
 	}
@@ -50,6 +49,4 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 		// Called when the application is about to terminate. Save data if appropriate. See also applicationDidEnterBackground:.
 	}
 
-
 }
-

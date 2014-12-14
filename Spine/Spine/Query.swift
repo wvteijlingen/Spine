@@ -9,7 +9,7 @@
 import Foundation
 import BrightFutures
 
-private struct QueryFilter {
+internal struct QueryFilter {
 	var key: String
 	var value: String
 	var comparator: String
@@ -35,34 +35,28 @@ private struct QueryFilter {
 
 public class Query {
 	
-	// Base parts
+	/// The type of resource to fetch.
 	var resourceType: String
-	private var URL: NSURL
+	
+	/// The specific IDs the fetch.
+	var resourceIDs: [String]?
+	
+	/// The optional base URL
+	internal var URL: NSURL?
 
 	// Query parts
-	private var includes: [String] = []
-	private var filters: [QueryFilter] = []
-	private var fields: [String: [String]] = [:]
-	private var sortOrders: [String] = []
+	internal var includes: [String] = []
+	internal var filters: [QueryFilter] = []
+	internal var fields: [String: [String]] = [:]
+	internal var sortOrders: [String] = []
+	internal var queryParts: [String: String] = [:]
 	
-	// Pagination parts. These are scoped internal so they can be accessed by the Paginator class.
+	// Pagination parts
 	internal var page: Int?
 	internal var pageSize: Int?
 	
 	
 	//MARK: Init
-	
-	/**
-	Inits a new query for the given resource type.
-	
-	:param: resourceType The type of resource to query.
-	
-	:returns: Query
-	*/
-	public init(resourceType: String) {
-		self.URL = NSURL(string: resourceType)!
-		self.resourceType = resourceType
-	}
 	
 	/**
 	Inits a new query for the given resource type and resource IDs
@@ -72,31 +66,33 @@ public class Query {
 	
 	:returns: Query
 	*/
-	public init(resourceType: String, resourceIDs: [String]) {
-		self.URL = NSURL(string: resourceType)!.URLByAppendingPathComponent(",".join(resourceIDs))
+	public init(resourceType: String, resourceIDs: [String]? = nil) {
 		self.resourceType = resourceType
+		self.resourceIDs = resourceIDs
 	}
 	
-	/**
-	Inits a new query to fetch related resources related by a relationship.
-	
-	:param: resource     The resource that links to the related resources.
-	:param: relationship The name of the relationship.
-	
-	:returns: Query
-	*/
-	public init(resource: Resource, relationship: String) {
-		assert(resource.links[relationship] != nil, "Specified relationship does not exist")
-		
-		let link = resource.links[relationship]
-		
-		self.resourceType = link!.type ?? relationship
+	public init(resource: Resource) {
+		assert(resource.uniqueIdentifier != nil, "Cannot instantiate query for resource, unique identifier is nil")
+		self.resourceType = resource.uniqueIdentifier!.type
+		self.resourceIDs = [resource.uniqueIdentifier!.id]
+	}
 
-		if let href = link!.href {
-			self.URL = NSURL(string: href)!
-		} else {
-			self.URL = NSURL(string: self.resourceType)!.URLByAppendingPathComponent(link!.joinedIDs)
+	public init(linkedResource: LinkedResource) {
+		assert(linkedResource.link != nil, "Linked resources does not contain a link")
+		
+		self.URL = linkedResource.link?.href
+		
+		if let id = linkedResource.link?.id {
+			self.resourceIDs = [id]
 		}
+		
+		self.resourceType = linkedResource.link!.type
+	}
+	
+	public init(linkedResourceCollection: ResourceCollection) {
+		assert(linkedResourceCollection.link != nil, "Linked resources collection does not contain a link")
+		self.URL = linkedResourceCollection.link!.href
+		self.resourceType = linkedResourceCollection.link!.type
 	}
 	
 	
@@ -110,7 +106,7 @@ public class Query {
 	
 	:returns: The query.
 	*/
-	public func include(relation: String)  -> Self {
+	public func include(relation: String) -> Self {
 		self.includes.append(relation)
 		return self
 	}
@@ -231,8 +227,8 @@ public class Query {
 	:returns: The query
 	*/
 	public func whereRelationship(relationship: String, isOrContains resource: Resource) -> Self {
-		assert(resource.resourceID != nil, "Attempt to add a where filter on a relationship, but the target resource does not contain a resource ID.")
-		self.filters.append(QueryFilter(property: relationship, value: resource.resourceID!, comparator: "="))
+		assert(resource.uniqueIdentifier != nil, "Attempt to add a where filter on a relationship, but the target resource does not have a unique identifier.")
+		self.filters.append(QueryFilter(property: relationship, value: resource.uniqueIdentifier!.id, comparator: "="))
 		return self
 	}
 	
@@ -325,71 +321,15 @@ public class Query {
 		self.sortOrders.append("-\(property)")
 		return self
 	}
-	
-	
-	// MARK: URL building
-	
-	/**
-	Returns the URL string of this query, relative to the given base URL.
-	
-	:param: baseURL The base URL string of the API.
-	
-	:returns: The URL string for this query.
-	*/
-	public func URLRelativeToURL(baseURL: String) -> String {
-		var URL = NSURL(string: self.URL.absoluteString!, relativeToURL: NSURL(string: baseURL))
-		var queryItems: [AnyObject] = []
-		
-		// Includes
-		if self.includes.count != 0 {
-			var item = NSURLQueryItem(name: "include", value: ",".join(self.includes))
-			queryItems.append(item)
-		}
-		
-		// Filters
-		for filter in self.filters {
-			var item = NSURLQueryItem(name: filter.key, value: filter.rhs)
-			queryItems.append(item)
-		}
-		
-		// Fields
-		for (resourceType, fields) in self.fields {
-			var item = NSURLQueryItem(name: "fields[\(resourceType)]", value: ",".join(fields))
-			queryItems.append(item)
-		}
-		
-		// Sorting
-		if self.sortOrders.count != 0 {
-			var item = NSURLQueryItem(name: "sort", value: ",".join(self.sortOrders))
-			queryItems.append(item)
-		}
-		
-		// Pagination
-		if let page = self.page {
-			var item = NSURLQueryItem(name: "page", value: String(page))
-			queryItems.append(item)
-		}
-		
-		if let pageSize = self.pageSize {
-			var item = NSURLQueryItem(name: "page_size", value: String(pageSize))
-			queryItems.append(item)
-		}
-		
-		let URLComponents = NSURLComponents(URL: URL!, resolvingAgainstBaseURL: true)!
-		
-		if URLComponents.queryItems != nil {
-			URLComponents.queryItems! += queryItems
-		} else {
-			URLComponents.queryItems = queryItems
-		}
-		
-		return URLComponents.string! //TODO: Check forced unwrapping
-	}
 }
 
 // MARK: - Convenience functions
 extension Query {
-	public func findResources() -> Future<([Resource], Meta?)> {
+	public func find() -> Future<ResourceCollection> {
 		return Spine.sharedInstance.fetchResourcesForQuery(self)
+	}
+	
+	public func findOne() -> Future<Resource> {
+		return Spine.sharedInstance.fetchResourceForQuery(self)
 	}
 }
