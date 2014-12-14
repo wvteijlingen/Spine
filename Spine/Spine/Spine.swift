@@ -68,6 +68,13 @@ public class Spine {
 	public func registerType(type: Resource.Type) {
 		self.serializer.registerClass(type)
 	}
+	
+	
+	// MARK: OAuth
+	
+	public func authenticate(URL: String, username: String, password: String, scope: String? = nil) -> Future<Void> {
+		return self.HTTPClient.authenticate(URL, username: username, password: password, scope: scope)
+	}
 
 
 	// MARK: Fetching
