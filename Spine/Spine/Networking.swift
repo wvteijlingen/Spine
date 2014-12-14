@@ -42,6 +42,8 @@ class AlamofireClient: HTTPClientProtocol {
 			}
 		}
 	}
+	var clientID: String?
+	var clientSecret: String?
 	
 	init() {
 		var additionalHeaders = Alamofire.Manager.sharedInstance.session.configuration.HTTPAdditionalHeaders!
@@ -114,8 +116,6 @@ class AlamofireClient: HTTPClientProtocol {
 	}
 	
 	private func authenticate(URL: String, parameters: [String: AnyObject]) -> Future<Void> {
-		// TODO: Add client_id and client_secret to parameters
-		
 		let promise = Promise<Void>()
 		
 		Alamofire.request(.POST, URL, parameters: parameters).response { request, response, data, error in

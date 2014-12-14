@@ -10,6 +10,8 @@ import Foundation
 
 protocol Router {
 	var baseURL: NSURL! { get set }
+	
+	func absoluteURLFromString(URLString: String) -> NSURL
 	func URLForRelationship(relationship: String, ofResource resource: Resource) -> NSURL
 	func URLForRelationship(relationship: String, ofResource resource: Resource, ids: [String]) -> NSURL
 	func URLForQuery(query: Query) -> NSURL
@@ -17,6 +19,20 @@ protocol Router {
 
 class JSONAPIRouter: Router {
 	var baseURL: NSURL! = nil
+	
+	func absoluteURLFromString(URLString: String) -> NSURL {
+		if let URL = NSURL(string: URLString) {
+			if URL.host == nil {
+				if let absoluteURL = NSURL(string: URLString, relativeToURL: self.baseURL) {
+					return absoluteURL
+				}
+			} else {
+				return URL
+			}
+		}
+		
+		assertionFailure("Could not make absolute URL from string: \(URLString)")
+	}
 	
 	func URLForRelationship(relationship: String, ofResource resource: Resource) -> NSURL {
 		let query = Query(resource: resource)

@@ -69,13 +69,6 @@ public class Spine {
 		self.serializer.registerClass(type)
 	}
 	
-	
-	// MARK: OAuth
-	
-	public func authenticate(URL: String, username: String, password: String, scope: String? = nil) -> Future<Void> {
-		return self.HTTPClient.authenticate(URL, username: username, password: password, scope: scope)
-	}
-
 
 	// MARK: Fetching
 
@@ -312,5 +305,16 @@ public class Spine {
 		}
 
 		return promise.future
+	}
+	
+	
+	// MARK: OAuth
+	
+	public func authenticate(URLString: String, username: String, password: String, scope: String? = nil) -> Future<Void> {
+		return self.HTTPClient.authenticate(self.router.absoluteURLFromString(URLString).absoluteString!, username: username, password: password, scope: scope)
+	}
+	
+	public func authenticate(URLString: String, refreshToken: String) -> Future<Void> {
+		return self.HTTPClient.authenticate(self.router.absoluteURLFromString(URLString).absoluteString!, refreshToken: refreshToken)
 	}
 }
