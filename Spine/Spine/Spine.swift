@@ -183,7 +183,7 @@ public class Spine {
 	
 	private func updateResourceRelationships(resource: Resource) -> Future<Void> {
 		let promise = Promise<Void>()
-		
+		/*
 		// Check if we have any new linked resources and link them
 		for (attributeName, attribute) in resource.persistentAttributes {
 			if !attribute.isRelationship() {
@@ -211,6 +211,11 @@ public class Spine {
 				}
 			}
 		}
+		*/
+		
+		// TODO: Fix this mess
+		
+		promise.success()
 		
 		return promise.future
 	}
