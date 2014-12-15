@@ -36,7 +36,7 @@ class AlamofireClient: HTTPClientProtocol {
 			var additionalHeaders = Alamofire.Manager.sharedInstance.session.configuration.HTTPAdditionalHeaders!
 			
 			if let credential = self.credential {
-				additionalHeaders.updateValue("Bearer: \(credential.accessToken)", forKey: "Authorization")
+				additionalHeaders.updateValue("Bearer \(credential.accessToken)", forKey: "Authorization")
 			} else {
 				additionalHeaders.removeValueForKey("Authorization")
 			}
