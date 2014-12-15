@@ -33,12 +33,10 @@ class AlamofireClient: HTTPClientProtocol {
 	var traceEnabled = true
 	var credential: OAuthCredential? {
 		didSet {
-			var additionalHeaders = Alamofire.Manager.sharedInstance.session.configuration.HTTPAdditionalHeaders!
-			
 			if let credential = self.credential {
-				additionalHeaders.updateValue("Bearer \(credential.accessToken)", forKey: "Authorization")
+				Alamofire.Manager.sharedInstance.session.configuration.HTTPAdditionalHeaders?.updateValue("Bearer \(credential.accessToken)", forKey: "Authorization")
 			} else {
-				additionalHeaders.removeValueForKey("Authorization")
+				Alamofire.Manager.sharedInstance.session.configuration.HTTPAdditionalHeaders?.removeValueForKey("Authorization")
 			}
 		}
 	}
