@@ -40,13 +40,13 @@ class SongsTableViewController: UITableViewController {
 	}
 	
 	override func tableView(tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-		return self.songs?.resources?.count ?? 0
+		return self.songs?.count ?? 0
 	}
 	
 	override func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell {
 		let cell = tableView.dequeueReusableCellWithIdentifier("SongCell", forIndexPath: indexPath) as UITableViewCell
 		
-		let song = self.songs?.resources![indexPath.row] as Song
+		let song = self.songs?[indexPath.row] as Song
 		
 		cell.textLabel?.text = song.title
 		
@@ -54,7 +54,7 @@ class SongsTableViewController: UITableViewController {
 	}
 	
 	override func tableView(tableView: UITableView, willDisplayCell cell: UITableViewCell, forRowAtIndexPath indexPath: NSIndexPath) {
-		if let count = self.songs?.resources?.count {
+		if let count = self.songs?.count {
 			if indexPath.row == count - 1 {
 				self.loadNextPage()
 			}

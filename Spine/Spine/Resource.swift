@@ -468,6 +468,20 @@ public class ResourceCollection: NSObject, NSCoding, ArrayLiteralConvertible, Se
 			return allObjects[index]
 		}
 	}
+	
+	// Subscript and count
+	
+	public subscript (index: Int) -> Resource? {
+		return self.resources?[index]
+	}
+	
+	public subscript (id: String) -> Resource? {
+		let foundResources = self.resources?.filter { resource in
+			return resource.id == id
+		}
+		
+		return foundResources?.first
+	}
 
 	// MARK: Mutators
 	

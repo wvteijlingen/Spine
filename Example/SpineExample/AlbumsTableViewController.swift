@@ -67,7 +67,7 @@ class AlbumsTableViewController: UITableViewController {
 		let cell = tableView.dequeueReusableCellWithIdentifier("SongCell", forIndexPath: indexPath) as UITableViewCell
 		
 		let album = self.albums[indexPath.section]
-		let song = album.songs?.resources![indexPath.row] as? Song
+		let song = album.songs?[indexPath.row] as? Song
 		
 		cell.textLabel?.text = song!.title
 		
