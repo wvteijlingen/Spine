@@ -54,6 +54,47 @@ struct PaginationData {
 	var afterCursor: String?
 	var nextHref: NSURL?
 	var previousHref: NSURL?
+	
+	func toDictionary() -> NSDictionary {
+		var dictionary = NSDictionary()
+		
+		if let count = self.count {
+			dictionary.setValue(NSNumber(integer: count), forKey: "count")
+		}
+		
+		if let limit = self.limit {
+			dictionary.setValue(NSNumber(integer: limit), forKey: "limit")
+		}
+		
+		if let beforeCursor = self.beforeCursor {
+			dictionary.setValue(beforeCursor, forKey: "beforeCursor")
+		}
+		
+		if let afterCursor = self.afterCursor {
+			dictionary.setValue(afterCursor, forKey: "afterCursor")
+		}
+		
+		if let nextHref = self.nextHref {
+			dictionary.setValue(nextHref, forKey: "nextHref")
+		}
+		
+		if let previousHref = self.previousHref {
+			dictionary.setValue(previousHref, forKey: "previousHref")
+		}
+		
+		return dictionary
+	}
+	
+	static func fromDictionary(dictionary: NSDictionary) -> PaginationData {
+		return PaginationData(
+			count: (dictionary.valueForKey("count") as? NSNumber)?.integerValue,
+			limit: (dictionary.valueForKey("limit") as? NSNumber)?.integerValue,
+			beforeCursor: dictionary.valueForKey("beforeCursor") as? String,
+			afterCursor: dictionary.valueForKey("afterCursor") as? String,
+			nextHref: dictionary.valueForKey("nextHref") as? NSURL,
+			previousHref: dictionary.valueForKey("previousHref") as? NSURL
+		)
+	}
 }
 
 
@@ -104,7 +145,7 @@ public struct ResourceAttribute {
 *  A base recource class that provides some defaults for resources.
 *  You must create custom resource classes by subclassing from Resource.
 */
-public class Resource: NSObject, Identifiable, Mappable, Printable {
+public class Resource: NSObject, Identifiable, Mappable, NSCoding, Printable {
 	
 	// MARK: Initializers
 	
@@ -116,6 +157,19 @@ public class Resource: NSObject, Identifiable, Mappable, Printable {
 	public init(id: String) {
 		super.init()
 		self.id = id
+	}
+	
+	// MARK: NSCoding protocol
+	
+	public required init(coder: NSCoder) {
+		super.init()
+		self.id = coder.decodeObjectForKey("id") as? String
+		self.href = coder.decodeObjectForKey("href") as? String
+	}
+	
+	public func encodeWithCoder(coder: NSCoder) {
+		coder.encodeObject(self.id, forKey: "id")
+		coder.encodeObject(self.href, forKey: "href")
 	}
 	
 	
@@ -173,7 +227,7 @@ public class Resource: NSObject, Identifiable, Mappable, Printable {
 
 //MARK: -
 
-public class LinkedResource: NSObject, Printable {
+public class LinkedResource: NSObject, NSCoding, Printable {
 	public var isLoaded: Bool
 	public var link: (href: NSURL?, type: String, id: String?)?
 	public var resource: Resource?
@@ -188,6 +242,28 @@ public class LinkedResource: NSObject, Printable {
 	init(_ resource: Resource) {
 		self.resource = resource
 		self.isLoaded = true
+	}
+	
+	// MARK: NSCoding
+	
+	public required init(coder: NSCoder) {
+		self.isLoaded = coder.decodeBoolForKey("isLoaded")
+		self.resource = coder.decodeObjectForKey("resource") as? Resource
+
+		if let type = coder.decodeObjectForKey("linkType") as? String {
+			self.link = (href: coder.decodeObjectForKey("linkHref") as? NSURL, type: type, id: coder.decodeObjectForKey("linkID") as? String)
+		}
+	}
+	
+	public func encodeWithCoder(coder: NSCoder) {
+		coder.encodeBool(self.isLoaded, forKey: "isLoaded")
+		coder.encodeObject(self.resource, forKey: "resource")
+		
+		if let link = self.link {
+			coder.encodeObject(link.href, forKey: "linkHref")
+			coder.encodeObject(link.type, forKey: "linkType")
+			coder.encodeObject(link.id, forKey: "linkID")
+		}
 	}
 	
 	// MARK: Printable
@@ -268,7 +344,7 @@ public class LinkedResource: NSObject, Printable {
 
 //MARK: -
 
-public class ResourceCollection: NSObject, ArrayLiteralConvertible, SequenceType, Printable, Paginatable {
+public class ResourceCollection: NSObject, NSCoding, ArrayLiteralConvertible, SequenceType, Printable, Paginatable {
 	/// Whether the resources for this collection are loaded
 	public var isLoaded: Bool
 	
@@ -311,6 +387,8 @@ public class ResourceCollection: NSObject, ArrayLiteralConvertible, SequenceType
 	/// Resources that are removed from this collection
 	var removedResources: [Resource] = []
 	
+	var paginationData: PaginationData?
+	
 	// MARK: Initializers
 	
 	public init(href: NSURL?, type: String, ids: [String]? = nil) {
@@ -326,6 +404,34 @@ public class ResourceCollection: NSObject, ArrayLiteralConvertible, SequenceType
 	public required init(arrayLiteral elements: Resource...) {
 		self.resources = elements
 		self.isLoaded = true
+	}
+	
+	// MARK: NSCoding
+	
+	public required init(coder: NSCoder) {
+		self.isLoaded = coder.decodeBoolForKey("isLoaded")
+		self.resources = coder.decodeObjectForKey("resources") as? [Resource]
+		
+		if let paginationData = coder.decodeObjectForKey("paginationData") as? NSDictionary {
+			self.paginationData = PaginationData.fromDictionary(paginationData)
+		}
+
+		if let type = coder.decodeObjectForKey("linkType") as? String {
+			self.link = (href: coder.decodeObjectForKey("linkHref") as? NSURL, type: type, ids: coder.decodeObjectForKey("linkID") as? [String])
+		}
+	}
+	
+	public func encodeWithCoder(coder: NSCoder) {
+		coder.encodeBool(self.isLoaded, forKey: "isLoaded")
+		coder.encodeObject(self.resources, forKey: "resources")
+		coder.encodeObject(self.resources, forKey: "resources")
+		coder.encodeObject(self.paginationData?.toDictionary(), forKey: "paginationData")
+		
+		if let link = self.link {
+			coder.encodeObject(link.href, forKey: "linkHref")
+			coder.encodeObject(link.type, forKey: "linkType")
+			coder.encodeObject(link.ids, forKey: "linkID")
+		}
 	}
 	
 	// MARK: Printable protocol
@@ -472,8 +578,6 @@ public class ResourceCollection: NSObject, ArrayLiteralConvertible, SequenceType
 	}
 	
 	// MARK: Paginatable
-	
-	var paginationData: PaginationData?
 	
 	public var canFetchNextPage: Bool {
 		return self.paginationData?.afterCursor != nil
