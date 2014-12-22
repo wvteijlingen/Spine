@@ -230,7 +230,14 @@ public class Resource: NSObject, Identifiable, Mappable, NSCoding, Printable {
 public class LinkedResource: NSObject, NSCoding, Printable {
 	public var isLoaded: Bool
 	public var link: (href: NSURL?, type: String, id: String?)?
-	public var resource: Resource?
+	public var resource: Resource? {
+		didSet {
+			if(oldValue?.id != self.resource?.id) {
+				self.hasChanged = true
+			}
+		}
+	}
+	var hasChanged: Bool = false
 	
 	// MARK: Initializers
 	

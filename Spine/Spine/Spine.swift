@@ -183,56 +183,64 @@ public class Spine {
 	
 	private func updateResourceRelationships(resource: Resource) -> Future<Void> {
 		let promise = Promise<Void>()
-		/*
-		// Check if we have any new linked resources and link them
+		
+		typealias Operation = (relationship: String, type: String, resources: [Resource])
+		
+		var operations: [Operation] = []
+		
+		// Create operations
 		for (attributeName, attribute) in resource.persistentAttributes {
 			if !attribute.isRelationship() {
 				continue
 			}
 			
-			// TODO: Support ToOne relationships
 			if attribute.type == .ToMany {
 				let linkedResources = resource.valueForKey(attributeName) as ResourceCollection
+				operations.append((relationship: attributeName, type: "add", resources: linkedResources.addedResources))
+				operations.append((relationship: attributeName, type: "remove", resources: linkedResources.removedResources))
 				
-				self.relateResources(linkedResources.addedResources, toResource: resource, relationship: attributeName).onSuccess {
-					linkedResources.addedResources = []
-					
-					self.unrelateResources(linkedResources.removedResources, fromResource: resource, relationship: attributeName).onSuccess {
-						linkedResources.removedResources = []
-						promise.success()
-					}.onFailure { error in
-						println("Error unrelating removed resources: \(error)")
-						promise.error(error)
-					}
-					
-				}.onFailure { error in
-					println("Error relating added resources: \(error)")
-					promise.error(error)
+			} else if attribute.type == .ToOne {
+				let linkedResource = resource.valueForKey(attributeName) as LinkedResource
+				if linkedResource.hasChanged && linkedResource.resource != nil {
+					operations.append((relationship: attributeName, type: "replace", resources: [linkedResource.resource!]))
 				}
 			}
 		}
-		*/
 		
-		// TODO: Fix this mess
-		
-		promise.success()
-		
+		// Run the operations
+		var stop = false
+		for operation in operations {
+			if stop {
+				break
+			}
+			
+			switch operation.type {
+				case "add":
+					self.addRelatedResources(operation.resources, toResource: resource, relationship: operation.relationship).onFailure { error in
+						promise.error(error)
+						stop = true
+					}
+				case "remove":
+					self.removeRelatedResources(operation.resources, fromResource: resource, relationship: operation.relationship).onFailure { error in
+						promise.error(error)
+						stop = true
+					}
+				case "replace":
+					self.updateRelatedResource(operation.resources.first!, ofResource: resource, relationship: operation.relationship).onFailure { error in
+						promise.error(error)
+						stop = true
+				}
+				default: ()
+			}
+		}
+
 		return promise.future
 	}
 
 	
 	// MARK: Relating
 	
-	/**
-	Performs a request to relate the given resources to a resource for a certain relationship.
-	This will fire a POST request to an URL of the form: /{resourceType}/{id}/links/{relationship}
-	
-	:param: resources         The resources to relate.
-	:param: toResource        The resource to relate to.
-	:param: relationship      The name of the relationship to relate the resources for.
-	:param: completionHandler Function to call after completion.
-	*/
-	private func relateResources(resources: [Resource], toResource: Resource, relationship: String) -> Future<Void> {
+	private func addRelatedResources(resources: [Resource], toResource: Resource, relationship: String) -> Future<Void> {
 		let promise = Promise<Void>()
 		
 		if resources.count > 0 {
@@ -255,16 +263,7 @@ public class Spine {
 		return promise.future
 	}
 	
-	/**
-	Performs a request to unrelate the given resources to a resource for a certain relationship.
-	This will fire a DELETE request to an URL of the form: /{resourceType}/{id}/links/{relationship}/{ids}
-	
-	:param: resources         The resources to remove from the relation
-	:param: fromResource      The resource from which to remove the related resources
-	:param: relationship      The name of the relationship from which to unrelate the resources
-	:param: completionHandler Function to call after completion
-	*/
-	private func unrelateResources(resources: [Resource], fromResource: Resource, relationship: String) -> Future<Void> {
+	private func removeRelatedResources(resources: [Resource], fromResource: Resource, relationship: String) -> Future<Void> {
 		let promise = Promise<Void>()
 		
 		if resources.count > 0 {
@@ -282,6 +281,20 @@ public class Spine {
 			}
 		} else {
 			promise.success()
+		}
+		
+		return promise.future
+	}
+	
+	private func updateRelatedResource(resource: Resource, ofResource: Resource, relationship: String) -> Future<Void> {
+		let promise = Promise<Void>()
+		
+		let URLString = self.router.URLForRelationship(relationship, ofResource: ofResource).absoluteString!
+		
+		self.HTTPClient.put(URLString, json: [relationship: resource.id!]).onSuccess { statusCode, data in
+			promise.success()
+		}.onFailure { error in
+			promise.error(error)
 		}
 		
 		return promise.future
