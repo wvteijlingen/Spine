@@ -234,12 +234,12 @@ public class LinkedResource: NSObject, NSCoding, Printable {
 	
 	// MARK: Initializers
 	
-	init(href: NSURL?, type: String, id: String? = nil) {
+	public init(href: NSURL?, type: String, id: String? = nil) {
 		self.link = (href, type, id)
 		self.isLoaded = false
 	}
 	
-	init(_ resource: Resource) {
+	public init(_ resource: Resource) {
 		self.resource = resource
 		self.isLoaded = true
 	}
