@@ -13,18 +13,18 @@ import BrightFutures
 let SPINE_ERROR_DOMAIN = "com.wardvanteijlingen.Spine"
 
 /**
- What this framework is all about ;)
- */
+What this framework is all about ;)
+*/
 public class Spine {
-
+	
 	public class var sharedInstance: Spine {
-        struct Singleton {
+		struct Singleton {
 			static let instance = Spine()
-        }
-
-        return Singleton.instance
-    }
-
+		}
+		
+		return Singleton.instance
+	}
+	
 	/// The base URL of the API. All other URLs will be made absolute to this URL.
 	public var baseURL: NSURL {
 		get {
@@ -69,29 +69,29 @@ public class Spine {
 		self.serializer.registerClass(type)
 	}
 	
-
+	
 	// MARK: Fetching
-
+	
 	/**
-	 Fetches a resource with the given type and ID.
-
-	 :param: resourceType The type of resource to fetch. Must be plural.
-	 :param: ID           The ID of the resource to fetch.
-	 :param: success      Function to call after success.
-	 :param: failure      Function to call after failure.
-	 */
+	Fetches a resource with the given type and ID.
+	
+	:param: resourceType The type of resource to fetch. Must be plural.
+	:param: ID           The ID of the resource to fetch.
+	:param: success      Function to call after success.
+	:param: failure      Function to call after failure.
+	*/
 	public func fetchResourceForQuery(query: Query) -> Future<Resource> {
 		let promise = Promise<Resource>()
 		
 		self.fetchResourcesForQuery(query).onSuccess { resources in
 			promise.success(resources.resources!.first!)
-		}.onFailure { error in
-			promise.error(error)
+			}.onFailure { error in
+				promise.error(error)
 		}
 		
 		return promise.future
 	}
-
+	
 	/**
 	Fetches resources by executing the given query.
 	
@@ -124,16 +124,16 @@ public class Spine {
 				promise.error(error)
 			}
 			
-		}.onFailure { error in
-			promise.error(error)
+			}.onFailure { error in
+				promise.error(error)
 		}
 		
 		return promise.future
 	}
-
-
+	
+	
 	// MARK: Saving
-
+	
 	/**
 	Saves a resource to the server.
 	This will also relate and unrelate any pending related and unrelated resource.
@@ -145,39 +145,47 @@ public class Spine {
 	*/
 	public func saveResource(resource: Resource) -> Future<Resource> {
 		let promise = Promise<Resource>()
-	
-		var future: Future<(Int?, NSData?)>
-	
+		
+		var saveFuture: Future<(Int?, NSData?)>
+		var shouldUpdateRelationships = false
+		
 		// Create or update the main resource
 		if let uniqueIdentifier = resource.uniqueIdentifier {
+			shouldUpdateRelationships = true
 			let URLString = self.router.URLForQuery(Query(resource: resource)).absoluteString!
-			future = self.HTTPClient.put(URLString, json: self.serializer.serializeResources([resource], mode: .DirtyAttributes))
+			let json = self.serializer.serializeResources([resource])
+			saveFuture = self.HTTPClient.put(URLString, json: json)
 		} else {
 			resource.id = NSUUID().UUIDString
 			let URLString = self.router.URLForQuery(Query(resourceType: resource.type)).absoluteString!
-			future = self.HTTPClient.post(URLString, json: self.serializer.serializeResources([resource], mode: .AllAttributes))
+			let json = self.serializer.serializeResources([resource], options: SerializationOptions(dirtyAttributesOnly: false, includeToOne: true, includeToMany: true))
+			saveFuture = self.HTTPClient.post(URLString, json: json)
 		}
 		
 		// Act on the future
-		future.onSuccess { statusCode, data in
+		saveFuture.onSuccess { statusCode, data in
 			// Map the response back onto the resource
 			if let data = data {
-				let store = Store(objects: [resource])
-				let mappedResourcesStore = self.serializer.deserializeData(data, usingStore: store)
-			}
-
-			self.updateResourceRelationships(resource).onSuccess {
-				// Resolve the promise
-				promise.success(resource)
-			}.onFailure { error in
-				println("Error updating resource relationships: \(error)")
+				self.serializer.deserializeData(data, usingStore: Store(objects: [resource]))
 			}
 			
-		}.onFailure { error in
-			promise.error(error)
+			// Separately update relationships if needed
+			if shouldUpdateRelationships == false {
+				promise.success(resource)
+			} else {
+				self.updateResourceRelationships(resource).onSuccess {
+					promise.success(resource)
+					}.onFailure { error in
+						println("Error updating resource relationships: \(error)")
+						promise.error(error)
+				}
+			}
+			
+			}.onFailure { error in
+				promise.error(error)
 		}
 		
-		// Return the outer future
+		// Return the public future
 		return promise.future
 	}
 	
@@ -215,28 +223,28 @@ public class Spine {
 			}
 			
 			switch operation.type {
-				case "add":
-					self.addRelatedResources(operation.resources, toResource: resource, relationship: operation.relationship).onFailure { error in
-						promise.error(error)
-						stop = true
-					}
-				case "remove":
-					self.removeRelatedResources(operation.resources, fromResource: resource, relationship: operation.relationship).onFailure { error in
-						promise.error(error)
-						stop = true
-					}
-				case "replace":
-					self.updateRelatedResource(operation.resources.first!, ofResource: resource, relationship: operation.relationship).onFailure { error in
-						promise.error(error)
-						stop = true
+			case "add":
+				self.addRelatedResources(operation.resources, toResource: resource, relationship: operation.relationship).onFailure { error in
+					promise.error(error)
+					stop = true
 				}
-				default: ()
+			case "remove":
+				self.removeRelatedResources(operation.resources, fromResource: resource, relationship: operation.relationship).onFailure { error in
+					promise.error(error)
+					stop = true
+				}
+			case "replace":
+				self.updateRelatedResource(operation.resources.first!, ofResource: resource, relationship: operation.relationship).onFailure { error in
+					promise.error(error)
+					stop = true
+				}
+			default: ()
 			}
 		}
-
+		
 		return promise.future
 	}
-
+	
 	
 	// MARK: Relating
 	
@@ -253,8 +261,8 @@ public class Spine {
 			
 			self.HTTPClient.post(URLString, json: [relationship: ids]).onSuccess { statusCode, data in
 				promise.success()
-			}.onFailure { error in
-				promise.error(error)
+				}.onFailure { error in
+					promise.error(error)
 			}
 		} else {
 			promise.success()
@@ -276,8 +284,8 @@ public class Spine {
 			
 			self.HTTPClient.delete(URLString).onSuccess { statusCode, data in
 				promise.success()
-			}.onFailure { error in
-				promise.error(error)
+				}.onFailure { error in
+					promise.error(error)
 			}
 		} else {
 			promise.success()
@@ -293,16 +301,16 @@ public class Spine {
 		
 		self.HTTPClient.put(URLString, json: [relationship: resource.id!]).onSuccess { statusCode, data in
 			promise.success()
-		}.onFailure { error in
-			promise.error(error)
+			}.onFailure { error in
+				promise.error(error)
 		}
 		
 		return promise.future
 	}
 	
-
+	
 	// MARK: Deleting
-
+	
 	/**
 	Deletes the resource from the server.
 	This will fire a DELETE request to an URL of the form: /{resourceType}/{id}.
@@ -318,10 +326,10 @@ public class Spine {
 		
 		self.HTTPClient.delete(URLString).onSuccess { statusCode, data in
 			promise.success()
-		}.onFailure { error in
-			promise.error(error)
+			}.onFailure { error in
+				promise.error(error)
 		}
-
+		
 		return promise.future
 	}
 	

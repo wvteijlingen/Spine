@@ -12,52 +12,52 @@ import SwiftyJSON
 typealias DeserializationResult = (store: Store<Resource>?, pagination: PaginationData?, error: NSError?)
 
 /**
- *  A ResourceClassMap contains information about how resource types
- *  should be mapped to Resource classes.
+*  A ResourceClassMap contains information about how resource types
+*  should be mapped to Resource classes.
 
- *  Each resource type is mapped to one specific Resource subclass.
- */
+*  Each resource type is mapped to one specific Resource subclass.
+*/
 struct ResourceClassMap {
-
+	
 	/// The registered resource type/class pairs.
 	private var registeredClasses: [String: Resource.Type] = [:]
 	
 	/**
-	 Register a Resource subclass.
-	 Example: `classMap.register(User.self)`
-
-	 :param: type The Type of the subclass to register.
-	 */
+	Register a Resource subclass.
+	Example: `classMap.register(User.self)`
+	
+	:param: type The Type of the subclass to register.
+	*/
 	mutating func registerClass(type: Resource.Type) {
 		let instance = type()
 		self.registeredClasses[instance.type] = type
 	}
 	
 	/**
-	 Unregister a Resource subclass. If the type was not prevously registered, nothing happens.
-	 Example: `classMap.unregister(User.self)`
-
-	 :param: type The Type of the subclass to unregister.
-	 */
+	Unregister a Resource subclass. If the type was not prevously registered, nothing happens.
+	Example: `classMap.unregister(User.self)`
+	
+	:param: type The Type of the subclass to unregister.
+	*/
 	mutating func unregisterClass(type: Resource.Type) {
 		let instance = type()
 		self.registeredClasses[instance.type] = nil
 	}
 	
 	/**
-	 Returns the Resource.Type into which a resource with the given type should be mapped.
-
-	 :param: resourceType The resource type for which to return the matching class.
-
-	 :returns: The Resource.Type that matches the given resource type.
-	 */
+	Returns the Resource.Type into which a resource with the given type should be mapped.
+	
+	:param: resourceType The resource type for which to return the matching class.
+	
+	:returns: The Resource.Type that matches the given resource type.
+	*/
 	func classForResourceType(type: String) -> Resource.Type {
 		return registeredClasses[type]!
 	}
 	
 	/**
-	 *  Returns the Resource.Type into which a resource with the given type should be mapped.
-	 */
+	*  Returns the Resource.Type into which a resource with the given type should be mapped.
+	*/
 	subscript(type: String) -> Resource.Type {
 		return self.classForResourceType(type)
 	}
@@ -65,14 +65,16 @@ struct ResourceClassMap {
 
 // MARK: -
 
-/**
-The serialization mode.
-
-- AllAttributes:	Serialize all attributes including relationships.
-- DirtyAttributes:	Serialize only dirty attributes and all relationships.
-*/
-public enum SerializationMode {
-	case AllAttributes, DirtyAttributes
+struct SerializationOptions {
+	var dirtyAttributesOnly = true
+	var includeToMany = false
+	var includeToOne = false
+	
+	init(dirtyAttributesOnly: Bool = false, includeToMany: Bool = false, includeToOne: Bool = false) {
+		self.dirtyAttributesOnly = dirtyAttributesOnly
+		self.includeToMany = includeToMany
+		self.includeToOne = includeToOne
+	}
 }
 
 // MARK: -
@@ -89,16 +91,16 @@ protocol SerializerProtocol {
 	func deserializeError(data: NSData, withResonseStatus responseStatus: Int) -> NSError
 	
 	// Serializing
-	func serializeResources(resources: [Resource], mode: SerializationMode) -> [String: AnyObject]
+	func serializeResources(resources: [Resource], options: SerializationOptions) -> [String: AnyObject]
 }
 
 /**
- *  The serializer is responsible for serializing and deserialing resources.
- *  It stores information about the Resource classes using a ResourceClassMap
- *  and uses SerializationOperations and DeserialisationOperations for (de)serializing.
- */
+*  The serializer is responsible for serializing and deserialing resources.
+*  It stores information about the Resource classes using a ResourceClassMap
+*  and uses SerializationOperations and DeserialisationOperations for (de)serializing.
+*/
 class JSONAPISerializer: SerializerProtocol {
-
+	
 	/// The class map that holds information about resource type/class mapping.
 	private var classMap: ResourceClassMap = ResourceClassMap()
 	
@@ -106,86 +108,86 @@ class JSONAPISerializer: SerializerProtocol {
 	//MARK: Class mapping
 	
 	/**
-	 Register a Resource subclass with this serializer.
-	 Example: `classMap.register(User.self)`
-
-	 :param: type The Type of the subclass to register.
-	 */
+	Register a Resource subclass with this serializer.
+	Example: `classMap.register(User.self)`
+	
+	:param: type The Type of the subclass to register.
+	*/
 	func registerClass(type: Resource.Type) {
 		self.classMap.registerClass(type)
 	}
 	
 	/**
-	 Unregister a Resource subclass from this serializer. If the type was not prevously registered, nothing happens.
-	 Example: `classMap.unregister(User.self)`
-
-	 :param: type The Type of the subclass to unregister.
-	 */
+	Unregister a Resource subclass from this serializer. If the type was not prevously registered, nothing happens.
+	Example: `classMap.unregister(User.self)`
+	
+	:param: type The Type of the subclass to unregister.
+	*/
 	func unregisterClass(type: Resource.Type) {
 		self.classMap.unregisterClass(type)
 	}
 	
 	/**
-	 Returns the Resource.Type into which a resource with the given type should be mapped.
-
-	 :param: resourceType The resource type for which to return the matching class.
-
-	 :returns: The Resource.Type that matches the given resource type.
-	 */
+	Returns the Resource.Type into which a resource with the given type should be mapped.
+	
+	:param: resourceType The resource type for which to return the matching class.
+	
+	:returns: The Resource.Type that matches the given resource type.
+	*/
 	func classNameForResourceType(resourceType: String) -> Resource.Type {
 		return self.classMap[resourceType]
 	}
 	
 	
 	// MARK: Serializing
-
+	
 	/**
-	 Deserializes the given data into a SerializationResult. This is a thin wrapper around
-	 a DeserializeOperation that does the actual deserialization.
-
-	 :param: data The data to deserialize.
-
-	 :returns: A DeserializationResult that contains either a Store or an error.
-	 */
+	Deserializes the given data into a SerializationResult. This is a thin wrapper around
+	a DeserializeOperation that does the actual deserialization.
+	
+	:param: data The data to deserialize.
+	
+	:returns: A DeserializationResult that contains either a Store or an error.
+	*/
 	func deserializeData(data: NSData) -> DeserializationResult {
 		let mappingOperation = DeserializeOperation(data: data, classMap: self.classMap)
 		mappingOperation.start()
 		return mappingOperation.result!
 	}
-
+	
 	/**
-	 Deserializes the given data into a SerializationResult. This is a thin wrapper around
-	 a DeserializeOperation that does the actual deserialization.
-
-	 Use this method if you want to deserialize onto existing Resource instances. Otherwise, use
-	 the regular `deserializeData` method.
-
-	 :param: data  The data to deserialize.
-	 :param: store A Store that contains Resource instances onto which data will be deserialize.
-
-	 :returns: A DeserializationResult that contains either a Store or an error.
-	 */
-
+	Deserializes the given data into a SerializationResult. This is a thin wrapper around
+	a DeserializeOperation that does the actual deserialization.
+	
+	Use this method if you want to deserialize onto existing Resource instances. Otherwise, use
+	the regular `deserializeData` method.
+	
+	:param: data  The data to deserialize.
+	:param: store A Store that contains Resource instances onto which data will be deserialize.
+	
+	:returns: A DeserializationResult that contains either a Store or an error.
+	*/
+	
 	func deserializeData(data: NSData, usingStore store: Store<Resource>) -> DeserializationResult {
 		let mappingOperation = DeserializeOperation(data: data, store: store, classMap: self.classMap)
 		mappingOperation.start()
 		return mappingOperation.result!
 	}
 	
-
+	
 	/**
-	 Deserializes the given data into an NSError. Use this method if the server response is not in the
-	 200 successful range.
-
-	 The error returned will contain the error code specified in the `error` section of the response.
-	 If no error code is available, the given HTTP response status code will be used instead.
-	 If the `error` section contains a `title` key, it's value will be used for the NSLocalizedDescriptionKey.
-
-	 :param: data           The data to deserialize.
-	 :param: responseStatus The HTTP response status which will be used when an error code is absent in the data.
-
-	 :returns: A NSError deserialized from the given data.
-	 */
+	Deserializes the given data into an NSError. Use this method if the server response is not in the
+	200 successful range.
+	
+	The error returned will contain the error code specified in the `error` section of the response.
+	If no error code is available, the given HTTP response status code will be used instead.
+	If the `error` section contains a `title` key, it's value will be used for the NSLocalizedDescriptionKey.
+	
+	:param: data           The data to deserialize.
+	:param: responseStatus The HTTP response status which will be used when an error code is absent in the data.
+	
+	:returns: A NSError deserialized from the given data.
+	*/
 	func deserializeError(data: NSData, withResonseStatus responseStatus: Int) -> NSError {
 		let json = JSON(data as NSData!)
 		
@@ -199,18 +201,18 @@ class JSONAPISerializer: SerializerProtocol {
 		
 		return NSError(domain: SPINE_ERROR_DOMAIN, code: code, userInfo: userInfo)
 	}
-
+	
 	/**
-	 Serializes the given Resources into a multidimensional dictionary/array structure
-	 that can be passed to NSJSONSerialization.
-
-	 :param: resources The resources to serialize.
-	 :param: mode      The serialization mode to use.
-
-	 :returns: A multidimensional dictionary/array structure.
-	 */
-	func serializeResources(resources: [Resource], mode: SerializationMode) -> [String: AnyObject] {
-		let mappingOperation = SerializeOperation(resources: resources, mode: mode)
+	Serializes the given Resources into a multidimensional dictionary/array structure
+	that can be passed to NSJSONSerialization.
+	
+	:param: resources The resources to serialize.
+	:param: mode      The serialization mode to use.
+	
+	:returns: A multidimensional dictionary/array structure.
+	*/
+	func serializeResources(resources: [Resource], options: SerializationOptions = SerializationOptions()) -> [String: AnyObject] {
+		let mappingOperation = SerializeOperation(resources: resources, options: options)
 		mappingOperation.start()
 		return mappingOperation.result!
 	}
@@ -220,11 +222,11 @@ class JSONAPISerializer: SerializerProtocol {
 // MARK: -
 
 /**
- *  A DeserializeOperation is responsible for deserializing a single server response.
- *  The serialized data is converted into Resource instances using a layered process.
- *
- *  This process is the inverse of that of the SerializeOperation.
- */
+*  A DeserializeOperation is responsible for deserializing a single server response.
+*  The serialized data is converted into Resource instances using a layered process.
+*
+*  This process is the inverse of that of the SerializeOperation.
+*/
 class DeserializeOperation: NSOperation {
 	
 	// Input
@@ -238,7 +240,7 @@ class DeserializeOperation: NSOperation {
 	
 	private lazy var formatter = {
 		Formatter()
-	}()
+		}()
 	
 	var result: DeserializationResult?
 	
@@ -266,7 +268,7 @@ class DeserializeOperation: NSOperation {
 		
 		// Extract link templates
 		let linkTemplates: JSON? = self.data.dictionaryValue["links"]
-
+		
 		// Extract resources
 		for(key: String, data: JSON) in self.data.dictionaryValue {
 			// Linked resources for compound documents
@@ -276,7 +278,7 @@ class DeserializeOperation: NSOperation {
 						self.deserializeSingleRepresentation(representation, withResourceType: linkedResourceType, linkTemplates: linkTemplates)
 					}
 				}
-			
+				
 			} else if key != "links" && key != "meta" {
 				// Multiple resources
 				if let representations = data.array {
@@ -284,7 +286,7 @@ class DeserializeOperation: NSOperation {
 						self.deserializeSingleRepresentation(representation, withResourceType: key, linkTemplates: linkTemplates)
 					}
 					
-				// Single resource
+					// Single resource
 				} else {
 					self.deserializeSingleRepresentation(data, withResourceType: key, linkTemplates: linkTemplates)
 				}
@@ -300,7 +302,7 @@ class DeserializeOperation: NSOperation {
 		// Create a result
 		self.result = DeserializationResult(self.store, self.paginationData, nil)
 	}
-
+	
 	/**
 	Maps a single resource representation into a resource object of the given type.
 	
@@ -324,13 +326,13 @@ class DeserializeOperation: NSOperation {
 			resource = self.classMap[resourceType]() as Resource
 			isExistingResource = false
 		}
-
+		
 		// Extract data into resource
 		self.extractID(representation, intoResource: resource)
 		self.extractHref(representation, intoResource: resource)
 		self.extractAttributes(representation, intoResource: resource)
 		self.extractRelationships(representation, intoResource: resource, linkTemplates: linkTemplates)
-
+		
 		// Add resource to store if needed
 		if !isExistingResource {
 			self.store.add(resource)
@@ -341,11 +343,11 @@ class DeserializeOperation: NSOperation {
 	// MARK: Special attributes
 	
 	/**
-	 Extracts the resource ID from the serialized data into the given resource.
-
-	 :param: serializedData The data from which to extract the ID.
-	 :param: resource       The resource into which to extract the ID.
-	 */
+	Extracts the resource ID from the serialized data into the given resource.
+	
+	:param: serializedData The data from which to extract the ID.
+	:param: resource       The resource into which to extract the ID.
+	*/
 	private func extractID(serializedData: JSON, intoResource resource: Resource) {
 		if serializedData["id"].stringValue != "" {
 			resource.id = serializedData["id"].stringValue
@@ -353,11 +355,11 @@ class DeserializeOperation: NSOperation {
 	}
 	
 	/**
-	 Extracts the resource href from the serialized data into the given resource.
-
-	 :param: serializedData The data from which to extract the href.
-	 :param: resource       The resource into which to extract the href.
-	 */
+	Extracts the resource href from the serialized data into the given resource.
+	
+	:param: serializedData The data from which to extract the href.
+	:param: resource       The resource into which to extract the href.
+	*/
 	private func extractHref(serializedData: JSON, intoResource resource: Resource) {
 		if let href = serializedData["href"].string {
 			resource.href = href
@@ -366,17 +368,17 @@ class DeserializeOperation: NSOperation {
 	
 	
 	// MARK: Attributes
-
+	
 	/**
-	 Extracts the attributes from the given data into the given resource.
-
-	 This method loops over all the attributes in the passed resource, maps the attribute name
-	 to the key for the serialized form and invokes `extractAttribute`. It then formats the extracted
-	 attribute and sets the formatted value on the resource.
-
-	 :param: serializedData The data from which to extract the attributes.
-	 :param: resource       The resource into which to extract the attributes.
-	 */
+	Extracts the attributes from the given data into the given resource.
+	
+	This method loops over all the attributes in the passed resource, maps the attribute name
+	to the key for the serialized form and invokes `extractAttribute`. It then formats the extracted
+	attribute and sets the formatted value on the resource.
+	
+	:param: serializedData The data from which to extract the attributes.
+	:param: resource       The resource into which to extract the attributes.
+	*/
 	private func extractAttributes(serializedData: JSON, intoResource resource: Resource) {
 		for (attributeName, attribute) in resource.persistentAttributes {
 			if attribute.isRelationship() {
@@ -393,13 +395,13 @@ class DeserializeOperation: NSOperation {
 	}
 	
 	/**
-	 Extracts the value for the given key from the passed serialized data.
-
-	 :param: serializedData The data from which to extract the attribute.
-	 :param: key            The key for which to extract the value from the data.
-
-	 :returns: The extracted value or nil if no attribute with the given key was found in the data.
-	 */
+	Extracts the value for the given key from the passed serialized data.
+	
+	:param: serializedData The data from which to extract the attribute.
+	:param: key            The key for which to extract the value from the data.
+	
+	:returns: The extracted value or nil if no attribute with the given key was found in the data.
+	*/
 	private func extractAttribute(serializedData: JSON, key: String) -> AnyObject? {
 		let value = serializedData[key]
 		
@@ -414,15 +416,15 @@ class DeserializeOperation: NSOperation {
 	// MARK: Relationships
 	
 	/**
-	 Extracts the relationships from the given data into the given resource.
-
-	 This method loops over all the relationships in the passed resource, maps the relationship name
-	 to the key for the serialized form and invokes `extractToOneRelationship` or `extractToManyRelationship`.
-	 It then sets the extracted ResourceRelationship on the resource.
-
-	 :param: serializedData The data from which to extract the relationships.
-	 :param: resource       The resource into which to extract the relationships.
-	 */
+	Extracts the relationships from the given data into the given resource.
+	
+	This method loops over all the relationships in the passed resource, maps the relationship name
+	to the key for the serialized form and invokes `extractToOneRelationship` or `extractToManyRelationship`.
+	It then sets the extracted ResourceRelationship on the resource.
+	
+	:param: serializedData The data from which to extract the relationships.
+	:param: resource       The resource into which to extract the relationships.
+	*/
 	private func extractRelationships(serializedData: JSON, intoResource resource: Resource, linkTemplates: JSON? = nil) {
 		for (attributeName, attribute) in resource.persistentAttributes {
 			if !attribute.isRelationship() {
@@ -446,14 +448,14 @@ class DeserializeOperation: NSOperation {
 	}
 	
 	/**
-	 Extracts the to-one relationship for the given key from the passed serialized data.
-	 
-	 This method supports both the single ID form and the resource object forms.
+	Extracts the to-one relationship for the given key from the passed serialized data.
 	
-	 :param: serializedData The data from which to extract the relationship.
-	 :param: key            The key for which to extract the relationship from the data.
+	This method supports both the single ID form and the resource object forms.
 	
-	 :returns: The extracted relationship or nil if no relationship with the given key was found in the data.
+	:param: serializedData The data from which to extract the relationship.
+	:param: key            The key for which to extract the relationship from the data.
+	
+	:returns: The extracted relationship or nil if no relationship with the given key was found in the data.
 	*/
 	private func extractToOneRelationship(serializedData: JSON, key: String, resource: Resource, linkTemplates: JSON? = nil) -> LinkedResource? {
 		// Resource level link with href/id/type combo
@@ -508,14 +510,14 @@ class DeserializeOperation: NSOperation {
 	}
 	
 	/**
-	 Extracts the to-many relationship for the given key from the passed serialized data.
+	Extracts the to-many relationship for the given key from the passed serialized data.
 	
-	 This method supports both the array of IDs form and the resource object forms.
+	This method supports both the array of IDs form and the resource object forms.
 	
-	 :param: serializedData The data from which to extract the relationship.
-	 :param: key            The key for which to extract the relationship from the data.
+	:param: serializedData The data from which to extract the relationship.
+	:param: key            The key for which to extract the relationship from the data.
 	
-	 :returns: The extracted relationship or nil if no relationship with the given key was found in the data.
+	:returns: The extracted relationship or nil if no relationship with the given key was found in the data.
 	*/
 	private func extractToManyRelationship(serializedData: JSON, key: String, resource: Resource, linkTemplates: JSON? = nil) -> ResourceCollection? {
 		// Resource level link with href/id/type combo
@@ -536,7 +538,7 @@ class DeserializeOperation: NSOperation {
 			} else {
 				type = key
 			}
-		
+			
 			return ResourceCollection(href: href, type: type, ids: IDs)
 		}
 		
@@ -546,7 +548,7 @@ class DeserializeOperation: NSOperation {
 			IDs.filter { return $0 != "" }
 			return ResourceCollection(href: nil, type: key, ids: IDs)
 		}
-
+		
 		// Document level link template
 		if let linkData = linkTemplates?[resource.type + "." + key].dictionary {
 			var href: NSURL?, type: String, IDs: [String]?
@@ -577,7 +579,7 @@ class DeserializeOperation: NSOperation {
 	}
 	
 	/**
-	 Resolves the relations of the resources in the store.
+	Resolves the relations of the resources in the store.
 	*/
 	private func resolveRelations() {
 		for resource in self.store {
@@ -642,7 +644,7 @@ class DeserializeOperation: NSOperation {
 				nextHref: nil,
 				previousHref: nil
 			)
-
+			
 			if let nextHref = meta["after_cursor"]?.string {
 				paginationData.nextHref = NSURL(string: nextHref)
 			}
@@ -660,22 +662,22 @@ class DeserializeOperation: NSOperation {
 // MARK: -
 
 /**
- *  A SerializeOperation is responsible for serializing resource into a multidimensional dictionary/array structure.
- *  The resouces are converted to their serialized form using a layered process.
- *
- *  This process is the inverse of that of the DeserializeOperation.
- */
+*  A SerializeOperation is responsible for serializing resource into a multidimensional dictionary/array structure.
+*  The resouces are converted to their serialized form using a layered process.
+*
+*  This process is the inverse of that of the DeserializeOperation.
+*/
 class SerializeOperation: NSOperation {
 	
 	private let resources: [Resource]
 	private let formatter = Formatter()
-	private let mode: SerializationMode
+	private let options: SerializationOptions
 	
 	var result: [String: AnyObject]?
 	
-	init(resources: [Resource], mode: SerializationMode) {
+	init(resources: [Resource], options: SerializationOptions) {
 		self.resources = resources
-		self.mode = mode
+		self.options = options
 	}
 	
 	override func main() {
@@ -742,12 +744,12 @@ class SerializeOperation: NSOperation {
 	:param: serializedData The data to add the attributes to.
 	:param: resource       The resource whose attributes to add.
 	*/
-	private func addAttributes(inout serializedData: [String: AnyObject], resource: Resource) {		
+	private func addAttributes(inout serializedData: [String: AnyObject], resource: Resource) {
 		for (attributeName, attribute) in resource.persistentAttributes {
 			if attribute.isRelationship() {
 				continue
 			}
-
+			
 			//TODO: Dirty checking
 			
 			let key = attribute.representationName ?? attributeName
@@ -792,13 +794,17 @@ class SerializeOperation: NSOperation {
 			}
 			
 			let key = attribute.representationName ?? attributeName
-
+			
 			switch attribute.type {
-				case .ToOne:
-					self.addToOneRelationship(&serializedData, key: key, relatedResource: resource.valueForKey(attributeName) as? Resource)
-				case .ToMany:
-					self.addToManyRelationship(&serializedData, key: key, relatedResources: resource.valueForKey(attributeName) as? [Resource])
-				default: ()
+			case .ToOne:
+				if self.options.includeToOne {
+					self.addToOneRelationship(&serializedData, key: key, linkedResource: resource.valueForKey(attributeName) as? LinkedResource)
+				}
+			case .ToMany:
+				if self.options.includeToMany {
+					self.addToManyRelationship(&serializedData, key: key, linkedResources: resource.valueForKey(attributeName) as? ResourceCollection)
+				}
+			default: ()
 			}
 		}
 	}
@@ -810,10 +816,10 @@ class SerializeOperation: NSOperation {
 	:param: key             The key to add to the serialized data.
 	:param: relatedResource The related resource to add to the serialized data.
 	*/
-	private func addToOneRelationship(inout serializedData: [String: AnyObject], key: String, relatedResource: Resource?) {
+	private func addToOneRelationship(inout serializedData: [String: AnyObject], key: String, linkedResource: LinkedResource?) {
 		var linkData: AnyObject
 		
-		if let ID = relatedResource?.id {
+		if let ID = linkedResource?.resource?.id {
 			linkData = ID
 		} else {
 			linkData = NSNull()
@@ -835,14 +841,14 @@ class SerializeOperation: NSOperation {
 	:param: key              The key to add to the serialized data.
 	:param: relatedResources The related resources to add to the serialized data.
 	*/
-	private func addToManyRelationship(inout serializedData: [String: AnyObject], key: String, relatedResources: [Resource]?) {
+	private func addToManyRelationship(inout serializedData: [String: AnyObject], key: String, linkedResources: ResourceCollection?) {
 		var linkData: AnyObject
 		
-		if let resources = relatedResources {
+		if let resources = linkedResources?.resources {
 			let IDs: [String] = resources.filter { resource in
 				return resource.id != nil
-			}.map { resource in
-				return resource.id!
+				}.map { resource in
+					return resource.id!
 			}
 			
 			linkData = IDs
@@ -865,7 +871,7 @@ class SerializeOperation: NSOperation {
 // MARK: -
 
 class Formatter {
-
+	
 	private func deserialize(value: AnyObject, ofType type: ResourceAttribute.AttributeType) -> AnyObject {
 		switch type {
 		case .Date:
@@ -890,12 +896,12 @@ class Formatter {
 		let formatter = NSDateFormatter()
 		formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ssZZZZZ"
 		return formatter
-	}()
-
+		}()
+	
 	private func serializeDate(date: NSDate) -> String {
 		return self.dateFormatter.stringFromDate(date)
 	}
-
+	
 	private func deserializeDate(value: String) -> NSDate {
 		if let date = self.dateFormatter.dateFromString(value) {
 			return date
