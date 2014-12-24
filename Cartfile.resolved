@@ -1,0 +1,3 @@
+github "Alamofire/Alamofire" "1.1.2"
+github "Thomvis/BrightFutures" "bac838bac0b55152326631e220507179f5b2e154"
+github "SwiftyJSON/SwiftyJSON" "2.1.2"
