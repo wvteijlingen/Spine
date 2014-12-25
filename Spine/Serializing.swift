@@ -599,13 +599,13 @@ class DeserializeOperation: NSOperation {
 							if let targetResource = store.objectWithType(linkedResource.link!.type, identifier: id) {
 								linkedResource.fulfill(targetResource)
 							} else {
-								println("Cannot resolve to-one link '\(attributeName):\(id)' because the linked resource does not exist in the store.")
+								println("Cannot resolve to-one link '\(resource.type):\(resource.id)' -> '\(attributeName):\(id)' because the linked resource does not exist in the store.")
 							}
 						} else {
-							println("Cannot resolve to-one link '\(attributeName)' because the foreign ID is not known.")
+							println("Cannot resolve to-one link '\(resource.type):\(resource.id)' -> '\(attributeName)' because the foreign ID is not known.")
 						}
 					} else {
-						println("Cannot resolve to-one link '\(attributeName)' because the link data is not fetched.")
+						println("Cannot resolve to-one link '\(resource.type):\(resource.id)' -> '\(attributeName)' because the link data is not fetched.")
 					}
 					
 				} else if attribute.type == .ToMany {
@@ -620,16 +620,16 @@ class DeserializeOperation: NSOperation {
 								if let targetResource = store.objectWithType(linkedResource.link!.type, identifier: id) {
 									targetResources.append(targetResource)
 								} else {
-									println("Cannot resolve to-many link '\(attributeName):\(id)' because the linked resource does not exist in the store.")
+									println("Cannot resolve to-many link '\(resource.type):\(resource.id)' -> '\(attributeName):\(id)' because the linked resource does not exist in the store.")
 								}
 							}
 							
 							linkedResource.fulfill(targetResources)
 						} else {
-							println("Cannot resolve to-many link '\(attributeName)' because the foreign IDs are not known.")
+							println("Cannot resolve to-many link '\(resource.type):\(resource.id)' -> '\(attributeName)' because the foreign IDs are not known.")
 						}
 					} else {
-						println("Cannot resolve to-many link '\(attributeName)' because the link data is not fetched.")
+						println("Cannot resolve to-many link '\(resource.type):\(resource.id)' -> '\(attributeName)' because the link data is not fetched.")
 					}
 				}
 			}
