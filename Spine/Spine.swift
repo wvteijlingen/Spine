@@ -94,8 +94,8 @@ public class Spine {
 		
 		self.fetchResourcesForQuery(query).onSuccess { resources in
 			promise.success(resources.resources!.first!)
-			}.onFailure { error in
-				promise.error(error)
+		}.onFailure { error in
+			promise.error(error)
 		}
 		
 		return promise.future
