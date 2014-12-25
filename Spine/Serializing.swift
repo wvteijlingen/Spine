@@ -598,9 +598,11 @@ class DeserializeOperation: NSOperation {
 							// Find target of relation in store
 							if let targetResource = store.objectWithType(linkedResource.link!.type, identifier: id) {
 								linkedResource.fulfill(targetResource)
+							} else {
+								println("Cannot resolve to-one link '\(attributeName):\(id)' because the linked resource does not exist in the store.")
 							}
 						} else {
-							println("Cannot resolve to-one link '\(attributeName)' because the foreign ID is not known or the related resource was not included.")
+							println("Cannot resolve to-one link '\(attributeName)' because the foreign ID is not known.")
 						}
 					} else {
 						println("Cannot resolve to-one link '\(attributeName)' because the link data is not fetched.")
@@ -617,12 +619,14 @@ class DeserializeOperation: NSOperation {
 								// Find target of relation in store
 								if let targetResource = store.objectWithType(linkedResource.link!.type, identifier: id) {
 									targetResources.append(targetResource)
+								} else {
+									println("Cannot resolve to-many link '\(attributeName):\(id)' because the linked resource does not exist in the store.")
 								}
 							}
 							
 							linkedResource.fulfill(targetResources)
 						} else {
-							println("Cannot resolve to-many link '\(attributeName)' because the foreign IDs are not known or the related resources were not included.")
+							println("Cannot resolve to-many link '\(attributeName)' because the foreign IDs are not known.")
 						}
 					} else {
 						println("Cannot resolve to-many link '\(attributeName)' because the link data is not fetched.")
