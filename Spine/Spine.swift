@@ -9,8 +9,11 @@
 import Foundation
 import BrightFutures
 
-/// The domain used for errors
+/// The domain used for errors that occur within the Spine framework.
 let SPINE_ERROR_DOMAIN = "com.wardvanteijlingen.Spine"
+
+// The domain used for errors that are returned by the API.
+let SPINE_API_ERROR_DOMAIN = "com.wardvanteijlingen.Spine.Api"
 
 /**
 What this framework is all about ;)
@@ -44,6 +47,12 @@ public class Spine {
 	/// The serializer to use for serializing and deserializing of JSON representations.
 	private var serializer: JSONAPISerializer
 	
+	/// Whether the print debug information
+	public var traceEnabled: Bool = false {
+		didSet {
+			self.HTTPClient.traceEnabled = traceEnabled
+		}
+	}
 	
 	// MARK: Initializers
 	

@@ -30,7 +30,7 @@ protocol HTTPClientProtocol {
 
 class AlamofireClient: HTTPClientProtocol {
 	
-	var traceEnabled = true
+	var traceEnabled = false
 	var credential: OAuthCredential? {
 		didSet {
 			if let credential = self.credential {

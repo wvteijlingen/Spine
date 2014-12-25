@@ -52,6 +52,7 @@ struct ResourceClassMap {
 	:returns: The Resource.Type that matches the given resource type.
 	*/
 	func classForResourceType(type: String) -> Resource.Type {
+		assert(registeredClasses[type] != nil, "Cannot map resources of type \(type). You must create a Resource subclass and register it with Spine.")
 		return registeredClasses[type]!
 	}
 	
@@ -199,7 +200,7 @@ class JSONAPISerializer: SerializerProtocol {
 			userInfo = [NSLocalizedDescriptionKey: errorTitle]
 		}
 		
-		return NSError(domain: SPINE_ERROR_DOMAIN, code: code, userInfo: userInfo)
+		return NSError(domain: SPINE_API_ERROR_DOMAIN, code: code, userInfo: userInfo)
 	}
 	
 	/**
@@ -493,7 +494,7 @@ class DeserializeOperation: NSOperation {
 				if let interpolatedHref = hrefTemplate.interpolate(serializedData.dictionaryObject! as NSDictionary, rootKeyPath: resource.type) {
 					href = NSURL(string: interpolatedHref)
 				} else {
-					println("Error: Could not interpolate href template: \(hrefTemplate)")
+					assertionFailure("Could not interpolate href template: \(hrefTemplate).")
 				}
 			}
 			
@@ -557,7 +558,7 @@ class DeserializeOperation: NSOperation {
 				if let interpolatedHref = hrefTemplate.interpolate(serializedData.dictionaryObject! as NSDictionary, rootKeyPath: resource.type) {
 					href = NSURL(string: interpolatedHref)
 				} else {
-					println("Error: Could not interpolate href template: \(hrefTemplate)")
+					assertionFailure("Error: Could not interpolate href template: \(hrefTemplate).")
 				}
 			}
 			
