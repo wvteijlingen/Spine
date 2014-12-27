@@ -20,25 +20,6 @@ import BrightFutures
 */
 public typealias ResourceIdentifier = (type: String, id: String)
 
-protocol Identifiable {
-	/// The resource id. If this is nil, the resource hasn't been saved yet.
-	var id: String? { get set }
-	
-	/// The resource type in plural form.
-	var type: String { get }
-	
-	/// The resource's unique identifier. If this is nil, the resource cannot be uniquely identified.
-	var uniqueIdentifier: ResourceIdentifier? { get }
-	
-	/// The location (URL) of this resource.
-	var href: String? { get set }
-}
-
-protocol Mappable {
-	/// Array of attributes that must be mapped by Spine.
-	var persistentAttributes: [String: ResourceAttribute] { get }
-}
-
 protocol Paginatable {
 	var paginationData: PaginationData? { get set }
 	var canFetchNextPage: Bool { get }
@@ -145,7 +126,7 @@ public struct ResourceAttribute {
 *  A base recource class that provides some defaults for resources.
 *  You must create custom resource classes by subclassing from Resource.
 */
-public class Resource: NSObject, Identifiable, Mappable, NSCoding, Printable {
+public class Resource: NSObject, NSCoding, Printable {
 	
 	// MARK: Initializers
 	
@@ -173,14 +154,18 @@ public class Resource: NSObject, Identifiable, Mappable, NSCoding, Printable {
 	}
 	
 	
-	// MARK: Mappable protocol
+	// MARK: Mapping data
 	
+	/// IDs of resources that must be linked up after mapping
+	var links: [String: [String]]?
+	
+	/// Array of attributes that must be mapped by Spine.
 	public var persistentAttributes: [String: ResourceAttribute] {
 		return [:]
 	}
 	
 	
-	// MARK: Identifiable protocol
+	// MARK: Identification
 	
 	private var _id: String?
 	public var id: String? {

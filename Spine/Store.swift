@@ -8,9 +8,9 @@
 
 import Foundation
 
-class Store<T:Identifiable>: ArrayLiteralConvertible, SequenceType, Printable {
-	private var objectsByType: [String : [T]] = [:]
-	private var objectsByTypeAndID: [String : [String: T]] = [:]
+class Store: ArrayLiteralConvertible, SequenceType, Printable {
+	private var objectsByType: [String : [Resource]] = [:]
+	private var objectsByTypeAndID: [String : [String: Resource]] = [:]
 	
 	// MARK: Intializers
 	
@@ -18,7 +18,7 @@ class Store<T:Identifiable>: ArrayLiteralConvertible, SequenceType, Printable {
 
 	}
 	
-	init(objects: [T]) {
+	init(objects: [Resource]) {
 		for object in objects {
 			self.add(object)
 		}
@@ -26,7 +26,7 @@ class Store<T:Identifiable>: ArrayLiteralConvertible, SequenceType, Printable {
 	
 	// MARK: ArrayLiteralConvertible protocol
 	
-	required init(arrayLiteral elements: T...) {
+	required init(arrayLiteral elements: Resource...) {
 		for element in elements {
 			self.add(element)
 		}
@@ -34,7 +34,7 @@ class Store<T:Identifiable>: ArrayLiteralConvertible, SequenceType, Printable {
 	
 	// MARK: Mutating
 	
-	func add(object: T) {
+	func add(object: Resource) {
 		if let identifier = object.uniqueIdentifier {
 			let type = identifier.type
 			
@@ -52,7 +52,7 @@ class Store<T:Identifiable>: ArrayLiteralConvertible, SequenceType, Printable {
 		}
 	}
 	
-	func remove(object: T) {
+	func remove(object: Resource) {
 		if let identifier = object.uniqueIdentifier {
 			let type = identifier.type
 			
@@ -72,7 +72,7 @@ class Store<T:Identifiable>: ArrayLiteralConvertible, SequenceType, Printable {
 	
 	// MARK: Fetching
 	
-	func objectWithType(type: String, identifier: String) -> T? {
+	func objectWithType(type: String, identifier: String) -> Resource? {
 		if let objects = self.objectsByTypeAndID[type] {
 			if let object = objects[identifier] {
 				return object
@@ -92,12 +92,12 @@ class Store<T:Identifiable>: ArrayLiteralConvertible, SequenceType, Printable {
 		return false
 	}
 	
-	func allObjectsWithType(type: String) -> [T] {
+	func allObjectsWithType(type: String) -> [Resource] {
 		return self.objectsByType[type] ?? []
 	}
 	
-	func allObjects() -> [T] {
-		var allObjects: [T] = []
+	func allObjects() -> [Resource] {
+		var allObjects: [Resource] = []
 		
 		for (type, objects) in self.objectsByType {
 			allObjects += objects
@@ -119,11 +119,11 @@ class Store<T:Identifiable>: ArrayLiteralConvertible, SequenceType, Printable {
 	
 	// MARK: SequenceType protocol
 	
-	func generate() -> GeneratorOf<T> {
+	func generate() -> GeneratorOf<Resource> {
 		var allObjects = self.allObjects()
 		var index = -1
 
-		return GeneratorOf<T> {
+		return GeneratorOf<Resource> {
 			index++
 			
 			if (index > allObjects.count - 1) {

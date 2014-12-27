@@ -9,7 +9,7 @@
 import UIKit
 import SwiftyJSON
 
-typealias DeserializationResult = (store: Store<Resource>?, pagination: PaginationData?, error: NSError?)
+typealias DeserializationResult = (store: Store?, pagination: PaginationData?, error: NSError?)
 
 /**
 *  A ResourceClassMap contains information about how resource types
@@ -88,7 +88,7 @@ protocol SerializerProtocol {
 	
 	// Deserializing
 	func deserializeData(data: NSData) -> DeserializationResult
-	func deserializeData(data: NSData, usingStore store: Store<Resource>) -> DeserializationResult
+	func deserializeData(data: NSData, usingStore store: Store) -> DeserializationResult
 	func deserializeError(data: NSData, withResonseStatus responseStatus: Int) -> NSError
 	
 	// Serializing
@@ -169,7 +169,7 @@ class JSONAPISerializer: SerializerProtocol {
 	:returns: A DeserializationResult that contains either a Store or an error.
 	*/
 	
-	func deserializeData(data: NSData, usingStore store: Store<Resource>) -> DeserializationResult {
+	func deserializeData(data: NSData, usingStore store: Store) -> DeserializationResult {
 		let mappingOperation = DeserializeOperation(data: data, store: store, classMap: self.classMap)
 		mappingOperation.start()
 		return mappingOperation.result!
@@ -235,7 +235,7 @@ class DeserializeOperation: NSOperation {
 	private var data: JSON
 	
 	// Output
-	private var store: Store<Resource>
+	private var store: Store
 	private var paginationData: PaginationData?
 	
 	
@@ -252,7 +252,7 @@ class DeserializeOperation: NSOperation {
 		super.init()
 	}
 	
-	init(data: NSData, store: Store<Resource>, classMap: ResourceClassMap) {
+	init(data: NSData, store: Store, classMap: ResourceClassMap) {
 		self.data = JSON(data: data)
 		self.classMap = classMap
 		self.store = store
