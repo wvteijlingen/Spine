@@ -175,7 +175,7 @@ public class Spine {
 		saveFuture.onSuccess { statusCode, data in
 			// Map the response back onto the resource
 			if let data = data {
-				self.serializer.deserializeData(data, usingStore: Store(objects: [resource]))
+				self.serializer.deserializeData(data, usingStore: Store(objects: [resource]), options: DeserializationOptions(mapOntoFirstResourceInStore: true))
 			}
 			
 			// Separately update relationships if needed

@@ -80,6 +80,15 @@ struct SerializationOptions {
 	}
 }
 
+struct DeserializationOptions {
+	var mapOntoFirstResourceInStore = false
+	
+	init(mapOntoFirstResourceInStore: Bool = false) {
+		self.mapOntoFirstResourceInStore = mapOntoFirstResourceInStore
+	}
+}
+
+
 // MARK: -
 
 protocol SerializerProtocol {
@@ -89,8 +98,8 @@ protocol SerializerProtocol {
 	func classNameForResourceType(resourceType: String) -> Resource.Type
 	
 	// Deserializing
-	func deserializeData(data: NSData) -> DeserializationResult
-	func deserializeData(data: NSData, usingStore store: Store) -> DeserializationResult
+	func deserializeData(data: NSData, options: DeserializationOptions) -> DeserializationResult
+	func deserializeData(data: NSData, usingStore store: Store, options: DeserializationOptions) -> DeserializationResult
 	func deserializeError(data: NSData, withResonseStatus responseStatus: Int) -> NSError
 	
 	// Serializing
@@ -152,8 +161,8 @@ class JSONAPISerializer: SerializerProtocol {
 	
 	:returns: A DeserializationResult that contains either a Store or an error.
 	*/
-	func deserializeData(data: NSData) -> DeserializationResult {
-		let mappingOperation = DeserializeOperation(data: data, classMap: self.classMap)
+	func deserializeData(data: NSData, options: DeserializationOptions = DeserializationOptions()) -> DeserializationResult {
+		let mappingOperation = DeserializeOperation(data: data, classMap: self.classMap, options: options)
 		mappingOperation.start()
 		return mappingOperation.result!
 	}
@@ -171,8 +180,8 @@ class JSONAPISerializer: SerializerProtocol {
 	:returns: A DeserializationResult that contains either a Store or an error.
 	*/
 	
-	func deserializeData(data: NSData, usingStore store: Store) -> DeserializationResult {
-		let mappingOperation = DeserializeOperation(data: data, store: store, classMap: self.classMap)
+	func deserializeData(data: NSData, usingStore store: Store, options: DeserializationOptions = DeserializationOptions()) -> DeserializationResult {
+		let mappingOperation = DeserializeOperation(data: data, store: store, classMap: self.classMap, options: options)
 		mappingOperation.start()
 		return mappingOperation.result!
 	}
@@ -233,8 +242,9 @@ class JSONAPISerializer: SerializerProtocol {
 class DeserializeOperation: NSOperation {
 	
 	// Input
-	private var classMap: ResourceClassMap
-	private var data: JSON
+	private let classMap: ResourceClassMap
+	private let data: JSON
+	private let options: DeserializationOptions
 	
 	// Output
 	private var store: Store
@@ -247,16 +257,18 @@ class DeserializeOperation: NSOperation {
 	
 	var result: DeserializationResult?
 	
-	init(data: NSData, classMap: ResourceClassMap) {
+	init(data: NSData, classMap: ResourceClassMap, options: DeserializationOptions) {
 		self.data = JSON(data: data)
 		self.classMap = classMap
+		self.options = options
 		self.store = Store()
 		super.init()
 	}
 	
-	init(data: NSData, store: Store, classMap: ResourceClassMap) {
+	init(data: NSData, store: Store, classMap: ResourceClassMap, options: DeserializationOptions) {
 		self.data = JSON(data: data)
 		self.classMap = classMap
+		self.options = options
 		self.store = store
 		super.init()
 	}
@@ -322,9 +334,16 @@ class DeserializeOperation: NSOperation {
 		if let existingResource = self.store.objectWithType(resourceType, identifier: representation["id"].stringValue) {
 			resource = existingResource
 			isExistingResource = true
-		} else if let existingResource = self.store.allObjectsWithType(resourceType).first {
-			resource = existingResource
-			isExistingResource = true
+			
+		} else if self.options.mapOntoFirstResourceInStore == true {
+			if let existingResource = self.store.allObjectsWithType(resourceType).first {
+				resource = existingResource
+				isExistingResource = true
+			} else {
+				resource = self.classMap[resourceType]() as Resource
+				isExistingResource = false
+			}
+			
 		} else {
 			resource = self.classMap[resourceType]() as Resource
 			isExistingResource = false
