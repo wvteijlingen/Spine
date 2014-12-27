@@ -683,12 +683,3 @@ extension Resource {
 		return Spine.sharedInstance.fetchResourcesForQuery(query)
 	}
 }
-
-
-//MARK: - Meta
-
-public class Meta: Resource {
-	final override public var type: String {
-		return "_meta"
-	}
-}
