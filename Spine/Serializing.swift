@@ -439,12 +439,12 @@ class DeserializeOperation: NSOperation {
 			let key = attribute.representationName ?? attributeName
 			
 			switch attribute.type {
-			case .ToOne:
-				if let linkedResource = self.extractToOneRelationship(serializedData, key: key, resource: resource, linkTemplates: linkTemplates) {
+			case .ToOne(let linkedType):
+				if let linkedResource = self.extractToOneRelationship(serializedData, key: key, linkedType: linkedType, resource: resource, linkTemplates: linkTemplates) {
 					resource.setValue(linkedResource, forKey: attributeName)
 				}
-			case .ToMany:
-				if let linkedResources = self.extractToManyRelationship(serializedData, key: key, resource: resource, linkTemplates: linkTemplates) {
+			case .ToMany(let linkedType):
+				if let linkedResources = self.extractToManyRelationship(serializedData, key: key, linkedType: linkedType, resource: resource, linkTemplates: linkTemplates) {
 					resource.setValue(linkedResources, forKey: attributeName)
 				}
 			default: ()
@@ -462,7 +462,7 @@ class DeserializeOperation: NSOperation {
 	
 	:returns: The extracted relationship or nil if no relationship with the given key was found in the data.
 	*/
-	private func extractToOneRelationship(serializedData: JSON, key: String, resource: Resource, linkTemplates: JSON? = nil) -> LinkedResource? {
+	private func extractToOneRelationship(serializedData: JSON, key: String, linkedType: String, resource: Resource, linkTemplates: JSON? = nil) -> LinkedResource? {
 		// Resource level link with href/id/type combo
 		if let linkData = serializedData["links"][key].dictionary {
 			var href: NSURL?, type: String, ID: String?
@@ -474,7 +474,7 @@ class DeserializeOperation: NSOperation {
 			if let rawType = linkData["type"]?.string {
 				type = rawType
 			} else {
-				type = key + "s" // TODO: Retrieve type from ResourceAttribute
+				type = linkedType
 			}
 			
 			if linkData["id"]?.stringValue != "" {
@@ -487,7 +487,7 @@ class DeserializeOperation: NSOperation {
 		// Resource level link with only an id
 		let ID = serializedData["links"][key].stringValue
 		if ID != "" {
-			return LinkedResource(href: nil, type: key + "s", id: ID) // TODO: Retrieve type from ResourceAttribute
+			return LinkedResource(href: nil, type: linkedType, id: ID)
 		}
 		
 		// Document level link template
@@ -505,7 +505,7 @@ class DeserializeOperation: NSOperation {
 			if let rawType = linkData["type"]?.string {
 				type = rawType
 			} else {
-				type = key + "s"  // TODO: Retrieve type from ResourceAttribute
+				type = linkedType
 			}
 			
 			return LinkedResource(href: href, type: type)
@@ -524,7 +524,7 @@ class DeserializeOperation: NSOperation {
 	
 	:returns: The extracted relationship or nil if no relationship with the given key was found in the data.
 	*/
-	private func extractToManyRelationship(serializedData: JSON, key: String, resource: Resource, linkTemplates: JSON? = nil) -> ResourceCollection? {
+	private func extractToManyRelationship(serializedData: JSON, key: String, linkedType: String, resource: Resource, linkTemplates: JSON? = nil) -> ResourceCollection? {
 		// Resource level link with href/id/type combo
 		if let linkData = serializedData["links"][key].dictionary {
 			var href: NSURL?, type: String, IDs: [String]?
@@ -541,7 +541,7 @@ class DeserializeOperation: NSOperation {
 			if let rawType = linkData["type"]?.string {
 				type = rawType
 			} else {
-				type = key
+				type = linkedType
 			}
 			
 			return ResourceCollection(href: href, type: type, ids: IDs)
@@ -551,7 +551,7 @@ class DeserializeOperation: NSOperation {
 		if let rawIDs: [JSON] = serializedData["links"][key].array {
 			let IDs = rawIDs.map { $0.stringValue }
 			IDs.filter { return $0 != "" }
-			return ResourceCollection(href: nil, type: key, ids: IDs)
+			return ResourceCollection(href: nil, type: linkedType, ids: IDs)
 		}
 		
 		// Document level link template
@@ -569,7 +569,7 @@ class DeserializeOperation: NSOperation {
 			if let rawType = linkData["type"]?.string {
 				type = rawType
 			} else {
-				type = key
+				type = linkedType
 			}
 			
 			if let rawIDs = serializedData["links"][key].array {
@@ -594,7 +594,8 @@ class DeserializeOperation: NSOperation {
 					continue
 				}
 				
-				if attribute.type == .ToOne {
+				switch attribute.type {
+				case .ToOne:
 					if let linkedResource = resource.valueForKey(attributeName) as? LinkedResource {
 						
 						// We can only resolve if an ID is known
@@ -612,7 +613,7 @@ class DeserializeOperation: NSOperation {
 						println("Cannot resolve to-one link '\(resource.type):\(resource.id)' -> '\(attributeName)' because the link data is not fetched.")
 					}
 					
-				} else if attribute.type == .ToMany {
+				case .ToMany:
 					if let linkedResource = resource.valueForKey(attributeName) as? ResourceCollection {
 						var targetResources: [Resource] = []
 						
@@ -635,6 +636,8 @@ class DeserializeOperation: NSOperation {
 					} else {
 						println("Cannot resolve to-many link '\(resource.type):\(resource.id)' -> '\(attributeName)' because the link data is not fetched.")
 					}
+					
+				default: ()
 				}
 			}
 		}

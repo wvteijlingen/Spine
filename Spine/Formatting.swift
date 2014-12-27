@@ -12,8 +12,10 @@ class Formatter {
 	
 	func deserialize(value: AnyObject, ofType type: ResourceAttribute.AttributeType) -> AnyObject {
 		switch type {
-		case .Date:
-			return self.deserializeDate(value as String)
+		case .ISO8601Date:
+			return self.deserializeISO8601Date(value as String)
+		case .URL:
+			return self.deserializeURL(value as String)
 		default:
 			return value
 		}
@@ -21,8 +23,8 @@ class Formatter {
 	
 	func serialize(value: AnyObject, ofType type: ResourceAttribute.AttributeType) -> AnyObject {
 		switch type {
-		case .Date:
-			return self.serializeDate(value as NSDate)
+		case .ISO8601Date:
+			return self.serializeISO8601Date(value as NSDate)
 		default:
 			return value
 		}
@@ -30,21 +32,34 @@ class Formatter {
 	
 	// MARK: Date
 	
-	private lazy var dateFormatter: NSDateFormatter = {
+	private func serializeISO8601Date(date: NSDate) -> String {
 		let formatter = NSDateFormatter()
 		formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ssZZZZZ"
-		return formatter
-		}()
-	
-	private func serializeDate(date: NSDate) -> String {
-		return self.dateFormatter.stringFromDate(date)
+		return formatter.stringFromDate(date)
 	}
 	
-	private func deserializeDate(value: String) -> NSDate {
-		if let date = self.dateFormatter.dateFromString(value) {
+	private func deserializeISO8601Date(value: String) -> NSDate {
+		let formatter = NSDateFormatter()
+		formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ssZZZZZ"
+		
+		if let date = formatter.dateFromString(value) {
 			return date
 		}
 		
-		return NSDate()
+		assertionFailure("Could not deserialize ISO8601 date: \(value)")
+	}
+	
+	// MARK: URL
+	
+	private func serializeURL(URL: NSURL) -> String {
+		return URL.absoluteString!
+	}
+	
+	private func deserializeURL(value: String) -> NSURL {
+		if let URL = NSURL(string: value) {
+			return URL
+		}
+		
+		assertionFailure("Could not deserialize URL: \(value)")
 	}
 }

@@ -85,17 +85,12 @@ struct PaginationData {
 *  Describes a resource attribute that can be persisted to the server.
 */
 public struct ResourceAttribute {
-	
-	/**
-	The type of attribute.
-	
-	- Property: A plain property.
-	- Date:     A formatted date property.
-	- ToOne:    A to-one relationship.
-	- ToMany:   A to-many relationship.
-	*/
 	public enum AttributeType {
-		case Property, Date, ToOne, ToMany
+		case Property
+		case ISO8601Date
+		case URL
+		case ToOne(linkedType: String)
+		case ToMany(linkedType: String)
 	}
 	
 	/// The type of attribute.
@@ -105,17 +100,20 @@ public struct ResourceAttribute {
 	/// This can be empty, in which case the same name as the attribute is used.
 	var representationName: String?
 	
-	public init(type: AttributeType) {
-		self.type = type
-	}
-	
-	public init(type: AttributeType, representationName: String) {
+	public init(type: AttributeType, representationName: String? = nil) {
 		self.type = type
 		self.representationName = representationName
 	}
 	
 	func isRelationship() -> Bool {
-		return (self.type == .ToOne || self.type == .ToMany)
+		switch self.type {
+		case .ToOne:
+			return true
+		case .ToMany:
+			return true
+		default:
+			return false
+		}
 	}
 }
 

@@ -211,16 +211,17 @@ public class Spine {
 				continue
 			}
 			
-			if attribute.type == .ToMany {
-				let linkedResources = resource.valueForKey(attributeName) as ResourceCollection
-				operations.append((relationship: attributeName, type: "add", resources: linkedResources.addedResources))
-				operations.append((relationship: attributeName, type: "remove", resources: linkedResources.removedResources))
-				
-			} else if attribute.type == .ToOne {
+			switch attribute.type {
+			case .ToOne:
 				let linkedResource = resource.valueForKey(attributeName) as LinkedResource
 				if linkedResource.hasChanged && linkedResource.resource != nil {
 					operations.append((relationship: attributeName, type: "replace", resources: [linkedResource.resource!]))
 				}
+			case .ToMany:
+				let linkedResources = resource.valueForKey(attributeName) as ResourceCollection
+				operations.append((relationship: attributeName, type: "add", resources: linkedResources.addedResources))
+				operations.append((relationship: attributeName, type: "remove", resources: linkedResources.removedResources))
+			default: ()
 			}
 		}
 		
