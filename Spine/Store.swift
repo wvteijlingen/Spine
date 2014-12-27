@@ -12,12 +12,6 @@ class Store: ArrayLiteralConvertible, SequenceType, Printable {
 	private var objectsByType: [String : [Resource]] = [:]
 	private var objectsByTypeAndID: [String : [String: Resource]] = [:]
 	
-	// MARK: Intializers
-	
-	init() {
-
-	}
-	
 	init(objects: [Resource]) {
 		for object in objects {
 			self.add(object)
