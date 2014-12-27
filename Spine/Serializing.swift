@@ -354,6 +354,8 @@ class DeserializeOperation: NSOperation {
 	private func extractID(serializedData: JSON, intoResource resource: Resource) {
 		if serializedData["id"].stringValue != "" {
 			resource.id = serializedData["id"].stringValue
+		} else {
+			assertionFailure("Cannot deserialize resource of type: \(resource.type). Serializated data must contain a primary key named 'id'.")
 		}
 	}
 	
@@ -496,7 +498,7 @@ class DeserializeOperation: NSOperation {
 				if let interpolatedHref = hrefTemplate.interpolate(serializedData.dictionaryObject! as NSDictionary, rootKeyPath: resource.type) {
 					href = NSURL(string: interpolatedHref)
 				} else {
-					assertionFailure("Could not interpolate href template: \(hrefTemplate).")
+					assertionFailure("Could not interpolate href template: \(hrefTemplate) with values: \(serializedData.dictionaryObject!).")
 				}
 			}
 			
@@ -560,7 +562,7 @@ class DeserializeOperation: NSOperation {
 				if let interpolatedHref = hrefTemplate.interpolate(serializedData.dictionaryObject! as NSDictionary, rootKeyPath: resource.type) {
 					href = NSURL(string: interpolatedHref)
 				} else {
-					assertionFailure("Error: Could not interpolate href template: \(hrefTemplate).")
+					assertionFailure("Error: Could not interpolate href template: \(hrefTemplate) with values \(serializedData.dictionaryObject!).")
 				}
 			}
 			
