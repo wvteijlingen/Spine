@@ -29,8 +29,9 @@ struct ResourceClassMap {
 	:param: type The Type of the subclass to register.
 	*/
 	mutating func registerClass(type: Resource.Type) {
-		let instance = type()
-		self.registeredClasses[instance.type] = type
+		let typeString = type().type
+		assert(registeredClasses[typeString] == nil, "Cannot register class of type \(type). A class with that type is already registered.")
+		self.registeredClasses[typeString] = type
 	}
 	
 	/**
@@ -40,8 +41,9 @@ struct ResourceClassMap {
 	:param: type The Type of the subclass to unregister.
 	*/
 	mutating func unregisterClass(type: Resource.Type) {
-		let instance = type()
-		self.registeredClasses[instance.type] = nil
+		let typeString = type().type
+		assert(registeredClasses[typeString] != nil, "Cannot unregister class of type \(type). Type does not exist in the class map.")
+		self.registeredClasses[typeString] = nil
 	}
 	
 	/**
