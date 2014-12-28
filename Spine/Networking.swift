@@ -27,6 +27,7 @@ protocol HTTPClientProtocol {
 	func authenticate(URL: String, username: String, password: String, scope: String?) -> Future<OAuthCredential>
 	func authenticate(URL: String, credential: OAuthCredential) -> Future<OAuthCredential>
 	func authenticate(URL: String, refreshToken: String) -> Future<OAuthCredential>
+	func revokeAuthentication()
 }
 
 class AlamofireClient: HTTPClientProtocol {
@@ -121,6 +122,10 @@ class AlamofireClient: HTTPClientProtocol {
 		]
 		
 		return self.authenticate(URL, parameters: parameters)
+	}
+	
+	func revokeAuthentication() {
+		self.credential = nil
 	}
 	
 	private func authenticate(URL: String, parameters: [String: AnyObject]) -> Future<OAuthCredential> {

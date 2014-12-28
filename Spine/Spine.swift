@@ -357,4 +357,8 @@ public class Spine {
 	public func authenticate(URLString: String, refreshToken: String) -> Future<OAuthCredential> {
 		return self.HTTPClient.authenticate(self.router.absoluteURLFromString(URLString).absoluteString!, refreshToken: refreshToken)
 	}
+	
+	public func revokeAuthentication() {
+		self.HTTPClient.revokeAuthentication()
+	}
 }
