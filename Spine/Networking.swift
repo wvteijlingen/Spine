@@ -24,8 +24,9 @@ protocol HTTPClientProtocol {
 
 	// MARK: OAuth
 	
-	func authenticate(URL: String, username: String, password: String, scope: String?) -> Future<Void>
-	func authenticate(URL: String, refreshToken: String) -> Future<Void>
+	func authenticate(URL: String, username: String, password: String, scope: String?) -> Future<OAuthCredential>
+	func authenticate(URL: String, credential: OAuthCredential) -> Future<OAuthCredential>
+	func authenticate(URL: String, refreshToken: String) -> Future<OAuthCredential>
 }
 
 class AlamofireClient: HTTPClientProtocol {
@@ -40,8 +41,6 @@ class AlamofireClient: HTTPClientProtocol {
 			}
 		}
 	}
-	var clientID: String?
-	var clientSecret: String?
 	
 	init() {
 		var additionalHeaders = Alamofire.Manager.sharedInstance.session.configuration.HTTPAdditionalHeaders!
@@ -90,7 +89,7 @@ class AlamofireClient: HTTPClientProtocol {
 	
 	// MARK: OAuth
 	
-	func authenticate(URL: String, username: String, password: String, scope: String? = nil) -> Future<Void> {
+	func authenticate(URL: String, username: String, password: String, scope: String? = nil) -> Future<OAuthCredential> {
 		var parameters = [
 			"grant_type": OAuthCredential.TokenType.PasswordCredentialsGrant.rawValue,
 			"username": username,
@@ -104,7 +103,18 @@ class AlamofireClient: HTTPClientProtocol {
 		return self.authenticate(URL, parameters: parameters)
 	}
 	
-	func authenticate(URL: String, refreshToken: String) -> Future<Void> {
+	func authenticate(URL: String, credential: OAuthCredential) -> Future<OAuthCredential> {
+		if credential.isExpired {
+			return self.authenticate(URL, refreshToken: credential.refreshToken!)
+		} else {
+			self.credential = credential
+			let promise = Promise<OAuthCredential>()
+			promise.success(credential)
+			return promise.future
+		}
+	}
+	
+	func authenticate(URL: String, refreshToken: String) -> Future<OAuthCredential> {
 		let parameters = [
 			"grant_type": OAuthCredential.TokenType.RefreshTokenGrant.rawValue,
 			"refresh_token": refreshToken,
@@ -113,8 +123,8 @@ class AlamofireClient: HTTPClientProtocol {
 		return self.authenticate(URL, parameters: parameters)
 	}
 	
-	private func authenticate(URL: String, parameters: [String: AnyObject]) -> Future<Void> {
-		let promise = Promise<Void>()
+	private func authenticate(URL: String, parameters: [String: AnyObject]) -> Future<OAuthCredential> {
+		let promise = Promise<OAuthCredential>()
 		
 		Alamofire.request(.POST, URL, parameters: parameters).response { request, response, data, error in
 			if let error = error {
@@ -163,7 +173,7 @@ class AlamofireClient: HTTPClientProtocol {
 				
 				self.credential = credential
 				
-				promise.success()
+				promise.success(credential)
 			}
 		}
 		
@@ -179,7 +189,7 @@ class AlamofireClient: HTTPClientProtocol {
 	}
 }
 
-struct OAuthCredential: Printable {
+public class OAuthCredential: NSObject, Printable, NSCoding {
 	enum TokenType: String {
 		case AuthorizationCodeGrant = "authorization_code"
 		case ClientCredentialsGrant = "client_credentials"
@@ -197,7 +207,26 @@ struct OAuthCredential: Printable {
 		self.tokenType = tokenType
 	}
 	
-	mutating func setRefreshToken(refreshToken: String, withExpirationDate expiration: NSDate) {
+	public required init(coder: NSCoder) {
+		if let type = coder.decodeObjectForKey("tokenType") as? String {
+			self.tokenType = TokenType(rawValue: type)!
+		} else {
+			self.tokenType = .PasswordCredentialsGrant
+		}
+		
+		self.accessToken = coder.decodeObjectForKey("accessToken") as String
+		self.refreshToken = coder.decodeObjectForKey("refreshToken") as? String
+		self.expirationDate = coder.decodeObjectForKey("expirationDate") as? NSDate
+	}
+	
+	public func encodeWithCoder(coder: NSCoder) {
+		coder.encodeObject(tokenType.rawValue, forKey: "tokenType")
+		coder.encodeObject(accessToken, forKey: "accessToken")
+		coder.encodeObject(refreshToken, forKey: "refreshToken")
+		coder.encodeObject(expirationDate, forKey: "expirationDate")
+	}
+	
+	func setRefreshToken(refreshToken: String, withExpirationDate expiration: NSDate) {
 		self.refreshToken = refreshToken
 		self.expirationDate = expiration
 	}
@@ -212,7 +241,7 @@ struct OAuthCredential: Printable {
 		}
 	}
 	
-	var description: String {
+	public override var description: String {
 		return "{accessToken: \(self.accessToken), refreshToken: \(self.refreshToken), expirationDate: \(self.expirationDate)}"
 	}
 }

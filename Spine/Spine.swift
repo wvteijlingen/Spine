@@ -346,11 +346,15 @@ public class Spine {
 	
 	// MARK: OAuth
 	
-	public func authenticate(URLString: String, username: String, password: String, scope: String? = nil) -> Future<Void> {
+	public func authenticate(URLString: String, username: String, password: String, scope: String? = nil) -> Future<OAuthCredential> {
 		return self.HTTPClient.authenticate(self.router.absoluteURLFromString(URLString).absoluteString!, username: username, password: password, scope: scope)
 	}
 	
-	public func authenticate(URLString: String, refreshToken: String) -> Future<Void> {
+	public func authenticate(URLString: String, credential: OAuthCredential) -> Future<OAuthCredential> {
+		return self.HTTPClient.authenticate(self.router.absoluteURLFromString(URLString).absoluteString!, credential: credential)
+	}
+	
+	public func authenticate(URLString: String, refreshToken: String) -> Future<OAuthCredential> {
 		return self.HTTPClient.authenticate(self.router.absoluteURLFromString(URLString).absoluteString!, refreshToken: refreshToken)
 	}
 }
