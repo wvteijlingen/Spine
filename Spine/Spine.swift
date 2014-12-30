@@ -206,21 +206,17 @@ public class Spine {
 		var operations: [Operation] = []
 		
 		// Create operations
-		for (attributeName, attribute) in resource.persistentAttributes {
-			if !attribute.isRelationship() {
-				continue
-			}
-			
+		for attribute in resource.persistentAttributes {
 			switch attribute.type {
-			case .ToOne:
-				let linkedResource = resource.valueForKey(attributeName) as LinkedResource
+			case let toOne as ToOneType:
+				let linkedResource = resource.valueForKey(attribute.name) as LinkedResource
 				if linkedResource.hasChanged && linkedResource.resource != nil {
-					operations.append((relationship: attributeName, type: "replace", resources: [linkedResource.resource!]))
+					operations.append((relationship: attribute.name, type: "replace", resources: [linkedResource.resource!]))
 				}
-			case .ToMany:
-				let linkedResources = resource.valueForKey(attributeName) as ResourceCollection
-				operations.append((relationship: attributeName, type: "add", resources: linkedResources.addedResources))
-				operations.append((relationship: attributeName, type: "remove", resources: linkedResources.removedResources))
+			case let toMany as ToManyType:
+				let linkedResources = resource.valueForKey(attribute.name) as ResourceCollection
+				operations.append((relationship: attribute.name, type: "add", resources: linkedResources.addedResources))
+				operations.append((relationship: attribute.name, type: "remove", resources: linkedResources.removedResources))
 			default: ()
 			}
 		}

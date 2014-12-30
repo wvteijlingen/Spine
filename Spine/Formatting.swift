@@ -10,21 +10,21 @@ import Foundation
 
 class Formatter {
 	
-	func deserialize(value: AnyObject, ofType type: ResourceAttribute.AttributeType) -> AnyObject {
+	func deserialize(value: AnyObject, ofType type: AttributeType) -> AnyObject {
 		switch type {
-		case .ISO8601Date:
-			return self.deserializeISO8601Date(value as String)
-		case .URL:
+		case let date as DateType:
+			return self.deserializeDate(value as String, format: date.format)
+		case let URL as URLType:
 			return self.deserializeURL(value as String)
 		default:
 			return value
 		}
 	}
 	
-	func serialize(value: AnyObject, ofType type: ResourceAttribute.AttributeType) -> AnyObject {
+	func serialize(value: AnyObject, ofType type: AttributeType) -> AnyObject {
 		switch type {
-		case .ISO8601Date:
-			return self.serializeISO8601Date(value as NSDate)
+		case let date as DateType:
+			return self.serializeDate(value as NSDate, format: date.format)
 		default:
 			return value
 		}
@@ -32,15 +32,15 @@ class Formatter {
 	
 	// MARK: Date
 	
-	private func serializeISO8601Date(date: NSDate) -> String {
+	private func serializeDate(date: NSDate, format: String) -> String {
 		let formatter = NSDateFormatter()
-		formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ssZZZZZ"
+		formatter.dateFormat = format
 		return formatter.stringFromDate(date)
 	}
 	
-	private func deserializeISO8601Date(value: String) -> NSDate {
+	private func deserializeDate(value: String, format: String) -> NSDate {
 		let formatter = NSDateFormatter()
-		formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ssZZZZZ"
+		formatter.dateFormat = format
 		
 		if let date = formatter.dateFromString(value) {
 			return date
