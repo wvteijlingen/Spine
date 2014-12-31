@@ -8,10 +8,6 @@
 
 import Foundation
 
-func isRelationship(attribute: Attribute) -> Bool {
-	return (attribute.type is ToOneType) || (attribute.type is ToManyType)
-}
-
 extension String {
 	func interpolate(callback: (key: String) -> String?) -> String {
 		var interpolatedString = ""

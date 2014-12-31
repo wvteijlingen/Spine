@@ -8,12 +8,17 @@
 
 import Foundation
 
-public protocol AttributeType { }
 
+func isRelationship(attribute: Attribute) -> Bool {
+	return (attribute is ToOneAttribute) || (attribute is ToManyAttribute)
+}
+
+
+/**
+*  Base attribute
+*/
 public class Attribute {
-	var type: AttributeType
-	
-	var name: String
+	var name: String!
 	
 	private var _serializedName: String?
 	var serializedName: String {
@@ -25,80 +30,68 @@ public class Attribute {
 		}
 	}
 	
-	init(_ name: String, type: AttributeType, serializedName: String? = nil) {
-		self.name = name
-		self.type = type
-		
-		if serializedName != nil {
-			self.serializedName = serializedName!
-		}
+	class func attributeType() -> String {
+		return "_unspecified"
 	}
 	
-	public func serializeAs(key: String) -> Attribute {
-		serializedName = key
+	init() { }
+	
+	public func serializeAs(name: String) -> Self{
+		serializedName = name
 		return self
 	}
 }
 
+// MARK: - Built in attributes
 
-// MARK: - Property
+public class PropertyAttribute: Attribute {
+	override class func attributeType() -> String {
+		return "property"
+	}
+	
+	public override init() { }
+}
 
-public struct PropertyType: AttributeType { }
+public class URLAttribute: Attribute {
+	override class func attributeType() -> String {
+		return "url"
+	}
+	
+	public override init() { }
+}
 
-extension Attribute {
-	public class func property(name: String) -> Attribute {
-		return Attribute(name, type: PropertyType())
+public class DateAttribute: Attribute {
+	let format: String
+	
+	override class func attributeType() -> String {
+		return "date"
+	}
+	
+	public init(_ format: String = "yyyy-MM-dd'T'HH:mm:ssZZZZZ") {
+		self.format = format
 	}
 }
 
-
-// MARK: - ToOne
-
-public struct ToOneType: AttributeType {
-	var linkedType: String
-}
-
-extension Attribute {
-	public class func toOne(name: String, linkedType: String) -> Attribute {
-		return Attribute(name, type: ToOneType(linkedType: linkedType))
+public class ToOneAttribute: Attribute {
+	let linkedType: String
+	
+	public init(_ type: String) {
+		linkedType = type
+	}
+	
+	override class func attributeType() -> String {
+		return "toOne"
 	}
 }
 
-
-// MARK: - ToMany
-
-public struct ToManyType: AttributeType {
-	var linkedType: String
-}
-
-extension Attribute {
-	public class func toMany(name: String, linkedType: String) -> Attribute {
-		return Attribute(name, type: ToManyType(linkedType: linkedType))
+public class ToManyAttribute: Attribute {
+	let linkedType: String
+	
+	public init(_ type: String) {
+		linkedType = type
 	}
-}
-
-
-// MARK: - Date
-
-public struct DateType: AttributeType {
-	var format: String = "yyyy-MM-dd'T'HH:mm:ssZZZZZ"
-}
-
-extension Attribute {
-	public class func date(name: String, format: String = "yyyy-MM-dd'T'HH:mm:ssZZZZZ") -> Attribute {
-		return Attribute(name, type: DateType(format: format))
+	
+	override class func attributeType() -> String {
+		return "toMany"
 	}
-}
-
-
-// MARK: - URL
-
-public struct URLType: AttributeType {
-
-}
-
-extension Attribute {
-	public class func url(name: String) -> Attribute {
-		return Attribute(name, type: URLType())
-	}
-}
+} 

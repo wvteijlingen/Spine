@@ -119,8 +119,15 @@ public class Resource: NSObject, NSCoding, Printable {
 	var links: [String: [String]]?
 	
 	/// Array of attributes that must be mapped by Spine.
-	public var persistentAttributes: [Attribute] {
-		return []
+	public var persistentAttributes: [String: Attribute] {
+		return [:]
+	}
+	
+	var attributes: [Attribute] {
+		return map(self.persistentAttributes) { (name, attribute) in
+			attribute.name = name
+			return attribute
+		}
 	}
 	
 	

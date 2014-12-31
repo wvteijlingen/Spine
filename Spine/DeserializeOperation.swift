@@ -19,17 +19,13 @@ class DeserializeOperation: NSOperation {
 	
 	// Input
 	private let classMap: ResourceClassMap
+	private let transformers: TransformerDirectory = TransformerDirectory()
 	private let data: JSON
 	private let options: DeserializationOptions
 	
 	// Output
 	private var store: Store
 	private var paginationData: PaginationData?
-	
-	
-	private lazy var formatter = {
-		Formatter()
-		}()
 	
 	var result: DeserializationResult?
 	
@@ -180,7 +176,7 @@ class DeserializeOperation: NSOperation {
 	:param: resource       The resource into which to extract the attributes.
 	*/
 	private func extractAttributes(serializedData: JSON, intoResource resource: Resource) {
-		for attribute in resource.persistentAttributes {
+		for attribute in resource.attributes {
 			if isRelationship(attribute) {
 				continue
 			}
@@ -188,7 +184,7 @@ class DeserializeOperation: NSOperation {
 			let key = attribute.serializedName
 			
 			if let extractedValue: AnyObject = self.extractAttribute(serializedData, key: key) {
-				let formattedValue: AnyObject = self.formatter.deserialize(extractedValue, ofType: attribute.type)
+				let formattedValue: AnyObject = self.transformers.deserialize(extractedValue, forAttribute: attribute)
 				resource.setValue(formattedValue, forKey: attribute.name)
 			}
 		}
@@ -226,19 +222,19 @@ class DeserializeOperation: NSOperation {
 	:param: resource       The resource into which to extract the relationships.
 	*/
 	private func extractRelationships(serializedData: JSON, intoResource resource: Resource, linkTemplates: JSON? = nil) {
-		for attribute in resource.persistentAttributes {
+		for attribute in resource.attributes {
 			if !isRelationship(attribute) {
 				continue
 			}
 			
 			let key = attribute.serializedName
 			
-			switch attribute.type {
-			case let toOne as ToOneType:
+			switch attribute {
+			case let toOne as ToOneAttribute:
 				if let linkedResource = self.extractToOneRelationship(serializedData, key: key, linkedType: toOne.linkedType, resource: resource, linkTemplates: linkTemplates) {
 					resource.setValue(linkedResource, forKey: attribute.name)
 				}
-			case let toMany as ToManyType:
+			case let toMany as ToManyAttribute:
 				if let linkedResources = self.extractToManyRelationship(serializedData, key: key, linkedType: toMany.linkedType, resource: resource, linkTemplates: linkTemplates) {
 					resource.setValue(linkedResources, forKey: attribute.name)
 				}
@@ -384,13 +380,13 @@ class DeserializeOperation: NSOperation {
 	private func resolveRelations() {
 		for resource in self.store {
 			
-			for attribute in resource.persistentAttributes {
+			for attribute in resource.attributes {
 				if !isRelationship(attribute) {
 					continue
 				}
 				
-				switch attribute.type {
-				case let toOne as ToOneType:
+				switch attribute {
+				case let toOne as ToOneAttribute:
 					if let linkedResource = resource.valueForKey(attribute.name) as? LinkedResource {
 						
 						// We can only resolve if an ID is known
@@ -408,7 +404,7 @@ class DeserializeOperation: NSOperation {
 						println("Cannot resolve to-one link '\(resource.type):\(resource.id!)' - '\(attribute.name) -> ?' because the link data is not fetched.")
 					}
 					
-				case let toMany as ToManyType:
+				case let toMany as ToManyAttribute:
 					if let linkedResource = resource.valueForKey(attribute.name) as? ResourceCollection {
 						var targetResources: [Resource] = []
 						

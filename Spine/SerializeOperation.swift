@@ -18,7 +18,7 @@ import SwiftyJSON
 class SerializeOperation: NSOperation {
 	
 	private let resources: [Resource]
-	private let formatter = Formatter()
+	private let transformers = TransformerDirectory()
 	private let options: SerializationOptions
 	
 	var result: [String: AnyObject]?
@@ -93,7 +93,7 @@ class SerializeOperation: NSOperation {
 	:param: resource       The resource whose attributes to add.
 	*/
 	private func addAttributes(inout serializedData: [String: AnyObject], resource: Resource) {
-		for attribute in resource.persistentAttributes {
+		for attribute in resource.attributes {
 			if isRelationship(attribute) {
 				continue
 			}
@@ -103,7 +103,7 @@ class SerializeOperation: NSOperation {
 			let key = attribute.serializedName
 			
 			if let unformattedValue: AnyObject = resource.valueForKey(attribute.name) {
-				self.addAttribute(&serializedData, key: key, value: self.formatter.serialize(unformattedValue, ofType: attribute.type))
+				self.addAttribute(&serializedData, key: key, value: self.transformers.serialize(unformattedValue, forAttribute: attribute))
 			} else {
 				self.addAttribute(&serializedData, key: key, value: NSNull())
 			}
@@ -136,19 +136,19 @@ class SerializeOperation: NSOperation {
 	:param: resource       The resource whose relationships to add.
 	*/
 	private func addRelationships(inout serializedData: [String: AnyObject], resource: Resource) {
-		for attribute in resource.persistentAttributes {
+		for attribute in resource.attributes {
 			if !isRelationship(attribute) {
 				continue
 			}
 			
 			let key = attribute.serializedName
 			
-			switch attribute.type {
-			case let toOne as ToOneType:
+			switch attribute {
+			case let toOne as ToOneAttribute:
 				if self.options.includeToOne {
 					self.addToOneRelationship(&serializedData, key: key, linkedResource: resource.valueForKey(attribute.name) as? LinkedResource)
 				}
-			case let toMany as ToManyType:
+			case let toMany as ToManyAttribute:
 				if self.options.includeToMany {
 					self.addToManyRelationship(&serializedData, key: key, linkedResources: resource.valueForKey(attribute.name) as? ResourceCollection)
 				}
