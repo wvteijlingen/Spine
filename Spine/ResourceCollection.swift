@@ -65,13 +65,13 @@ public class ResourceCollection: NSObject, NSCoding, ArrayLiteralConvertible, Se
 	}
 	
 	public init(_ resources: [Resource]) {
-		self.type = resources.first!.type
+		self.type = resources.first!.dynamicType.type
 		self.resources = resources
 		self.isLoaded = true
 	}
 	
 	public required init(arrayLiteral elements: Resource...) {
-		self.type = elements.first!.type
+		self.type = elements.first!.dynamicType.type
 		self.resources = elements
 		self.isLoaded = true
 	}
@@ -175,7 +175,7 @@ public class ResourceCollection: NSObject, NSCoding, ArrayLiteralConvertible, Se
 	
 	:returns: The query
 	*/
-	public func query() -> Query {
+	public func query() -> Query<Resource> {
 		return Query(linkedResourceCollection: self)
 	}
 	
@@ -184,48 +184,48 @@ public class ResourceCollection: NSObject, NSCoding, ArrayLiteralConvertible, Se
 	
 	:returns: A future promising an array of Resource objects.
 	*/
-	public func ensureResources() -> Future<([Resource])> {
-		return self.ensureWithQuery(self.query())
-	}
-	
-	/**
-	Loads the resources if they are not yet loaded.
-	The callback is passed a Query object that will be used to load the resources. In this callback, you can alter the query.
-	For example, you could include related resources or change the sparse fieldset.
-	
-	:param: queryCallback The query callback.
-	
-	:returns: A future promising an array of Resource objects.
-	*/
-	public func ensureResources(queryCallback: (Query) -> Void) -> Future<([Resource])> {
-		let query = self.query()
-		queryCallback(query)
-		return self.ensureWithQuery(query)
-	}
-	
-	/**
-	Loads the resources using a given query if they are not yet loaded.
-	
-	:param: query The query to load the resources.
-	
-	:returns: A future promising an array of Resource objects.
-	*/
-	private func ensureWithQuery(query: Query)  -> Future<([Resource])> {
-		let promise = Promise<([Resource])>()
-		
-		if self.isLoaded {
-			promise.success(self.resources!)
-		} else {
-			query.find().onSuccess { resourceCollection in
-				self.fulfill(resourceCollection.resources!)
-				promise.success(self.resources!)
-				}.onFailure { error in
-					promise.error(error)
-			}
-		}
-		
-		return promise.future
-	}
+//	public func ensureResources() -> Future<([Resource])> {
+//		return self.ensureWithQuery(self.query())
+//	}
+//	
+//	/**
+//	Loads the resources if they are not yet loaded.
+//	The callback is passed a Query object that will be used to load the resources. In this callback, you can alter the query.
+//	For example, you could include related resources or change the sparse fieldset.
+//	
+//	:param: queryCallback The query callback.
+//	
+//	:returns: A future promising an array of Resource objects.
+//	*/
+//	public func ensureResources(queryCallback: (Query<Resource>) -> Void) -> Future<([Resource])> {
+//		let query = self.query()
+//		queryCallback(query)
+//		return self.ensureWithQuery(query)
+//	}
+//	
+//	/**
+//	Loads the resources using a given query if they are not yet loaded.
+//	
+//	:param: query The query to load the resources.
+//	
+//	:returns: A future promising an array of Resource objects.
+//	*/
+//	private func ensureWithQuery(query: Query<Resource>) -> Future<([Resource])> {
+//		let promise = Promise<([Resource])>()
+//		
+//		if self.isLoaded {
+//			promise.success(self.resources!)
+//		} else {
+//			query.find().onSuccess { resourceCollection in
+//				self.fulfill(resourceCollection.resources!)
+//				promise.success(self.resources!)
+//				}.onFailure { error in
+//					promise.error(error)
+//			}
+//		}
+//		
+//		return promise.future
+//	}
 	
 	// MARK: ifLoaded
 	
@@ -297,4 +297,65 @@ public class ResourceCollection: NSObject, NSCoding, ArrayLiteralConvertible, Se
 		return nil
 	}
 	
+}
+
+
+// MARK: - Collection pagination
+
+protocol Paginatable {
+	var paginationData: PaginationData? { get set }
+	var canFetchNextPage: Bool { get }
+	var canFetchPreviousPage: Bool { get }
+	func fetchNextPage() -> Future<Void>
+	func fetchPreviousPage() -> Future<Void>
+}
+
+struct PaginationData {
+	var count: Int?
+	var limit: Int?
+	var beforeCursor: String?
+	var afterCursor: String?
+	var nextHref: NSURL?
+	var previousHref: NSURL?
+	
+	func toDictionary() -> NSDictionary {
+		var dictionary = NSDictionary()
+		
+		if let count = self.count {
+			dictionary.setValue(NSNumber(integer: count), forKey: "count")
+		}
+		
+		if let limit = self.limit {
+			dictionary.setValue(NSNumber(integer: limit), forKey: "limit")
+		}
+		
+		if let beforeCursor = self.beforeCursor {
+			dictionary.setValue(beforeCursor, forKey: "beforeCursor")
+		}
+		
+		if let afterCursor = self.afterCursor {
+			dictionary.setValue(afterCursor, forKey: "afterCursor")
+		}
+		
+		if let nextHref = self.nextHref {
+			dictionary.setValue(nextHref, forKey: "nextHref")
+		}
+		
+		if let previousHref = self.previousHref {
+			dictionary.setValue(previousHref, forKey: "previousHref")
+		}
+		
+		return dictionary
+	}
+	
+	static func fromDictionary(dictionary: NSDictionary) -> PaginationData {
+		return PaginationData(
+			count: (dictionary.valueForKey("count") as? NSNumber)?.integerValue,
+			limit: (dictionary.valueForKey("limit") as? NSNumber)?.integerValue,
+			beforeCursor: dictionary.valueForKey("beforeCursor") as? String,
+			afterCursor: dictionary.valueForKey("afterCursor") as? String,
+			nextHref: dictionary.valueForKey("nextHref") as? NSURL,
+			previousHref: dictionary.valueForKey("previousHref") as? NSURL
+		)
+	}
 }

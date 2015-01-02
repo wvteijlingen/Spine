@@ -33,7 +33,7 @@ internal struct QueryFilter {
 
 // MARK: -
 
-public class Query {
+public class Query<T: Resource> {
 	
 	/// The type of resource to fetch.
 	var resourceType: String
@@ -66,36 +66,24 @@ public class Query {
 	
 	:returns: Query
 	*/
-	public init(resourceType: String, resourceIDs: [String]? = nil) {
-		self.resourceType = resourceType
+	public init(resourceType: T.Type, resourceIDs: [String]? = nil) {
+		self.resourceType = resourceType.type
 		self.resourceIDs = resourceIDs
 	}
 	
-	public init(resource: Resource) {
+	public init(resource: T) {
 		assert(resource.uniqueIdentifier != nil, "Cannot instantiate query for resource, unique identifier is nil")
 		self.resourceType = resource.uniqueIdentifier!.type
 		self.resourceIDs = [resource.uniqueIdentifier!.id]
 	}
-
-//	public init(linkedResource: LinkedResource) {
-//		assert(linkedResource.link != nil, "Linked resources does not contain a link")
-//		
-//		self.URL = linkedResource.link?.href
-//		
-//		if let id = linkedResource.link?.id {
-//			self.resourceIDs = [id]
-//		}
-//		
-//		self.resourceType = linkedResource.link!.type
-//	}
 	
 	public init(linkedResourceCollection: ResourceCollection) {
 		self.URL = linkedResourceCollection.href
 		self.resourceType = linkedResourceCollection.type
 	}
 	
-	public init(resourceType: String, URLString: String) {
-		self.resourceType = resourceType
+	public init(resourceType: T.Type, URLString: String) {
+		self.resourceType = resourceType.type
 		self.URL = NSURL(string: URLString)
 	}
 	
@@ -333,7 +321,7 @@ extension Query {
 		return Spine.sharedInstance.fetchResourcesForQuery(self)
 	}
 	
-	public func findOne() -> Future<Resource> {
+	public func findOne() -> Future<T> {
 		return Spine.sharedInstance.fetchResourceForQuery(self)
 	}
 }

@@ -12,12 +12,10 @@ import BrightFutures
 /// The domain used for errors that occur within the Spine framework.
 let SPINE_ERROR_DOMAIN = "com.wardvanteijlingen.Spine"
 
-// The domain used for errors that are returned by the API.
+/// The domain used for errors that are returned by the API.
 let SPINE_API_ERROR_DOMAIN = "com.wardvanteijlingen.Spine.Api"
 
-/**
-What this framework is all about ;)
-*/
+/// The main class
 public class Spine {
 	
 	public class var sharedInstance: Spine {
@@ -81,11 +79,12 @@ public class Spine {
 	
 	// MARK: Public fetching methods
 	
-	public func fetchResourceForQuery(query: Query) -> Future<Resource> {
-		let promise = Promise<Resource>()
+	public func fetchResourceForQuery<T: Resource>(query: Query<T>) -> Future<T> {
+		let promise = Promise<T>()
 		
 		self.fetch(query).onSuccess { resources in
-			promise.success(resources.resources!.first!)
+			let resource = resources.resources!.first! as T
+			promise.success(resource)
 		}.onFailure { error in
 			promise.error(error)
 		}
@@ -93,14 +92,14 @@ public class Spine {
 		return promise.future
 	}
 	
-	public func fetchResourcesForQuery(query: Query) -> Future<ResourceCollection> {
+	public func fetchResourcesForQuery<T: Resource>(query: Query<T>) -> Future<ResourceCollection> {
 		return self.fetch(query)
 	}
 	
 	
 	// MARK: Internal fetching methods
 
-	func fetch(query: Query, mapOnto mappingTargetResources: [Resource] = []) -> Future<(ResourceCollection)> {
+	func fetch<T: Resource>(query: Query<T>, mapOnto mappingTargetResources: [Resource] = []) -> Future<(ResourceCollection)> {
 		// We can only map onto resources that are not loaded yet
 		for resource in mappingTargetResources {
 			assert(resource.isLoaded == false, "Cannot map onto loaded resource \(resource)")
@@ -164,7 +163,7 @@ public class Spine {
 			saveFuture = self.HTTPClient.put(URLString, json: json)
 		} else {
 			resource.id = NSUUID().UUIDString
-			let URLString = self.router.URLForQuery(Query(resourceType: resource.type)).absoluteString!
+			let URLString = self.router.URLForQuery(Query(resourceType: resource.dynamicType)).absoluteString!
 			let json = self.serializer.serializeResources([resource], options: SerializationOptions(dirtyAttributesOnly: false, includeToOne: true, includeToMany: true))
 			saveFuture = self.HTTPClient.post(URLString, json: json)
 		}
@@ -339,22 +338,56 @@ public class Spine {
 }
 
 
-// MARK: OAuth
+// MARK: - OAuth
 
 extension Spine {
 	public func authenticate(URLString: String, username: String, password: String, scope: String? = nil) -> Future<OAuthCredential> {
-		return self.HTTPClient.authenticate(self.router.absoluteURLFromString(URLString).absoluteString!, username: username, password: password, scope: scope)
+		let authenticationURL = NSURL(string: URLString, relativeToURL: baseURL)!
+		return self.HTTPClient.authenticate(authenticationURL, username: username, password: password, scope: scope)
 	}
 	
 	public func authenticate(URLString: String, credential: OAuthCredential) -> Future<OAuthCredential> {
-		return self.HTTPClient.authenticate(self.router.absoluteURLFromString(URLString).absoluteString!, credential: credential)
+		let authenticationURL = NSURL(string: URLString, relativeToURL: baseURL)!
+		return self.HTTPClient.authenticate(authenticationURL, credential: credential)
 	}
 	
 	public func authenticate(URLString: String, refreshToken: String) -> Future<OAuthCredential> {
-		return self.HTTPClient.authenticate(self.router.absoluteURLFromString(URLString).absoluteString!, refreshToken: refreshToken)
+		let authenticationURL = NSURL(string: URLString, relativeToURL: baseURL)!
+		return self.HTTPClient.authenticate(authenticationURL, refreshToken: refreshToken)
 	}
 	
 	public func revokeAuthentication() {
 		self.HTTPClient.revokeAuthentication()
 	}
+}
+
+
+// MARK: - Finders
+
+// Find one
+public func findOne<T: Resource>(ID: String, ofType type: T.Type) -> Future<T> {
+	let query = Query(resourceType: type, resourceIDs: [ID])
+	return Spine.sharedInstance.fetchResourceForQuery(query)
+}
+
+// Find multiple
+public func find<T: Resource>(IDs: [String], ofType type: T.Type) -> Future<ResourceCollection> {
+	let query = Query(resourceType: type, resourceIDs: IDs)
+	return Spine.sharedInstance.fetchResourcesForQuery(query)
+}
+
+// Find all
+public func find<T: Resource>(type: T.Type) -> Future<ResourceCollection> {
+	let query = Query(resourceType: type)
+	return Spine.sharedInstance.fetchResourcesForQuery(query)
+}
+
+// Find by query
+public func find<T: Resource>(query: Query<T>) -> Future<ResourceCollection> {
+	return Spine.sharedInstance.fetchResourcesForQuery(query)
+}
+
+// Find one by query
+public func findOne<T: Resource>(query: Query<T>) -> Future<T> {
+	return Spine.sharedInstance.fetchResourceForQuery(query)
 }

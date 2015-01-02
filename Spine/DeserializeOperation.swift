@@ -157,7 +157,7 @@ class DeserializeOperation: NSOperation {
 		if serializedData["id"].stringValue != "" {
 			resource.id = serializedData["id"].stringValue
 		} else {
-			assertionFailure("Cannot deserialize resource of type: \(resource.type). Serializated data must contain a primary key named 'id'.")
+			assertionFailure("Cannot deserialize resource of type: \(resource.dynamicType.type). Serializated data must contain a primary key named 'id'.")
 		}
 	}
 	
@@ -306,11 +306,11 @@ class DeserializeOperation: NSOperation {
 		}
 		
 		// Document level link template
-		if let linkData = linkTemplates?[resource.type + "." + key].dictionary {
+		if let linkData = linkTemplates?[resource.dynamicType.type + "." + key].dictionary {
 			var href: NSURL?, type: String
 			
 			if let hrefTemplate = linkData["href"]?.string {
-				if let interpolatedHref = hrefTemplate.interpolate(serializedData.dictionaryObject! as NSDictionary, rootKeyPath: resource.type) {
+				if let interpolatedHref = hrefTemplate.interpolate(serializedData.dictionaryObject! as NSDictionary, rootKeyPath: resource.dynamicType.type) {
 					href = NSURL(string: interpolatedHref)
 				} else {
 					assertionFailure("Could not interpolate href template: \(hrefTemplate) with values: \(serializedData.dictionaryObject!).")
@@ -370,11 +370,11 @@ class DeserializeOperation: NSOperation {
 		}
 		
 		// Document level link template
-		if let linkData = linkTemplates?[resource.type + "." + key].dictionary {
+		if let linkData = linkTemplates?[resource.dynamicType.type + "." + key].dictionary {
 			var href: NSURL?, type: String, IDs: [String]?
 			
 			if let hrefTemplate = linkData["href"]?.string {
-				if let interpolatedHref = hrefTemplate.interpolate(serializedData.dictionaryObject! as NSDictionary, rootKeyPath: resource.type) {
+				if let interpolatedHref = hrefTemplate.interpolate(serializedData.dictionaryObject! as NSDictionary, rootKeyPath: resource.dynamicType.type) {
 					href = NSURL(string: interpolatedHref)
 				} else {
 					assertionFailure("Error: Could not interpolate href template: \(hrefTemplate) with values \(serializedData.dictionaryObject!).")
@@ -422,16 +422,16 @@ class DeserializeOperation: NSOperation {
 								if let targetResource = store.objectWithType(linkedResource.type, identifier: id) {
 									targetResources.append(targetResource)
 								} else {
-									println("Cannot resolve to-many link \(resource.type):\(resource.id!) - \(attribute.name) -> \(linkedResource.type):\(id) because the linked resource does not exist in the store.")
+									println("Cannot resolve to-many link \(resource.dynamicType.type):\(resource.id!) - \(attribute.name) -> \(linkedResource.type):\(id) because the linked resource does not exist in the store.")
 								}
 							}
 							
 							linkedResource.fulfill(targetResources)
 						} else {
-							println("Cannot resolve to-many link \(resource.type):\(resource.id!) - \(attribute.name) -> \(linkedResource.type):? because the foreign IDs are not known.")
+							println("Cannot resolve to-many link \(resource.dynamicType.type):\(resource.id!) - \(attribute.name) -> \(linkedResource.type):? because the foreign IDs are not known.")
 						}
 					} else {
-						println("Cannot resolve to-many link \(resource.type):\(resource.id!) - \(attribute.name) -> ? because the link data is not fetched.")
+						println("Cannot resolve to-many link \(resource.dynamicType.type):\(resource.id!) - \(attribute.name) -> ? because the link data is not fetched.")
 					}
 					
 				default: ()

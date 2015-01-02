@@ -105,7 +105,7 @@ class Store: ArrayLiteralConvertible, SequenceType, Printable {
 	var description: String {
 		var string = ""
 		for object in self.allObjects() {
-			string += "\(object.type)[\(object.id)]\n"
+			string += "\(object.dynamicType.type)[\(object.id)]\n"
 		}
 		
 		return string

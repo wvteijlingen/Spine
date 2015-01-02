@@ -32,7 +32,7 @@ class SerializeOperation: NSOperation {
 		if self.resources.count == 1 {
 			let resource = self.resources.first!
 			let serializedData = self.serializeResource(resource)
-			self.result = [resource.type: serializedData]
+			self.result = [resource.dynamicType.type: serializedData]
 			
 		} else  {
 			var dictionary: [String: [[String: AnyObject]]] = [:]
@@ -41,10 +41,10 @@ class SerializeOperation: NSOperation {
 				var serializedData = self.serializeResource(resource)
 				
 				//Add the resource representation to the root dictionary
-				if dictionary[resource.type] == nil {
-					dictionary[resource.type] = [serializedData]
+				if dictionary[resource.dynamicType.type] == nil {
+					dictionary[resource.dynamicType.type] = [serializedData]
 				} else {
-					dictionary[resource.type]!.append(serializedData)
+					dictionary[resource.dynamicType.type]!.append(serializedData)
 				}
 			}
 			

@@ -24,9 +24,9 @@ protocol HTTPClientProtocol {
 
 	// MARK: OAuth
 	
-	func authenticate(URL: String, username: String, password: String, scope: String?) -> Future<OAuthCredential>
-	func authenticate(URL: String, credential: OAuthCredential) -> Future<OAuthCredential>
-	func authenticate(URL: String, refreshToken: String) -> Future<OAuthCredential>
+	func authenticate(URL: NSURL, username: String, password: String, scope: String?) -> Future<OAuthCredential>
+	func authenticate(URL: NSURL, credential: OAuthCredential) -> Future<OAuthCredential>
+	func authenticate(URL: NSURL, refreshToken: String) -> Future<OAuthCredential>
 	func revokeAuthentication()
 }
 
@@ -90,7 +90,7 @@ class AlamofireClient: HTTPClientProtocol {
 	
 	// MARK: OAuth
 	
-	func authenticate(URL: String, username: String, password: String, scope: String? = nil) -> Future<OAuthCredential> {
+	func authenticate(URL: NSURL, username: String, password: String, scope: String? = nil) -> Future<OAuthCredential> {
 		var parameters = [
 			"grant_type": OAuthCredential.TokenType.PasswordCredentialsGrant.rawValue,
 			"username": username,
@@ -104,7 +104,7 @@ class AlamofireClient: HTTPClientProtocol {
 		return self.authenticate(URL, parameters: parameters)
 	}
 	
-	func authenticate(URL: String, credential: OAuthCredential) -> Future<OAuthCredential> {
+	func authenticate(URL: NSURL, credential: OAuthCredential) -> Future<OAuthCredential> {
 		if credential.isExpired {
 			return self.authenticate(URL, refreshToken: credential.refreshToken!)
 		} else {
@@ -115,7 +115,7 @@ class AlamofireClient: HTTPClientProtocol {
 		}
 	}
 	
-	func authenticate(URL: String, refreshToken: String) -> Future<OAuthCredential> {
+	func authenticate(URL: NSURL, refreshToken: String) -> Future<OAuthCredential> {
 		let parameters = [
 			"grant_type": OAuthCredential.TokenType.RefreshTokenGrant.rawValue,
 			"refresh_token": refreshToken,
@@ -128,7 +128,7 @@ class AlamofireClient: HTTPClientProtocol {
 		self.credential = nil
 	}
 	
-	private func authenticate(URL: String, parameters: [String: AnyObject]) -> Future<OAuthCredential> {
+	private func authenticate(URL: NSURL, parameters: [String: AnyObject]) -> Future<OAuthCredential> {
 		let promise = Promise<OAuthCredential>()
 		
 		Alamofire.request(.POST, URL, parameters: parameters).response { request, response, data, error in
