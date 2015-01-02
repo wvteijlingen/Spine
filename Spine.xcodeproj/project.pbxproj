@@ -23,7 +23,6 @@
 		D35CE46F19B276E4002B358E /* Resource.swift in Sources */ = {isa = PBXBuildFile; fileRef = D373F7A219B224BB00275AFC /* Resource.swift */; };
 		D35CE47019B276E4002B358E /* Serializing.swift in Sources */ = {isa = PBXBuildFile; fileRef = D373F7A119B224BB00275AFC /* Serializing.swift */; };
 		D35F9D3C1A52FCBB00E5FF97 /* ResourceCollection.swift in Sources */ = {isa = PBXBuildFile; fileRef = D35F9D3B1A52FCBB00E5FF97 /* ResourceCollection.swift */; };
-		D35F9D3E1A52FCD600E5FF97 /* LinkedResource.swift in Sources */ = {isa = PBXBuildFile; fileRef = D35F9D3D1A52FCD600E5FF97 /* LinkedResource.swift */; };
 		D35F9D411A53014500E5FF97 /* DeserializeOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = D35F9D401A53014500E5FF97 /* DeserializeOperation.swift */; };
 		D35F9D431A53016000E5FF97 /* SerializeOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = D35F9D421A53016000E5FF97 /* SerializeOperation.swift */; };
 		D35F9D481A532EC600E5FF97 /* Transformer.swift in Sources */ = {isa = PBXBuildFile; fileRef = D35F9D471A532EC600E5FF97 /* Transformer.swift */; };
@@ -47,7 +46,6 @@
 		D3411E7A1A4B5D2200D27F54 /* SwiftyJSON.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftyJSON.framework; path = ../Carthage/Build/iOS/SwiftyJSON.framework; sourceTree = "<group>"; };
 		D341907619D30BA4007B38D6 /* Routing.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Routing.swift; sourceTree = "<group>"; };
 		D35F9D3B1A52FCBB00E5FF97 /* ResourceCollection.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ResourceCollection.swift; sourceTree = "<group>"; };
-		D35F9D3D1A52FCD600E5FF97 /* LinkedResource.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LinkedResource.swift; sourceTree = "<group>"; };
 		D35F9D401A53014500E5FF97 /* DeserializeOperation.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DeserializeOperation.swift; sourceTree = "<group>"; };
 		D35F9D421A53016000E5FF97 /* SerializeOperation.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SerializeOperation.swift; sourceTree = "<group>"; };
 		D35F9D471A532EC600E5FF97 /* Transformer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Transformer.swift; sourceTree = "<group>"; };
@@ -91,7 +89,6 @@
 			children = (
 				D373F7A219B224BB00275AFC /* Resource.swift */,
 				D39929EA1A52F3A0008BF0A9 /* ResourceAttribute.swift */,
-				D35F9D3D1A52FCD600E5FF97 /* LinkedResource.swift */,
 				D35F9D3B1A52FCBB00E5FF97 /* ResourceCollection.swift */,
 			);
 			name = Resource;
@@ -294,7 +291,6 @@
 				D373F7A419B224BB00275AFC /* Serializing.swift in Sources */,
 				D3DFBB6519B9DC64009785BE /* Networking.swift in Sources */,
 				D373F7A519B224BB00275AFC /* Resource.swift in Sources */,
-				D35F9D3E1A52FCD600E5FF97 /* LinkedResource.swift in Sources */,
 				D35F9D3C1A52FCBB00E5FF97 /* ResourceCollection.swift in Sources */,
 				D328A4AA1A4EED0000FFC18D /* Utilities.swift in Sources */,
 				D39929EB1A52F3A0008BF0A9 /* ResourceAttribute.swift in Sources */,

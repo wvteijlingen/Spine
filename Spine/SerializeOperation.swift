@@ -146,7 +146,7 @@ class SerializeOperation: NSOperation {
 			switch attribute {
 			case let toOne as ToOneAttribute:
 				if self.options.includeToOne {
-					self.addToOneRelationship(&serializedData, key: key, linkedResource: resource.valueForKey(attribute.name) as? LinkedResource)
+					self.addToOneRelationship(&serializedData, key: key, linkedResource: resource.valueForKey(attribute.name) as? Resource)
 				}
 			case let toMany as ToManyAttribute:
 				if self.options.includeToMany {
@@ -164,10 +164,10 @@ class SerializeOperation: NSOperation {
 	:param: key             The key to add to the serialized data.
 	:param: relatedResource The related resource to add to the serialized data.
 	*/
-	private func addToOneRelationship(inout serializedData: [String: AnyObject], key: String, linkedResource: LinkedResource?) {
+	private func addToOneRelationship(inout serializedData: [String: AnyObject], key: String, linkedResource: Resource?) {
 		var linkData: AnyObject
 		
-		if let ID = linkedResource?.resource?.id {
+		if let ID = linkedResource?.id {
 			linkData = ID
 		} else {
 			linkData = NSNull()

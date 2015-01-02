@@ -86,6 +86,19 @@ struct PaginationData {
 *  You must create custom resource classes by subclassing from Resource.
 */
 public class Resource: NSObject, NSCoding, Printable {
+	public var id: String?
+	public var href: NSURL?
+	public var type: String { return "_unknown_type" }
+	public var isLoaded: Bool = false
+	
+	public var uniqueIdentifier: ResourceIdentifier? {
+		if let id = self.id {
+			return (type: self.type, id: id)
+		}
+		
+		return nil
+	}
+	
 	
 	// MARK: Initializers
 	
@@ -94,17 +107,21 @@ public class Resource: NSObject, NSCoding, Printable {
 		super.init()
 	}
 	
-	public init(id: String) {
+	public init(id: String?, href: NSURL?) {
 		super.init()
 		self.id = id
+		self.href = href
 	}
+
 	
 	// MARK: NSCoding protocol
 	
 	public required init(coder: NSCoder) {
 		super.init()
 		self.id = coder.decodeObjectForKey("id") as? String
-		self.href = coder.decodeObjectForKey("href") as? String
+		self.href = coder.decodeObjectForKey("href") as? NSURL
+		self.isLoaded = coder.decodeBoolForKey("isLoaded")
+
 	}
 	
 	public func encodeWithCoder(coder: NSCoder) {
@@ -114,9 +131,6 @@ public class Resource: NSObject, NSCoding, Printable {
 	
 	
 	// MARK: Mapping data
-	
-	/// IDs of resources that must be linked up after mapping
-	var links: [String: [String]]?
 	
 	/// Array of attributes that must be mapped by Spine.
 	public var persistentAttributes: [String: Attribute] {
@@ -131,47 +145,51 @@ public class Resource: NSObject, NSCoding, Printable {
 	}
 	
 	
-	// MARK: Identification
-	
-	private var _id: String?
-	public var id: String? {
-		get {
-			return self._id
-		}
-		set (newValue) {
-			self._id = newValue
-		}
-	}
-	
-	private var _href: String?
-	public var href: String? {
-		get {
-			return self._href
-		}
-		set (newValue) {
-			self._href = newValue
-		}
-	}
-	
-	public var type: String {
-		return "_unknown_type"
-	}
-	
-	public var uniqueIdentifier: ResourceIdentifier? {
-		get {
-			if let id = self.id {
-				return (type: self.type, id: id)
-			}
-			
-			return nil
-		}
-	}
-	
-	
 	// MARK: Printable protocol
 	
 	override public var description: String {
 		return "\(self.type)[\(self.id)]"
+	}
+	
+	
+	// MARK: Fetching
+	
+	public func query() -> Query {
+		return Query(resource: self)
+	}
+	
+	public func ensureResource() -> Future<(Resource)> {
+		return self.ensureWithQuery(self.query())
+	}
+	
+	public func ensureResource(queryCallback: (Query) -> Void) -> Future<(Resource)> {
+		let query = self.query()
+		queryCallback(query)
+		return self.ensureWithQuery(query)
+	}
+	
+	private func ensureWithQuery(query: Query) -> Future<(Resource)> {
+		let promise = Promise<(Resource)>()
+		
+		if self.isLoaded {
+			promise.success(self)
+		} else {
+			Spine.sharedInstance.fetch(query, mapOnto: [self]).onSuccess { resources in
+				promise.success(self)
+			}.onFailure { error in
+				promise.error(error)
+			}
+		}
+		
+		return promise.future
+	}
+	
+	public func ifLoaded(callback: (Resource) -> Void) -> Self {
+		if self.isLoaded {
+			callback(self)
+		}
+
+		return self
 	}
 }
 
@@ -186,7 +204,7 @@ extension Resource {
 	:returns: A future of this resource.
 	*/
 	public func save() -> Future<Resource> {
-		return Spine.sharedInstance.saveResource(self)
+		return Spine.sharedInstance.save(self)
 	}
 
 	/**
@@ -195,7 +213,7 @@ extension Resource {
 	:returns: A void future.
 	*/
 	public func delete() -> Future<Void> {
-		return Spine.sharedInstance.deleteResource(self)
+		return Spine.sharedInstance.delete(self)
 	}
 
 	/**

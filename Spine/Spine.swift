@@ -79,20 +79,12 @@ public class Spine {
 	}
 	
 	
-	// MARK: Fetching
+	// MARK: Public fetching methods
 	
-	/**
-	Fetches a resource with the given type and ID.
-	
-	:param: resourceType The type of resource to fetch. Must be plural.
-	:param: ID           The ID of the resource to fetch.
-	:param: success      Function to call after success.
-	:param: failure      Function to call after failure.
-	*/
 	public func fetchResourceForQuery(query: Query) -> Future<Resource> {
 		let promise = Promise<Resource>()
 		
-		self.fetchResourcesForQuery(query).onSuccess { resources in
+		self.fetch(query).onSuccess { resources in
 			promise.success(resources.resources!.first!)
 		}.onFailure { error in
 			promise.error(error)
@@ -101,14 +93,19 @@ public class Spine {
 		return promise.future
 	}
 	
-	/**
-	Fetches resources by executing the given query.
+	public func fetchResourcesForQuery(query: Query) -> Future<ResourceCollection> {
+		return self.fetch(query)
+	}
 	
-	:param: query The query to execute.
 	
-	:returns: Future of an array of resources.
-	*/
-	public func fetchResourcesForQuery(query: Query) -> Future<(ResourceCollection)> {
+	// MARK: Internal fetching methods
+
+	func fetch(query: Query, mapOnto mappingTargetResources: [Resource] = []) -> Future<(ResourceCollection)> {
+		// We can only map onto resources that are not loaded yet
+		for resource in mappingTargetResources {
+			assert(resource.isLoaded == false, "Cannot map onto loaded resource \(resource)")
+		}
+		
 		let promise = Promise<ResourceCollection>()
 		
 		let URLString = self.router.URLForQuery(query).absoluteString!
@@ -116,7 +113,8 @@ public class Spine {
 		self.HTTPClient.get(URLString).onSuccess { statusCode, data in
 			
 			if 200 ... 299 ~= statusCode! {
-				let deserializationResult = self.serializer.deserializeData(data!)
+				let store = Store(objects: mappingTargetResources)
+				let deserializationResult = self.serializer.deserializeData(data!, usingStore: store)
 				
 				if let store = deserializationResult.store {
 					let collection = ResourceCollection(store.allObjectsWithType(query.resourceType))
@@ -152,7 +150,7 @@ public class Spine {
 	
 	:returns: Future of the resource saved.
 	*/
-	public func saveResource(resource: Resource) -> Future<Resource> {
+	public func save(resource: Resource) -> Future<Resource> {
 		let promise = Promise<Resource>()
 		
 		var saveFuture: Future<(Int?, NSData?)>
@@ -182,7 +180,7 @@ public class Spine {
 			if shouldUpdateRelationships == false {
 				promise.success(resource)
 			} else {
-				self.updateResourceRelationships(resource).onSuccess {
+				self.updateRelationshipsOfResource(resource).onSuccess {
 					promise.success(resource)
 					}.onFailure { error in
 						println("Error updating resource relationships: \(error)")
@@ -198,7 +196,7 @@ public class Spine {
 		return promise.future
 	}
 	
-	private func updateResourceRelationships(resource: Resource) -> Future<Void> {
+	private func updateRelationshipsOfResource(resource: Resource) -> Future<Void> {
 		let promise = Promise<Void>()
 		
 		typealias Operation = (relationship: String, type: String, resources: [Resource])
@@ -209,9 +207,9 @@ public class Spine {
 		for attribute in resource.attributes {
 			switch attribute {
 			case let toOne as ToOneAttribute:
-				let linkedResource = resource.valueForKey(attribute.name) as LinkedResource
-				if linkedResource.hasChanged && linkedResource.resource != nil {
-					operations.append((relationship: attribute.name, type: "replace", resources: [linkedResource.resource!]))
+				let linkedResource = resource.valueForKey(attribute.name) as Resource
+				if linkedResource.id != nil {
+					operations.append((relationship: attribute.name, type: "replace", resources: [linkedResource]))
 				}
 			case let toMany as ToManyAttribute:
 				let linkedResources = resource.valueForKey(attribute.name) as ResourceCollection
@@ -325,7 +323,7 @@ public class Spine {
 	
 	:returns: Void future.
 	*/
-	public func deleteResource(resource: Resource) -> Future<Void> {
+	public func delete(resource: Resource) -> Future<Void> {
 		let promise = Promise<Void>()
 		
 		let URLString = self.router.URLForQuery(Query(resource: resource)).absoluteString!
@@ -338,10 +336,12 @@ public class Spine {
 		
 		return promise.future
 	}
-	
-	
-	// MARK: OAuth
-	
+}
+
+
+// MARK: OAuth
+
+extension Spine {
 	public func authenticate(URLString: String, username: String, password: String, scope: String? = nil) -> Future<OAuthCredential> {
 		return self.HTTPClient.authenticate(self.router.absoluteURLFromString(URLString).absoluteString!, username: username, password: password, scope: scope)
 	}

@@ -100,26 +100,7 @@ class DeserializeOperation: NSOperation {
 		assert(representation.dictionary != nil, "The given JSON representation was not of type 'object' (dictionary).")
 		
 		// Find existing resource in the store, or create a new resource.
-		var resource: Resource
-		var isExistingResource: Bool
-		
-		if let existingResource = self.store.objectWithType(resourceType, identifier: representation["id"].stringValue) {
-			resource = existingResource
-			isExistingResource = true
-			
-		} else if self.options.mapOntoFirstResourceInStore == true {
-			if let existingResource = self.store.allObjectsWithType(resourceType).first {
-				resource = existingResource
-				isExistingResource = true
-			} else {
-				resource = self.classMap[resourceType]() as Resource
-				isExistingResource = false
-			}
-			
-		} else {
-			resource = self.classMap[resourceType]() as Resource
-			isExistingResource = false
-		}
+		let resource: Resource = dispenseResourceWithType(resourceType, id: representation["id"].stringValue, useFirst: options.mapOntoFirstResourceInStore)
 		
 		// Extract data into resource
 		self.extractID(representation, intoResource: resource)
@@ -127,10 +108,40 @@ class DeserializeOperation: NSOperation {
 		self.extractAttributes(representation, intoResource: resource)
 		self.extractRelationships(representation, intoResource: resource, linkTemplates: linkTemplates)
 		
+		// Set loaded flag
+		resource.isLoaded = true
+	}
+	
+	private func dispenseResourceWithType(type: String, id: String, useFirst: Bool) -> Resource {
+		var resource: Resource
+		var isExistingResource: Bool
+		
+		if let existingResource = store.objectWithType(type, identifier: id) {
+			resource = existingResource
+			isExistingResource = true
+			
+		} else if useFirst {
+			if let existingResource = store.allObjectsWithType(type).first {
+				resource = existingResource
+				isExistingResource = true
+			} else {
+				resource = classMap[type]() as Resource
+				resource.id = id
+				isExistingResource = false
+			}
+			
+		} else {
+			resource = classMap[type]() as Resource
+			resource.id = id
+			isExistingResource = false
+		}
+		
 		// Add resource to store if needed
 		if !isExistingResource {
-			self.store.add(resource)
+			store.add(resource)
 		}
+		
+		return resource
 	}
 	
 	
@@ -157,7 +168,7 @@ class DeserializeOperation: NSOperation {
 	:param: resource       The resource into which to extract the href.
 	*/
 	private func extractHref(serializedData: JSON, intoResource resource: Resource) {
-		if let href = serializedData["href"].string {
+		if let href = serializedData["href"].URL {
 			resource.href = href
 		}
 	}
@@ -253,7 +264,20 @@ class DeserializeOperation: NSOperation {
 	
 	:returns: The extracted relationship or nil if no relationship with the given key was found in the data.
 	*/
-	private func extractToOneRelationship(serializedData: JSON, key: String, linkedType: String, resource: Resource, linkTemplates: JSON? = nil) -> LinkedResource? {
+	private func extractToOneRelationship(serializedData: JSON, key: String, linkedType: String, resource: Resource, linkTemplates: JSON? = nil) -> Resource? {
+		func extractedResource(type: String, id: String?, href: NSURL?) -> Resource {
+			// If no ID is given, we cannot add it to the store. Return a placeholder resource.
+			if id == nil {
+				let resource = self.classMap[type]() as Resource
+				resource.id = id
+				return resource
+			}
+			
+			let resource = self.dispenseResourceWithType(type, id: id!, useFirst: false)
+			resource.href = href
+			return resource
+		}
+		
 		// Resource level link with href/id/type combo
 		if let linkData = serializedData["links"][key].dictionary {
 			var href: NSURL?, type: String, ID: String?
@@ -272,13 +296,13 @@ class DeserializeOperation: NSOperation {
 				ID = linkData["id"]!.stringValue
 			}
 			
-			return LinkedResource(href: href, type: type, id: ID)
+			return extractedResource(type, ID, href)
 		}
 		
 		// Resource level link with only an id
 		let ID = serializedData["links"][key].stringValue
 		if ID != "" {
-			return LinkedResource(href: nil, type: linkedType, id: ID)
+			return extractedResource(linkedType, ID, nil)
 		}
 		
 		// Document level link template
@@ -299,7 +323,7 @@ class DeserializeOperation: NSOperation {
 				type = linkedType
 			}
 			
-			return LinkedResource(href: href, type: type)
+			return extractedResource(type, nil, href)
 		}
 		
 		return nil
@@ -386,46 +410,28 @@ class DeserializeOperation: NSOperation {
 				}
 				
 				switch attribute {
-				case let toOne as ToOneAttribute:
-					if let linkedResource = resource.valueForKey(attribute.name) as? LinkedResource {
-						
-						// We can only resolve if an ID is known
-						if let id = linkedResource.link?.id {
-							// Find target of relation in store
-							if let targetResource = store.objectWithType(linkedResource.link!.type, identifier: id) {
-								linkedResource.fulfill(targetResource)
-							} else {
-								println("Cannot resolve to-one link '\(resource.type):\(resource.id!) - \(attribute.name) -> \(linkedResource.link!.type):\(id)' because the linked resource does not exist in the store.")
-							}
-						} else {
-							println("Cannot resolve to-one link '\(resource.type):\(resource.id!) - \(attribute.name) -> \(linkedResource.link!.type):?' because the foreign ID is not known.")
-						}
-					} else {
-						println("Cannot resolve to-one link '\(resource.type):\(resource.id!)' - '\(attribute.name) -> ?' because the link data is not fetched.")
-					}
-					
 				case let toMany as ToManyAttribute:
 					if let linkedResource = resource.valueForKey(attribute.name) as? ResourceCollection {
 						var targetResources: [Resource] = []
 						
 						// We can only resolve if IDs are known
-						if let ids = linkedResource.link?.ids {
+						if let ids = linkedResource.ids {
 							
 							for id in ids {
 								// Find target of relation in store
-								if let targetResource = store.objectWithType(linkedResource.link!.type, identifier: id) {
+								if let targetResource = store.objectWithType(linkedResource.type, identifier: id) {
 									targetResources.append(targetResource)
 								} else {
-									println("Cannot resolve to-many link '\(resource.type):\(resource.id!) - \(attribute.name) -> \(linkedResource.link!.type):\(id)' because the linked resource does not exist in the store.")
+									println("Cannot resolve to-many link \(resource.type):\(resource.id!) - \(attribute.name) -> \(linkedResource.type):\(id) because the linked resource does not exist in the store.")
 								}
 							}
 							
 							linkedResource.fulfill(targetResources)
 						} else {
-							println("Cannot resolve to-many link '\(resource.type):\(resource.id!)- \(attribute.name) -> \(linkedResource.link!.type):?' because the foreign IDs are not known.")
+							println("Cannot resolve to-many link \(resource.type):\(resource.id!) - \(attribute.name) -> \(linkedResource.type):? because the foreign IDs are not known.")
 						}
 					} else {
-						println("Cannot resolve to-many link '\(resource.type):\(resource.id!) - \(attribute.name) -> ?' because the link data is not fetched.")
+						println("Cannot resolve to-many link \(resource.type):\(resource.id!) - \(attribute.name) -> ? because the link data is not fetched.")
 					}
 					
 				default: ()

@@ -13,8 +13,9 @@ public class ResourceCollection: NSObject, NSCoding, ArrayLiteralConvertible, Se
 	/// Whether the resources for this collection are loaded
 	public var isLoaded: Bool
 	
-	/// The link for this collection
-	public var link: (href: NSURL?, type: String, ids: [String]?)?
+	public var type: String
+	public var ids: [String]?
+	public var href: NSURL?
 	
 	/// The count of the loaded resources
 	public var count: Int {
@@ -57,16 +58,20 @@ public class ResourceCollection: NSObject, NSCoding, ArrayLiteralConvertible, Se
 	// MARK: Initializers
 	
 	public init(href: NSURL?, type: String, ids: [String]? = nil) {
-		self.link = (href, type, ids)
+		self.href = href
+		self.type = type
+		self.ids = ids
 		self.isLoaded = false
 	}
 	
 	public init(_ resources: [Resource]) {
+		self.type = resources.first!.type
 		self.resources = resources
 		self.isLoaded = true
 	}
 	
 	public required init(arrayLiteral elements: Resource...) {
+		self.type = elements.first!.type
 		self.resources = elements
 		self.isLoaded = true
 	}
@@ -74,29 +79,27 @@ public class ResourceCollection: NSObject, NSCoding, ArrayLiteralConvertible, Se
 	// MARK: NSCoding
 	
 	public required init(coder: NSCoder) {
-		self.isLoaded = coder.decodeBoolForKey("isLoaded")
-		self.resources = coder.decodeObjectForKey("resources") as? [Resource]
+		isLoaded = coder.decodeBoolForKey("isLoaded")
+		resources = coder.decodeObjectForKey("resources") as? [Resource]
 		
 		if let paginationData = coder.decodeObjectForKey("paginationData") as? NSDictionary {
 			self.paginationData = PaginationData.fromDictionary(paginationData)
 		}
 		
-		if let type = coder.decodeObjectForKey("linkType") as? String {
-			self.link = (href: coder.decodeObjectForKey("linkHref") as? NSURL, type: type, ids: coder.decodeObjectForKey("linkID") as? [String])
-		}
+		type = coder.decodeObjectForKey("type") as String
+		href = coder.decodeObjectForKey("href") as? NSURL
+		ids = coder.decodeObjectForKey("ids") as? [String]
 	}
 	
 	public func encodeWithCoder(coder: NSCoder) {
-		coder.encodeBool(self.isLoaded, forKey: "isLoaded")
-		coder.encodeObject(self.resources, forKey: "resources")
-		coder.encodeObject(self.resources, forKey: "resources")
-		coder.encodeObject(self.paginationData?.toDictionary(), forKey: "paginationData")
+		coder.encodeBool(isLoaded, forKey: "isLoaded")
+		coder.encodeObject(resources, forKey: "resources")
+		coder.encodeObject(resources, forKey: "resources")
+		coder.encodeObject(paginationData?.toDictionary(), forKey: "paginationData")
 		
-		if let link = self.link {
-			coder.encodeObject(link.href, forKey: "linkHref")
-			coder.encodeObject(link.type, forKey: "linkType")
-			coder.encodeObject(link.ids, forKey: "linkID")
-		}
+		coder.encodeObject(href, forKey: "href")
+		coder.encodeObject(type, forKey: "type")
+		coder.encodeObject(ids, forKey: "ids")
 	}
 	
 	// MARK: Printable protocol
@@ -105,15 +108,15 @@ public class ResourceCollection: NSObject, NSCoding, ArrayLiteralConvertible, Se
 		if self.isLoaded {
 			if let resources = self.resources {
 				let descriptions = ", ".join(resources.map { $0.description })
-				return "ResourceCollection.loaded<\(self.link!.type)>(\(descriptions))"
+				return "ResourceCollection.loaded<\(self.type)>(\(descriptions))"
 			} else {
-				return "ResourceCollection.loaded<\(self.link!.type)>([])"
+				return "ResourceCollection.loaded<\(self.type)>([])"
 			}
-		} else if let URLString = self.link!.href?.absoluteString {
-			return "ResourceCollection.link<\(self.link!.type)>(\(URLString))"
+		} else if let URLString = self.href?.absoluteString {
+			return "ResourceCollection.link<\(self.type)>(\(URLString))"
 		} else {
-			let IDs = ", ".join(self.link!.ids!)
-			return "ResourceCollection.link<\(self.link!.type)>(\(IDs))"
+			let IDs = ", ".join(self.ids!)
+			return "ResourceCollection.link<\(self.type)>(\(IDs))"
 		}
 	}
 	

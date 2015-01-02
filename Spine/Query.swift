@@ -77,22 +77,21 @@ public class Query {
 		self.resourceIDs = [resource.uniqueIdentifier!.id]
 	}
 
-	public init(linkedResource: LinkedResource) {
-		assert(linkedResource.link != nil, "Linked resources does not contain a link")
-		
-		self.URL = linkedResource.link?.href
-		
-		if let id = linkedResource.link?.id {
-			self.resourceIDs = [id]
-		}
-		
-		self.resourceType = linkedResource.link!.type
-	}
+//	public init(linkedResource: LinkedResource) {
+//		assert(linkedResource.link != nil, "Linked resources does not contain a link")
+//		
+//		self.URL = linkedResource.link?.href
+//		
+//		if let id = linkedResource.link?.id {
+//			self.resourceIDs = [id]
+//		}
+//		
+//		self.resourceType = linkedResource.link!.type
+//	}
 	
 	public init(linkedResourceCollection: ResourceCollection) {
-		assert(linkedResourceCollection.link != nil, "Linked resources collection does not contain a link")
-		self.URL = linkedResourceCollection.link!.href
-		self.resourceType = linkedResourceCollection.link!.type
+		self.URL = linkedResourceCollection.href
+		self.resourceType = linkedResourceCollection.type
 	}
 	
 	public init(resourceType: String, URLString: String) {
