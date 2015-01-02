@@ -42,6 +42,11 @@ public class Spine {
 	/// The HTTPClient that performs the HTTP requests.
 	private var HTTPClient: HTTPClientProtocol
 	
+	/// The public facing HTTPClient
+	public var client: HTTPClientHeadersProtocol {
+		return HTTPClient
+	}
+	
 	/// The serializer to use for serializing and deserializing of JSON representations.
 	private var serializer: JSONAPISerializer
 	
@@ -334,30 +339,6 @@ public class Spine {
 		}
 		
 		return promise.future
-	}
-}
-
-
-// MARK: - OAuth
-
-extension Spine {
-	public func authenticate(URLString: String, username: String, password: String, scope: String? = nil) -> Future<OAuthCredential> {
-		let authenticationURL = NSURL(string: URLString, relativeToURL: baseURL)!
-		return self.HTTPClient.authenticate(authenticationURL, username: username, password: password, scope: scope)
-	}
-	
-	public func authenticate(URLString: String, credential: OAuthCredential) -> Future<OAuthCredential> {
-		let authenticationURL = NSURL(string: URLString, relativeToURL: baseURL)!
-		return self.HTTPClient.authenticate(authenticationURL, credential: credential)
-	}
-	
-	public func authenticate(URLString: String, refreshToken: String) -> Future<OAuthCredential> {
-		let authenticationURL = NSURL(string: URLString, relativeToURL: baseURL)!
-		return self.HTTPClient.authenticate(authenticationURL, refreshToken: refreshToken)
-	}
-	
-	public func revokeAuthentication() {
-		self.HTTPClient.revokeAuthentication()
 	}
 }
 
