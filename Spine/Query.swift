@@ -72,9 +72,9 @@ public class Query<T: Resource> {
 	}
 	
 	public init(resource: T) {
-		assert(resource.uniqueIdentifier != nil, "Cannot instantiate query for resource, unique identifier is nil")
-		self.resourceType = resource.uniqueIdentifier!.type
-		self.resourceIDs = [resource.uniqueIdentifier!.id]
+		assert(resource.id != nil, "Cannot instantiate query for resource, id is nil.")
+		self.resourceType = resource.dynamicType.type
+		self.resourceIDs = [resource.id!]
 	}
 	
 	public init(linkedResourceCollection: ResourceCollection) {
@@ -219,8 +219,8 @@ public class Query<T: Resource> {
 	:returns: The query
 	*/
 	public func whereRelationship(relationship: String, isOrContains resource: Resource) -> Self {
-		assert(resource.uniqueIdentifier != nil, "Attempt to add a where filter on a relationship, but the target resource does not have a unique identifier.")
-		self.filters.append(QueryFilter(property: relationship, value: resource.uniqueIdentifier!.id, comparator: "="))
+		assert(resource.id != nil, "Attempt to add a where filter on a relationship, but the target resource does not have an id.")
+		self.filters.append(QueryFilter(property: relationship, value: resource.id!, comparator: "="))
 		return self
 	}
 	

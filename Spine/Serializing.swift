@@ -14,13 +14,10 @@ typealias DeserializationResult = (store: Store?, pagination: PaginationData?, e
 // MARK: - Serializer
 
 protocol SerializerProtocol {
-	// Class mapping
-	func registerClass(type: Resource.Type)
-	func unregisterClass(type: Resource.Type)
-	func classNameForResourceType(resourceType: String) -> Resource.Type
+	var resourceTypes: ResourceClassMap { get }
+	var transformers: TransformerDirectory { get }
 	
 	// Deserializing
-	func deserializeData(data: NSData, options: DeserializationOptions) -> DeserializationResult
 	func deserializeData(data: NSData, usingStore store: Store, options: DeserializationOptions) -> DeserializationResult
 	func deserializeError(data: NSData, withResonseStatus responseStatus: Int) -> NSError
 	
@@ -33,61 +30,13 @@ protocol SerializerProtocol {
 *  It stores information about the Resource classes using a ResourceClassMap
 *  and uses SerializationOperations and DeserialisationOperations for (de)serializing.
 */
-class JSONAPISerializer: SerializerProtocol {
+class JSONSerializer: SerializerProtocol {
 	
 	/// The class map that holds information about resource type/class mapping.
-	private var classMap: ResourceClassMap = ResourceClassMap()
-	
-	
-	//MARK: Class mapping
-	
-	/**
-	Register a Resource subclass with this serializer.
-	Example: `classMap.register(User.self)`
-	
-	:param: type The Type of the subclass to register.
-	*/
-	func registerClass(type: Resource.Type) {
-		self.classMap.registerClass(type)
-	}
-	
-	/**
-	Unregister a Resource subclass from this serializer. If the type was not prevously registered, nothing happens.
-	Example: `classMap.unregister(User.self)`
-	
-	:param: type The Type of the subclass to unregister.
-	*/
-	func unregisterClass(type: Resource.Type) {
-		self.classMap.unregisterClass(type)
-	}
-	
-	/**
-	Returns the Resource.Type into which a resource with the given type should be mapped.
-	
-	:param: resourceType The resource type for which to return the matching class.
-	
-	:returns: The Resource.Type that matches the given resource type.
-	*/
-	func classNameForResourceType(resourceType: String) -> Resource.Type {
-		return self.classMap[resourceType]
-	}
-	
+	var resourceTypes = ResourceClassMap()
+	var transformers = TransformerDirectory()
 	
 	// MARK: Serializing
-	
-	/**
-	Deserializes the given data into a SerializationResult. This is a thin wrapper around
-	a DeserializeOperation that does the actual deserialization.
-	
-	:param: data The data to deserialize.
-	
-	:returns: A DeserializationResult that contains either a Store or an error.
-	*/
-	func deserializeData(data: NSData, options: DeserializationOptions = DeserializationOptions()) -> DeserializationResult {
-		let mappingOperation = DeserializeOperation(data: data, classMap: self.classMap, options: options)
-		mappingOperation.start()
-		return mappingOperation.result!
-	}
 	
 	/**
 	Deserializes the given data into a SerializationResult. This is a thin wrapper around
@@ -102,10 +51,15 @@ class JSONAPISerializer: SerializerProtocol {
 	:returns: A DeserializationResult that contains either a Store or an error.
 	*/
 	
-	func deserializeData(data: NSData, usingStore store: Store, options: DeserializationOptions = DeserializationOptions()) -> DeserializationResult {
-		let mappingOperation = DeserializeOperation(data: data, store: store, classMap: self.classMap, options: options)
-		mappingOperation.start()
-		return mappingOperation.result!
+	func deserializeData(data: NSData, usingStore store: Store = Store(), options: DeserializationOptions = DeserializationOptions()) -> DeserializationResult {
+		store.classMap = resourceTypes
+		
+		let deserializeOperation = DeserializeOperation(data: data, store: store)
+		deserializeOperation.options = options
+		deserializeOperation.transformers = transformers
+		
+		deserializeOperation.start()
+		return deserializeOperation.result!
 	}
 	
 	
@@ -146,9 +100,12 @@ class JSONAPISerializer: SerializerProtocol {
 	:returns: A multidimensional dictionary/array structure.
 	*/
 	func serializeResources(resources: [Resource], options: SerializationOptions = SerializationOptions()) -> [String: AnyObject] {
-		let mappingOperation = SerializeOperation(resources: resources, options: options)
-		mappingOperation.start()
-		return mappingOperation.result!
+		let serializeOperation = SerializeOperation(resources: resources)
+		serializeOperation.options = options
+		serializeOperation.transformers = transformers
+		
+		serializeOperation.start()
+		return serializeOperation.result!
 	}
 }
 
@@ -195,7 +152,7 @@ struct ResourceClassMap {
 	
 	:param: type The Type of the subclass to register.
 	*/
-	mutating func registerClass(type: Resource.Type) {
+	mutating func registerResource(type: Resource.Type) {
 		assert(registeredClasses[type.type] == nil, "Cannot register class of type \(type). A class with that type is already registered.")
 		self.registeredClasses[type.type] = type
 	}
@@ -206,7 +163,7 @@ struct ResourceClassMap {
 	
 	:param: type The Type of the subclass to unregister.
 	*/
-	mutating func unregisterClass(type: Resource.Type) {
+	mutating func unregisterResource(type: Resource.Type) {
 		assert(registeredClasses[type.type] != nil, "Cannot unregister class of type \(type). Type does not exist in the class map.")
 		self.registeredClasses[type.type] = nil
 	}

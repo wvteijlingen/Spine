@@ -9,40 +9,15 @@
 import Foundation
 import BrightFutures
 
-
-//MARK: - Protocols
-
-/**
-*  An identifier that uniquely identifies a resource.
-*
-*  @param type The resource type in plural form.
-*  @param id   The id of the resource. This must be unique amongst its type.
-*/
-public typealias ResourceIdentifier = (type: String, id: String)
-
-
-// MARK: -
-
 /**
 *  A base recource class that provides some defaults for resources.
 *  You must create custom resource classes by subclassing from Resource.
 */
 public class Resource: NSObject, NSCoding, Printable {
-	public class var type: String {
-		return "_unknown_type"
-	}
-	
+	public class var type: String { return "_unknown_type" }
 	public var id: String?
 	public var href: NSURL?
 	public var isLoaded: Bool = false
-	
-	public var uniqueIdentifier: ResourceIdentifier? {
-		if let id = self.id {
-			return (type: self.dynamicType.type, id: id)
-		}
-		
-		return nil
-	}
 	
 	
 	// MARK: Initializers
@@ -72,6 +47,7 @@ public class Resource: NSObject, NSCoding, Printable {
 	public func encodeWithCoder(coder: NSCoder) {
 		coder.encodeObject(self.id, forKey: "id")
 		coder.encodeObject(self.href, forKey: "href")
+		coder.encodeBool(self.isLoaded, forKey: "isLoaded")
 	}
 	
 	

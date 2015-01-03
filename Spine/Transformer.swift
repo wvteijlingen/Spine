@@ -13,7 +13,7 @@ public typealias Transformer = (deserialize: TransformerFunction, serialize: Tra
 
 // MARK: Built in transformers
 
-let URLTransformer: Transformer = (
+private let URLTransformer: Transformer = (
 	deserialize: { value, attribute in
 		// TODO: Make this independent from the singleton
 		if let URL = NSURL(string: (value as String), relativeToURL: Spine.sharedInstance.baseURL) {
@@ -27,7 +27,7 @@ let URLTransformer: Transformer = (
 	}
 )
 
-let DateTransformer: Transformer = (
+private let DateTransformer: Transformer = (
 	deserialize: { value, attribute in
 		let formatter = NSDateFormatter()
 		formatter.dateFormat = (attribute as DateAttribute).format

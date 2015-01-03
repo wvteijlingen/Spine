@@ -18,14 +18,13 @@ import SwiftyJSON
 class SerializeOperation: NSOperation {
 	
 	private let resources: [Resource]
-	private let transformers = TransformerDirectory()
-	private let options: SerializationOptions
+	var transformers = TransformerDirectory()
+	var options = SerializationOptions()
 	
 	var result: [String: AnyObject]?
 	
-	init(resources: [Resource], options: SerializationOptions) {
+	init(resources: [Resource]) {
 		self.resources = resources
-		self.options = options
 	}
 	
 	override func main() {

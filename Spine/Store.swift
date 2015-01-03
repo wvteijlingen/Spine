@@ -8,7 +8,7 @@
 
 import Foundation
 
-class Store: ArrayLiteralConvertible, SequenceType, Printable {
+class Store: ArrayLiteralConvertible, SequenceType, Printable, DebugPrintable {
 	private var objectsByType: [String : [Resource]] = [:]
 	private var objectsByTypeAndID: [String : [String: Resource]] = [:]
 	
@@ -29,29 +29,29 @@ class Store: ArrayLiteralConvertible, SequenceType, Printable {
 	// MARK: Mutating
 	
 	func add(object: Resource) {
-		if let identifier = object.uniqueIdentifier {
-			let type = identifier.type
+		if let id = object.id {
+			let type = object.dynamicType.type
 			
 			if (self.objectsByTypeAndID[type] == nil) {
 				self.objectsByTypeAndID[type] = [:]
 			}
-			self.objectsByTypeAndID[type]![identifier.id] = object
+			self.objectsByTypeAndID[type]![id] = object
 			
 			if (self.objectsByType[type] == nil) {
 				self.objectsByType[type] = []
 			}
 			self.objectsByType[type]!.append(object)
 		} else {
-			assertionFailure("Store can only store objects that are uniquely identifiable.")
+			assertionFailure("Store can only store objects that are have an id.")
 		}
 	}
 	
 	func remove(object: Resource) {
-		if let identifier = object.uniqueIdentifier {
-			let type = identifier.type
+		if let id = object.id {
+			let type = object.dynamicType.type
 			
 			if self.objectsByTypeAndID[type] != nil {
-				self.objectsByTypeAndID[type]![identifier.id] = nil
+				self.objectsByTypeAndID[type]![id] = nil
 			}
 			
 			if (self.objectsByType[type] != nil) {
@@ -60,7 +60,7 @@ class Store: ArrayLiteralConvertible, SequenceType, Printable {
 				}
 			}
 		} else {
-			assertionFailure("Store can only remove objects that are uniquely identifiable.")
+			assertionFailure("Store can only remove objects that have an id.")
 		}
 	}
 	
@@ -74,16 +74,6 @@ class Store: ArrayLiteralConvertible, SequenceType, Printable {
 		}
 		
 		return nil
-	}
-	
-	func containsObjectWithType(type: String, identifier: String) -> Bool {
-		if let objects = self.objectsByTypeAndID[type] {
-			if let object = objects[identifier] {
-				return true
-			}
-		}
-		
-		return false
 	}
 	
 	func allObjectsWithType(type: String) -> [Resource] {
@@ -111,6 +101,12 @@ class Store: ArrayLiteralConvertible, SequenceType, Printable {
 		return string
 	}
 	
+	// MARK: DebugPrintable protocol
+	
+	var debugDescription: String {
+		return description
+	}
+	
 	// MARK: SequenceType protocol
 	
 	func generate() -> GeneratorOf<Resource> {
@@ -126,5 +122,46 @@ class Store: ArrayLiteralConvertible, SequenceType, Printable {
 		
 			return allObjects[index]
 		}
+	}
+	
+	
+	// MARK: Dispensing
+	
+	var classMap: ResourceClassMap!
+	
+	func dispenseResourceWithType(type: String, id: String? = nil, useFirst: Bool = false) -> Resource {
+		if id == nil {
+			return self.classMap[type]() as Resource
+		}
+		
+		var resource: Resource
+		var isExistingResource: Bool
+		
+		if let existingResource = objectWithType(type, identifier: id!) {
+			resource = existingResource
+			isExistingResource = true
+			
+		} else if useFirst {
+			if let existingResource = allObjectsWithType(type).first {
+				resource = existingResource
+				isExistingResource = true
+			} else {
+				resource = classMap[type]() as Resource
+				resource.id = id
+				isExistingResource = false
+			}
+			
+		} else {
+			resource = classMap[type]() as Resource
+			resource.id = id
+			isExistingResource = false
+		}
+		
+		// Add resource to store if needed
+		if !isExistingResource {
+			add(resource)
+		}
+		
+		return resource
 	}
 }

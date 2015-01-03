@@ -18,37 +18,21 @@ import SwiftyJSON
 class DeserializeOperation: NSOperation {
 	
 	// Input
-	private let classMap: ResourceClassMap
-	private let transformers: TransformerDirectory = TransformerDirectory()
 	private let data: JSON
-	private let options: DeserializationOptions
-	
-	// Output
 	private var store: Store
+	var transformers: TransformerDirectory = TransformerDirectory()
+	var options: DeserializationOptions = DeserializationOptions()
 	private var paginationData: PaginationData?
 	
 	var result: DeserializationResult?
-	
-	init(data: NSData, classMap: ResourceClassMap, options: DeserializationOptions) {
+
+	init(data: NSData, store: Store) {
 		self.data = JSON(data: data)
-		self.classMap = classMap
-		self.options = options
-		self.store = Store()
-		super.init()
-	}
-	
-	init(data: NSData, store: Store, classMap: ResourceClassMap, options: DeserializationOptions) {
-		self.data = JSON(data: data)
-		self.classMap = classMap
-		self.options = options
 		self.store = store
-		super.init()
 	}
 	
 	override func main() {
-		// Check if the given data is in the expected format
-		if (self.data.dictionary == nil) {
-			let error = NSError(domain: SPINE_ERROR_DOMAIN, code: 0, userInfo: [NSLocalizedDescriptionKey: "The given JSON representation was not as expected."])
+		if let error = checkDataFormat() {
 			self.result = DeserializationResult(nil, nil, error)
 			return
 		}
@@ -90,6 +74,16 @@ class DeserializeOperation: NSOperation {
 		self.result = DeserializationResult(self.store, self.paginationData, nil)
 	}
 	
+	/// Check if the given data is in the expected format
+	private func checkDataFormat() -> NSError? {
+		if (self.data.dictionary == nil) {
+			let error = NSError(domain: SPINE_ERROR_DOMAIN, code: 0, userInfo: [NSLocalizedDescriptionKey: "The given JSON representation was not as expected."])
+			return error
+		}
+		
+		return nil
+	}
+	
 	/**
 	Maps a single resource representation into a resource object of the given type.
 	
@@ -100,7 +94,7 @@ class DeserializeOperation: NSOperation {
 		assert(representation.dictionary != nil, "The given JSON representation was not of type 'object' (dictionary).")
 		
 		// Find existing resource in the store, or create a new resource.
-		let resource: Resource = dispenseResourceWithType(resourceType, id: representation["id"].stringValue, useFirst: options.mapOntoFirstResourceInStore)
+		let resource: Resource = store.dispenseResourceWithType(resourceType, id: representation["id"].stringValue, useFirst: options.mapOntoFirstResourceInStore)
 		
 		// Extract data into resource
 		self.extractID(representation, intoResource: resource)
@@ -111,40 +105,7 @@ class DeserializeOperation: NSOperation {
 		// Set loaded flag
 		resource.isLoaded = true
 	}
-	
-	private func dispenseResourceWithType(type: String, id: String, useFirst: Bool) -> Resource {
-		var resource: Resource
-		var isExistingResource: Bool
-		
-		if let existingResource = store.objectWithType(type, identifier: id) {
-			resource = existingResource
-			isExistingResource = true
-			
-		} else if useFirst {
-			if let existingResource = store.allObjectsWithType(type).first {
-				resource = existingResource
-				isExistingResource = true
-			} else {
-				resource = classMap[type]() as Resource
-				resource.id = id
-				isExistingResource = false
-			}
-			
-		} else {
-			resource = classMap[type]() as Resource
-			resource.id = id
-			isExistingResource = false
-		}
-		
-		// Add resource to store if needed
-		if !isExistingResource {
-			store.add(resource)
-		}
-		
-		return resource
-	}
-	
-	
+
 	// MARK: Special attributes
 	
 	/**
@@ -265,19 +226,6 @@ class DeserializeOperation: NSOperation {
 	:returns: The extracted relationship or nil if no relationship with the given key was found in the data.
 	*/
 	private func extractToOneRelationship(serializedData: JSON, key: String, linkedType: String, resource: Resource, linkTemplates: JSON? = nil) -> Resource? {
-		func extractedResource(type: String, id: String?, href: NSURL?) -> Resource {
-			// If no ID is given, we cannot add it to the store. Return a placeholder resource.
-			if id == nil {
-				let resource = self.classMap[type]() as Resource
-				resource.id = id
-				return resource
-			}
-			
-			let resource = self.dispenseResourceWithType(type, id: id!, useFirst: false)
-			resource.href = href
-			return resource
-		}
-		
 		// Resource level link with href/id/type combo
 		if let linkData = serializedData["links"][key].dictionary {
 			var href: NSURL?, type: String, ID: String?
@@ -296,13 +244,15 @@ class DeserializeOperation: NSOperation {
 				ID = linkData["id"]!.stringValue
 			}
 			
-			return extractedResource(type, ID, href)
+			let resource = store.dispenseResourceWithType(type, id: ID)
+			resource.href = href
+			return resource
 		}
 		
 		// Resource level link with only an id
 		let ID = serializedData["links"][key].stringValue
 		if ID != "" {
-			return extractedResource(linkedType, ID, nil)
+			return store.dispenseResourceWithType(linkedType, id: ID)
 		}
 		
 		// Document level link template
@@ -323,7 +273,9 @@ class DeserializeOperation: NSOperation {
 				type = linkedType
 			}
 			
-			return extractedResource(type, nil, href)
+			let resource = store.dispenseResourceWithType(type, id: ID)
+			resource.href = href
+			return resource
 		}
 		
 		return nil

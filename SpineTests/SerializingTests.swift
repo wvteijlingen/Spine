@@ -50,7 +50,7 @@ class SerializingTests: XCTestCase {
 	}
 	
 	
-	let serializer = JSONAPISerializer()
+	let serializer = JSONSerializer()
 	
 	
 	override func setUp() {

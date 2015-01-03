@@ -12,7 +12,6 @@ import BrightFutures
 public class ResourceCollection: NSObject, NSCoding, ArrayLiteralConvertible, SequenceType, Printable, Paginatable {
 	/// Whether the resources for this collection are loaded
 	public var isLoaded: Bool
-	
 	public var type: String
 	public var ids: [String]?
 	public var href: NSURL?
@@ -184,48 +183,48 @@ public class ResourceCollection: NSObject, NSCoding, ArrayLiteralConvertible, Se
 	
 	:returns: A future promising an array of Resource objects.
 	*/
-//	public func ensureResources() -> Future<([Resource])> {
-//		return self.ensureWithQuery(self.query())
-//	}
-//	
-//	/**
-//	Loads the resources if they are not yet loaded.
-//	The callback is passed a Query object that will be used to load the resources. In this callback, you can alter the query.
-//	For example, you could include related resources or change the sparse fieldset.
-//	
-//	:param: queryCallback The query callback.
-//	
-//	:returns: A future promising an array of Resource objects.
-//	*/
-//	public func ensureResources(queryCallback: (Query<Resource>) -> Void) -> Future<([Resource])> {
-//		let query = self.query()
-//		queryCallback(query)
-//		return self.ensureWithQuery(query)
-//	}
-//	
-//	/**
-//	Loads the resources using a given query if they are not yet loaded.
-//	
-//	:param: query The query to load the resources.
-//	
-//	:returns: A future promising an array of Resource objects.
-//	*/
-//	private func ensureWithQuery(query: Query<Resource>) -> Future<([Resource])> {
-//		let promise = Promise<([Resource])>()
-//		
-//		if self.isLoaded {
-//			promise.success(self.resources!)
-//		} else {
-//			query.find().onSuccess { resourceCollection in
-//				self.fulfill(resourceCollection.resources!)
-//				promise.success(self.resources!)
-//				}.onFailure { error in
-//					promise.error(error)
-//			}
-//		}
-//		
-//		return promise.future
-//	}
+	public func ensureResources() -> Future<([Resource])> {
+		return self.ensureWithQuery(self.query())
+	}
+	
+	/**
+	Loads the resources if they are not yet loaded.
+	The callback is passed a Query object that will be used to load the resources. In this callback, you can alter the query.
+	For example, you could include related resources or change the sparse fieldset.
+	
+	:param: queryCallback The query callback.
+	
+	:returns: A future promising an array of Resource objects.
+	*/
+	public func ensureResources(queryCallback: (Query<Resource>) -> Void) -> Future<([Resource])> {
+		let query = self.query()
+		queryCallback(query)
+		return self.ensureWithQuery(query)
+	}
+	
+	/**
+	Loads the resources using a given query if they are not yet loaded.
+	
+	:param: query The query to load the resources.
+	
+	:returns: A future promising an array of Resource objects.
+	*/
+	private func ensureWithQuery(query: Query<Resource>) -> Future<([Resource])> {
+		let promise = Promise<([Resource])>()
+		
+		if self.isLoaded {
+			promise.success(self.resources!)
+		} else {
+			query.find().onSuccess { resourceCollection in
+				self.fulfill(resourceCollection.resources!)
+				promise.success(self.resources!)
+				}.onFailure { error in
+					promise.error(error)
+			}
+		}
+		
+		return promise.future
+	}
 	
 	// MARK: ifLoaded
 	

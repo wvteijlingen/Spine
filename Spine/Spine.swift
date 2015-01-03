@@ -48,7 +48,7 @@ public class Spine {
 	}
 	
 	/// The serializer to use for serializing and deserializing of JSON representations.
-	private var serializer: JSONAPISerializer
+	private var serializer: JSONSerializer
 	
 	/// Whether the print debug information
 	public var traceEnabled: Bool = false {
@@ -62,23 +62,11 @@ public class Spine {
 	public init(baseURL: NSURL! = nil) {
 		self.HTTPClient = AlamofireClient()
 		self.router = JSONAPIRouter()
-		self.serializer = JSONAPISerializer()
+		self.serializer = JSONSerializer()
 		
 		if baseURL != nil {
 			self.baseURL = baseURL
 		}
-	}
-	
-	
-	// MARK: Mapping
-	
-	/**
-	Registers the given class as a resource class.
-	
-	:param: type The class type.
-	*/
-	public func registerType(type: Resource.Type) {
-		self.serializer.registerClass(type)
 	}
 	
 	
@@ -161,7 +149,7 @@ public class Spine {
 		var shouldUpdateRelationships = false
 		
 		// Create or update the main resource
-		if let uniqueIdentifier = resource.uniqueIdentifier {
+		if let id = resource.id {
 			shouldUpdateRelationships = true
 			let URLString = self.router.URLForQuery(Query(resource: resource)).absoluteString!
 			let json = self.serializer.serializeResources([resource])
@@ -261,8 +249,8 @@ public class Spine {
 		
 		if resources.count > 0 {
 			let ids: [String] = resources.map { resource in
-				assert(resource.uniqueIdentifier != nil, "Attempt to relate resource without unique identifier. Only existing resources can be related.")
-				return resource.uniqueIdentifier!.id
+				assert(resource.id != nil, "Attempt to relate resource without id. Only existing resources can be related.")
+				return resource.id!
 			}
 			
 			let URLString = self.router.URLForRelationship(relationship, ofResource: toResource).absoluteString!
@@ -284,8 +272,8 @@ public class Spine {
 		
 		if resources.count > 0 {
 			let ids: [String] = resources.map { (resource) in
-				assert(resource.uniqueIdentifier != nil, "Attempt to unrelate resource without unique identifier. Only existing resources can be unrelated.")
-				return resource.uniqueIdentifier!.id
+				assert(resource.id != nil, "Attempt to unrelate resource without id. Only existing resources can be unrelated.")
+				return resource.id!
 			}
 			
 			let URLString = self.router.URLForRelationship(relationship, ofResource: fromResource, ids: ids).absoluteString!
@@ -339,6 +327,32 @@ public class Spine {
 		}
 		
 		return promise.future
+	}
+}
+
+// MARK: - Resource registering
+
+extension Spine {
+	/**
+	Registers the given class as a resource class.
+	
+	:param: type The class type.
+	*/
+	public func registerResource(type: Resource.Type) {
+		self.serializer.resourceTypes.registerResource(type)
+	}
+}
+
+// MARK: - Transformer registering
+
+extension Spine {
+	/**
+	Registers the given class as a resource class.
+	
+	:param: type The class type.
+	*/
+	public func registerTransformer(transformer: Transformer, forType type: Attribute.Type) {
+		self.serializer.transformers.registerTransformer(transformer, forType: type)
 	}
 }
 

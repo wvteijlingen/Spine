@@ -30,8 +30,7 @@ public class AlamofireClient: HTTPClientProtocol {
 	var traceEnabled = false
 	
 	init() {
-		var additionalHeaders = Alamofire.Manager.sharedInstance.session.configuration.HTTPAdditionalHeaders!
-		additionalHeaders.updateValue("application/vnd.api+json", forKey: "Content-Type")
+		setHeader("Content-Type", to: "application/vnd.api+json")
 	}
 	
 	// MARK: Headers
