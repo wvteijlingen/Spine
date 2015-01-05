@@ -9,7 +9,7 @@
 import Foundation
 import BrightFutures
 
-internal struct QueryFilter {
+struct QueryFilter {
 	var key: String
 	var value: String
 	var comparator: String
@@ -33,7 +33,7 @@ internal struct QueryFilter {
 
 // MARK: -
 
-public class Query<T: Resource> {
+public struct Query<T: Resource> {
 	
 	/// The type of resource to fetch.
 	var resourceType: String
@@ -72,9 +72,13 @@ public class Query<T: Resource> {
 	}
 	
 	public init(resource: T) {
-		assert(resource.id != nil, "Cannot instantiate query for resource, id is nil.")
-		self.resourceType = resource.dynamicType.type
-		self.resourceIDs = [resource.id!]
+		// We need to cast T to Resource, other wise dynamicType will throw an EXC_BAD_ACCESS exception
+		// See http://stackoverflow.com/questions/27782792/using-dynamictype-of-a-generic-results-in-exc-bad-access
+		var typecastResource = (resource as Resource)
+		
+		assert(typecastResource.id != nil, "Cannot instantiate query for resource, id is nil.")
+		self.resourceType = typecastResource.dynamicType.type
+		self.resourceIDs = [typecastResource.id!]
 	}
 	
 	public init(linkedResourceCollection: ResourceCollection) {
@@ -98,7 +102,7 @@ public class Query<T: Resource> {
 	
 	:returns: The query.
 	*/
-	public func include(relation: String) -> Self {
+	public mutating func include(relation: String) -> Query {
 		self.includes.append(relation)
 		return self
 	}
@@ -111,7 +115,7 @@ public class Query<T: Resource> {
 	
 	:returns: The query
 	*/
-	public func include(relations: [String]) -> Self {
+	public mutating func include(relations: [String]) -> Query {
 		self.includes += relations
 		return self
 	}
@@ -123,7 +127,7 @@ public class Query<T: Resource> {
 	
 	:returns: The query
 	*/
-	public func removeInclude(relation: String) -> Self {
+	public mutating func removeInclude(relation: String) -> Query {
 		self.includes.filter({$0 != relation})
 		return self
 	}
@@ -139,7 +143,7 @@ public class Query<T: Resource> {
 	
 	:returns: The query
 	*/
-	public func whereProperty(property: String, equalTo: String) -> Self {
+	public mutating func whereProperty(property: String, equalTo: String) -> Query {
 		self.filters.append(QueryFilter(property: property, value: equalTo, comparator: "="))
 		return self
 	}
@@ -152,7 +156,7 @@ public class Query<T: Resource> {
 	
 	:returns: The query
 	*/
-	public func whereProperty(property: String, notEqualTo: String) -> Self {
+	public mutating func whereProperty(property: String, notEqualTo: String) -> Query {
 		self.filters.append(QueryFilter(property: property, value: notEqualTo, comparator: "=!"))
 		return self
 	}
@@ -165,7 +169,7 @@ public class Query<T: Resource> {
 	
 	:returns: The query
 	*/
-	public func whereProperty(property: String, lessThan: String) -> Self {
+	public mutating func whereProperty(property: String, lessThan: String) -> Query {
 		self.filters.append(QueryFilter(property: property, value: lessThan, comparator: "<"))
 		return self
 	}
@@ -178,7 +182,7 @@ public class Query<T: Resource> {
 	
 	:returns: The query
 	*/
-	public func whereProperty(property: String, lessThanOrEqualTo: String) -> Self {
+	public mutating func whereProperty(property: String, lessThanOrEqualTo: String) -> Query {
 		self.filters.append(QueryFilter(property: property, value: lessThanOrEqualTo, comparator: "<="))
 		return self
 	}
@@ -191,7 +195,7 @@ public class Query<T: Resource> {
 	
 	:returns: The query
 	*/
-	public func whereProperty(property: String, greaterThan: String) -> Self {
+	public mutating func whereProperty(property: String, greaterThan: String) -> Query {
 		self.filters.append(QueryFilter(property: property, value: greaterThan, comparator: ">"))
 		return self
 	}
@@ -204,7 +208,7 @@ public class Query<T: Resource> {
 	
 	:returns: The query
 	*/
-	public func whereProperty(property: String, greaterThanOrEqualTo: String) -> Self {
+	public mutating func whereProperty(property: String, greaterThanOrEqualTo: String) -> Query {
 		self.filters.append(QueryFilter(property: property, value: greaterThanOrEqualTo, comparator: ">="))
 		return self
 	}
@@ -218,7 +222,7 @@ public class Query<T: Resource> {
 	
 	:returns: The query
 	*/
-	public func whereRelationship(relationship: String, isOrContains resource: Resource) -> Self {
+	public mutating func whereRelationship(relationship: String, isOrContains resource: Resource) -> Query {
 		assert(resource.id != nil, "Attempt to add a where filter on a relationship, but the target resource does not have an id.")
 		self.filters.append(QueryFilter(property: relationship, value: resource.id!, comparator: "="))
 		return self
@@ -234,7 +238,7 @@ public class Query<T: Resource> {
 	
 	:returns: The query
 	*/
-	public func restrictProperties(properties: [String]) -> Self {
+	public mutating func restrictProperties(properties: [String]) -> Query {
 		self.restrictProperties(properties, ofResourceType: self.resourceType)
 		return self
 	}
@@ -250,7 +254,7 @@ public class Query<T: Resource> {
 	
 	:returns: The query
 	*/
-	public func restrictProperties(properties: [String], ofResourceType type: String) -> Self {
+	public mutating func restrictProperties(properties: [String], ofResourceType type: String) -> Query {
 		if var fields = self.fields[type] {
 			fields += properties
 		} else {
@@ -270,7 +274,7 @@ public class Query<T: Resource> {
 	
 	:returns: The query
 	*/
-	public func limit(pageSize: Int) -> Self {
+	public mutating func limit(pageSize: Int) -> Query {
 		self.pageSize = pageSize
 		return self
 	}
@@ -282,7 +286,7 @@ public class Query<T: Resource> {
 	
 	:returns: The query
 	*/
-	public func startAtPage(page: Int) -> Self {
+	public mutating func startAtPage(page: Int) -> Query {
 		self.page = page
 		return self
 	}
@@ -297,7 +301,7 @@ public class Query<T: Resource> {
 	
 	:returns: The query
 	*/
-	public func addAscendingOrder(property: String) -> Self {
+	public mutating func addAscendingOrder(property: String) -> Query {
 		self.sortOrders.append(property)
 		return self
 	}
@@ -309,7 +313,7 @@ public class Query<T: Resource> {
 	
 	:returns: The query
 	*/
-	public func addDescendingOrder(property: String) -> Self {
+	public mutating func addDescendingOrder(property: String) -> Query {
 		self.sortOrders.append("-\(property)")
 		return self
 	}
