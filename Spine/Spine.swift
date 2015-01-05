@@ -19,8 +19,14 @@ let SPINE_API_ERROR_DOMAIN = "com.wardvanteijlingen.Spine.Api"
 public class Spine {
 	
 	public class var sharedInstance: Spine {
+		
 		struct Singleton {
-			static let instance = Spine()
+			static var instance: Spine!
+			static var token: dispatch_once_t = 0
+		}
+		
+		dispatch_once(&Singleton.token) {
+			Singleton.instance = Spine()
 		}
 		
 		return Singleton.instance
@@ -386,6 +392,7 @@ public func find<T: Resource>(query: Query<T>) -> Future<ResourceCollection> {
 public func findOne<T: Resource>(query: Query<T>) -> Future<T> {
 	return Spine.sharedInstance.fetchResourceForQuery(query)
 }
+
 // MARK: - Ensuring
 
 public func ensure<T: Resource>(resource: T) -> Future<T> {
