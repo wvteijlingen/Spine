@@ -386,3 +386,30 @@ public func find<T: Resource>(query: Query<T>) -> Future<ResourceCollection> {
 public func findOne<T: Resource>(query: Query<T>) -> Future<T> {
 	return Spine.sharedInstance.fetchResourceForQuery(query)
 }
+// MARK: - Ensuring
+
+public func ensure<T: Resource>(resource: T) -> Future<T> {
+	let query = Query(resource: resource)
+	return ensure(resource, query)
+}
+
+public func ensure<T: Resource>(resource: T, queryCallback: (Query<T>) -> Query<T>) -> Future<T> {
+	let query = queryCallback(Query(resource: resource))
+	return ensure(resource, query)
+}
+
+func ensure<T: Resource>(resource: T, query: Query<T>) -> Future<T> {
+	let promise = Promise<(T)>()
+	
+	if resource.isLoaded {
+		promise.success(resource)
+	} else {
+		Spine.sharedInstance.fetch(query, mapOnto: [resource]).onSuccess { resources in
+			promise.success(resource)
+			}.onFailure { error in
+				promise.error(error)
+		}
+	}
+	
+	return promise.future
+}
