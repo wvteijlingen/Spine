@@ -113,11 +113,13 @@ class JSONSerializer: SerializerProtocol {
 // MARK: - Options
 
 struct SerializationOptions {
+	var includeID = true
 	var dirtyAttributesOnly = true
 	var includeToMany = false
 	var includeToOne = false
 	
-	init(dirtyAttributesOnly: Bool = false, includeToMany: Bool = false, includeToOne: Bool = false) {
+	init(includeID: Bool = true, dirtyAttributesOnly: Bool = false, includeToMany: Bool = false, includeToOne: Bool = false) {
+		self.includeID = includeID
 		self.dirtyAttributesOnly = dirtyAttributesOnly
 		self.includeToMany = includeToMany
 		self.includeToOne = includeToOne

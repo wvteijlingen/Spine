@@ -55,8 +55,10 @@ class SerializeOperation: NSOperation {
 		var serializedData: [String: AnyObject] = [:]
 		
 		// Special attributes
-		if let ID = resource.id {
-			self.addID(&serializedData, ID: ID)
+		if options.includeID {
+			if let ID = resource.id {
+				self.addID(&serializedData, ID: ID)
+			}
 		}
 		
 		self.addAttributes(&serializedData, resource: resource)

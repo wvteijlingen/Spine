@@ -53,7 +53,7 @@ public class Spine {
 		return HTTPClient
 	}
 	
-	/// The serializer to use for serializing and deserializing of JSON representations.
+	/// The serializer to use for serializing and deserializing of JSON representations. Default false.
 	private var serializer: JSONSerializer
 	
 	/// Whether the print debug information
@@ -62,6 +62,10 @@ public class Spine {
 			self.HTTPClient.traceEnabled = traceEnabled
 		}
 	}
+	
+	/// Whether to use client side generated IDs instead of server side generated IDs. Default false.
+	var useClientSideIDs: Bool = false
+	
 	
 	// MARK: Initializers
 	
@@ -163,15 +167,17 @@ public class Spine {
 		} else {
 			resource.id = NSUUID().UUIDString
 			let URLString = self.router.URLForQuery(Query(resourceType: resource.dynamicType)).absoluteString!
-			let json = self.serializer.serializeResources([resource], options: SerializationOptions(dirtyAttributesOnly: false, includeToOne: true, includeToMany: true))
+			let json = self.serializer.serializeResources([resource], options: SerializationOptions(includeID: false, dirtyAttributesOnly: false, includeToOne: true, includeToMany: true))
 			saveFuture = self.HTTPClient.post(URLString, json: json)
 		}
 		
 		// Act on the future
 		saveFuture.onSuccess { statusCode, data in
+			let deserializationOptions = (self.useClientSideIDs) ? DeserializationOptions() : DeserializationOptions(mapOntoFirstResourceInStore: true)
+			
 			// Map the response back onto the resource
 			if let data = data {
-				self.serializer.deserializeData(data, usingStore: Store(objects: [resource]), options: DeserializationOptions(mapOntoFirstResourceInStore: true))
+				self.serializer.deserializeData(data, usingStore: Store(objects: [resource]), options: deserializationOptions)
 			}
 			
 			// Separately update relationships if needed
