@@ -93,7 +93,6 @@ public class ResourceCollection: NSObject, NSCoding, ArrayLiteralConvertible, Se
 	public func encodeWithCoder(coder: NSCoder) {
 		coder.encodeBool(isLoaded, forKey: "isLoaded")
 		coder.encodeObject(resources, forKey: "resources")
-		coder.encodeObject(resources, forKey: "resources")
 		coder.encodeObject(paginationData?.toDictionary(), forKey: "paginationData")
 		
 		coder.encodeObject(href, forKey: "href")
