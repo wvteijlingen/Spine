@@ -26,43 +26,48 @@ protocol HTTPClientProtocol: HTTPClientHeadersProtocol {
 }
 
 public class AlamofireClient: HTTPClientProtocol {
-	
+	var alamofireManager: Alamofire.Manager
 	var traceEnabled = false
 	
 	init() {
+		let configuration = NSURLSessionConfiguration.defaultSessionConfiguration()
+		configuration.HTTPAdditionalHeaders = Alamofire.Manager.defaultHTTPHeaders()
+		
+		alamofireManager = Alamofire.Manager(configuration: configuration)
+		
 		setHeader("Content-Type", to: "application/vnd.api+json")
 	}
 	
 	// MARK: Headers
 	
 	public func setHeader(header: String, to value: String) {
-		Alamofire.Manager.sharedInstance.session.configuration.HTTPAdditionalHeaders?.updateValue(value, forKey: header)
+		alamofireManager.session.configuration.HTTPAdditionalHeaders?.updateValue(value, forKey: header)
 	}
 	
 	public func removeHeader(header: String) {
-		Alamofire.Manager.sharedInstance.session.configuration.HTTPAdditionalHeaders?.removeValueForKey(header)
+		alamofireManager.session.configuration.HTTPAdditionalHeaders?.removeValueForKey(header)
 	}
 	
 	// MARK: Basic requests
 	
 	func get(URL: String) -> Future<(Int?, NSData?)> {
 		trace("GET:      " + URL)
-		return self.performRequest(Alamofire.request(Alamofire.Method.GET, URL))
+		return self.performRequest(alamofireManager.request(.GET, URL))
 	}
 	
 	func post(URL: String, json: [String: AnyObject]) -> Future<(Int?, NSData?)> {
 		trace("POST:     " + URL)
-		return self.performRequest(Alamofire.request(Alamofire.Method.POST, URL, parameters: json, encoding: Alamofire.ParameterEncoding.JSON))
+		return self.performRequest(alamofireManager.request(.POST, URL, parameters: json, encoding: .JSON))
 	}
 	
 	func put(URL: String, json: [String: AnyObject]) -> Future<(Int?, NSData?)> {
 		trace("PUT:      " + URL)
-		return self.performRequest(Alamofire.request(Alamofire.Method.PUT, URL, parameters: json, encoding: Alamofire.ParameterEncoding.JSON))
+		return self.performRequest(alamofireManager.request(.PUT, URL, parameters: json, encoding: .JSON))
 	}
 	
 	func delete(URL: String) -> Future<(Int?, NSData?)> {
 		trace("DELETE:   " + URL)
-		return self.performRequest(Alamofire.request(Alamofire.Method.DELETE, URL))
+		return self.performRequest(alamofireManager.request(.DELETE, URL))
 	}
 	
 	private func performRequest(request: Request) -> Future<(Int?, NSData?)> {
