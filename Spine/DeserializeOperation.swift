@@ -225,7 +225,7 @@ class DeserializeOperation: NSOperation {
 	
 	:returns: The extracted relationship or nil if no relationship with the given key was found in the data.
 	*/
-	private func extractToOneRelationship(serializedData: JSON, key: String, linkedType: String, resource: Resource, linkTemplates: JSON? = nil) -> Resource? {
+	private func extractToOneRelationship(serializedData: JSON, key: String, linkedType: Resource.Type, resource: Resource, linkTemplates: JSON? = nil) -> Resource? {
 		// Resource level link with href/id/type combo
 		if let linkData = serializedData["links"][key].dictionary {
 			var href: NSURL?, type: String, ID: String?
@@ -237,7 +237,7 @@ class DeserializeOperation: NSOperation {
 			if let rawType = linkData["type"]?.string {
 				type = rawType
 			} else {
-				type = linkedType
+				type = linkedType.type
 			}
 			
 			if linkData["id"]?.stringValue != "" {
@@ -252,7 +252,7 @@ class DeserializeOperation: NSOperation {
 		// Resource level link with only an id
 		let ID = serializedData["links"][key].stringValue
 		if ID != "" {
-			return store.dispenseResourceWithType(linkedType, id: ID)
+			return store.dispenseResourceWithType(linkedType.type, id: ID)
 		}
 		
 		// Document level link template
@@ -270,7 +270,7 @@ class DeserializeOperation: NSOperation {
 			if let rawType = linkData["type"]?.string {
 				type = rawType
 			} else {
-				type = linkedType
+				type = linkedType.type
 			}
 			
 			let resource = store.dispenseResourceWithType(type, id: ID)
@@ -291,7 +291,7 @@ class DeserializeOperation: NSOperation {
 	
 	:returns: The extracted relationship or nil if no relationship with the given key was found in the data.
 	*/
-	private func extractToManyRelationship(serializedData: JSON, key: String, linkedType: String, resource: Resource, linkTemplates: JSON? = nil) -> ResourceCollection? {
+	private func extractToManyRelationship(serializedData: JSON, key: String, linkedType: Resource.Type, resource: Resource, linkTemplates: JSON? = nil) -> ResourceCollection? {
 		// Resource level link with href/id/type combo
 		if let linkData = serializedData["links"][key].dictionary {
 			var href: NSURL?, type: String, IDs: [String]?
@@ -308,7 +308,7 @@ class DeserializeOperation: NSOperation {
 			if let rawType = linkData["type"]?.string {
 				type = rawType
 			} else {
-				type = linkedType
+				type = linkedType.type
 			}
 			
 			return ResourceCollection(href: href, type: type, ids: IDs)
@@ -318,7 +318,7 @@ class DeserializeOperation: NSOperation {
 		if let rawIDs: [JSON] = serializedData["links"][key].array {
 			let IDs = rawIDs.map { $0.stringValue }
 			IDs.filter { return $0 != "" }
-			return ResourceCollection(href: nil, type: linkedType, ids: IDs)
+			return ResourceCollection(href: nil, type: linkedType.type, ids: IDs)
 		}
 		
 		// Document level link template
@@ -336,7 +336,7 @@ class DeserializeOperation: NSOperation {
 			if let rawType = linkData["type"]?.string {
 				type = rawType
 			} else {
-				type = linkedType
+				type = linkedType.type
 			}
 			
 			if let rawIDs = serializedData["links"][key].array {

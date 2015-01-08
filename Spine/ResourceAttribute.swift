@@ -73,9 +73,9 @@ public class DateAttribute: Attribute {
 }
 
 public class ToOneAttribute: Attribute {
-	let linkedType: String
+	let linkedType: Resource.Type
 	
-	public init(_ type: String) {
+	public init(_ type: Resource.Type) {
 		linkedType = type
 	}
 	
@@ -85,9 +85,9 @@ public class ToOneAttribute: Attribute {
 }
 
 public class ToManyAttribute: Attribute {
-	let linkedType: String
+	let linkedType: Resource.Type
 	
-	public init(_ type: String) {
+	public init(_ type: Resource.Type) {
 		linkedType = type
 	}
 	
