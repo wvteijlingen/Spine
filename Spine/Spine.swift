@@ -363,8 +363,8 @@ extension Spine {
 	
 	:param: type The class type.
 	*/
-	public func registerTransformer(transformer: Transformer, forType type: Attribute.Type) {
-		self.serializer.transformers.registerTransformer(transformer, forType: type)
+	public func registerTransformer<T: Transformer>(transformer: T) {
+		self.serializer.transformers.registerTransformer(transformer)
 	}
 }
 

@@ -29,12 +29,8 @@ public class Attribute {
 			_serializedName = newValue
 		}
 	}
-	
-	class func attributeType() -> String {
-		return "_unspecified"
-	}
-	
-	init() { }
+
+	public init() {}
 	
 	public func serializeAs(name: String) -> Self{
 		serializedName = name
@@ -44,29 +40,19 @@ public class Attribute {
 
 // MARK: - Built in attributes
 
-public class PropertyAttribute: Attribute {
-	override class func attributeType() -> String {
-		return "property"
-	}
-	
-	public override init() { }
-}
+public class PropertyAttribute: Attribute { }
 
 public class URLAttribute: Attribute {
-	override class func attributeType() -> String {
-		return "url"
-	}
+	let baseURL: NSURL?
 	
-	public override init() { }
+	public init(baseURL: NSURL? = nil) {
+		self.baseURL = baseURL
+	}
 }
 
 public class DateAttribute: Attribute {
 	let format: String
-	
-	override class func attributeType() -> String {
-		return "date"
-	}
-	
+
 	public init(_ format: String = "yyyy-MM-dd'T'HH:mm:ssZZZZZ") {
 		self.format = format
 	}
@@ -78,10 +64,6 @@ public class ToOneAttribute: Attribute {
 	public init(_ type: Resource.Type) {
 		linkedType = type
 	}
-	
-	override class func attributeType() -> String {
-		return "toOne"
-	}
 }
 
 public class ToManyAttribute: Attribute {
@@ -89,9 +71,5 @@ public class ToManyAttribute: Attribute {
 	
 	public init(_ type: Resource.Type) {
 		linkedType = type
-	}
-	
-	override class func attributeType() -> String {
-		return "toMany"
 	}
 } 

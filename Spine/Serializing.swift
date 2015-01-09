@@ -34,7 +34,7 @@ class JSONSerializer: SerializerProtocol {
 	
 	/// The class map that holds information about resource type/class mapping.
 	var resourceTypes = ResourceClassMap()
-	var transformers = TransformerDirectory()
+	var transformers = TransformerDirectory.defaultTransformerDirectory()
 	
 	// MARK: Serializing
 	

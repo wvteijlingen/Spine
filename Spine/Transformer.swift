@@ -8,81 +8,94 @@
 
 import Foundation
 
-public typealias TransformerFunction = (AnyObject, Attribute) -> AnyObject
-public typealias Transformer = (deserialize: TransformerFunction, serialize: TransformerFunction)
-
-// MARK: Built in transformers
-
-private let URLTransformer: Transformer = (
-	deserialize: { value, attribute in
-		// TODO: Make this independent from the singleton
-		if let URL = NSURL(string: (value as String), relativeToURL: Spine.sharedInstance.baseURL) {
-			return URL
-		}
-		
-		assertionFailure("Could not deserialize URL: \(value)")
-	},
-	serialize: { value, attribute in
-		return (value as NSURL).absoluteString!
-	}
-)
-
-private let DateTransformer: Transformer = (
-	deserialize: { value, attribute in
-		let formatter = NSDateFormatter()
-		formatter.dateFormat = (attribute as DateAttribute).format
-		
-		if let date = formatter.dateFromString(value as String) {
-			return date
-		}
-		
-		assertionFailure("Could not deserialize date: \(value)")
-	},
-	serialize: { value, attribute in
-		let formatter = NSDateFormatter()
-		formatter.dateFormat = (attribute as DateAttribute).format
-		return formatter.stringFromDate(value as NSDate)
-
-	}
-)
-
-// MARK: Transformer directory
+public protocol Transformer {
+	typealias SerializedType
+	typealias DeserializedType
+	typealias AttributeType
+	
+	func deserialize(value: SerializedType, attribute: AttributeType) -> AnyObject
+	func serialize(value: DeserializedType, attribute: AttributeType) -> AnyObject
+}
 
 struct TransformerDirectory {
-	private var transformers: [String: Transformer] = [
-		URLAttribute.attributeType(): URLTransformer,
-		DateAttribute.attributeType(): DateTransformer
-	]
+	private var serializers: [(AnyObject, Attribute) -> AnyObject?] = []
+	private var deserializers: [(AnyObject, Attribute) -> AnyObject?] = []
 	
-	mutating func registerTransformer(transformer: Transformer, forType type: Attribute.Type) {
-		transformers[type.attributeType()] = transformer
+	static func defaultTransformerDirectory() -> TransformerDirectory {
+		var directory = TransformerDirectory()
+		directory.registerTransformer(URLTransformer())
+		directory.registerTransformer(DateTransformer())
+		return directory
 	}
 	
-	func transformerForType(type: Attribute.Type) -> Transformer? {
-		return transformers[type.attributeType()]
-	}
-	
-	func transformerForAttribute(attribute: Attribute) -> Transformer? {
-		return transformerForType(attribute.dynamicType)
-	}
-
-	subscript(type: Attribute.Type) -> Transformer? {
-		return transformerForType(type)
+	mutating func registerTransformer<T: Transformer>(transformer: T) {
+		serializers.append { (value: AnyObject, attribute: Attribute) -> AnyObject? in
+			if let typedAttribute = attribute as? T.AttributeType {
+				if let typedValue = value as? T.DeserializedType {
+					return transformer.serialize(typedValue, attribute: typedAttribute)
+				}
+			}
+			
+			return nil
+		}
+		
+		deserializers.append { (value: AnyObject, attribute: Attribute) -> AnyObject? in
+			if let typedAttribute = attribute as? T.AttributeType {
+				if let typedValue = value as? T.SerializedType {
+					return transformer.deserialize(typedValue, attribute: typedAttribute)
+				}
+			}
+			
+			return nil
+		}
 	}
 	
 	func deserialize(value: AnyObject, forAttribute attribute: Attribute) -> AnyObject {
-		if let transformer = self.transformerForAttribute(attribute) {
-			return transformer.deserialize(value, attribute)
-		} else {
-			return value
+		for deserializer in deserializers {
+			if let deserialized: AnyObject = deserializer(value, attribute) {
+				return deserialized
+			}
 		}
+		
+		return value
 	}
 	
 	func serialize(value: AnyObject, forAttribute attribute: Attribute) -> AnyObject {
-		if let transformer = self.transformerForAttribute(attribute) {
-			return transformer.serialize(value, attribute)
-		} else {
-			return value
+		for serializer in serializers {
+			if let serialized: AnyObject = serializer(value, attribute) {
+				return serialized
+			}
 		}
+		
+		return value
+	}
+}
+
+
+// MARK: - Built in transformers
+
+private struct URLTransformer: Transformer {
+	func deserialize(value: String, attribute: URLAttribute) -> AnyObject {
+		return NSURL(string: value, relativeToURL: attribute.baseURL)!
+	}
+	
+	func serialize(value: NSURL, attribute: URLAttribute) -> AnyObject {
+		return value.absoluteString!
+	}
+}
+
+private struct DateTransformer: Transformer {
+	func formatter(attribute: DateAttribute) -> NSDateFormatter {
+		let formatter = NSDateFormatter()
+		formatter.dateFormat = attribute.format
+		return formatter
+	}
+	
+	func deserialize(value: String, attribute: DateAttribute) -> AnyObject {
+		return formatter(attribute).dateFromString(value)!
+	}
+	
+	func serialize(value: NSDate, attribute: DateAttribute) -> AnyObject {
+		return formatter(attribute).stringFromDate(value)
 	}
 }
