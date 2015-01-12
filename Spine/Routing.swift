@@ -78,8 +78,16 @@ class JSONAPIRouter: Router {
 		}
 		
 		// Sorting
-		if query.sortOrders.count != 0 {
-			var item = NSURLQueryItem(name: "sort", value: ",".join(query.sortOrders))
+		if query.sortDescriptors.count != 0 {
+			let descriptorStrings = query.sortDescriptors.map { descriptor -> String in
+				if descriptor.ascending {
+					return descriptor.key!
+				} else {
+					return "-\(descriptor.key)"
+				}
+			}
+			
+			var item = NSURLQueryItem(name: "sort", value: ",".join(descriptorStrings))
 			self.setQueryItem(item, forQueryItems: &queryItems)
 		}
 		

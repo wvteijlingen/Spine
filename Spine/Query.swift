@@ -27,8 +27,7 @@ public struct Query<T: ResourceProtocol> {
 	internal var includes: [String] = []
 	internal var filters: [NSComparisonPredicate] = []
 	internal var fields: [String: [String]] = [:]
-	internal var sortOrders: [String] = []
-	internal var queryParts: [String: String] = [:]
+	internal var sortDescriptors: [NSSortDescriptor] = []
 	
 	// Pagination parts
 	internal var page: Int?
@@ -280,7 +279,7 @@ public struct Query<T: ResourceProtocol> {
 	:returns: The query
 	*/
 	public mutating func addAscendingOrder(property: String) -> Query {
-		sortOrders.append(property)
+		sortDescriptors.append(NSSortDescriptor(key: property, ascending: true))
 		return self
 	}
 	
@@ -292,7 +291,7 @@ public struct Query<T: ResourceProtocol> {
 	:returns: The query
 	*/
 	public mutating func addDescendingOrder(property: String) -> Query {
-		sortOrders.append("-\(property)")
+		sortDescriptors.append(NSSortDescriptor(key: property, ascending: false))
 		return self
 	}
 }
