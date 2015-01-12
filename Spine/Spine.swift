@@ -39,10 +39,10 @@ public class Spine {
 		return HTTPClient
 	}
 	
-	/// The serializer to use for serializing and deserializing of JSON representations. Default false.
+	/// The serializer to use for serializing and deserializing of JSON representations.
 	private var serializer: JSONSerializer
 	
-	/// Whether the print debug information
+	/// Whether the print debug information. Default false.
 	public var traceEnabled: Bool = false {
 		didSet {
 			self.HTTPClient.traceEnabled = traceEnabled

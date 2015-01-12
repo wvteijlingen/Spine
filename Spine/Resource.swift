@@ -59,15 +59,8 @@ public class Resource: NSObject, ResourceProtocol, NSCoding, Printable {
 	// MARK: Mapping data
 	
 	/// Array of attributes that must be mapped by Spine.
-	public var persistentAttributes: [String: Attribute] {
-		return [:]
-	}
-	
 	public var attributes: [Attribute] {
-		return map(self.persistentAttributes) { (name, attribute) in
-			attribute.name = name
-			return attribute
-		}
+		return []
 	}
 	
     public subscript(key: String) -> AnyObject? {

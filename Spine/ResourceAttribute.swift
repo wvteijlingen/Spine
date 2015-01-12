@@ -8,9 +8,15 @@
 
 import Foundation
 
-
 func isRelationship(attribute: Attribute) -> Bool {
 	return (attribute is ToOneAttribute) || (attribute is ToManyAttribute)
+}
+
+public func attributesFromDictionary(dictionary: [String: Attribute]) -> [Attribute] {
+	return map(dictionary) { (name, attribute) in
+		attribute.name = name
+		return attribute
+	}
 }
 
 
