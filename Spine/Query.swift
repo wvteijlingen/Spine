@@ -7,10 +7,6 @@
 //
 
 import Foundation
-import BrightFutures
-
-
-// MARK: -
 
 public struct Query<T: ResourceProtocol> {
 	
