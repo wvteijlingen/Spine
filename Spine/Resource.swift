@@ -64,28 +64,7 @@ public class Resource: NSObject, NSCoding, Printable {
 			return attribute
 		}
 	}
-	
-	
-	// MARK: Persisting
-	
-	/**
-	Saves this resource asynchronously.
-	
-	:returns: A future of this resource.
-	*/
-	public func save() -> Future<Resource> {
-		return Spine.sharedInstance.save(self)
-	}
-	
-	/**
-	Deletes this resource asynchronously.
-	
-	:returns: A void future.
-	*/
-	public func delete() -> Future<Void> {
-		return Spine.sharedInstance.delete(self)
-	}
-	
+
 	
 	// MARK: Printable protocol
 	

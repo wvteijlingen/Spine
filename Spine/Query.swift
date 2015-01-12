@@ -318,14 +318,3 @@ public struct Query<T: Resource> {
 		return self
 	}
 }
-
-// MARK: - Convenience functions
-extension Query {
-	public func find() -> Future<ResourceCollection> {
-		return Spine.sharedInstance.fetchResourcesForQuery(self)
-	}
-	
-	public func findOne() -> Future<T> {
-		return Spine.sharedInstance.fetchResourceForQuery(self)
-	}
-}

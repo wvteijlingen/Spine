@@ -370,59 +370,63 @@ extension Spine {
 
 
 // MARK: - Finders
+extension Spine {
 
-// Find one
-public func findOne<T: Resource>(ID: String, ofType type: T.Type) -> Future<T> {
-	let query = Query(resourceType: type, resourceIDs: [ID])
-	return Spine.sharedInstance.fetchResourceForQuery(query)
-}
+	// Find one
+	public func findOne<T: Resource>(ID: String, ofType type: T.Type) -> Future<T> {
+		let query = Query(resourceType: type, resourceIDs: [ID])
+		return fetchResourceForQuery(query)
+	}
 
-// Find multiple
-public func find<T: Resource>(IDs: [String], ofType type: T.Type) -> Future<ResourceCollection> {
-	let query = Query(resourceType: type, resourceIDs: IDs)
-	return Spine.sharedInstance.fetchResourcesForQuery(query)
-}
+	// Find multiple
+	public func find<T: Resource>(IDs: [String], ofType type: T.Type) -> Future<ResourceCollection> {
+		let query = Query(resourceType: type, resourceIDs: IDs)
+		return fetchResourcesForQuery(query)
+	}
 
-// Find all
-public func find<T: Resource>(type: T.Type) -> Future<ResourceCollection> {
-	let query = Query(resourceType: type)
-	return Spine.sharedInstance.fetchResourcesForQuery(query)
-}
+	// Find all
+	public func find<T: Resource>(type: T.Type) -> Future<ResourceCollection> {
+		let query = Query(resourceType: type)
+		return fetchResourcesForQuery(query)
+	}
 
-// Find by query
-public func find<T: Resource>(query: Query<T>) -> Future<ResourceCollection> {
-	return Spine.sharedInstance.fetchResourcesForQuery(query)
-}
+	// Find by query
+	public func find<T: Resource>(query: Query<T>) -> Future<ResourceCollection> {
+		return fetchResourcesForQuery(query)
+	}
 
-// Find one by query
-public func findOne<T: Resource>(query: Query<T>) -> Future<T> {
-	return Spine.sharedInstance.fetchResourceForQuery(query)
+	// Find one by query
+	public func findOne<T: Resource>(query: Query<T>) -> Future<T> {
+		return fetchResourceForQuery(query)
+	}
 }
 
 // MARK: - Ensuring
-
-public func ensure<T: Resource>(resource: T) -> Future<T> {
-	let query = Query(resource: resource)
-	return ensure(resource, query)
-}
-
-public func ensure<T: Resource>(resource: T, queryCallback: (Query<T>) -> Query<T>) -> Future<T> {
-	let query = queryCallback(Query(resource: resource))
-	return ensure(resource, query)
-}
-
-func ensure<T: Resource>(resource: T, query: Query<T>) -> Future<T> {
-	let promise = Promise<(T)>()
+extension Spine {
 	
-	if resource.isLoaded {
-		promise.success(resource)
-	} else {
-		Spine.sharedInstance.fetch(query, mapOnto: [resource]).onSuccess { resources in
+	public func ensure<T: Resource>(resource: T) -> Future<T> {
+		let query = Query(resource: resource)
+		return ensure(resource, query: query)
+	}
+
+	public func ensure<T: Resource>(resource: T, queryCallback: (Query<T>) -> Query<T>) -> Future<T> {
+		let query = queryCallback(Query(resource: resource))
+		return ensure(resource, query: query)
+	}
+
+	func ensure<T: Resource>(resource: T, query: Query<T>) -> Future<T> {
+		let promise = Promise<(T)>()
+		
+		if resource.isLoaded {
 			promise.success(resource)
+		} else {
+			fetch(query, mapOnto: [resource]).onSuccess { resources in
+				promise.success(resource)
 			}.onFailure { error in
 				promise.error(error)
+			}
 		}
+		
+		return promise.future
 	}
-	
-	return promise.future
 }
