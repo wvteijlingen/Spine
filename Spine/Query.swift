@@ -46,28 +46,24 @@ public struct Query<T: ResourceProtocol> {
 	:returns: Query
 	*/
 	public init(resourceType: T.Type, resourceIDs: [String]? = nil) {
-		self.resourceType = resourceType.resourceType
-		self.resourceIDs = resourceIDs
+		resourceType = resourceType.resourceType
+		resourceIDs = resourceIDs
 	}
 	
 	public init(resource: T) {
-		// We need to cast T to Resource, other wise dynamicType will throw an EXC_BAD_ACCESS exception
-		// See http://stackoverflow.com/questions/27782792/using-dynamictype-of-a-generic-results-in-exc-bad-access
-		var typecastResource = (resource as ResourceProtocol)
-		
-		assert(typecastResource.id != nil, "Cannot instantiate query for resource, id is nil.")
-		self.resourceType = typecastResource.type
-		self.resourceIDs = [typecastResource.id!]
+		assert(resource.id != nil, "Cannot instantiate query for resource, id is nil.")
+		resourceType = resource.type
+		resourceIDs = [resource.id!]
 	}
 	
 	public init(linkedResourceCollection: ResourceCollection) {
-		self.URL = linkedResourceCollection.href
-		self.resourceType = linkedResourceCollection.type
+		URL = linkedResourceCollection.href
+		resourceType = linkedResourceCollection.type
 	}
 	
 	public init(resourceType: T.Type, URLString: String) {
-		self.resourceType = resourceType.resourceType
-		self.URL = NSURL(string: URLString)
+		resourceType = resourceType.resourceType
+		URL = NSURL(string: URLString)
 	}
 	
 	
@@ -81,21 +77,8 @@ public struct Query<T: ResourceProtocol> {
 	
 	:returns: The query.
 	*/
-	public mutating func include(relation: String) -> Query {
-		self.includes.append(relation)
-		return self
-	}
-	
-	/**
-	Includes the given relations in the query.
-	See include(relation: String) for more information.
-	
-	:param: relations The name of the relation to include.
-	
-	:returns: The query
-	*/
-	public mutating func include(relations: [String]) -> Query {
-		self.includes += relations
+	public mutating func include(relations: String...) -> Query {
+		includes += relations
 		return self
 	}
 	
@@ -106,8 +89,8 @@ public struct Query<T: ResourceProtocol> {
 	
 	:returns: The query
 	*/
-	public mutating func removeInclude(relation: String) -> Query {
-		self.includes.filter({$0 != relation})
+	public mutating func removeInclude(relations: String...) -> Query {
+		includes.filter { !contains(relations, $0) }
 		return self
 	}
 	
@@ -122,7 +105,7 @@ public struct Query<T: ResourceProtocol> {
 			type: type,
 			options: NSComparisonPredicateOptions.allZeros)
 		
-		self.filters.append(predicate)
+		filters.append(predicate)
 	}
 	
 	/**
@@ -134,7 +117,7 @@ public struct Query<T: ResourceProtocol> {
 	:returns: The query
 	*/
 	public mutating func whereProperty(property: String, equalTo: String) -> Query {
-		self.addPredicateWithKey(property, value: equalTo, type: .EqualToPredicateOperatorType)
+		addPredicateWithKey(property, value: equalTo, type: .EqualToPredicateOperatorType)
 		return self
 	}
 
@@ -147,7 +130,7 @@ public struct Query<T: ResourceProtocol> {
 	:returns: The query
 	*/
 	public mutating func whereProperty(property: String, notEqualTo: String) -> Query {
-		self.addPredicateWithKey(property, value: notEqualTo, type: .NotEqualToPredicateOperatorType)
+		addPredicateWithKey(property, value: notEqualTo, type: .NotEqualToPredicateOperatorType)
 		return self
 	}
 
@@ -160,7 +143,7 @@ public struct Query<T: ResourceProtocol> {
 	:returns: The query
 	*/
 	public mutating func whereProperty(property: String, lessThan: String) -> Query {
-		self.addPredicateWithKey(property, value: lessThan, type: .LessThanPredicateOperatorType)
+		addPredicateWithKey(property, value: lessThan, type: .LessThanPredicateOperatorType)
 		return self
 	}
 
@@ -173,7 +156,7 @@ public struct Query<T: ResourceProtocol> {
 	:returns: The query
 	*/
 	public mutating func whereProperty(property: String, lessThanOrEqualTo: String) -> Query {
-		self.addPredicateWithKey(property, value: lessThanOrEqualTo, type: .LessThanOrEqualToPredicateOperatorType)
+		addPredicateWithKey(property, value: lessThanOrEqualTo, type: .LessThanOrEqualToPredicateOperatorType)
 		return self
 	}
 	
@@ -186,7 +169,7 @@ public struct Query<T: ResourceProtocol> {
 	:returns: The query
 	*/
 	public mutating func whereProperty(property: String, greaterThan: String) -> Query {
-		self.addPredicateWithKey(property, value: greaterThan, type: .GreaterThanPredicateOperatorType)
+		addPredicateWithKey(property, value: greaterThan, type: .GreaterThanPredicateOperatorType)
 		return self
 	}
 
@@ -199,7 +182,7 @@ public struct Query<T: ResourceProtocol> {
 	:returns: The query
 	*/
 	public mutating func whereProperty(property: String, greaterThanOrEqualTo: String) -> Query {
-		self.addPredicateWithKey(property, value: greaterThanOrEqualTo, type: .GreaterThanOrEqualToPredicateOperatorType)
+		addPredicateWithKey(property, value: greaterThanOrEqualTo, type: .GreaterThanOrEqualToPredicateOperatorType)
 		return self
 	}
 	
@@ -214,7 +197,7 @@ public struct Query<T: ResourceProtocol> {
 	*/
 	public mutating func whereRelationship(relationship: String, isOrContains resource: Resource) -> Query {
 		assert(resource.id != nil, "Attempt to add a where filter on a relationship, but the target resource does not have an id.")
-		self.addPredicateWithKey(relationship, value: resource.id!, type: .EqualToPredicateOperatorType)
+		addPredicateWithKey(relationship, value: resource.id!, type: .EqualToPredicateOperatorType)
 		return self
 	}
 	
@@ -228,8 +211,13 @@ public struct Query<T: ResourceProtocol> {
 	
 	:returns: The query
 	*/
-	public mutating func restrictProperties(properties: [String]) -> Query {
-		self.restrictProperties(properties, ofResourceType: self.resourceType)
+	public mutating func restrictPropertiesTo(properties: String...) -> Query {
+		if var fields = fields[resourceType] {
+			fields += properties
+		} else {
+			fields[resourceType] = properties
+		}
+		
 		return self
 	}
 	
@@ -244,11 +232,11 @@ public struct Query<T: ResourceProtocol> {
 	
 	:returns: The query
 	*/
-	public mutating func restrictProperties(properties: [String], ofResourceType type: String) -> Query {
-		if var fields = self.fields[type] {
+	public mutating func restrictPropertiesOfResourceType(type: String, to properties: String...) -> Query {
+		if var fields = fields[type] {
 			fields += properties
 		} else {
-			self.fields[type] = properties
+			fields[type] = properties
 		}
 		
 		return self
@@ -292,7 +280,7 @@ public struct Query<T: ResourceProtocol> {
 	:returns: The query
 	*/
 	public mutating func addAscendingOrder(property: String) -> Query {
-		self.sortOrders.append(property)
+		sortOrders.append(property)
 		return self
 	}
 	
@@ -304,7 +292,7 @@ public struct Query<T: ResourceProtocol> {
 	:returns: The query
 	*/
 	public mutating func addDescendingOrder(property: String) -> Query {
-		self.sortOrders.append("-\(property)")
+		sortOrders.append("-\(property)")
 		return self
 	}
 }
