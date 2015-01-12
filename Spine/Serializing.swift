@@ -144,17 +144,12 @@ struct ResourceFactory {
 		factoryFunctions[type] = factory
 	}
 
-	mutating func unregisterResource(type: String) {
-		assert(factoryFunctions[type] != nil, "Cannot unregister class of type \(type). Type does not exist in the class map.")
-		factoryFunctions[type] = nil
-	}
-
-	func createInstanceOfType(type: String) -> ResourceProtocol {
-		assert(factoryFunctions[type] != nil, "Cannot map resources of type \(type). You must create a Resource subclass and register it with Spine.")
+	func instantiate(type: String) -> ResourceProtocol {
+		assert(factoryFunctions[type] != nil, "Cannot instantiate resource of type \(type). You must register this type with Spine first.")
 		return factoryFunctions[type]!()
 	}
 
 	subscript(type: String) -> ResourceProtocol {
-		return createInstanceOfType(type)
+		return instantiate(type)
 	}
 }

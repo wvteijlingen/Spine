@@ -142,13 +142,13 @@ class Store: ArrayLiteralConvertible, SequenceType, Printable, DebugPrintable {
 				resource = existingResource
 				isExistingResource = true
 			} else {
-				resource = resourceFactory.createInstanceOfType(type)
+				resource = resourceFactory.instantiate(type)
 				resource.id = id
 				isExistingResource = false
 			}
 			
 		} else {
-			resource = resourceFactory.createInstanceOfType(type)
+			resource = resourceFactory.instantiate(type)
 			resource.id = id
 			isExistingResource = false
 		}
