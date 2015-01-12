@@ -46,24 +46,24 @@ public struct Query<T: ResourceProtocol> {
 	:returns: Query
 	*/
 	public init(resourceType: T.Type, resourceIDs: [String]? = nil) {
-		resourceType = resourceType.resourceType
-		resourceIDs = resourceIDs
+		self.resourceType = resourceType.resourceType
+		self.resourceIDs = resourceIDs
 	}
 	
 	public init(resource: T) {
 		assert(resource.id != nil, "Cannot instantiate query for resource, id is nil.")
-		resourceType = resource.type
-		resourceIDs = [resource.id!]
+		self.resourceType = resource.type
+		self.resourceIDs = [resource.id!]
 	}
 	
 	public init(linkedResourceCollection: ResourceCollection) {
-		URL = linkedResourceCollection.href
-		resourceType = linkedResourceCollection.type
+		self.URL = linkedResourceCollection.href
+		self.resourceType = linkedResourceCollection.type
 	}
 	
 	public init(resourceType: T.Type, URLString: String) {
-		resourceType = resourceType.resourceType
-		URL = NSURL(string: URLString)
+		self.resourceType = resourceType.resourceType
+		self.URL = NSURL(string: URLString)
 	}
 	
 	
