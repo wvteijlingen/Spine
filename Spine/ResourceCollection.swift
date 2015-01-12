@@ -22,21 +22,21 @@ public class ResourceCollection: NSObject, NSCoding, ArrayLiteralConvertible, Se
 	}
 	
 	/// The loaded resources
-	public var resources: [Resource]? {
+	public var resources: [ResourceProtocol]? {
 		didSet {
 			if !observeResources {
 				return
 			}
 			
-			let previousItems: [Resource] = oldValue ?? []
-			let newItems: [Resource] = self.resources ?? []
+			let previousItems: [ResourceProtocol] = oldValue ?? []
+			let newItems: [ResourceProtocol] = self.resources ?? []
 			
 			let addedItems = newItems.filter { item in
-				return !contains(previousItems, item)
+                return false //!contains(previousItems, item)
 			}
 			
 			let removedItems = previousItems.filter { item in
-				return !contains(newItems, item)
+                return false //!contains(newItems, item)
 			}
 			
 			self.addedResources += addedItems
@@ -47,10 +47,10 @@ public class ResourceCollection: NSObject, NSCoding, ArrayLiteralConvertible, Se
 	var observeResources: Bool = true
 	
 	/// Resources that are added to this collection
-	var addedResources: [Resource] = []
+	var addedResources: [ResourceProtocol] = []
 	
 	/// Resources that are removed from this collection
-	var removedResources: [Resource] = []
+	var removedResources: [ResourceProtocol] = []
 	
 	var paginationData: PaginationData?
 	
@@ -63,14 +63,14 @@ public class ResourceCollection: NSObject, NSCoding, ArrayLiteralConvertible, Se
 		self.isLoaded = false
 	}
 	
-	public init(_ resources: [Resource]) {
-		self.type = resources.first!.dynamicType.type
+	public init(_ resources: [ResourceProtocol]) {
+		self.type = resources.first!.type
 		self.resources = resources
 		self.isLoaded = true
 	}
 	
-	public required init(arrayLiteral elements: Resource...) {
-		self.type = elements.first!.dynamicType.type
+	public required init(arrayLiteral elements: ResourceProtocol...) {
+		self.type = elements.first!.type
 		self.resources = elements
 		self.isLoaded = true
 	}
@@ -79,7 +79,7 @@ public class ResourceCollection: NSObject, NSCoding, ArrayLiteralConvertible, Se
 	
 	public required init(coder: NSCoder) {
 		isLoaded = coder.decodeBoolForKey("isLoaded")
-		resources = coder.decodeObjectForKey("resources") as? [Resource]
+		resources = coder.decodeObjectForKey("resources") as Any as? [ResourceProtocol]
 		
 		if let paginationData = coder.decodeObjectForKey("paginationData") as? NSDictionary {
 			self.paginationData = PaginationData.fromDictionary(paginationData)
@@ -105,7 +105,7 @@ public class ResourceCollection: NSObject, NSCoding, ArrayLiteralConvertible, Se
 	override public var description: String {
 		if self.isLoaded {
 			if let resources = self.resources {
-				let descriptions = ", ".join(resources.map { $0.description })
+                let descriptions = ", ".join(resources.map { "\($0.type):\($0.type)" })
 				return "ResourceCollection.loaded<\(self.type)>(\(descriptions))"
 			} else {
 				return "ResourceCollection.loaded<\(self.type)>([])"
@@ -120,11 +120,11 @@ public class ResourceCollection: NSObject, NSCoding, ArrayLiteralConvertible, Se
 	
 	// MARK: SequenceType protocol
 	
-	public func generate() -> GeneratorOf<Resource> {
-		let allObjects: [Resource] = self.resources ?? []
+	public func generate() -> GeneratorOf<ResourceProtocol> {
+		let allObjects: [ResourceProtocol] = self.resources ?? []
 		var index = -1
 		
-		return GeneratorOf<Resource> {
+		return GeneratorOf<ResourceProtocol> {
 			index++
 			
 			if (index > allObjects.count - 1) {
@@ -137,11 +137,11 @@ public class ResourceCollection: NSObject, NSCoding, ArrayLiteralConvertible, Se
 	
 	// Subscript and count
 	
-	public subscript (index: Int) -> Resource? {
+	public subscript (index: Int) -> ResourceProtocol? {
 		return self.resources?[index]
 	}
 	
-	public subscript (id: String) -> Resource? {
+	public subscript (id: String) -> ResourceProtocol? {
 		let foundResources = self.resources?.filter { resource in
 			return resource.id == id
 		}
@@ -157,7 +157,7 @@ public class ResourceCollection: NSObject, NSCoding, ArrayLiteralConvertible, Se
 	
 	:param: resources The loaded resources.
 	*/
-	public func fulfill(resources: [Resource]) {
+	public func fulfill(resources: [ResourceProtocol]) {
 		self.observeResources = false
 		
 		self.resources = resources
@@ -173,7 +173,7 @@ public class ResourceCollection: NSObject, NSCoding, ArrayLiteralConvertible, Se
 	
 	:returns: The query
 	*/
-	public func query() -> Query<Resource> {
+	public func query() -> Query<ResourceProtocol> {
 		return Query(linkedResourceCollection: self)
 	}
 	
@@ -186,7 +186,7 @@ public class ResourceCollection: NSObject, NSCoding, ArrayLiteralConvertible, Se
 	
 	:returns: This collection.
 	*/
-	public func ifLoaded(callback: ([Resource]) -> Void) -> Self {
+	public func ifLoaded(callback: ([ResourceProtocol]) -> Void) -> Self {
 		if self.isLoaded {
 			callback(self.resources!)
 		}

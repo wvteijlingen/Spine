@@ -9,31 +9,36 @@
 import Foundation
 import BrightFutures
 
+@objc public protocol ResourceProtocol: class {
+    class var resourceType: String { get }
+    var type: String { get }
+    
+    var attributes: [Attribute] { get }
+    
+    var id: String? { get set }
+    var href: NSURL? { get set }
+    var isLoaded: Bool { get set }
+	
+	subscript(key: String) -> AnyObject? { get set }
+}
+
+
 /**
 *  A base recource class that provides some defaults for resources.
 *  You must create custom resource classes by subclassing from Resource.
 */
-public class Resource: NSObject, NSCoding, Printable {
-	public class var type: String { return "_unknown_type" }
+public class Resource: NSObject, ResourceProtocol, NSCoding, Printable {
+	public class var resourceType: String { return "_unknown_type" }
+    public var type: String { return self.dynamicType.resourceType }
+    
 	public var id: String?
 	public var href: NSURL?
 	public var isLoaded: Bool = false
 	
 	
-	// MARK: Initializers
+	public override init() {}
 	
-	// This is needed for the dynamic instantiation based on the metatype
-	required override public init() {
-		super.init()
-	}
 	
-	public init(id: String?, href: NSURL?) {
-		super.init()
-		self.id = id
-		self.href = href
-	}
-	
-
 	// MARK: NSCoding protocol
 	
 	public required init(coder: NSCoder) {
@@ -58,17 +63,25 @@ public class Resource: NSObject, NSCoding, Printable {
 		return [:]
 	}
 	
-	var attributes: [Attribute] {
+	public var attributes: [Attribute] {
 		return map(self.persistentAttributes) { (name, attribute) in
 			attribute.name = name
 			return attribute
 		}
 	}
-
+	
+    public subscript(key: String) -> AnyObject? {
+        get {
+           return valueForKey(key)
+        }
+        set {
+            setValue(newValue, forKey: key)
+        }
+    }
 	
 	// MARK: Printable protocol
 	
 	override public var description: String {
-		return "\(self.dynamicType.type)[\(self.id)]"
+		return "\(self.type)[\(self.id)]"
 	}
 }

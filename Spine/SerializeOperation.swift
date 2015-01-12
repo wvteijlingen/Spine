@@ -17,13 +17,13 @@ import SwiftyJSON
 */
 class SerializeOperation: NSOperation {
 	
-	private let resources: [Resource]
+	private let resources: [ResourceProtocol]
 	var transformers = TransformerDirectory()
 	var options = SerializationOptions()
 	
 	var result: [String: AnyObject]?
 	
-	init(resources: [Resource]) {
+	init(resources: [ResourceProtocol]) {
 		self.resources = resources
 	}
 	
@@ -31,7 +31,7 @@ class SerializeOperation: NSOperation {
 		if self.resources.count == 1 {
 			let resource = self.resources.first!
 			let serializedData = self.serializeResource(resource)
-			self.result = [resource.dynamicType.type: serializedData]
+			self.result = [resource.type: serializedData]
 			
 		} else  {
 			var dictionary: [String: [[String: AnyObject]]] = [:]
@@ -40,10 +40,10 @@ class SerializeOperation: NSOperation {
 				var serializedData = self.serializeResource(resource)
 				
 				//Add the resource representation to the root dictionary
-				if dictionary[resource.dynamicType.type] == nil {
-					dictionary[resource.dynamicType.type] = [serializedData]
+				if dictionary[resource.type] == nil {
+					dictionary[resource.type] = [serializedData]
 				} else {
-					dictionary[resource.dynamicType.type]!.append(serializedData)
+					dictionary[resource.type]!.append(serializedData)
 				}
 			}
 			
@@ -51,7 +51,7 @@ class SerializeOperation: NSOperation {
 		}
 	}
 	
-	private func serializeResource(resource: Resource) -> [String: AnyObject] {
+	private func serializeResource(resource: ResourceProtocol) -> [String: AnyObject] {
 		var serializedData: [String: AnyObject] = [:]
 		
 		// Special attributes
@@ -93,7 +93,7 @@ class SerializeOperation: NSOperation {
 	:param: serializedData The data to add the attributes to.
 	:param: resource       The resource whose attributes to add.
 	*/
-	private func addAttributes(inout serializedData: [String: AnyObject], resource: Resource) {
+	private func addAttributes(inout serializedData: [String: AnyObject], resource: ResourceProtocol) {
 		for attribute in resource.attributes {
 			if isRelationship(attribute) {
 				continue
@@ -103,7 +103,7 @@ class SerializeOperation: NSOperation {
 			
 			let key = attribute.serializedName
 			
-			if let unformattedValue: AnyObject = resource.valueForKey(attribute.name) {
+			if let unformattedValue: AnyObject = resource[attribute.name] {
 				self.addAttribute(&serializedData, key: key, value: self.transformers.serialize(unformattedValue, forAttribute: attribute))
 			} else {
 				self.addAttribute(&serializedData, key: key, value: NSNull())
@@ -136,7 +136,7 @@ class SerializeOperation: NSOperation {
 	:param: serializedData The data to add the relationships to.
 	:param: resource       The resource whose relationships to add.
 	*/
-	private func addRelationships(inout serializedData: [String: AnyObject], resource: Resource) {
+	private func addRelationships(inout serializedData: [String: AnyObject], resource: ResourceProtocol) {
 		for attribute in resource.attributes {
 			if !isRelationship(attribute) {
 				continue
@@ -147,11 +147,11 @@ class SerializeOperation: NSOperation {
 			switch attribute {
 			case let toOne as ToOneAttribute:
 				if self.options.includeToOne {
-					self.addToOneRelationship(&serializedData, key: key, linkedResource: resource.valueForKey(attribute.name) as? Resource)
+					self.addToOneRelationship(&serializedData, key: key, linkedResource: resource[attribute.name] as? ResourceProtocol)
 				}
 			case let toMany as ToManyAttribute:
 				if self.options.includeToMany {
-					self.addToManyRelationship(&serializedData, key: key, linkedResources: resource.valueForKey(attribute.name) as? ResourceCollection)
+					self.addToManyRelationship(&serializedData, key: key, linkedResources: resource[attribute.name] as? ResourceCollection)
 				}
 			default: ()
 			}
@@ -165,7 +165,7 @@ class SerializeOperation: NSOperation {
 	:param: key             The key to add to the serialized data.
 	:param: relatedResource The related resource to add to the serialized data.
 	*/
-	private func addToOneRelationship(inout serializedData: [String: AnyObject], key: String, linkedResource: Resource?) {
+	private func addToOneRelationship(inout serializedData: [String: AnyObject], key: String, linkedResource: ResourceProtocol?) {
 		var linkData: AnyObject
 		
 		if let ID = linkedResource?.id {

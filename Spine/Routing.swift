@@ -12,9 +12,9 @@ protocol Router {
 	var baseURL: NSURL! { get set }
 	
 	func URLForResourceType(type: String) -> NSURL
-	func URLForRelationship(relationship: String, ofResource resource: Resource) -> NSURL
-	func URLForRelationship(relationship: String, ofResource resource: Resource, ids: [String]) -> NSURL
-	func URLForQuery<T: Resource>(query: Query<T>) -> NSURL
+	func URLForRelationship(relationship: String, ofResource resource: ResourceProtocol) -> NSURL
+	func URLForRelationship(relationship: String, ofResource resource: ResourceProtocol, ids: [String]) -> NSURL
+	func URLForQuery<T: ResourceProtocol>(query: Query<T>) -> NSURL
 }
 
 class JSONAPIRouter: Router {
@@ -24,16 +24,16 @@ class JSONAPIRouter: Router {
 		return baseURL.URLByAppendingPathComponent(type)
 	}
 	
-	func URLForRelationship(relationship: String, ofResource resource: Resource) -> NSURL {
-		return URLForResourceType(resource.dynamicType.type).URLByAppendingPathComponent("links/\(relationship)")
+	func URLForRelationship(relationship: String, ofResource resource: ResourceProtocol) -> NSURL {
+		return URLForResourceType(resource.type).URLByAppendingPathComponent("links/\(relationship)")
 	}
 	
-	func URLForRelationship(relationship: String, ofResource resource: Resource, ids: [String]) -> NSURL {
+	func URLForRelationship(relationship: String, ofResource resource: ResourceProtocol, ids: [String]) -> NSURL {
 		var URL = URLForRelationship(relationship, ofResource: resource)
 		return URL.URLByAppendingPathComponent(",".join(ids))
 	}
 	
-	func URLForQuery<T: Resource>(query: Query<T>) -> NSURL {
+	func URLForQuery<T: ResourceProtocol>(query: Query<T>) -> NSURL {
 		var URL: NSURL!
 		
 		// Base URL

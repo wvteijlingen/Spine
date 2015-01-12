@@ -82,7 +82,7 @@ public class Spine {
 	
 	// MARK: Public fetching methods
 	
-	public func fetchResourceForQuery<T: Resource>(query: Query<T>) -> Future<T> {
+	public func fetchResourceForQuery<T: ResourceProtocol>(query: Query<T>) -> Future<T> {
 		let promise = Promise<T>()
 		
 		self.fetch(query).onSuccess { resources in
@@ -95,14 +95,14 @@ public class Spine {
 		return promise.future
 	}
 	
-	public func fetchResourcesForQuery<T: Resource>(query: Query<T>) -> Future<ResourceCollection> {
+	public func fetchResourcesForQuery<T: ResourceProtocol>(query: Query<T>) -> Future<ResourceCollection> {
 		return self.fetch(query)
 	}
 	
 	
 	// MARK: Internal fetching methods
 
-	func fetch<T: Resource>(query: Query<T>, mapOnto mappingTargetResources: [Resource] = []) -> Future<(ResourceCollection)> {
+	func fetch<T: ResourceProtocol>(query: Query<T>, mapOnto mappingTargetResources: [ResourceProtocol] = []) -> Future<(ResourceCollection)> {
 		// We can only map onto resources that are not loaded yet
 		for resource in mappingTargetResources {
 			assert(resource.isLoaded == false, "Cannot map onto loaded resource \(resource)")
@@ -152,8 +152,8 @@ public class Spine {
 	
 	:returns: Future of the resource saved.
 	*/
-	public func save(resource: Resource) -> Future<Resource> {
-		let promise = Promise<Resource>()
+	public func save(resource: ResourceProtocol) -> Future<ResourceProtocol> {
+		let promise = Promise<ResourceProtocol>()
 		
 		var saveFuture: Future<(Int?, NSData?)>
 		var shouldUpdateRelationships = false
@@ -166,7 +166,7 @@ public class Spine {
 			saveFuture = self.HTTPClient.put(URLString, json: json)
 		} else {
 			resource.id = NSUUID().UUIDString
-			let URLString = self.router.URLForQuery(Query(resourceType: resource.dynamicType)).absoluteString!
+			let URLString = self.router.URLForResourceType(resource.type).absoluteString!
 			let json = self.serializer.serializeResources([resource], options: SerializationOptions(includeID: false, dirtyAttributesOnly: false, includeToOne: true, includeToMany: true))
 			saveFuture = self.HTTPClient.post(URLString, json: json)
 		}
@@ -200,10 +200,10 @@ public class Spine {
 		return promise.future
 	}
 	
-	private func updateRelationshipsOfResource(resource: Resource) -> Future<Void> {
+	private func updateRelationshipsOfResource(resource: ResourceProtocol) -> Future<Void> {
 		let promise = Promise<Void>()
 		
-		typealias Operation = (relationship: String, type: String, resources: [Resource])
+		typealias Operation = (relationship: String, type: String, resources: [ResourceProtocol])
 		
 		var operations: [Operation] = []
 		
@@ -211,12 +211,12 @@ public class Spine {
 		for attribute in resource.attributes {
 			switch attribute {
 			case let toOne as ToOneAttribute:
-				let linkedResource = resource.valueForKey(attribute.name) as Resource
+				let linkedResource = resource[attribute.name] as ResourceProtocol
 				if linkedResource.id != nil {
 					operations.append((relationship: attribute.name, type: "replace", resources: [linkedResource]))
 				}
 			case let toMany as ToManyAttribute:
-				let linkedResources = resource.valueForKey(attribute.name) as ResourceCollection
+				let linkedResources = resource[attribute.name] as ResourceCollection
 				operations.append((relationship: attribute.name, type: "add", resources: linkedResources.addedResources))
 				operations.append((relationship: attribute.name, type: "remove", resources: linkedResources.removedResources))
 			default: ()
@@ -256,7 +256,7 @@ public class Spine {
 	
 	// MARK: Relating
 	
-	private func addRelatedResources(resources: [Resource], toResource: Resource, relationship: String) -> Future<Void> {
+	private func addRelatedResources(resources: [ResourceProtocol], toResource: ResourceProtocol, relationship: String) -> Future<Void> {
 		let promise = Promise<Void>()
 		
 		if resources.count > 0 {
@@ -279,7 +279,7 @@ public class Spine {
 		return promise.future
 	}
 	
-	private func removeRelatedResources(resources: [Resource], fromResource: Resource, relationship: String) -> Future<Void> {
+	private func removeRelatedResources(resources: [ResourceProtocol], fromResource: ResourceProtocol, relationship: String) -> Future<Void> {
 		let promise = Promise<Void>()
 		
 		if resources.count > 0 {
@@ -302,7 +302,7 @@ public class Spine {
 		return promise.future
 	}
 	
-	private func updateRelatedResource(resource: Resource, ofResource: Resource, relationship: String) -> Future<Void> {
+	private func updateRelatedResource(resource: ResourceProtocol, ofResource: ResourceProtocol, relationship: String) -> Future<Void> {
 		let promise = Promise<Void>()
 		
 		let URLString = self.router.URLForRelationship(relationship, ofResource: ofResource).absoluteString!
@@ -327,7 +327,7 @@ public class Spine {
 	
 	:returns: Void future.
 	*/
-	public func delete(resource: Resource) -> Future<Void> {
+	public func delete(resource: ResourceProtocol) -> Future<Void> {
 		let promise = Promise<Void>()
 		
 		let URLString = self.router.URLForQuery(Query(resource: resource)).absoluteString!
@@ -350,8 +350,8 @@ extension Spine {
 	
 	:param: type The class type.
 	*/
-	public func registerResource(type: Resource.Type) {
-		self.serializer.resourceTypes.registerResource(type)
+	public func registerResource(type: String, factory: () -> ResourceProtocol) {
+		self.serializer.resourceFactory.registerResource(type, factory: factory)
 	}
 }
 
@@ -373,30 +373,30 @@ extension Spine {
 extension Spine {
 
 	// Find one
-	public func findOne<T: Resource>(ID: String, ofType type: T.Type) -> Future<T> {
+	public func findOne<T: ResourceProtocol>(ID: String, ofType type: T.Type) -> Future<T> {
 		let query = Query(resourceType: type, resourceIDs: [ID])
 		return fetchResourceForQuery(query)
 	}
 
 	// Find multiple
-	public func find<T: Resource>(IDs: [String], ofType type: T.Type) -> Future<ResourceCollection> {
+	public func find<T: ResourceProtocol>(IDs: [String], ofType type: T.Type) -> Future<ResourceCollection> {
 		let query = Query(resourceType: type, resourceIDs: IDs)
 		return fetchResourcesForQuery(query)
 	}
 
 	// Find all
-	public func find<T: Resource>(type: T.Type) -> Future<ResourceCollection> {
+	public func find<T: ResourceProtocol>(type: T.Type) -> Future<ResourceCollection> {
 		let query = Query(resourceType: type)
 		return fetchResourcesForQuery(query)
 	}
 
 	// Find by query
-	public func find<T: Resource>(query: Query<T>) -> Future<ResourceCollection> {
+	public func find<T: ResourceProtocol>(query: Query<T>) -> Future<ResourceCollection> {
 		return fetchResourcesForQuery(query)
 	}
 
 	// Find one by query
-	public func findOne<T: Resource>(query: Query<T>) -> Future<T> {
+	public func findOne<T: ResourceProtocol>(query: Query<T>) -> Future<T> {
 		return fetchResourceForQuery(query)
 	}
 }
@@ -404,17 +404,17 @@ extension Spine {
 // MARK: - Ensuring
 extension Spine {
 	
-	public func ensure<T: Resource>(resource: T) -> Future<T> {
+	public func ensure<T: ResourceProtocol>(resource: T) -> Future<T> {
 		let query = Query(resource: resource)
 		return ensure(resource, query: query)
 	}
 
-	public func ensure<T: Resource>(resource: T, queryCallback: (Query<T>) -> Query<T>) -> Future<T> {
+	public func ensure<T: ResourceProtocol>(resource: T, queryCallback: (Query<T>) -> Query<T>) -> Future<T> {
 		let query = queryCallback(Query(resource: resource))
 		return ensure(resource, query: query)
 	}
 
-	func ensure<T: Resource>(resource: T, query: Query<T>) -> Future<T> {
+	func ensure<T: ResourceProtocol>(resource: T, query: Query<T>) -> Future<T> {
 		let promise = Promise<(T)>()
 		
 		if resource.isLoaded {

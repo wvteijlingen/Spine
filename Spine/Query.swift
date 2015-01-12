@@ -33,7 +33,7 @@ struct QueryFilter {
 
 // MARK: -
 
-public struct Query<T: Resource> {
+public struct Query<T: ResourceProtocol> {
 	
 	/// The type of resource to fetch.
 	var resourceType: String
@@ -67,17 +67,17 @@ public struct Query<T: Resource> {
 	:returns: Query
 	*/
 	public init(resourceType: T.Type, resourceIDs: [String]? = nil) {
-		self.resourceType = resourceType.type
+		self.resourceType = resourceType.resourceType
 		self.resourceIDs = resourceIDs
 	}
 	
 	public init(resource: T) {
 		// We need to cast T to Resource, other wise dynamicType will throw an EXC_BAD_ACCESS exception
 		// See http://stackoverflow.com/questions/27782792/using-dynamictype-of-a-generic-results-in-exc-bad-access
-		var typecastResource = (resource as Resource)
+		var typecastResource = (resource as ResourceProtocol)
 		
 		assert(typecastResource.id != nil, "Cannot instantiate query for resource, id is nil.")
-		self.resourceType = typecastResource.dynamicType.type
+		self.resourceType = typecastResource.type
 		self.resourceIDs = [typecastResource.id!]
 	}
 	
@@ -87,7 +87,7 @@ public struct Query<T: Resource> {
 	}
 	
 	public init(resourceType: T.Type, URLString: String) {
-		self.resourceType = resourceType.type
+		self.resourceType = resourceType.resourceType
 		self.URL = NSURL(string: URLString)
 	}
 	
