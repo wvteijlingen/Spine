@@ -94,7 +94,7 @@ class DeserializeOperation: NSOperation {
 		assert(representation.dictionary != nil, "The given JSON representation was not of type 'object' (dictionary).")
 		
 		// Find existing resource in the store, or create a new resource.
-		let resource: Resource = store.dispenseResourceWithType(resourceType, id: representation["id"].stringValue, useFirst: options.mapOntoFirstResourceInStore)
+		let resource: ResourceProtocol = store.dispenseResourceWithType(resourceType, id: representation["id"].stringValue, useFirst: options.mapOntoFirstResourceInStore)
 		
 		// Extract data into resource
 		self.extractID(representation, intoResource: resource)
@@ -114,11 +114,11 @@ class DeserializeOperation: NSOperation {
 	:param: serializedData The data from which to extract the ID.
 	:param: resource       The resource into which to extract the ID.
 	*/
-	private func extractID(serializedData: JSON, intoResource resource: Resource) {
+	private func extractID(serializedData: JSON, intoResource resource: ResourceProtocol) {
 		if serializedData["id"].stringValue != "" {
 			resource.id = serializedData["id"].stringValue
 		} else {
-			assertionFailure("Cannot deserialize resource of type: \(resource.dynamicType.type). Serializated data must contain a primary key named 'id'.")
+			assertionFailure("Cannot deserialize resource of type: \(resource.type). Serializated data must contain a primary key named 'id'.")
 		}
 	}
 	
@@ -128,7 +128,7 @@ class DeserializeOperation: NSOperation {
 	:param: serializedData The data from which to extract the href.
 	:param: resource       The resource into which to extract the href.
 	*/
-	private func extractHref(serializedData: JSON, intoResource resource: Resource) {
+	private func extractHref(serializedData: JSON, intoResource resource: ResourceProtocol) {
 		if let href = serializedData["href"].URL {
 			resource.href = href
 		}
@@ -147,7 +147,7 @@ class DeserializeOperation: NSOperation {
 	:param: serializedData The data from which to extract the attributes.
 	:param: resource       The resource into which to extract the attributes.
 	*/
-	private func extractAttributes(serializedData: JSON, intoResource resource: Resource) {
+	private func extractAttributes(serializedData: JSON, intoResource resource: ResourceProtocol) {
 		for attribute in resource.attributes {
 			if isRelationship(attribute) {
 				continue
@@ -157,7 +157,7 @@ class DeserializeOperation: NSOperation {
 			
 			if let extractedValue: AnyObject = self.extractAttribute(serializedData, key: key) {
 				let formattedValue: AnyObject = self.transformers.deserialize(extractedValue, forAttribute: attribute)
-				resource.setValue(formattedValue, forKey: attribute.name)
+				resource[attribute.name] = formattedValue
 			}
 		}
 	}
@@ -193,7 +193,7 @@ class DeserializeOperation: NSOperation {
 	:param: serializedData The data from which to extract the relationships.
 	:param: resource       The resource into which to extract the relationships.
 	*/
-	private func extractRelationships(serializedData: JSON, intoResource resource: Resource, linkTemplates: JSON? = nil) {
+	private func extractRelationships(serializedData: JSON, intoResource resource: ResourceProtocol, linkTemplates: JSON? = nil) {
 		for attribute in resource.attributes {
 			if !isRelationship(attribute) {
 				continue
@@ -204,11 +204,11 @@ class DeserializeOperation: NSOperation {
 			switch attribute {
 			case let toOne as ToOneAttribute:
 				if let linkedResource = self.extractToOneRelationship(serializedData, key: key, linkedType: toOne.linkedType, resource: resource, linkTemplates: linkTemplates) {
-					resource.setValue(linkedResource, forKey: attribute.name)
+					resource[attribute.name] = linkedResource
 				}
 			case let toMany as ToManyAttribute:
 				if let linkedResources = self.extractToManyRelationship(serializedData, key: key, linkedType: toMany.linkedType, resource: resource, linkTemplates: linkTemplates) {
-					resource.setValue(linkedResources, forKey: attribute.name)
+					resource[attribute.name] = linkedResources
 				}
 			default: ()
 			}
@@ -225,7 +225,7 @@ class DeserializeOperation: NSOperation {
 	
 	:returns: The extracted relationship or nil if no relationship with the given key was found in the data.
 	*/
-	private func extractToOneRelationship(serializedData: JSON, key: String, linkedType: Resource.Type, resource: Resource, linkTemplates: JSON? = nil) -> Resource? {
+	private func extractToOneRelationship(serializedData: JSON, key: String, linkedType: String, resource: ResourceProtocol, linkTemplates: JSON? = nil) -> ResourceProtocol? {
 		// Resource level link with href/id/type combo
 		if let linkData = serializedData["links"][key].dictionary {
 			var href: NSURL?, type: String, ID: String?
@@ -237,7 +237,7 @@ class DeserializeOperation: NSOperation {
 			if let rawType = linkData["type"]?.string {
 				type = rawType
 			} else {
-				type = linkedType.type
+				type = linkedType
 			}
 			
 			if linkData["id"]?.stringValue != "" {
@@ -252,15 +252,15 @@ class DeserializeOperation: NSOperation {
 		// Resource level link with only an id
 		let ID = serializedData["links"][key].stringValue
 		if ID != "" {
-			return store.dispenseResourceWithType(linkedType.type, id: ID)
+			return store.dispenseResourceWithType(linkedType, id: ID)
 		}
 		
 		// Document level link template
-		if let linkData = linkTemplates?[resource.dynamicType.type + "." + key].dictionary {
+		if let linkData = linkTemplates?[resource.type + "." + key].dictionary {
 			var href: NSURL?, type: String
 			
 			if let hrefTemplate = linkData["href"]?.string {
-				if let interpolatedHref = hrefTemplate.interpolate(serializedData.dictionaryObject! as NSDictionary, rootKeyPath: resource.dynamicType.type) {
+				if let interpolatedHref = hrefTemplate.interpolate(serializedData.dictionaryObject! as NSDictionary, rootKeyPath: resource.type) {
 					href = NSURL(string: interpolatedHref)
 				} else {
 					assertionFailure("Could not interpolate href template: \(hrefTemplate) with values: \(serializedData.dictionaryObject!).")
@@ -270,7 +270,7 @@ class DeserializeOperation: NSOperation {
 			if let rawType = linkData["type"]?.string {
 				type = rawType
 			} else {
-				type = linkedType.type
+				type = linkedType
 			}
 			
 			let resource = store.dispenseResourceWithType(type, id: ID)
@@ -291,7 +291,7 @@ class DeserializeOperation: NSOperation {
 	
 	:returns: The extracted relationship or nil if no relationship with the given key was found in the data.
 	*/
-	private func extractToManyRelationship(serializedData: JSON, key: String, linkedType: Resource.Type, resource: Resource, linkTemplates: JSON? = nil) -> ResourceCollection? {
+	private func extractToManyRelationship(serializedData: JSON, key: String, linkedType: String, resource: ResourceProtocol, linkTemplates: JSON? = nil) -> ResourceCollection? {
 		// Resource level link with href/id/type combo
 		if let linkData = serializedData["links"][key].dictionary {
 			var href: NSURL?, type: String, IDs: [String]?
@@ -308,7 +308,7 @@ class DeserializeOperation: NSOperation {
 			if let rawType = linkData["type"]?.string {
 				type = rawType
 			} else {
-				type = linkedType.type
+				type = linkedType
 			}
 			
 			return ResourceCollection(href: href, type: type, ids: IDs)
@@ -318,15 +318,15 @@ class DeserializeOperation: NSOperation {
 		if let rawIDs: [JSON] = serializedData["links"][key].array {
 			let IDs = rawIDs.map { $0.stringValue }
 			IDs.filter { return $0 != "" }
-			return ResourceCollection(href: nil, type: linkedType.type, ids: IDs)
+			return ResourceCollection(href: nil, type: linkedType, ids: IDs)
 		}
 		
 		// Document level link template
-		if let linkData = linkTemplates?[resource.dynamicType.type + "." + key].dictionary {
+		if let linkData = linkTemplates?[resource.type + "." + key].dictionary {
 			var href: NSURL?, type: String, IDs: [String]?
 			
 			if let hrefTemplate = linkData["href"]?.string {
-				if let interpolatedHref = hrefTemplate.interpolate(serializedData.dictionaryObject! as NSDictionary, rootKeyPath: resource.dynamicType.type) {
+				if let interpolatedHref = hrefTemplate.interpolate(serializedData.dictionaryObject! as NSDictionary, rootKeyPath: resource.type) {
 					href = NSURL(string: interpolatedHref)
 				} else {
 					assertionFailure("Error: Could not interpolate href template: \(hrefTemplate) with values \(serializedData.dictionaryObject!).")
@@ -336,7 +336,7 @@ class DeserializeOperation: NSOperation {
 			if let rawType = linkData["type"]?.string {
 				type = rawType
 			} else {
-				type = linkedType.type
+				type = linkedType
 			}
 			
 			if let rawIDs = serializedData["links"][key].array {
@@ -363,8 +363,8 @@ class DeserializeOperation: NSOperation {
 				
 				switch attribute {
 				case let toMany as ToManyAttribute:
-					if let linkedResource = resource.valueForKey(attribute.name) as? ResourceCollection {
-						var targetResources: [Resource] = []
+					if let linkedResource = resource[attribute.name] as? ResourceCollection {
+						var targetResources: [ResourceProtocol] = []
 						
 						// We can only resolve if IDs are known
 						if let ids = linkedResource.ids {
@@ -374,16 +374,16 @@ class DeserializeOperation: NSOperation {
 								if let targetResource = store.objectWithType(linkedResource.type, identifier: id) {
 									targetResources.append(targetResource)
 								} else {
-									println("Cannot resolve to-many link \(resource.dynamicType.type):\(resource.id!) - \(attribute.name) -> \(linkedResource.type):\(id) because the linked resource does not exist in the store.")
+									println("Cannot resolve to-many link \(resource.type):\(resource.id!) - \(attribute.name) -> \(linkedResource.type):\(id) because the linked resource does not exist in the store.")
 								}
 							}
 							
 							linkedResource.fulfill(targetResources)
 						} else {
-							println("Cannot resolve to-many link \(resource.dynamicType.type):\(resource.id!) - \(attribute.name) -> \(linkedResource.type):? because the foreign IDs are not known.")
+							println("Cannot resolve to-many link \(resource.type):\(resource.id!) - \(attribute.name) -> \(linkedResource.type):? because the foreign IDs are not known.")
 						}
 					} else {
-						println("Cannot resolve to-many link \(resource.dynamicType.type):\(resource.id!) - \(attribute.name) -> ? because the link data is not fetched.")
+						println("Cannot resolve to-many link \(resource.type):\(resource.id!) - \(attribute.name) -> ? because the link data is not fetched.")
 					}
 					
 				default: ()

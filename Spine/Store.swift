@@ -9,10 +9,10 @@
 import Foundation
 
 class Store: ArrayLiteralConvertible, SequenceType, Printable, DebugPrintable {
-	private var objectsByType: [String : [Resource]] = [:]
-	private var objectsByTypeAndID: [String : [String: Resource]] = [:]
+	private var objectsByType: [String : [ResourceProtocol]] = [:]
+	private var objectsByTypeAndID: [String : [String: ResourceProtocol]] = [:]
 	
-	init(objects: [Resource]) {
+	init(objects: [ResourceProtocol]) {
 		for object in objects {
 			self.add(object)
 		}
@@ -20,7 +20,7 @@ class Store: ArrayLiteralConvertible, SequenceType, Printable, DebugPrintable {
 	
 	// MARK: ArrayLiteralConvertible protocol
 	
-	required init(arrayLiteral elements: Resource...) {
+	required init(arrayLiteral elements: ResourceProtocol...) {
 		for element in elements {
 			self.add(element)
 		}
@@ -28,9 +28,9 @@ class Store: ArrayLiteralConvertible, SequenceType, Printable, DebugPrintable {
 	
 	// MARK: Mutating
 	
-	func add(object: Resource) {
+	func add(object: ResourceProtocol) {
 		if let id = object.id {
-			let type = object.dynamicType.type
+			let type = object.type
 			
 			if (self.objectsByTypeAndID[type] == nil) {
 				self.objectsByTypeAndID[type] = [:]
@@ -46,9 +46,9 @@ class Store: ArrayLiteralConvertible, SequenceType, Printable, DebugPrintable {
 		}
 	}
 	
-	func remove(object: Resource) {
+	func remove(object: ResourceProtocol) {
 		if let id = object.id {
-			let type = object.dynamicType.type
+			let type = object.type
 			
 			if self.objectsByTypeAndID[type] != nil {
 				self.objectsByTypeAndID[type]![id] = nil
@@ -66,7 +66,7 @@ class Store: ArrayLiteralConvertible, SequenceType, Printable, DebugPrintable {
 	
 	// MARK: Fetching
 	
-	func objectWithType(type: String, identifier: String) -> Resource? {
+	func objectWithType(type: String, identifier: String) -> ResourceProtocol? {
 		if let objects = self.objectsByTypeAndID[type] {
 			if let object = objects[identifier] {
 				return object
@@ -76,12 +76,12 @@ class Store: ArrayLiteralConvertible, SequenceType, Printable, DebugPrintable {
 		return nil
 	}
 	
-	func allObjectsWithType(type: String) -> [Resource] {
+	func allObjectsWithType(type: String) -> [ResourceProtocol] {
 		return self.objectsByType[type] ?? []
 	}
 	
-	func allObjects() -> [Resource] {
-		var allObjects: [Resource] = []
+	func allObjects() -> [ResourceProtocol] {
+		var allObjects: [ResourceProtocol] = []
 		
 		for (type, objects) in self.objectsByType {
 			allObjects += objects
@@ -95,7 +95,7 @@ class Store: ArrayLiteralConvertible, SequenceType, Printable, DebugPrintable {
 	var description: String {
 		var string = ""
 		for object in self.allObjects() {
-			string += "\(object.dynamicType.type)[\(object.id)]\n"
+			string += "\(object.type)[\(object.id)]\n"
 		}
 		
 		return string
@@ -109,11 +109,11 @@ class Store: ArrayLiteralConvertible, SequenceType, Printable, DebugPrintable {
 	
 	// MARK: SequenceType protocol
 	
-	func generate() -> GeneratorOf<Resource> {
+	func generate() -> GeneratorOf<ResourceProtocol> {
 		var allObjects = self.allObjects()
 		var index = -1
 
-		return GeneratorOf<Resource> {
+		return GeneratorOf<ResourceProtocol> {
 			index++
 			
 			if (index > allObjects.count - 1) {
@@ -127,14 +127,10 @@ class Store: ArrayLiteralConvertible, SequenceType, Printable, DebugPrintable {
 	
 	// MARK: Dispensing
 	
-	var classMap: ResourceClassMap!
+	var resourceFactory: ResourceFactory!
 	
-	func dispenseResourceWithType(type: String, id: String? = nil, useFirst: Bool = false) -> Resource {
-		if id == nil {
-			return self.classMap[type]() as Resource
-		}
-		
-		var resource: Resource
+	func dispenseResourceWithType(type: String, id: String? = nil, useFirst: Bool = false) -> ResourceProtocol {
+		var resource: ResourceProtocol
 		var isExistingResource: Bool
 		
 		if let existingResource = objectWithType(type, identifier: id!) {
@@ -146,13 +142,13 @@ class Store: ArrayLiteralConvertible, SequenceType, Printable, DebugPrintable {
 				resource = existingResource
 				isExistingResource = true
 			} else {
-				resource = classMap[type]() as Resource
+				resource = resourceFactory.createInstanceOfType(type)
 				resource.id = id
 				isExistingResource = false
 			}
 			
 		} else {
-			resource = classMap[type]() as Resource
+			resource = resourceFactory.createInstanceOfType(type)
 			resource.id = id
 			isExistingResource = false
 		}
