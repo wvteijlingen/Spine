@@ -79,30 +79,10 @@ public class Spine {
 		}
 	}
 	
-	
-	// MARK: Public fetching methods
-	
-	public func fetchResourceForQuery<T: ResourceProtocol>(query: Query<T>) -> Future<T> {
-		let promise = Promise<T>()
-		
-		self.fetch(query).onSuccess { resources in
-			let resource = resources.resources!.first! as T
-			promise.success(resource)
-		}.onFailure { error in
-			promise.error(error)
-		}
-		
-		return promise.future
-	}
-	
-	public func fetchResourcesForQuery<T: ResourceProtocol>(query: Query<T>) -> Future<ResourceCollection> {
-		return self.fetch(query)
-	}
-	
-	
-	// MARK: Internal fetching methods
 
-	func fetch<T: ResourceProtocol>(query: Query<T>, mapOnto mappingTargetResources: [ResourceProtocol] = []) -> Future<(ResourceCollection)> {
+	// MARK: Fetching methods
+
+	func fetchResourcesByExecutingQuery<T: ResourceProtocol>(query: Query<T>, mapOnto mappingTargetResources: [ResourceProtocol] = []) -> Future<(ResourceCollection)> {
 		// We can only map onto resources that are not loaded yet
 		for resource in mappingTargetResources {
 			assert(resource.isLoaded == false, "Cannot map onto loaded resource \(resource)")
@@ -141,6 +121,23 @@ public class Spine {
 	}
 	
 	
+	func loadResourceByExecutingQuery<T: ResourceProtocol>(resource: T, query: Query<T>) -> Future<T> {
+		let promise = Promise<(T)>()
+		
+		if resource.isLoaded {
+			promise.success(resource)
+		} else {
+			fetchResourcesByExecutingQuery(query, mapOnto: [resource]).onSuccess { resources in
+				promise.success(resource)
+			}.onFailure { error in
+				promise.error(error)
+			}
+		}
+		
+		return promise.future
+	}
+	
+	
 	// MARK: Saving
 	
 	/**
@@ -152,7 +149,7 @@ public class Spine {
 	
 	:returns: Future of the resource saved.
 	*/
-	public func save(resource: ResourceProtocol) -> Future<ResourceProtocol> {
+	func saveResource(resource: ResourceProtocol) -> Future<ResourceProtocol> {
 		let promise = Promise<ResourceProtocol>()
 		
 		var saveFuture: Future<(Int?, NSData?)>
@@ -327,7 +324,7 @@ public class Spine {
 	
 	:returns: Void future.
 	*/
-	public func delete(resource: ResourceProtocol) -> Future<Void> {
+	func deleteResource(resource: ResourceProtocol) -> Future<Void> {
 		let promise = Promise<Void>()
 		
 		let URLString = self.router.URLForQuery(Query(resource: resource)).absoluteString!
@@ -342,91 +339,106 @@ public class Spine {
 	}
 }
 
-// MARK: - Resource registering
+// MARK: - Public functions
 
-extension Spine {
+
+/**
+ *  Registering resource types
+ */
+public extension Spine {
 	/**
 	Registers the given class as a resource class.
 	
 	:param: type The class type.
 	*/
-	public func registerResource(type: String, factory: () -> ResourceProtocol) {
+	func registerResource(type: String, factory: () -> ResourceProtocol) {
 		self.serializer.resourceFactory.registerResource(type, factory: factory)
 	}
 }
 
-// MARK: - Transformer registering
 
-extension Spine {
+/**
+ *  Registering transformers
+ */
+public extension Spine {
 	/**
 	Registers the given class as a resource class.
 	
 	:param: type The class type.
 	*/
-	public func registerTransformer<T: Transformer>(transformer: T) {
+	func registerTransformer<T: Transformer>(transformer: T) {
 		self.serializer.transformers.registerTransformer(transformer)
 	}
 }
 
-
-// MARK: - Finders
-extension Spine {
+/**
+ *  Finding resources
+ */
+public extension Spine {
 
 	// Find one
-	public func findOne<T: ResourceProtocol>(ID: String, ofType type: T.Type) -> Future<T> {
+	func findOne<T: ResourceProtocol>(ID: String, ofType type: T.Type) -> Future<T> {
 		let query = Query(resourceType: type, resourceIDs: [ID])
-		return fetchResourceForQuery(query)
+		return findOne(query)
 	}
 
 	// Find multiple
-	public func find<T: ResourceProtocol>(IDs: [String], ofType type: T.Type) -> Future<ResourceCollection> {
+	func find<T: ResourceProtocol>(IDs: [String], ofType type: T.Type) -> Future<ResourceCollection> {
 		let query = Query(resourceType: type, resourceIDs: IDs)
-		return fetchResourcesForQuery(query)
+		return fetchResourcesByExecutingQuery(query)
 	}
 
 	// Find all
-	public func find<T: ResourceProtocol>(type: T.Type) -> Future<ResourceCollection> {
+	func find<T: ResourceProtocol>(type: T.Type) -> Future<ResourceCollection> {
 		let query = Query(resourceType: type)
-		return fetchResourcesForQuery(query)
+		return fetchResourcesByExecutingQuery(query)
 	}
 
 	// Find by query
-	public func find<T: ResourceProtocol>(query: Query<T>) -> Future<ResourceCollection> {
-		return fetchResourcesForQuery(query)
+	func find<T: ResourceProtocol>(query: Query<T>) -> Future<ResourceCollection> {
+		return fetchResourcesByExecutingQuery(query)
 	}
 
 	// Find one by query
-	public func findOne<T: ResourceProtocol>(query: Query<T>) -> Future<T> {
-		return fetchResourceForQuery(query)
-	}
-}
-
-// MARK: - Ensuring
-extension Spine {
-	
-	public func ensure<T: ResourceProtocol>(resource: T) -> Future<T> {
-		let query = Query(resource: resource)
-		return ensure(resource, query: query)
-	}
-
-	public func ensure<T: ResourceProtocol>(resource: T, queryCallback: (Query<T>) -> Query<T>) -> Future<T> {
-		let query = queryCallback(Query(resource: resource))
-		return ensure(resource, query: query)
-	}
-
-	func ensure<T: ResourceProtocol>(resource: T, query: Query<T>) -> Future<T> {
-		let promise = Promise<(T)>()
+	func findOne<T: ResourceProtocol>(query: Query<T>) -> Future<T> {
+		let promise = Promise<T>()
 		
-		if resource.isLoaded {
+		fetchResourcesByExecutingQuery(query).onSuccess { resources in
+			let resource = resources.resources!.first! as T
 			promise.success(resource)
-		} else {
-			fetch(query, mapOnto: [resource]).onSuccess { resources in
-				promise.success(resource)
-			}.onFailure { error in
-				promise.error(error)
-			}
+		}.onFailure { error in
+			promise.error(error)
 		}
 		
 		return promise.future
+	}
+}
+
+/**
+ *  Persisting resources
+ */
+public extension Spine {
+	func save(resource: Resource) -> Future<ResourceProtocol> {
+		return saveResource(resource)
+	}
+	
+	func delete(resource: ResourceProtocol) -> Future<Void> {
+		return delete(resource)
+	}
+}
+
+/**
+ *  Ensuring resources
+ */
+public extension Spine {
+	
+	func ensure<T: ResourceProtocol>(resource: T) -> Future<T> {
+		let query = Query(resource: resource)
+		return loadResourceByExecutingQuery(resource, query: query)
+	}
+
+	func ensure<T: ResourceProtocol>(resource: T, queryCallback: (Query<T>) -> Query<T>) -> Future<T> {
+		let query = queryCallback(Query(resource: resource))
+		return loadResourceByExecutingQuery(resource, query: query)
 	}
 }
