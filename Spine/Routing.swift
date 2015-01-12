@@ -67,7 +67,7 @@ class JSONAPIRouter: Router {
 		
 		// Filters
 		for filter in query.filters {
-			var item = NSURLQueryItem(name: filter.key, value: filter.rhs)
+			var item = NSURLQueryItem(name: filter.leftExpression.keyPath, value: "\(filter.rightExpression.constantValue)")
 			self.setQueryItem(item, forQueryItems: &queryItems)
 		}
 		

@@ -9,27 +9,6 @@
 import Foundation
 import BrightFutures
 
-struct QueryFilter {
-	var key: String
-	var value: String
-	var comparator: String
-	
-	var rhs: String {
-		get {
-			if self.comparator == "=" {
-				return self.value
-			} else {
-				return self.comparator + self.value
-			}
-		}
-	}
-	
-	init(property: String, value: String, comparator: String) {
-		self.key = property
-		self.value = value
-		self.comparator = comparator
-	}
-}
 
 // MARK: -
 
@@ -46,7 +25,7 @@ public struct Query<T: ResourceProtocol> {
 
 	// Query parts
 	internal var includes: [String] = []
-	internal var filters: [QueryFilter] = []
+	internal var filters: [NSComparisonPredicate] = []
 	internal var fields: [String: [String]] = [:]
 	internal var sortOrders: [String] = []
 	internal var queryParts: [String: String] = [:]
@@ -135,6 +114,17 @@ public struct Query<T: ResourceProtocol> {
 	
 	// MARK: Where filtering
 	
+	private mutating func addPredicateWithKey(key: String, value: String, type: NSPredicateOperatorType) {
+		let predicate = NSComparisonPredicate(
+			leftExpression: NSExpression(forKeyPath: key),
+			rightExpression: NSExpression(forConstantValue: value),
+			modifier: NSComparisonPredicateModifier.DirectPredicateModifier,
+			type: type,
+			options: NSComparisonPredicateOptions.allZeros)
+		
+		self.filters.append(predicate)
+	}
+	
 	/**
 	Adds a filter where the given property should be equal to the given value.
 	
@@ -144,7 +134,7 @@ public struct Query<T: ResourceProtocol> {
 	:returns: The query
 	*/
 	public mutating func whereProperty(property: String, equalTo: String) -> Query {
-		self.filters.append(QueryFilter(property: property, value: equalTo, comparator: "="))
+		self.addPredicateWithKey(property, value: equalTo, type: .EqualToPredicateOperatorType)
 		return self
 	}
 
@@ -157,7 +147,7 @@ public struct Query<T: ResourceProtocol> {
 	:returns: The query
 	*/
 	public mutating func whereProperty(property: String, notEqualTo: String) -> Query {
-		self.filters.append(QueryFilter(property: property, value: notEqualTo, comparator: "=!"))
+		self.addPredicateWithKey(property, value: notEqualTo, type: .NotEqualToPredicateOperatorType)
 		return self
 	}
 
@@ -170,7 +160,7 @@ public struct Query<T: ResourceProtocol> {
 	:returns: The query
 	*/
 	public mutating func whereProperty(property: String, lessThan: String) -> Query {
-		self.filters.append(QueryFilter(property: property, value: lessThan, comparator: "<"))
+		self.addPredicateWithKey(property, value: lessThan, type: .LessThanPredicateOperatorType)
 		return self
 	}
 
@@ -183,7 +173,7 @@ public struct Query<T: ResourceProtocol> {
 	:returns: The query
 	*/
 	public mutating func whereProperty(property: String, lessThanOrEqualTo: String) -> Query {
-		self.filters.append(QueryFilter(property: property, value: lessThanOrEqualTo, comparator: "<="))
+		self.addPredicateWithKey(property, value: lessThanOrEqualTo, type: .LessThanOrEqualToPredicateOperatorType)
 		return self
 	}
 	
@@ -196,7 +186,7 @@ public struct Query<T: ResourceProtocol> {
 	:returns: The query
 	*/
 	public mutating func whereProperty(property: String, greaterThan: String) -> Query {
-		self.filters.append(QueryFilter(property: property, value: greaterThan, comparator: ">"))
+		self.addPredicateWithKey(property, value: greaterThan, type: .GreaterThanPredicateOperatorType)
 		return self
 	}
 
@@ -209,7 +199,7 @@ public struct Query<T: ResourceProtocol> {
 	:returns: The query
 	*/
 	public mutating func whereProperty(property: String, greaterThanOrEqualTo: String) -> Query {
-		self.filters.append(QueryFilter(property: property, value: greaterThanOrEqualTo, comparator: ">="))
+		self.addPredicateWithKey(property, value: greaterThanOrEqualTo, type: .GreaterThanOrEqualToPredicateOperatorType)
 		return self
 	}
 	
@@ -224,7 +214,7 @@ public struct Query<T: ResourceProtocol> {
 	*/
 	public mutating func whereRelationship(relationship: String, isOrContains resource: Resource) -> Query {
 		assert(resource.id != nil, "Attempt to add a where filter on a relationship, but the target resource does not have an id.")
-		self.filters.append(QueryFilter(property: relationship, value: resource.id!, comparator: "="))
+		self.addPredicateWithKey(relationship, value: resource.id!, type: .EqualToPredicateOperatorType)
 		return self
 	}
 	
