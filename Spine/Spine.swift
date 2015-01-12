@@ -18,20 +18,6 @@ let SPINE_API_ERROR_DOMAIN = "com.wardvanteijlingen.Spine.Api"
 /// The main class
 public class Spine {
 	
-	public class var sharedInstance: Spine {
-		
-		struct Singleton {
-			static var instance: Spine!
-			static var token: dispatch_once_t = 0
-		}
-		
-		dispatch_once(&Singleton.token) {
-			Singleton.instance = Spine()
-		}
-		
-		return Singleton.instance
-	}
-	
 	/// The base URL of the API. All other URLs will be made absolute to this URL.
 	public var baseURL: NSURL {
 		get {
