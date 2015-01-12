@@ -32,11 +32,23 @@ public class ResourceCollection: NSObject, NSCoding, ArrayLiteralConvertible, Se
 			let newItems: [ResourceProtocol] = self.resources ?? []
 			
 			let addedItems = newItems.filter { item in
-                return false //!contains(previousItems, item)
+				for previousItem in previousItems {
+					if previousItem === item {
+						return false
+					}
+				}
+				
+				return true
 			}
 			
 			let removedItems = previousItems.filter { item in
-                return false //!contains(newItems, item)
+				for newItem in newItems {
+					if newItem === item {
+						return false
+					}
+				}
+				
+				return true
 			}
 			
 			self.addedResources += addedItems
