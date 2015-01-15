@@ -169,14 +169,14 @@ public class Spine {
 			} else {
 				self.updateRelationshipsOfResource(resource).onSuccess {
 					promise.success(resource)
-					}.onFailure { error in
-						println("Error updating resource relationships: \(error)")
-						promise.error(error)
+				}.onFailure { error in
+					println("Error updating resource relationships: \(error)")
+					promise.error(error)
 				}
 			}
 			
-			}.onFailure { error in
-				promise.error(error)
+		}.onFailure { error in
+			promise.error(error)
 		}
 		
 		// Return the public future
@@ -196,12 +196,12 @@ public class Spine {
 			case let toOne as ToOneAttribute:
 				let linkedResource = resource[attribute.name] as ResourceProtocol
 				if linkedResource.id != nil {
-					operations.append((relationship: attribute.name, type: "replace", resources: [linkedResource]))
+					operations.append((relationship: attribute.serializedName, type: "replace", resources: [linkedResource]))
 				}
 			case let toMany as ToManyAttribute:
 				let linkedResources = resource[attribute.name] as ResourceCollection
-				operations.append((relationship: attribute.name, type: "add", resources: linkedResources.addedResources))
-				operations.append((relationship: attribute.name, type: "remove", resources: linkedResources.removedResources))
+				operations.append((relationship: attribute.serializedName, type: "add", resources: linkedResources.addedResources))
+				operations.append((relationship: attribute.serializedName, type: "remove", resources: linkedResources.removedResources))
 			default: ()
 			}
 		}
