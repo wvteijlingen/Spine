@@ -25,7 +25,8 @@ class JSONAPIRouter: Router {
 	}
 	
 	func URLForRelationship(relationship: String, ofResource resource: ResourceProtocol) -> NSURL {
-		return URLForResourceType(resource.type).URLByAppendingPathComponent("links/\(relationship)")
+		assert(resource.id != nil, "Cannot build URL for relationship for resource without id: \(resource)")
+		return URLForResourceType(resource.type).URLByAppendingPathComponent("/\(resource.id!)/links/\(relationship)")
 	}
 	
 	func URLForRelationship(relationship: String, ofResource resource: ResourceProtocol, ids: [String]) -> NSURL {
