@@ -374,16 +374,16 @@ class DeserializeOperation: NSOperation {
 								if let targetResource = store.objectWithType(linkedResource.type, identifier: id) {
 									targetResources.append(targetResource)
 								} else {
-									println("Cannot resolve to-many link \(resource.type):\(resource.id!) - \(attribute.name) -> \(linkedResource.type):\(id) because the linked resource does not exist in the store.")
+									//println("Cannot resolve to-many link \(resource.type):\(resource.id!) - \(attribute.name) -> \(linkedResource.type):\(id) because the linked resource does not exist in the store.")
 								}
 							}
 							
 							linkedResource.fulfill(targetResources)
 						} else {
-							println("Cannot resolve to-many link \(resource.type):\(resource.id!) - \(attribute.name) -> \(linkedResource.type):? because the foreign IDs are not known.")
+							//println("Cannot resolve to-many link \(resource.type):\(resource.id!) - \(attribute.name) -> \(linkedResource.type):? because the foreign IDs are not known.")
 						}
 					} else {
-						println("Cannot resolve to-many link \(resource.type):\(resource.id!) - \(attribute.name) -> ? because the link data is not fetched.")
+						//println("Cannot resolve to-many link \(resource.type):\(resource.id!) - \(attribute.name) -> ? because the link data is not fetched.")
 					}
 					
 				default: ()
