@@ -16,46 +16,10 @@ public class ResourceCollection: NSObject, NSCoding, ArrayLiteralConvertible, Se
 	public var ids: [String]?
 	public var href: NSURL?
 	
-	/// The count of the loaded resources
-	public var count: Int {
-		return self.resources?.count ?? 0
-	}
-	
 	/// The loaded resources
-	public var resources: [ResourceProtocol]? {
-		didSet {
-			if !observeResources {
-				return
-			}
-			
-			let previousItems: [ResourceProtocol] = oldValue ?? []
-			let newItems: [ResourceProtocol] = self.resources ?? []
-			
-			let addedItems = newItems.filter { item in
-				for previousItem in previousItems {
-					if previousItem === item {
-						return false
-					}
-				}
-				
-				return true
-			}
-			
-			let removedItems = previousItems.filter { item in
-				for newItem in newItems {
-					if newItem === item {
-						return false
-					}
-				}
-				
-				return true
-			}
-			
-			self.addedResources += addedItems
-			self.removedResources += removedResources
-		}
-	}
-	
+	private var _resources: [ResourceProtocol] = []
+	public var resources: [ResourceProtocol] { return _resources }
+
 	var observeResources: Bool = true
 	
 	/// Resources that are added to this collection
@@ -68,7 +32,7 @@ public class ResourceCollection: NSObject, NSCoding, ArrayLiteralConvertible, Se
 	
 	// MARK: Initializers
 	
-	public init(href: NSURL?, type: String, ids: [String]? = nil) {
+	public init(href: NSURL? = nil, type: String, ids: [String]? = nil) {
 		self.href = href
 		self.type = type
 		self.ids = ids
@@ -77,13 +41,13 @@ public class ResourceCollection: NSObject, NSCoding, ArrayLiteralConvertible, Se
 	
 	public init(_ resources: [ResourceProtocol]) {
 		self.type = resources.first!.type
-		self.resources = resources
+		self._resources = resources
 		self.isLoaded = true
 	}
 	
 	public required init(arrayLiteral elements: ResourceProtocol...) {
 		self.type = elements.first!.type
-		self.resources = elements
+		self._resources = elements
 		self.isLoaded = true
 	}
 	
@@ -91,37 +55,35 @@ public class ResourceCollection: NSObject, NSCoding, ArrayLiteralConvertible, Se
 	
 	public required init(coder: NSCoder) {
 		isLoaded = coder.decodeBoolForKey("isLoaded")
-		resources = coder.decodeObjectForKey("resources") as Any as? [ResourceProtocol]
+		type = coder.decodeObjectForKey("type") as String
+		href = coder.decodeObjectForKey("href") as? NSURL
+		ids = coder.decodeObjectForKey("ids") as? [String]
+		_resources = coder.decodeObjectForKey("resources") as [ResourceProtocol]
+		addedResources = coder.decodeObjectForKey("addedResources") as [ResourceProtocol]
+		removedResources = coder.decodeObjectForKey("removedResources") as [ResourceProtocol]
 		
 		if let paginationData = coder.decodeObjectForKey("paginationData") as? NSDictionary {
 			self.paginationData = PaginationData.fromDictionary(paginationData)
 		}
-		
-		type = coder.decodeObjectForKey("type") as String
-		href = coder.decodeObjectForKey("href") as? NSURL
-		ids = coder.decodeObjectForKey("ids") as? [String]
 	}
 	
 	public func encodeWithCoder(coder: NSCoder) {
 		coder.encodeBool(isLoaded, forKey: "isLoaded")
-		coder.encodeObject(resources, forKey: "resources")
-		coder.encodeObject(paginationData?.toDictionary(), forKey: "paginationData")
-		
 		coder.encodeObject(href, forKey: "href")
 		coder.encodeObject(type, forKey: "type")
 		coder.encodeObject(ids, forKey: "ids")
+		coder.encodeObject(resources, forKey: "resources")
+		coder.encodeObject(addedResources, forKey: "addedResources")
+		coder.encodeObject(removedResources, forKey: "removedResources")
+		coder.encodeObject(paginationData?.toDictionary(), forKey: "paginationData")
 	}
 	
 	// MARK: Printable protocol
 	
 	override public var description: String {
 		if self.isLoaded {
-			if let resources = self.resources {
-                let descriptions = ", ".join(resources.map { "\($0.type):\($0.type)" })
-				return "ResourceCollection.loaded<\(self.type)>(\(descriptions))"
-			} else {
-				return "ResourceCollection.loaded<\(self.type)>([])"
-			}
+			let descriptions = ", ".join(resources.map { "\($0.type):\($0.type)" })
+			return "ResourceCollection.loaded<\(self.type)>[\(descriptions)]"
 		} else if let URLString = self.href?.absoluteString {
 			return "ResourceCollection.link<\(self.type)>(\(URLString))"
 		} else {
@@ -133,7 +95,7 @@ public class ResourceCollection: NSObject, NSCoding, ArrayLiteralConvertible, Se
 	// MARK: SequenceType protocol
 	
 	public func generate() -> GeneratorOf<ResourceProtocol> {
-		let allObjects: [ResourceProtocol] = self.resources ?? []
+		let allObjects: [ResourceProtocol] = resources
 		var index = -1
 		
 		return GeneratorOf<ResourceProtocol> {
@@ -150,32 +112,44 @@ public class ResourceCollection: NSObject, NSCoding, ArrayLiteralConvertible, Se
 	// Subscript and count
 	
 	public subscript (index: Int) -> ResourceProtocol? {
-		return self.resources?[index]
+		return resources[index]
 	}
 	
 	public subscript (id: String) -> ResourceProtocol? {
-		let foundResources = self.resources?.filter { resource in
+		let foundResources = self.resources.filter { resource in
 			return resource.id == id
 		}
 		
-		return foundResources?.first
+		return foundResources.first
+	}
+	
+	public var count: Int {
+		return resources.count
 	}
 	
 	// MARK: Mutators
+
+	public func add(resource: ResourceProtocol) {
+		_resources.append(resource)
+		addedResources.append(resource)
+		removedResources = removedResources.filter { $0 !== resource }
+	}
 	
-	/**
-	Sets the passed resources as the loaded resources and sets the isLoaded property to true.
-	The resources array will not be observed during fulfilling.
+	public func remove(resource: ResourceProtocol) {
+		_resources = resources.filter { $0 !== resource }
+		addedResources = addedResources.filter { $0 !== resource }
+		removedResources.append(resource)
+	}
 	
-	:param: resources The loaded resources.
-	*/
-	public func fulfill(resources: [ResourceProtocol]) {
-		self.observeResources = false
-		
-		self.resources = resources
-		self.isLoaded = true
-		
-		self.observeResources = true
+	internal func addAsExisting(resource: ResourceProtocol) {
+		_resources.append(resource)
+		removedResources = removedResources.filter { $0 !== resource }
+		addedResources = addedResources.filter { $0 !== resource }
+	}
+	
+	internal func fulfill(resources: [ResourceProtocol]) {
+		_resources = resources
+		isLoaded = true
 	}
 	
 	// MARK: Fetching
@@ -199,8 +173,8 @@ public class ResourceCollection: NSObject, NSCoding, ArrayLiteralConvertible, Se
 	:returns: This collection.
 	*/
 	public func ifLoaded(callback: ([ResourceProtocol]) -> Void) -> Self {
-		if self.isLoaded {
-			callback(self.resources!)
+		if isLoaded {
+			callback(self.resources)
 		}
 		
 		return self
@@ -214,7 +188,7 @@ public class ResourceCollection: NSObject, NSCoding, ArrayLiteralConvertible, Se
 	:returns: This collection
 	*/
 	public func ifNotLoaded(callback: () -> Void) -> Self {
-		if !self.isLoaded {
+		if !isLoaded {
 			callback()
 		}
 		
@@ -224,27 +198,27 @@ public class ResourceCollection: NSObject, NSCoding, ArrayLiteralConvertible, Se
 	// MARK: Paginatable
 	
 	public var canFetchNextPage: Bool {
-		return self.paginationData?.afterCursor != nil
+		return paginationData?.afterCursor != nil
 	}
 	
 	public var canFetchPreviousPage: Bool {
-		return self.paginationData?.beforeCursor != nil
+		return paginationData?.beforeCursor != nil
 	}
 	
 	public func fetchNextPage() -> Future<Void> {
-		assert(self.canFetchNextPage, "Cannot fetch the next page.")
+		assert(canFetchNextPage, "Cannot fetch the next page.")
 		let promise = Promise<(Void)>()
 		return promise.future
 	}
 	
 	public func fetchPreviousPage() -> Future<Void> {
-		assert(self.canFetchPreviousPage, "Cannot fetch the previous page.")
+		assert(canFetchPreviousPage, "Cannot fetch the previous page.")
 		let promise = Promise<(Void)>()
 		return promise.future
 	}
 	
 	private func nextPageURL() -> NSURL? {
-		if let cursor = self.paginationData?.afterCursor {
+		if let cursor = paginationData?.afterCursor {
 			let queryParts = "limit=\(self.paginationData?.limit)&after=\(cursor)"
 		}
 		
@@ -252,7 +226,7 @@ public class ResourceCollection: NSObject, NSCoding, ArrayLiteralConvertible, Se
 	}
 	
 	private func previousPageURL() -> NSURL? {
-		if let cursor = self.paginationData?.beforeCursor {
+		if let cursor = paginationData?.beforeCursor {
 			let queryParts = "limit=\(self.paginationData?.limit)&before=\(cursor)"
 		}
 		

@@ -389,8 +389,8 @@ public extension Spine {
 	func findOne<T: ResourceProtocol>(query: Query<T>) -> Future<T> {
 		let promise = Promise<T>()
 		
-		fetchResourcesByExecutingQuery(query).onSuccess { resources in
-			let resource = resources.resources!.first! as T
+		fetchResourcesByExecutingQuery(query).onSuccess { resourceCollection in
+			let resource = resourceCollection.resources.first! as T
 			promise.success(resource)
 		}.onFailure { error in
 			promise.error(error)
@@ -404,7 +404,7 @@ public extension Spine {
  *  Persisting resources
  */
 public extension Spine {
-	func save(resource: Resource) -> Future<ResourceProtocol> {
+	func save(resource: ResourceProtocol) -> Future<ResourceProtocol> {
 		return saveResource(resource)
 	}
 	

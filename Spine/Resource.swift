@@ -24,11 +24,14 @@ import BrightFutures
 
 
 /**
-*  A base recource class that provides some defaults for resources.
-*  You must create custom resource classes by subclassing from Resource.
-*/
+ *  A base recource class that provides some defaults for resources.
+ *  You can create custom resource classes by subclassing from Resource.
+ */
 public class Resource: NSObject, ResourceProtocol, NSCoding, Printable {
-	public class var resourceType: String { return "_unknown_type" }
+	public class var resourceType: String {
+		fatalError("Override resourceType in a subclass.")
+		return "_unknown_type"
+	}
     public var type: String { return self.dynamicType.resourceType }
     
 	public var id: String?
