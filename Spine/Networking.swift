@@ -51,22 +51,22 @@ public class AlamofireClient: HTTPClientProtocol {
 	// MARK: Basic requests
 	
 	func get(URL: String) -> Future<(Int?, NSData?)> {
-		trace("GET:      " + URL)
+		trace("⬆️ GET:  " + URL)
 		return self.performRequest(alamofireManager.request(.GET, URL))
 	}
 	
 	func post(URL: String, json: [String: AnyObject]) -> Future<(Int?, NSData?)> {
-		trace("POST:     " + URL)
+		trace("⬆️ POST: " + URL)
 		return self.performRequest(alamofireManager.request(.POST, URL, parameters: json, encoding: .JSON))
 	}
 	
 	func put(URL: String, json: [String: AnyObject]) -> Future<(Int?, NSData?)> {
-		trace("PUT:      " + URL)
+		trace("⬆️ PUT:  " + URL)
 		return self.performRequest(alamofireManager.request(.PUT, URL, parameters: json, encoding: .JSON))
 	}
 	
 	func delete(URL: String) -> Future<(Int?, NSData?)> {
-		trace("DELETE:   " + URL)
+		trace("⬆️ DEL:  " + URL)
 		return self.performRequest(alamofireManager.request(.DELETE, URL))
 	}
 	
@@ -74,13 +74,11 @@ public class AlamofireClient: HTTPClientProtocol {
 		let promise = Promise<(Int?, NSData?)>()
 		
 		request.response { request, response, data, error in
-			self.trace("RESPONSE: \(request.URL)")
-			
 			if let error = error {
-				self.trace("          └─ Network error: \(error.localizedDescription)")
+				self.trace("❌ Err:  \(request.URL) - \(error.localizedDescription)")
 				promise.error(error)
 			} else {
-				self.trace("          └─ HTTP status: \(response!.statusCode)")
+				self.trace("✅ \(response!.statusCode):  \(request.URL)")
 				promise.success(response?.statusCode, data as? NSData)
 			}
 		}
