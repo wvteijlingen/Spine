@@ -8,8 +8,8 @@
 
 import Foundation
 import Alamofire
-import BrightFutures
-import SwiftyJSON
+
+typealias HTTPClientCallback = (statusCode: Int, responseData: NSData?, error: NSError?) -> Void
 
 public protocol HTTPClientHeadersProtocol {
 	func setHeader(header: String, to: String)
@@ -19,10 +19,10 @@ public protocol HTTPClientHeadersProtocol {
 protocol HTTPClientProtocol: HTTPClientHeadersProtocol {
 	var traceEnabled: Bool { get set }
 	
-	func get(URL: String) -> Future<(Int?, NSData?)>
-	func post(URL: String, json: [String: AnyObject]) -> Future<(Int?, NSData?)>
-	func put(URL: String, json: [String: AnyObject]) -> Future<(Int?, NSData?)>
-	func delete(URL: String) -> Future<(Int?, NSData?)>
+	func get(URL: String, callback: HTTPClientCallback)
+	func post(URL: String, json: [String: AnyObject], callback: HTTPClientCallback)
+	func put(URL: String, json: [String: AnyObject], callback: HTTPClientCallback)
+	func delete(URL: String, callback: HTTPClientCallback)
 }
 
 public class AlamofireClient: HTTPClientProtocol {
@@ -50,41 +50,49 @@ public class AlamofireClient: HTTPClientProtocol {
 	
 	// MARK: Basic requests
 	
-	func get(URL: String) -> Future<(Int?, NSData?)> {
+	func get(URL: String, callback: HTTPClientCallback) {
 		trace("⬆️ GET:  " + URL)
-		return self.performRequest(alamofireManager.request(.GET, URL))
+		return self.performRequest(alamofireManager.request(.GET, URL), callback: callback)
 	}
 	
-	func post(URL: String, json: [String: AnyObject]) -> Future<(Int?, NSData?)> {
+	func post(URL: String, json: [String: AnyObject], callback: HTTPClientCallback) {
 		trace("⬆️ POST: " + URL)
-		return self.performRequest(alamofireManager.request(.POST, URL, parameters: json, encoding: .JSON))
+		return self.performRequest(alamofireManager.request(.POST, URL, parameters: json, encoding: .JSON), callback: callback)
 	}
 	
-	func put(URL: String, json: [String: AnyObject]) -> Future<(Int?, NSData?)> {
+	func put(URL: String, json: [String: AnyObject], callback: HTTPClientCallback) {
 		trace("⬆️ PUT:  " + URL)
-		return self.performRequest(alamofireManager.request(.PUT, URL, parameters: json, encoding: .JSON))
+		return self.performRequest(alamofireManager.request(.PUT, URL, parameters: json, encoding: .JSON), callback: callback)
 	}
 	
-	func delete(URL: String) -> Future<(Int?, NSData?)> {
+	func delete(URL: String, callback: HTTPClientCallback) {
 		trace("⬆️ DEL:  " + URL)
-		return self.performRequest(alamofireManager.request(.DELETE, URL))
+		return self.performRequest(alamofireManager.request(.DELETE, URL), callback: callback)
 	}
 	
-	private func performRequest(request: Request) -> Future<(Int?, NSData?)> {
-		let promise = Promise<(Int?, NSData?)>()
-		
+	private func performRequest(request: Request, callback: HTTPClientCallback) {
 		request.response { request, response, data, error in
+			var resolvedError: NSError?
+			
+			// Framework error
 			if let error = error {
 				self.trace("❌ Err:  \(request.URL) - \(error.localizedDescription)")
-				promise.error(error)
-			} else {
+				resolvedError = NSError(domain: SPINE_ERROR_DOMAIN, code: error.code, userInfo: error.userInfo)
+			
+			// Success
+			} else if 200 ... 299 ~= response!.statusCode {
 				self.trace("✅ \(response!.statusCode):  \(request.URL)")
-				promise.success(response?.statusCode, data as? NSData)
+			
+			// API Error
+			} else {
+				self.trace("❌ Err:  \(response!.statusCode):  \(request.URL)")
+				resolvedError = NSError(domain: SPINE_API_ERROR_DOMAIN, code: response!.statusCode, userInfo: nil)
 			}
+			
+			callback(statusCode: response!.statusCode, responseData: data as? NSData, error: resolvedError)
 		}
-		
-		return promise.future
 	}
+	
 	
 	// MARK: Internal
 	

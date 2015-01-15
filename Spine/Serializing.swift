@@ -9,7 +9,10 @@
 import UIKit
 import SwiftyJSON
 
-typealias DeserializationResult = (store: Store?, pagination: PaginationData?, error: NSError?)
+enum DeserializationResult {
+	case Success(store: Store, pagination: PaginationData?)
+	case Failure(NSError)
+}
 
 // MARK: - Serializer
 

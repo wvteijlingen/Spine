@@ -8,6 +8,17 @@
 
 import Foundation
 
+extension NSError {
+	func isSpineError() -> Bool {
+		return self.domain == SPINE_ERROR_DOMAIN
+	}
+	
+	func isSpineAPIError() -> Bool {
+		return self.domain == SPINE_API_ERROR_DOMAIN
+	}
+}
+
+
 extension String {
 	func interpolate(callback: (key: String) -> String?) -> String {
 		var interpolatedString = ""

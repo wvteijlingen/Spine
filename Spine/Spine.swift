@@ -65,6 +65,20 @@ public class Spine {
 		}
 	}
 	
+	
+	// MARK: Error handling
+	
+	func handleErrorResponse(statusCode: Int, responseData: NSData?, error: NSError) -> NSError {
+		switch error.domain {
+		case SPINE_ERROR_DOMAIN:
+			return error
+		case SPINE_API_ERROR_DOMAIN:
+			return self.serializer.deserializeError(responseData!, withResonseStatus: statusCode)
+		default:
+			return error
+		}
+	}
+	
 
 	// MARK: Fetching methods
 
@@ -78,34 +92,26 @@ public class Spine {
 		
 		let URLString = self.router.URLForQuery(query).absoluteString!
 		
-		self.HTTPClient.get(URLString).onSuccess { statusCode, data in
-			
-			if 200 ... 299 ~= statusCode! {
-				let store = Store(objects: mappingTargetResources)
-				let deserializationResult = self.serializer.deserializeData(data!, usingStore: store)
-				
-				if let store = deserializationResult.store {
-					let collection = ResourceCollection(store.allObjectsWithType(query.resourceType))
-					collection.paginationData = deserializationResult.pagination
-					
-					promise.success(collection)
-					
-				} else {
-					promise.error(deserializationResult.error!)
-				}
+		self.HTTPClient.get(URLString) { statusCode, responseData, error in
+			if let error = error {
+				promise.error(self.handleErrorResponse(statusCode, responseData: responseData, error: error))
 				
 			} else {
-				let error = self.serializer.deserializeError(data!, withResonseStatus: statusCode!)
-				promise.error(error)
+				let deserializationResult = self.serializer.deserializeData(responseData!, usingStore: Store(objects: mappingTargetResources))
+				
+				switch deserializationResult {
+				case .Success(let store, let paginationData):
+					let collection = ResourceCollection(store.allObjectsWithType(query.resourceType))
+					collection.paginationData = paginationData
+					promise.success(collection)
+				case .Failure(let error):
+					promise.error(error)
+				}
 			}
-			
-			}.onFailure { error in
-				promise.error(error)
 		}
 		
 		return promise.future
 	}
-	
 	
 	func loadResourceByExecutingQuery<T: ResourceProtocol>(resource: T, query: Query<T>) -> Future<T> {
 		let promise = Promise<(T)>()
@@ -125,42 +131,23 @@ public class Spine {
 	
 	
 	// MARK: Saving
-	
-	/**
-	Saves a resource to the server.
-	This will also relate and unrelate any pending related and unrelated resource.
-	Related resources will not be saved automatically. You must ensure that related resources are saved before saving any parent resource.
-	
-	:param: resource The resource to save.
-	
-	:returns: Future of the resource saved.
-	*/
+
 	func saveResource(resource: ResourceProtocol) -> Future<ResourceProtocol> {
 		let promise = Promise<ResourceProtocol>()
-		
-		var saveFuture: Future<(Int?, NSData?)>
+
 		var shouldUpdateRelationships = false
 		
-		// Create or update the main resource
-		if let id = resource.id {
-			shouldUpdateRelationships = true
-			let URLString = self.router.URLForQuery(Query(resource: resource)).absoluteString!
-			let json = self.serializer.serializeResources([resource])
-			saveFuture = self.HTTPClient.put(URLString, json: json)
-		} else {
-			resource.id = NSUUID().UUIDString
-			let URLString = self.router.URLForResourceType(resource.type).absoluteString!
-			let json = self.serializer.serializeResources([resource], options: SerializationOptions(includeID: false, dirtyAttributesOnly: false, includeToOne: true, includeToMany: true))
-			saveFuture = self.HTTPClient.post(URLString, json: json)
-		}
-		
-		// Act on the future
-		saveFuture.onSuccess { statusCode, data in
+		var callback: HTTPClientCallback = { statusCode, responseData, error in
+			if let error = error {
+				promise.error(self.handleErrorResponse(statusCode, responseData: responseData, error: error))
+				return
+			}
+			
 			let deserializationOptions = (self.useClientSideIDs) ? DeserializationOptions() : DeserializationOptions(mapOntoFirstResourceInStore: true)
 			
 			// Map the response back onto the resource
-			if let data = data {
-				self.serializer.deserializeData(data, usingStore: Store(objects: [resource]), options: deserializationOptions)
+			if let data = responseData {
+				self.serializer.deserializeData(data, usingStore: [resource], options: deserializationOptions)
 			}
 			
 			// Separately update relationships if needed
@@ -174,14 +161,27 @@ public class Spine {
 					promise.error(error)
 				}
 			}
-			
-		}.onFailure { error in
-			promise.error(error)
+		}
+		
+		// Create or update the main resource
+		if let id = resource.id {
+			shouldUpdateRelationships = true
+			let URLString = self.router.URLForQuery(Query(resource: resource)).absoluteString!
+			let json = self.serializer.serializeResources([resource])
+			self.HTTPClient.put(URLString, json: json, callback: callback)
+		} else {
+			resource.id = NSUUID().UUIDString
+			let URLString = self.router.URLForResourceType(resource.type).absoluteString!
+			let json = self.serializer.serializeResources([resource], options: SerializationOptions(includeID: false, dirtyAttributesOnly: false, includeToOne: true, includeToMany: true))
+			self.HTTPClient.post(URLString, json: json, callback: callback)
 		}
 		
 		// Return the public future
 		return promise.future
 	}
+	
+	
+	// MARK: Relating
 	
 	private func updateRelationshipsOfResource(resource: ResourceProtocol) -> Future<Void> {
 		let promise = Promise<Void>()
@@ -225,7 +225,7 @@ public class Spine {
 					stop = true
 				}
 			case "replace":
-				self.updateRelatedResource(operation.resources.first!, ofResource: resource, relationship: operation.relationship).onFailure { error in
+				self.setRelatedResource(operation.resources.first!, ofResource: resource, relationship: operation.relationship).onFailure { error in
 					promise.error(error)
 					stop = true
 				}
@@ -236,13 +236,12 @@ public class Spine {
 		return promise.future
 	}
 	
-	
-	// MARK: Relating
-	
 	private func addRelatedResources(resources: [ResourceProtocol], toResource: ResourceProtocol, relationship: String) -> Future<Void> {
 		let promise = Promise<Void>()
 		
-		if resources.count > 0 {
+		if resources.count == 0 {
+			promise.success()
+		} else {
 			let ids: [String] = resources.map { resource in
 				assert(resource.id != nil, "Attempt to relate resource without id. Only existing resources can be related.")
 				return resource.id!
@@ -250,13 +249,13 @@ public class Spine {
 			
 			let URLString = self.router.URLForRelationship(relationship, ofResource: toResource).absoluteString!
 			
-			self.HTTPClient.post(URLString, json: [relationship: ids]).onSuccess { statusCode, data in
-				promise.success()
-				}.onFailure { error in
-					promise.error(error)
+			self.HTTPClient.post(URLString, json: [relationship: ids]) { statusCode, responseData, error in
+				if let error = error {
+					promise.error(self.handleErrorResponse(statusCode, responseData: responseData, error: error))
+				} else {
+					promise.success()
+				}
 			}
-		} else {
-			promise.success()
 		}
 		
 		return promise.future
@@ -265,7 +264,9 @@ public class Spine {
 	private func removeRelatedResources(resources: [ResourceProtocol], fromResource: ResourceProtocol, relationship: String) -> Future<Void> {
 		let promise = Promise<Void>()
 		
-		if resources.count > 0 {
+		if resources.count == 0 {
+			promise.success()
+		} else {
 			let ids: [String] = resources.map { (resource) in
 				assert(resource.id != nil, "Attempt to unrelate resource without id. Only existing resources can be unrelated.")
 				return resource.id!
@@ -273,27 +274,29 @@ public class Spine {
 			
 			let URLString = self.router.URLForRelationship(relationship, ofResource: fromResource, ids: ids).absoluteString!
 			
-			self.HTTPClient.delete(URLString).onSuccess { statusCode, data in
-				promise.success()
-				}.onFailure { error in
-					promise.error(error)
+			self.HTTPClient.delete(URLString) { statusCode, responseData, error in
+				if let error = error {
+					promise.error(self.handleErrorResponse(statusCode, responseData: responseData, error: error))
+				} else {
+					promise.success()
+				}
 			}
-		} else {
-			promise.success()
 		}
 		
 		return promise.future
 	}
 	
-	private func updateRelatedResource(resource: ResourceProtocol, ofResource: ResourceProtocol, relationship: String) -> Future<Void> {
+	private func setRelatedResource(resource: ResourceProtocol, ofResource: ResourceProtocol, relationship: String) -> Future<Void> {
 		let promise = Promise<Void>()
 		
 		let URLString = self.router.URLForRelationship(relationship, ofResource: ofResource).absoluteString!
 		
-		self.HTTPClient.put(URLString, json: [relationship: resource.id!]).onSuccess { statusCode, data in
-			promise.success()
-			}.onFailure { error in
-				promise.error(error)
+		self.HTTPClient.put(URLString, json: [relationship: resource.id!]) { statusCode, responseData, error in
+			if let error = error {
+				promise.error(self.handleErrorResponse(statusCode, responseData: responseData, error: error))
+			} else {
+				promise.success()
+			}
 		}
 		
 		return promise.future
@@ -302,23 +305,17 @@ public class Spine {
 	
 	// MARK: Deleting
 	
-	/**
-	Deletes the resource from the server.
-	This will fire a DELETE request to an URL of the form: /{resourceType}/{id}.
-	
-	:param: resource The resource to delete.
-	
-	:returns: Void future.
-	*/
 	func deleteResource(resource: ResourceProtocol) -> Future<Void> {
 		let promise = Promise<Void>()
 		
 		let URLString = self.router.URLForQuery(Query(resource: resource)).absoluteString!
 		
-		self.HTTPClient.delete(URLString).onSuccess { statusCode, data in
-			promise.success()
-			}.onFailure { error in
-				promise.error(error)
+		self.HTTPClient.delete(URLString) { statusCode, responseData, error in
+			if let error = error {
+				promise.error(self.handleErrorResponse(statusCode, responseData: responseData, error: error))
+			} else {
+				promise.success()
+			}
 		}
 		
 		return promise.future

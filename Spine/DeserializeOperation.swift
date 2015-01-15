@@ -33,7 +33,7 @@ class DeserializeOperation: NSOperation {
 	
 	override func main() {
 		if let error = checkDataFormat() {
-			self.result = DeserializationResult(nil, nil, error)
+			self.result = .Failure(error)
 			return
 		}
 		
@@ -71,7 +71,7 @@ class DeserializeOperation: NSOperation {
 		self.resolveRelations()
 		
 		// Create a result
-		self.result = DeserializationResult(self.store, self.paginationData, nil)
+		self.result = .Success(store: store, pagination: paginationData)
 	}
 	
 	/// Check if the given data is in the expected format
