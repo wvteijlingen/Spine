@@ -85,7 +85,7 @@ public class AlamofireClient: HTTPClientProtocol {
 			
 			// API Error
 			} else {
-				self.trace("❌ Err:  \(response!.statusCode):  \(request.URL)")
+				self.trace("❌ \(response!.statusCode):  \(request.URL)")
 				resolvedError = NSError(domain: SPINE_API_ERROR_DOMAIN, code: response!.statusCode, userInfo: nil)
 			}
 			
