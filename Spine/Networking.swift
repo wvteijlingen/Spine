@@ -9,7 +9,7 @@
 import Foundation
 import Alamofire
 
-typealias HTTPClientCallback = (statusCode: Int, responseData: NSData?, error: NSError?) -> Void
+typealias HTTPClientCallback = (statusCode: Int?, responseData: NSData?, error: NSError?) -> Void
 
 public protocol HTTPClientHeadersProtocol {
 	func setHeader(header: String, to: String)
@@ -89,7 +89,7 @@ public class AlamofireClient: HTTPClientProtocol {
 				resolvedError = NSError(domain: SPINE_API_ERROR_DOMAIN, code: response!.statusCode, userInfo: nil)
 			}
 			
-			callback(statusCode: response!.statusCode, responseData: data as? NSData, error: resolvedError)
+			callback(statusCode: response?.statusCode, responseData: data as? NSData, error: resolvedError)
 		}
 	}
 	

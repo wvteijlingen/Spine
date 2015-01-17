@@ -68,12 +68,12 @@ public class Spine {
 	
 	// MARK: Error handling
 	
-	func handleErrorResponse(statusCode: Int, responseData: NSData?, error: NSError) -> NSError {
+	func handleErrorResponse(statusCode: Int?, responseData: NSData?, error: NSError) -> NSError {
 		switch error.domain {
 		case SPINE_ERROR_DOMAIN:
 			return error
 		case SPINE_API_ERROR_DOMAIN:
-			return self.serializer.deserializeError(responseData!, withResonseStatus: statusCode)
+			return self.serializer.deserializeError(responseData!, withResonseStatus: statusCode!)
 		default:
 			return error
 		}
