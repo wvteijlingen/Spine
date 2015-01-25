@@ -101,7 +101,7 @@ public class Spine {
 				
 				switch deserializationResult {
 				case .Success(let store, let paginationData):
-					let collection = ResourceCollection(store.allObjectsWithType(query.resourceType))
+					let collection = ResourceCollection(store.allObjectsWithType(query.resourceType), type: query.resourceType)
 					collection.paginationData = paginationData
 					promise.success(collection)
 				case .Failure(let error):

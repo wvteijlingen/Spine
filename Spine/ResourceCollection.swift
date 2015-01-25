@@ -9,7 +9,7 @@
 import Foundation
 import BrightFutures
 
-public class ResourceCollection: NSObject, NSCoding, ArrayLiteralConvertible, SequenceType, Printable, Paginatable {
+public class ResourceCollection: NSObject, NSCoding, SequenceType, Printable, Paginatable {
 	/// Whether the resources for this collection are loaded
 	public var isLoaded: Bool
 	public var type: String
@@ -39,15 +39,9 @@ public class ResourceCollection: NSObject, NSCoding, ArrayLiteralConvertible, Se
 		self.isLoaded = false
 	}
 	
-	public init(_ resources: [ResourceProtocol]) {
-		self.type = resources.first!.type
+	public init(_ resources: [ResourceProtocol], type: String) {
+		self.type = type
 		self._resources = resources
-		self.isLoaded = true
-	}
-	
-	public required init(arrayLiteral elements: ResourceProtocol...) {
-		self.type = elements.first!.type
-		self._resources = elements
 		self.isLoaded = true
 	}
 	
