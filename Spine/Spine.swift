@@ -10,10 +10,10 @@ import Foundation
 import BrightFutures
 
 /// The domain used for errors that occur within the Spine framework.
-let SPINE_ERROR_DOMAIN = "com.wardvanteijlingen.Spine"
+public let SPINE_ERROR_DOMAIN = "com.wardvanteijlingen.Spine"
 
 /// The domain used for errors that are returned by the API.
-let SPINE_API_ERROR_DOMAIN = "com.wardvanteijlingen.Spine.Api"
+public let SPINE_API_ERROR_DOMAIN = "com.wardvanteijlingen.Spine.Api"
 
 /// The main class
 public class Spine {
@@ -387,8 +387,11 @@ public extension Spine {
 		let promise = Promise<T>()
 		
 		fetchResourcesByExecutingQuery(query).onSuccess { resourceCollection in
-			let resource = resourceCollection.resources.first! as T
-			promise.success(resource)
+			if let resource = resourceCollection.resources.first as? T {
+				promise.success(resource)
+			} else {
+				promise.error(NSError(domain: SPINE_ERROR_DOMAIN, code: 404, userInfo: nil))
+			}
 		}.onFailure { error in
 			promise.error(error)
 		}
