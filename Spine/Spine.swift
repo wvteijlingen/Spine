@@ -29,18 +29,18 @@ public class Spine {
 	}
 	
 	/// The router that builds the URLs for requests.
-	private var router: Router
+	private var router: Router = JSONAPIRouter()
 	
 	/// The HTTPClient that performs the HTTP requests.
-	private var HTTPClient: HTTPClientProtocol
+	private var HTTPClient: _HTTPClientProtocol = AlamofireClient()
 	
 	/// The public facing HTTPClient
-	public var client: HTTPClientHeadersProtocol {
+	public var client: HTTPClientProtocol {
 		return HTTPClient
 	}
 	
 	/// The serializer to use for serializing and deserializing of JSON representations.
-	private var serializer: JSONSerializer
+	private var serializer: JSONSerializer = JSONSerializer()
 	
 	/// Whether the print debug information. Default false.
 	public var traceEnabled: Bool = false {
@@ -55,12 +55,8 @@ public class Spine {
 	
 	// MARK: Initializers
 	
-	public init(baseURL: NSURL! = nil) {
-		self.HTTPClient = AlamofireClient()
-		self.router = JSONAPIRouter()
-		self.serializer = JSONSerializer()
-		
-		if baseURL != nil {
+	public init(baseURL: NSURL? = nil) {
+		if let baseURL = baseURL {
 			self.baseURL = baseURL
 		}
 	}

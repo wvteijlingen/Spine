@@ -11,12 +11,12 @@ import Alamofire
 
 typealias HTTPClientCallback = (statusCode: Int?, responseData: NSData?, error: NSError?) -> Void
 
-public protocol HTTPClientHeadersProtocol {
+public protocol HTTPClientProtocol {
 	func setHeader(header: String, to: String)
 	func removeHeader(header: String)
 }
 
-protocol HTTPClientProtocol: HTTPClientHeadersProtocol {
+protocol _HTTPClientProtocol: HTTPClientProtocol {
 	var traceEnabled: Bool { get set }
 	
 	func get(URL: String, callback: HTTPClientCallback)
@@ -25,7 +25,7 @@ protocol HTTPClientProtocol: HTTPClientHeadersProtocol {
 	func delete(URL: String, callback: HTTPClientCallback)
 }
 
-public class AlamofireClient: HTTPClientProtocol {
+public class AlamofireClient: _HTTPClientProtocol {
 	var alamofireManager: Alamofire.Manager
 	var traceEnabled = false
 	
