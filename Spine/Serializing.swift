@@ -10,7 +10,7 @@ import UIKit
 import SwiftyJSON
 
 enum DeserializationResult {
-	case Success(store: Store, pagination: PaginationData?)
+	case Success(resources: [ResourceProtocol], pagination: PaginationData?)
 	case Failure(NSError)
 }
 
@@ -21,7 +21,7 @@ protocol SerializerProtocol {
 	var transformers: TransformerDirectory { get }
 	
 	// Deserializing
-	func deserializeData(data: NSData, usingStore store: Store, options: DeserializationOptions) -> DeserializationResult
+	func deserializeData(data: NSData, mappingTargets: [ResourceProtocol]?) -> DeserializationResult
 	func deserializeError(data: NSData, withResonseStatus responseStatus: Int) -> NSError
 	
 	// Serializing
@@ -53,12 +53,13 @@ class JSONSerializer: SerializerProtocol {
 	
 	:returns: A DeserializationResult that contains either a Store or an error.
 	*/
-	func deserializeData(data: NSData, usingStore store: Store = Store(), options: DeserializationOptions = DeserializationOptions()) -> DeserializationResult {
-		store.resourceFactory = resourceFactory
-		
-		let deserializeOperation = DeserializeOperation(data: data, store: store)
-		deserializeOperation.options = options
+	func deserializeData(data: NSData, mappingTargets: [ResourceProtocol]?) -> DeserializationResult {		
+		let deserializeOperation = DeserializeOperation(data: data, resourceFactory: resourceFactory)
 		deserializeOperation.transformers = transformers
+		
+		if let mappingTargets = mappingTargets {
+			deserializeOperation.addMappingTargets(mappingTargets)
+		}
 		
 		deserializeOperation.start()
 		return deserializeOperation.result!
@@ -128,14 +129,6 @@ struct SerializationOptions {
 	}
 }
 
-struct DeserializationOptions {
-	var mapOntoFirstResourceInStore = false
-	
-	init(mapOntoFirstResourceInStore: Bool = false) {
-		self.mapOntoFirstResourceInStore = mapOntoFirstResourceInStore
-	}
-}
-
 
 // MARK: - ResourceFactory
 
@@ -151,8 +144,29 @@ struct ResourceFactory {
 		assert(factoryFunctions[type] != nil, "Cannot instantiate resource of type \(type). You must register this type with Spine first.")
 		return factoryFunctions[type]!()
 	}
-
-	subscript(type: String) -> ResourceProtocol {
-		return instantiate(type)
+	
+	func dispense(type: String, id: String, inout pool: [ResourceProtocol]) -> ResourceProtocol {
+		var resource: ResourceProtocol
+		var isExistingResource: Bool
+		
+		if let existingResource = findResource(pool, type, id) {
+			resource = existingResource
+			isExistingResource = true
+			
+		} else if let existingResource = findResourcesWithType(pool, type).first {
+			resource = existingResource
+			isExistingResource = true
+			
+		} else {
+			resource = instantiate(type)
+			resource.id = id
+			isExistingResource = false
+		}
+		
+		if !isExistingResource {
+			pool.append(resource)
+		}
+		
+		return resource
 	}
 }

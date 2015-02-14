@@ -52,7 +52,7 @@ public struct Query<T: ResourceProtocol> {
 	}
 	
 	public init(linkedResourceCollection: ResourceCollection) {
-		self.URL = linkedResourceCollection.href
+		self.URL = linkedResourceCollection.resourcesURL
 		self.resourceType = linkedResourceCollection.type
 	}
 	

@@ -81,3 +81,11 @@ extension String {
 		}
 	}
 }
+
+func findResourcesWithType<C: CollectionType where C.Generator.Element: ResourceProtocol>(domain: C, type: String) -> [C.Generator.Element] {
+	return filter(domain) { $0.type == type }
+}
+
+func findResource<C: CollectionType where C.Generator.Element: ResourceProtocol>(domain: C, type: String, id: String) -> C.Generator.Element? {
+	return filter(domain) { $0.type == type && $0.id == id }.first
+}

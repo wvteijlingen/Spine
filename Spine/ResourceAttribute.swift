@@ -8,10 +8,6 @@
 
 import Foundation
 
-func isRelationship(attribute: Attribute) -> Bool {
-	return (attribute is ToOneAttribute) || (attribute is ToManyAttribute)
-}
-
 public func attributesFromDictionary(dictionary: [String: Attribute]) -> [Attribute] {
 	return map(dictionary) { (name, attribute) in
 		attribute.name = name
@@ -19,10 +15,9 @@ public func attributesFromDictionary(dictionary: [String: Attribute]) -> [Attrib
 	}
 }
 
-
 /**
-*  Base attribute
-*/
+ *  Base attribute
+ */
 public class Attribute {
 	var name: String!
 	
@@ -38,7 +33,7 @@ public class Attribute {
 
 	public init() {}
 	
-	public func serializeAs(name: String) -> Self{
+	public func serializeAs(name: String) -> Self {
 		serializedName = name
 		return self
 	}
@@ -64,7 +59,7 @@ public class DateAttribute: Attribute {
 	}
 }
 
-public class ToOneAttribute: Attribute {
+public class RelationshipAttribute: Attribute {
 	let linkedType: String
 	
 	public init(_ type: String) {
@@ -72,10 +67,6 @@ public class ToOneAttribute: Attribute {
 	}
 }
 
-public class ToManyAttribute: Attribute {
-	let linkedType: String
-	
-	public init(_ type: String) {
-		linkedType = type
-	}
-} 
+public class ToOneAttribute: RelationshipAttribute { }
+
+public class ToManyAttribute: RelationshipAttribute { }

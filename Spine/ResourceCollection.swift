@@ -9,18 +9,17 @@
 import Foundation
 import BrightFutures
 
-public class ResourceCollection: NSObject, NSCoding, SequenceType, Printable, Paginatable {
+public class ResourceCollection: NSObject, NSCoding, Paginatable, Linkable {
 	/// Whether the resources for this collection are loaded
 	public var isLoaded: Bool
 	public var type: String
 	public var ids: [String]?
-	public var href: NSURL?
+	
+	public var URL: NSURL?
+	public var resourcesURL: NSURL?
 	
 	/// The loaded resources
-	private var _resources: [ResourceProtocol] = []
-	public var resources: [ResourceProtocol] { return _resources }
-
-	var observeResources: Bool = true
+	public private(set) var resources: [ResourceProtocol] = []
 	
 	/// Resources that are added to this collection
 	var addedResources: [ResourceProtocol] = []
@@ -32,8 +31,9 @@ public class ResourceCollection: NSObject, NSCoding, SequenceType, Printable, Pa
 	
 	// MARK: Initializers
 	
-	public init(href: NSURL? = nil, type: String, ids: [String]? = nil) {
-		self.href = href
+	public init(resourcesURL: NSURL? = nil, URL: NSURL? = nil, type: String, ids: [String]? = nil) {
+		self.resourcesURL = resourcesURL
+		self.URL = URL
 		self.type = type
 		self.ids = ids
 		self.isLoaded = false
@@ -41,7 +41,7 @@ public class ResourceCollection: NSObject, NSCoding, SequenceType, Printable, Pa
 	
 	public init(_ resources: [ResourceProtocol], type: String) {
 		self.type = type
-		self._resources = resources
+		self.resources = resources
 		self.isLoaded = true
 	}
 	
@@ -50,9 +50,10 @@ public class ResourceCollection: NSObject, NSCoding, SequenceType, Printable, Pa
 	public required init(coder: NSCoder) {
 		isLoaded = coder.decodeBoolForKey("isLoaded")
 		type = coder.decodeObjectForKey("type") as String
-		href = coder.decodeObjectForKey("href") as? NSURL
+		URL = coder.decodeObjectForKey("URL") as? NSURL
+		resourcesURL = coder.decodeObjectForKey("resourcesURL") as? NSURL
 		ids = coder.decodeObjectForKey("ids") as? [String]
-		_resources = coder.decodeObjectForKey("resources") as [ResourceProtocol]
+		resources = coder.decodeObjectForKey("resources") as [ResourceProtocol]
 		addedResources = coder.decodeObjectForKey("addedResources") as [ResourceProtocol]
 		removedResources = coder.decodeObjectForKey("removedResources") as [ResourceProtocol]
 		
@@ -63,7 +64,8 @@ public class ResourceCollection: NSObject, NSCoding, SequenceType, Printable, Pa
 	
 	public func encodeWithCoder(coder: NSCoder) {
 		coder.encodeBool(isLoaded, forKey: "isLoaded")
-		coder.encodeObject(href, forKey: "href")
+		coder.encodeObject(URL, forKey: "URL")
+		coder.encodeObject(resourcesURL, forKey: "resourcesURL")
 		coder.encodeObject(type, forKey: "type")
 		coder.encodeObject(ids, forKey: "ids")
 		coder.encodeObject(resources, forKey: "resources")
@@ -72,40 +74,9 @@ public class ResourceCollection: NSObject, NSCoding, SequenceType, Printable, Pa
 		coder.encodeObject(paginationData?.toDictionary(), forKey: "paginationData")
 	}
 	
-	// MARK: Printable protocol
-	
-	override public var description: String {
-		if self.isLoaded {
-			let descriptions = ", ".join(resources.map { "\($0.type):\($0.type)" })
-			return "ResourceCollection.loaded<\(self.type)>[\(descriptions)]"
-		} else if let URLString = self.href?.absoluteString {
-			return "ResourceCollection.link<\(self.type)>(\(URLString))"
-		} else {
-			let IDs = ", ".join(self.ids!)
-			return "ResourceCollection.link<\(self.type)>(\(IDs))"
-		}
-	}
-	
-	// MARK: SequenceType protocol
-	
-	public func generate() -> GeneratorOf<ResourceProtocol> {
-		let allObjects: [ResourceProtocol] = resources
-		var index = -1
-		
-		return GeneratorOf<ResourceProtocol> {
-			index++
-			
-			if (index > allObjects.count - 1) {
-				return nil
-			}
-			
-			return allObjects[index]
-		}
-	}
-	
 	// Subscript and count
 	
-	public subscript (index: Int) -> ResourceProtocol? {
+	public subscript (index: Int) -> ResourceProtocol {
 		return resources[index]
 	}
 	
@@ -123,39 +94,29 @@ public class ResourceCollection: NSObject, NSCoding, SequenceType, Printable, Pa
 	
 	// MARK: Mutators
 
-	public func add(resource: ResourceProtocol) {
-		_resources.append(resource)
+	public func append(resource: ResourceProtocol) {
+		resources.append(resource)
 		addedResources.append(resource)
 		removedResources = removedResources.filter { $0 !== resource }
 	}
 	
 	public func remove(resource: ResourceProtocol) {
-		_resources = resources.filter { $0 !== resource }
+		resources = resources.filter { $0 !== resource }
 		addedResources = addedResources.filter { $0 !== resource }
 		removedResources.append(resource)
 	}
 	
 	internal func addAsExisting(resource: ResourceProtocol) {
-		_resources.append(resource)
+		resources.append(resource)
 		removedResources = removedResources.filter { $0 !== resource }
 		addedResources = addedResources.filter { $0 !== resource }
 	}
 	
 	internal func fulfill(resources: [ResourceProtocol]) {
-		_resources = resources
+		self.resources = resources
 		isLoaded = true
 	}
 	
-	// MARK: Fetching
-	
-	/**
-	Returns a query for this resource collection.
-	
-	:returns: The query
-	*/
-	public func query() -> Query<ResourceProtocol> {
-		return Query(linkedResourceCollection: self)
-	}
 	
 	// MARK: ifLoaded
 	
@@ -168,7 +129,7 @@ public class ResourceCollection: NSObject, NSCoding, SequenceType, Printable, Pa
 	*/
 	public func ifLoaded(callback: ([ResourceProtocol]) -> Void) -> Self {
 		if isLoaded {
-			callback(self.resources)
+			callback(resources)
 		}
 		
 		return self
@@ -226,7 +187,28 @@ public class ResourceCollection: NSObject, NSCoding, SequenceType, Printable, Pa
 		
 		return nil
 	}
+}
+
+extension ResourceCollection: SequenceType {
+	public typealias Generator = IndexingGenerator<[ResourceProtocol]>
 	
+	public func generate() -> Generator {
+		return resources.generate()
+	}
+}
+
+extension ResourceCollection: Printable {
+	override public var description: String {
+		if self.isLoaded {
+			let descriptions = ", ".join(resources.map { "\($0.type):\($0.type)" })
+			return "ResourceCollection.loaded<\(self.type)>[\(descriptions)]"
+		} else if let URLString = self.URL?.absoluteString {
+			return "ResourceCollection.link<\(self.type)>(\(URLString))"
+		} else {
+			let IDs = ", ".join(self.ids!)
+			return "ResourceCollection.link<\(self.type)>(\(IDs))"
+		}
+	}
 }
 
 

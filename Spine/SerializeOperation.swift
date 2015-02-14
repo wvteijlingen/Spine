@@ -95,7 +95,7 @@ class SerializeOperation: NSOperation {
 	*/
 	private func addAttributes(inout serializedData: [String: AnyObject], resource: ResourceProtocol) {
 		for attribute in resource.attributes {
-			if isRelationship(attribute) {
+			if attribute is RelationshipAttribute {
 				continue
 			}
 			
@@ -103,7 +103,7 @@ class SerializeOperation: NSOperation {
 			
 			let key = attribute.serializedName
 			
-			if let unformattedValue: AnyObject = resource[attribute.name] {
+			if let unformattedValue: AnyObject = resource.valueForAttribute(attribute.name) {
 				self.addAttribute(&serializedData, key: key, value: self.transformers.serialize(unformattedValue, forAttribute: attribute))
 			} else {
 				self.addAttribute(&serializedData, key: key, value: NSNull())
@@ -138,7 +138,7 @@ class SerializeOperation: NSOperation {
 	*/
 	private func addRelationships(inout serializedData: [String: AnyObject], resource: ResourceProtocol) {
 		for attribute in resource.attributes {
-			if !isRelationship(attribute) {
+			if attribute is RelationshipAttribute == false {
 				continue
 			}
 			
@@ -147,11 +147,11 @@ class SerializeOperation: NSOperation {
 			switch attribute {
 			case let toOne as ToOneAttribute:
 				if self.options.includeToOne {
-					self.addToOneRelationship(&serializedData, key: key, linkedResource: resource[attribute.name] as? ResourceProtocol)
+					self.addToOneRelationship(&serializedData, key: key, linkedResource: resource.valueForAttribute(attribute.name) as? ResourceProtocol)
 				}
 			case let toMany as ToManyAttribute:
 				if self.options.includeToMany {
-					self.addToManyRelationship(&serializedData, key: key, linkedResources: resource[attribute.name] as? ResourceCollection)
+					self.addToManyRelationship(&serializedData, key: key, linkedResources: resource.valueForAttribute(attribute.name) as? ResourceCollection)
 				}
 			default: ()
 			}

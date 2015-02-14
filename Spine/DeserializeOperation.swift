@@ -18,120 +18,93 @@ import SwiftyJSON
 class DeserializeOperation: NSOperation {
 	
 	// Input
-	private let data: JSON
-	private var store: Store
+	let data: JSON
 	var transformers: TransformerDirectory = TransformerDirectory()
-	var options: DeserializationOptions = DeserializationOptions()
+	var resourceFactory: ResourceFactory
+	
+	// Output
+	var result: DeserializationResult?
+	
+	// Private
+	private var resources: [ResourceProtocol] = []
 	private var paginationData: PaginationData?
 	
-	var result: DeserializationResult?
-
-	init(data: NSData, store: Store) {
+	init(data: NSData, resourceFactory: ResourceFactory) {
 		self.data = JSON(data: data)
-		self.store = store
+		self.resourceFactory = resourceFactory
+	}
+	
+	func addMappingTargets(targets: [ResourceProtocol]) {
+		// We can only map onto resources that are not loaded yet
+		for resource in targets {
+			assert(resource.isLoaded == false, "Cannot map onto loaded resource \(resource)")
+		}
+		
+		resources += targets
 	}
 	
 	override func main() {
-		if let error = checkDataFormat() {
-			self.result = .Failure(error)
+		// Check if the given data is in the expected format
+		if (data.dictionary == nil) {
+			result = .Failure(NSError(domain: SPINE_ERROR_DOMAIN, code: 0, userInfo: [NSLocalizedDescriptionKey: "The given JSON representation was not as expected."]))
 			return
 		}
 		
 		// Extract link templates
 		let linkTemplates: JSON? = self.data.dictionaryValue["links"]
 		
-		// Extract resources
-		for(key: String, data: JSON) in self.data.dictionaryValue {
-			// Linked resources for compound documents
-			if key == "linked" {
-				for (linkedResourceType, linkedResources) in data.dictionaryValue {
-					for representation in linkedResources.array! {
-						self.deserializeSingleRepresentation(representation, withResourceType: linkedResourceType, linkTemplates: linkTemplates)
-					}
-				}
-				
-			} else if key != "links" && key != "meta" {
-				// Multiple resources
-				if let representations = data.array {
-					for representation in representations {
-						self.deserializeSingleRepresentation(representation, withResourceType: key, linkTemplates: linkTemplates)
-					}
-					
-					// Single resource
-				} else {
-					self.deserializeSingleRepresentation(data, withResourceType: key, linkTemplates: linkTemplates)
-				}
+		// Extract main resources
+		if let data = self.data["data"].array {
+			for representation in data {
+				deserializeSingleRepresentation(representation, linkTemplates: linkTemplates)
+			}
+		} else if let data = self.data["data"].dictionary {
+			deserializeSingleRepresentation(self.data["data"], linkTemplates: linkTemplates)
+		}
+		
+		// Extract linked resources
+		if let data = self.data["linked"].array {
+			for representation in data {
+				deserializeSingleRepresentation(representation, linkTemplates: linkTemplates)
 			}
 		}
 		
 		// Extract meta
-		self.extractMeta()
+		extractMeta()
 		
 		// Resolve relations in the store
-		self.resolveRelations()
+		resolveRelations()
 		
 		// Create a result
-		self.result = .Success(store: store, pagination: paginationData)
+		result = .Success(resources: resources, pagination: paginationData)
 	}
-	
-	/// Check if the given data is in the expected format
-	private func checkDataFormat() -> NSError? {
-		if (self.data.dictionary == nil) {
-			let error = NSError(domain: SPINE_ERROR_DOMAIN, code: 0, userInfo: [NSLocalizedDescriptionKey: "The given JSON representation was not as expected."])
-			return error
-		}
-		
-		return nil
-	}
-	
+
 	/**
 	Maps a single resource representation into a resource object of the given type.
 	
 	:param: representation The JSON representation of a single resource.
 	:param: resourceType   The type of resource onto which to map the representation.
 	*/
-	private func deserializeSingleRepresentation(representation: JSON, withResourceType resourceType: String, linkTemplates: JSON? = nil) {
+	private func deserializeSingleRepresentation(representation: JSON, linkTemplates: JSON? = nil) {
 		assert(representation.dictionary != nil, "The given JSON representation was not of type 'object' (dictionary).")
+		assert(representation["type"].string != nil, "The given JSON representation did not have a type.")
 		
-		// Find existing resource in the store, or create a new resource.
-		let resource: ResourceProtocol = store.dispenseResourceWithType(resourceType, id: representation["id"].stringValue, useFirst: options.mapOntoFirstResourceInStore)
+		// Dispense a resource
+		let resource = resourceFactory.dispense(representation["type"].string!, id: representation["id"].stringValue, pool: &resources)
 		
-		// Extract data into resource
-		self.extractID(representation, intoResource: resource)
-		self.extractHref(representation, intoResource: resource)
-		self.extractAttributes(representation, intoResource: resource)
-		self.extractRelationships(representation, intoResource: resource, linkTemplates: linkTemplates)
+		// Extract ID
+		resource.id = representation["id"].stringValue
+		assert(resource.id != "", "Cannot deserialize resource of type: \(resource.type). Serializated data must contain a primary key named 'id' which must be non-empty.")
+		
+		// Extract href
+		resource.URL = representation["links"]["self"].URL
+
+		// Extract data
+		extractAttributes(representation, intoResource: resource)
+		extractRelationships(representation, intoResource: resource, linkTemplates: linkTemplates)
 		
 		// Set loaded flag
 		resource.isLoaded = true
-	}
-
-	// MARK: Special attributes
-	
-	/**
-	Extracts the resource ID from the serialized data into the given resource.
-	
-	:param: serializedData The data from which to extract the ID.
-	:param: resource       The resource into which to extract the ID.
-	*/
-	private func extractID(serializedData: JSON, intoResource resource: ResourceProtocol) {
-		if serializedData["id"].stringValue != "" {
-			resource.id = serializedData["id"].stringValue
-		} else {
-			assertionFailure("Cannot deserialize resource of type: \(resource.type). Serializated data must contain a primary key named 'id'.")
-		}
-	}
-	
-	/**
-	Extracts the resource href from the serialized data into the given resource.
-	
-	:param: serializedData The data from which to extract the href.
-	:param: resource       The resource into which to extract the href.
-	*/
-	private func extractHref(serializedData: JSON, intoResource resource: ResourceProtocol) {
-		if let href = serializedData["href"].URL {
-			resource.href = href
-		}
 	}
 	
 	
@@ -148,16 +121,10 @@ class DeserializeOperation: NSOperation {
 	:param: resource       The resource into which to extract the attributes.
 	*/
 	private func extractAttributes(serializedData: JSON, intoResource resource: ResourceProtocol) {
-		for attribute in resource.attributes {
-			if isRelationship(attribute) {
-				continue
-			}
-			
-			let key = attribute.serializedName
-			
-			if let extractedValue: AnyObject = self.extractAttribute(serializedData, key: key) {
-				let formattedValue: AnyObject = self.transformers.deserialize(extractedValue, forAttribute: attribute)
-				resource[attribute.name] = formattedValue
+		for attribute in resource.attributes.filter({ $0 is RelationshipAttribute == false }) {
+			if let extractedValue: AnyObject = extractAttribute(serializedData, key: attribute.serializedName) {
+				let formattedValue: AnyObject = transformers.deserialize(extractedValue, forAttribute: attribute)
+				resource.setValue(formattedValue, forAttribute: attribute.name)
 			}
 		}
 	}
@@ -195,20 +162,14 @@ class DeserializeOperation: NSOperation {
 	*/
 	private func extractRelationships(serializedData: JSON, intoResource resource: ResourceProtocol, linkTemplates: JSON? = nil) {
 		for attribute in resource.attributes {
-			if !isRelationship(attribute) {
-				continue
-			}
-			
-			let key = attribute.serializedName
-			
 			switch attribute {
 			case let toOne as ToOneAttribute:
-				if let linkedResource = self.extractToOneRelationship(serializedData, key: key, linkedType: toOne.linkedType, resource: resource, linkTemplates: linkTemplates) {
-					resource[attribute.name] = linkedResource
+				if let linkedResource = extractToOneRelationship(serializedData, key: attribute.serializedName, linkedType: toOne.linkedType, resource: resource, linkTemplates: linkTemplates) {
+					resource.setValue(linkedResource, forAttribute: attribute.name)
 				}
 			case let toMany as ToManyAttribute:
-				if let linkedResources = self.extractToManyRelationship(serializedData, key: key, linkedType: toMany.linkedType, resource: resource, linkTemplates: linkTemplates) {
-					resource[attribute.name] = linkedResources
+				if let linkedResources = extractToManyRelationship(serializedData, key: attribute.serializedName, linkedType: toMany.linkedType, resource: resource, linkTemplates: linkTemplates) {
+					resource.setValue(linkedResources, forAttribute: attribute.name)
 				}
 			default: ()
 			}
@@ -226,59 +187,22 @@ class DeserializeOperation: NSOperation {
 	:returns: The extracted relationship or nil if no relationship with the given key was found in the data.
 	*/
 	private func extractToOneRelationship(serializedData: JSON, key: String, linkedType: String, resource: ResourceProtocol, linkTemplates: JSON? = nil) -> ResourceProtocol? {
-		// Resource level link with href/id/type combo
+		var resource: ResourceProtocol? = nil
+		
+		// Resource level link
 		if let linkData = serializedData["links"][key].dictionary {
-			var href: NSURL?, type: String, ID: String?
+			let type = linkData["type"]?.string ?? linkedType
+			let id = linkData["id"]?.stringValue
 			
-			if let rawHref = linkData["href"]?.string {
-				href = NSURL(string: rawHref)
+			resource = resourceFactory.dispense(type, id: id!, pool: &resources)
+			
+			if let resourceURL = linkData["resource"]?.stringValue {
+				resource!.URL = NSURL(string: resourceURL)
 			}
 			
-			if let rawType = linkData["type"]?.string {
-				type = rawType
-			} else {
-				type = linkedType
-			}
-			
-			if linkData["id"]?.stringValue != "" {
-				ID = linkData["id"]!.stringValue
-			}
-			
-			let resource = store.dispenseResourceWithType(type, id: ID)
-			resource.href = href
-			return resource
 		}
 		
-		// Resource level link with only an id
-		let ID = serializedData["links"][key].stringValue
-		if ID != "" {
-			return store.dispenseResourceWithType(linkedType, id: ID)
-		}
-		
-		// Document level link template
-		if let linkData = linkTemplates?[resource.type + "." + key].dictionary {
-			var href: NSURL?, type: String
-			
-			if let hrefTemplate = linkData["href"]?.string {
-				if let interpolatedHref = hrefTemplate.interpolate(serializedData.dictionaryObject! as NSDictionary, rootKeyPath: resource.type) {
-					href = NSURL(string: interpolatedHref)
-				} else {
-					assertionFailure("Could not interpolate href template: \(hrefTemplate) with values: \(serializedData.dictionaryObject!).")
-				}
-			}
-			
-			if let rawType = linkData["type"]?.string {
-				type = rawType
-			} else {
-				type = linkedType
-			}
-			
-			let resource = store.dispenseResourceWithType(type, id: ID)
-			resource.href = href
-			return resource
-		}
-		
-		return nil
+		return resource
 	}
 	
 	/**
@@ -292,86 +216,38 @@ class DeserializeOperation: NSOperation {
 	:returns: The extracted relationship or nil if no relationship with the given key was found in the data.
 	*/
 	private func extractToManyRelationship(serializedData: JSON, key: String, linkedType: String, resource: ResourceProtocol, linkTemplates: JSON? = nil) -> ResourceCollection? {
-		// Resource level link with href/id/type combo
+		var resourceCollection: ResourceCollection? = nil
+		
+		// Resource level link
 		if let linkData = serializedData["links"][key].dictionary {
-			var href: NSURL?, type: String, IDs: [String]?
+			var type: String = linkData["type"]?.string ?? linkedType
+			var ids: [String]? = linkData["ids"]?.array?.map { $0.stringValue }
+			var resourcesURL: NSURL? = linkData["resource"]?.URL
+			var linkURL: NSURL? = linkData["self"]?.URL
 			
-			if let rawHref = linkData["href"]?.string {
-				href = NSURL(string: rawHref)
-			}
-			
-			if let rawIDs = linkData["ids"]?.array {
-				IDs = rawIDs.map { $0.stringValue }
-				IDs?.filter { $0 != "" }
-			}
-			
-			if let rawType = linkData["type"]?.string {
-				type = rawType
-			} else {
-				type = linkedType
-			}
-			
-			return ResourceCollection(href: href, type: type, ids: IDs)
+			resourceCollection =  ResourceCollection(resourcesURL: resourcesURL, URL: linkURL, type: type, ids: ids)
 		}
 		
-		// Resource level link with only ids
-		if let rawIDs: [JSON] = serializedData["links"][key].array {
-			let IDs = rawIDs.map { $0.stringValue }
-			IDs.filter { return $0 != "" }
-			return ResourceCollection(href: nil, type: linkedType, ids: IDs)
-		}
-		
-		// Document level link template
-		if let linkData = linkTemplates?[resource.type + "." + key].dictionary {
-			var href: NSURL?, type: String, IDs: [String]?
-			
-			if let hrefTemplate = linkData["href"]?.string {
-				if let interpolatedHref = hrefTemplate.interpolate(serializedData.dictionaryObject! as NSDictionary, rootKeyPath: resource.type) {
-					href = NSURL(string: interpolatedHref)
-				} else {
-					assertionFailure("Error: Could not interpolate href template: \(hrefTemplate) with values \(serializedData.dictionaryObject!).")
-				}
-			}
-			
-			if let rawType = linkData["type"]?.string {
-				type = rawType
-			} else {
-				type = linkedType
-			}
-			
-			if let rawIDs = serializedData["links"][key].array {
-				IDs = rawIDs.map { return $0.stringValue }
-				IDs?.filter { return $0 != "" }
-			}
-			
-			return ResourceCollection(href: href, type: type, ids: IDs)
-		}
-		
-		return nil
+		return resourceCollection
 	}
 	
 	/**
 	Resolves the relations of the resources in the store.
 	*/
 	private func resolveRelations() {
-		for resource in self.store {
-			
+		for resource in resources {
 			for attribute in resource.attributes {
-				if !isRelationship(attribute) {
-					continue
-				}
 				
-				switch attribute {
-				case let toMany as ToManyAttribute:
-					if let linkedResource = resource[attribute.name] as? ResourceCollection {
-						var targetResources: [ResourceProtocol] = []
+				if let toManyAttribute = attribute as? ToManyAttribute {
+					if let linkedResource = resource.valueForAttribute(attribute.name) as? ResourceCollection {
 						
 						// We can only resolve if IDs are known
 						if let ids = linkedResource.ids {
+							var targetResources: [ResourceProtocol] = []
 							
 							for id in ids {
 								// Find target of relation in store
-								if let targetResource = store.objectWithType(linkedResource.type, identifier: id) {
+								if let targetResource = findResource(resources, linkedResource.type, id) {
 									targetResources.append(targetResource)
 								} else {
 									//println("Cannot resolve to-many link \(resource.type):\(resource.id!) - \(attribute.name) -> \(linkedResource.type):\(id) because the linked resource does not exist in the store.")
@@ -385,13 +261,10 @@ class DeserializeOperation: NSOperation {
 					} else {
 						//println("Cannot resolve to-many link \(resource.type):\(resource.id!) - \(attribute.name) -> ? because the link data is not fetched.")
 					}
-					
-				default: ()
 				}
 			}
 		}
 	}
-	
 	
 	// MARK: Meta
 	
