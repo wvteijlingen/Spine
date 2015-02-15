@@ -48,7 +48,7 @@ public class AlamofireClient: HTTPClientProtocol {
 	}
 
 	private func trace<T>(object: T) {
-		if self.traceEnabled {
+		if traceEnabled {
 			println(object)
 		}
 	}
@@ -79,6 +79,7 @@ extension AlamofireClient: _HTTPClientProtocol {
 		}
 	}
 	
+	// TODO: Move error handling out of networking component
 	private func performRequest(request: Request, callback: HTTPClientCallback) {
 		request.response { request, response, data, error in
 			var resolvedError: NSError?

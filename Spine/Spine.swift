@@ -89,7 +89,7 @@ public class Spine {
 				
 				switch deserializationResult {
 				case .Success(let resources, let paginationData):
-					let collection = ResourceCollection(findResourcesWithType(resources, query.resourceType), type: query.resourceType)
+					let collection = ResourceCollection(findResourcesWithType(resources, query.resourceType))
 					collection.paginationData = paginationData
 					promise.success(collection)
 				case .Failure(let error):
@@ -309,8 +309,8 @@ public class Spine {
 	}
 }
 
-// MARK: - Public functions
 
+// MARK: - Public functions
 
 /**
  *  Registering resource types
@@ -414,4 +414,15 @@ public extension Spine {
 		let query = queryCallback(Query(resource: resource))
 		return loadResourceByExecutingQuery(resource, query: query)
 	}
+}
+
+
+// MARK: - Utilities
+
+func findResourcesWithType<C: CollectionType where C.Generator.Element: ResourceProtocol>(domain: C, type: String) -> [C.Generator.Element] {
+	return filter(domain) { $0.type == type }
+}
+
+func findResource<C: CollectionType where C.Generator.Element: ResourceProtocol>(domain: C, type: String, id: String) -> C.Generator.Element? {
+	return filter(domain) { $0.type == type && $0.id == id }.first
 }

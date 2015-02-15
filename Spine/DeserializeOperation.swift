@@ -50,22 +50,19 @@ class DeserializeOperation: NSOperation {
 			return
 		}
 		
-		// Extract link templates
-		let linkTemplates: JSON? = self.data.dictionaryValue["links"]
-		
 		// Extract main resources
 		if let data = self.data["data"].array {
 			for representation in data {
-				deserializeSingleRepresentation(representation, linkTemplates: linkTemplates)
+				deserializeSingleRepresentation(representation)
 			}
 		} else if let data = self.data["data"].dictionary {
-			deserializeSingleRepresentation(self.data["data"], linkTemplates: linkTemplates)
+			deserializeSingleRepresentation(self.data["data"])
 		}
 		
 		// Extract linked resources
 		if let data = self.data["linked"].array {
 			for representation in data {
-				deserializeSingleRepresentation(representation, linkTemplates: linkTemplates)
+				deserializeSingleRepresentation(representation)
 			}
 		}
 		
@@ -85,7 +82,7 @@ class DeserializeOperation: NSOperation {
 	:param: representation The JSON representation of a single resource.
 	:param: resourceType   The type of resource onto which to map the representation.
 	*/
-	private func deserializeSingleRepresentation(representation: JSON, linkTemplates: JSON? = nil) {
+	private func deserializeSingleRepresentation(representation: JSON) {
 		assert(representation.dictionary != nil, "The given JSON representation was not of type 'object' (dictionary).")
 		assert(representation["type"].string != nil, "The given JSON representation did not have a type.")
 		
@@ -101,7 +98,7 @@ class DeserializeOperation: NSOperation {
 
 		// Extract data
 		extractAttributes(representation, intoResource: resource)
-		extractRelationships(representation, intoResource: resource, linkTemplates: linkTemplates)
+		extractRelationships(representation, intoResource: resource)
 		
 		// Set loaded flag
 		resource.isLoaded = true
@@ -160,15 +157,15 @@ class DeserializeOperation: NSOperation {
 	:param: serializedData The data from which to extract the relationships.
 	:param: resource       The resource into which to extract the relationships.
 	*/
-	private func extractRelationships(serializedData: JSON, intoResource resource: ResourceProtocol, linkTemplates: JSON? = nil) {
+	private func extractRelationships(serializedData: JSON, intoResource resource: ResourceProtocol) {
 		for attribute in resource.attributes {
 			switch attribute {
 			case let toOne as ToOneAttribute:
-				if let linkedResource = extractToOneRelationship(serializedData, key: attribute.serializedName, linkedType: toOne.linkedType, resource: resource, linkTemplates: linkTemplates) {
+				if let linkedResource = extractToOneRelationship(serializedData, key: attribute.serializedName, linkedType: toOne.linkedType, resource: resource) {
 					resource.setValue(linkedResource, forAttribute: attribute.name)
 				}
 			case let toMany as ToManyAttribute:
-				if let linkedResources = extractToManyRelationship(serializedData, key: attribute.serializedName, linkedType: toMany.linkedType, resource: resource, linkTemplates: linkTemplates) {
+				if let linkedResources = extractToManyRelationship(serializedData, key: attribute.serializedName, resource: resource) {
 					resource.setValue(linkedResources, forAttribute: attribute.name)
 				}
 			default: ()
@@ -186,15 +183,23 @@ class DeserializeOperation: NSOperation {
 	
 	:returns: The extracted relationship or nil if no relationship with the given key was found in the data.
 	*/
-	private func extractToOneRelationship(serializedData: JSON, key: String, linkedType: String, resource: ResourceProtocol, linkTemplates: JSON? = nil) -> ResourceProtocol? {
+	private func extractToOneRelationship(serializedData: JSON, key: String, linkedType: String, resource: ResourceProtocol) -> ResourceProtocol? {
 		var resource: ResourceProtocol? = nil
 		
-		// Resource level link
-		if let linkData = serializedData["links"][key].dictionary {
-			let type = linkData["type"]?.string ?? linkedType
-			let id = linkData["id"]?.stringValue
+		// Resource level link as a resource URL only.
+		if let linkedResourceURL = serializedData["links"][key].URL {
+			resource = resourceFactory.instantiate(linkedType)
+			resource?.URL = linkedResourceURL
 			
-			resource = resourceFactory.dispense(type, id: id!, pool: &resources)
+		// Resource level link as a link object. This might contain linkage in the form of type/id.
+		} else if let linkData = serializedData["links"][key].dictionary {
+			let type = linkData["type"]?.string ?? linkedType
+			
+			if let id = linkData["id"]?.stringValue {
+				resource = resourceFactory.dispense(type, id: id, pool: &resources)
+			} else {
+				resource = resourceFactory.instantiate(type)
+			}
 			
 			if let resourceURL = linkData["resource"]?.stringValue {
 				resource!.URL = NSURL(string: resourceURL)
@@ -215,17 +220,36 @@ class DeserializeOperation: NSOperation {
 	
 	:returns: The extracted relationship or nil if no relationship with the given key was found in the data.
 	*/
-	private func extractToManyRelationship(serializedData: JSON, key: String, linkedType: String, resource: ResourceProtocol, linkTemplates: JSON? = nil) -> ResourceCollection? {
+	private func extractToManyRelationship(serializedData: JSON, key: String, resource: ResourceProtocol) -> ResourceCollection? {
 		var resourceCollection: ResourceCollection? = nil
 		
-		// Resource level link
-		if let linkData = serializedData["links"][key].dictionary {
-			var type: String = linkData["type"]?.string ?? linkedType
-			var ids: [String]? = linkData["ids"]?.array?.map { $0.stringValue }
+		// Resource level link as a resource URL only.
+		if let linkedResourcesURL = serializedData["links"][key].URL {
+			resourceCollection = ResourceCollection(resourcesURL: linkedResourcesURL, URL: nil, composition: .Unknown, linkage: nil)
+		
+		// Resource level link as a link object. This might contain linkage in the form of type/id.
+		} else if let linkData = serializedData["links"][key].dictionary {
 			var resourcesURL: NSURL? = linkData["resource"]?.URL
 			var linkURL: NSURL? = linkData["self"]?.URL
 			
-			resourceCollection =  ResourceCollection(resourcesURL: resourcesURL, URL: linkURL, type: type, ids: ids)
+			// Homogenous
+			if let homogenousType = linkData["type"]?.string {
+				if let ids = linkData["ids"]?.array {
+					resourceCollection = ResourceCollection(resourcesURL: resourcesURL, URL: linkURL, homogenousType: homogenousType, linkage: ids.map { $0.stringValue })
+				}
+			
+			// Heterogenous
+			} else if let heterogenousTypes = linkData["data"]?.array {
+				let linkage = heterogenousTypes.map { (type: $0["type"].stringValue, id: $0["id"].stringValue) }
+				resourceCollection = ResourceCollection(resourcesURL: resourcesURL, URL: linkURL, composition: .Heterogenous, linkage: linkage)
+			}
+			
+			// Other
+			else {
+				resourceCollection = ResourceCollection(resourcesURL: resourcesURL, URL: linkURL, composition: .Unknown, linkage: nil)
+			}
+		} else {
+			assertionFailure("Could not extract resource level link object. Note: Links that specify only a `self` member are not supported.")
 		}
 		
 		return resourceCollection
@@ -241,13 +265,13 @@ class DeserializeOperation: NSOperation {
 				if let toManyAttribute = attribute as? ToManyAttribute {
 					if let linkedResource = resource.valueForAttribute(attribute.name) as? ResourceCollection {
 						
-						// We can only resolve if IDs are known
-						if let ids = linkedResource.ids {
+						// We can only resolve if the linkage is known
+						if let linkage = linkedResource.linkage {
 							var targetResources: [ResourceProtocol] = []
 							
-							for id in ids {
+							for link in linkage {
 								// Find target of relation in store
-								if let targetResource = findResource(resources, linkedResource.type, id) {
+								if let targetResource = findResource(resources, link.type, link.id) {
 									targetResources.append(targetResource)
 								} else {
 									//println("Cannot resolve to-many link \(resource.type):\(resource.id!) - \(attribute.name) -> \(linkedResource.type):\(id) because the linked resource does not exist in the store.")

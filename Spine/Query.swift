@@ -53,7 +53,13 @@ public struct Query<T: ResourceProtocol> {
 	
 	public init(linkedResourceCollection: ResourceCollection) {
 		self.URL = linkedResourceCollection.resourcesURL
-		self.resourceType = linkedResourceCollection.type
+		
+		switch linkedResourceCollection.composition {
+		case .Homogenous(let type):
+			self.resourceType = type
+		default:
+			assertionFailure("Query only supports homogenous collections.")
+		}
 	}
 	
 	public init(resourceType: T.Type, URLString: String) {
