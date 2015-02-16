@@ -89,7 +89,7 @@ public class Spine {
 				
 				switch deserializationResult {
 				case .Success(let resources, let paginationData):
-					let collection = ResourceCollection(resources)
+					let collection = ResourceCollection(resources: resources)
 					collection.paginationData = paginationData
 					promise.success(collection)
 				case .Failure(let error):
