@@ -9,21 +9,29 @@
 import Foundation
 import BrightFutures
 
-@objc public protocol Linkable {
-	var URL: NSURL? { get set }
-}
-
-@objc public protocol ResourceProtocol: class, Linkable {
+@objc public protocol ResourceProtocol: class {
+	/// The resource type in plural form.
     class var resourceType: String { get }
+	
+	/// The resource type in plural form.
     var type: String { get }
-    
+	
+	/// All attributes that must be persisted in the API.
     var attributes: [Attribute] { get }
-    
+	
+	/// The ID of the resource.
     var id: String? { get set }
+	
+	/// The self URL of the resource.
     var URL: NSURL? { get set }
+	
+	/// Whether the attributes of the resource are loaded.
     var isLoaded: Bool { get set }
 	
+	/// Returns the attribute value for the given key
 	func valueForAttribute(attribute: String) -> AnyObject?
+	
+	/// Sets the given attribute value for the given key
 	func setValue(value: AnyObject?, forAttribute: String)
 }
 
@@ -68,8 +76,12 @@ public class Resource: NSObject, NSCoding, ResourceProtocol {
 	}
 }
 
-extension Resource: Printable {
+extension Resource: Printable, DebugPrintable {
 	override public var description: String {
-		return "\(self.type)[\(self.id)]"
+		return "\(self.type)(\(self.id), \(self.URL))"
+	}
+	
+	override public var debugDescription: String {
+		return description
 	}
 }

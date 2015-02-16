@@ -10,8 +10,8 @@ import Foundation
 
 public struct Query<T: ResourceProtocol> {
 	
-	/// The type of resource to fetch.
-	var resourceType: String
+	/// The type of resource to fetch. This can be nil if in case of a expected heterogenous response.
+	var resourceType: String?
 	
 	/// The specific IDs the fetch.
 	var resourceIDs: [String]?
@@ -51,15 +51,8 @@ public struct Query<T: ResourceProtocol> {
 		self.resourceIDs = [resource.id!]
 	}
 	
-	public init(linkedResourceCollection: ResourceCollection) {
-		self.URL = linkedResourceCollection.resourcesURL
-		
-		switch linkedResourceCollection.composition {
-		case .Homogenous(let type):
-			self.resourceType = type
-		default:
-			assertionFailure("Query only supports homogenous collections.")
-		}
+	public init(resourceCollection: ResourceCollection) {
+		self.URL = resourceCollection.resourcesURL
 	}
 	
 	public init(resourceType: T.Type, URLString: String) {
@@ -213,10 +206,12 @@ public struct Query<T: ResourceProtocol> {
 	:returns: The query
 	*/
 	public mutating func restrictPropertiesTo(properties: String...) -> Query {
-		if var fields = fields[resourceType] {
+		assert(resourceType != nil, "Cannot restrict properties for query without resource type, use `restrictPropertiesOfResourceType` or set a resource type.")
+		
+		if var fields = fields[resourceType!] {
 			fields += properties
 		} else {
-			fields[resourceType] = properties
+			fields[resourceType!] = properties
 		}
 		
 		return self

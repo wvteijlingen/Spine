@@ -83,8 +83,8 @@
 			isa = PBXGroup;
 			children = (
 				D373F7A219B224BB00275AFC /* Resource.swift */,
-				D39929EA1A52F3A0008BF0A9 /* ResourceAttribute.swift */,
 				D35F9D3B1A52FCBB00E5FF97 /* ResourceCollection.swift */,
+				D39929EA1A52F3A0008BF0A9 /* ResourceAttribute.swift */,
 			);
 			name = Resource;
 			sourceTree = "<group>";

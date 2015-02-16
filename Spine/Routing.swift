@@ -38,19 +38,12 @@ class JSONAPIRouter: Router {
 		var URL: NSURL!
 		
 		// Base URL
-		if let baseURL = query.URL {
-			if baseURL.host == nil {
-				URL = NSURL(string: baseURL.absoluteString!, relativeToURL: self.baseURL)
-			} else {
-				URL = baseURL
-			}
+		if let queryURL = query.URL {
+			URL = NSURL(string: queryURL.absoluteString!, relativeToURL: self.baseURL)
+		} else if let type = query.resourceType {
+			URL = self.baseURL.URLByAppendingPathComponent(type, isDirectory: true)
 		} else {
-			URL = self.baseURL.URLByAppendingPathComponent(query.resourceType, isDirectory: true)
-		}
-		
-		// Resource IDs
-		if let IDs = query.resourceIDs {
-			URL = URL.URLByAppendingPathComponent(join(",", IDs), isDirectory: false)
+			assertionFailure("Cannot build URL for query. Query does not have a URL, nor a resource type.")
 		}
 		
 		var URLComponents = NSURLComponents(URL: URL, resolvingAgainstBaseURL: true)!
@@ -58,6 +51,12 @@ class JSONAPIRouter: Router {
 		
 		if let existingQueryItems = URLComponents.queryItems {
 			queryItems = existingQueryItems as [NSURLQueryItem]
+		}
+		
+		// Resource IDs
+		if let IDs = query.resourceIDs {
+			var item = NSURLQueryItem(name: "filter[id]", value: join(",", IDs))
+			self.setQueryItem(item, forQueryItems: &queryItems)
 		}
 		
 		// Includes
@@ -68,7 +67,7 @@ class JSONAPIRouter: Router {
 		
 		// Filters
 		for filter in query.filters {
-			var item = NSURLQueryItem(name: filter.leftExpression.keyPath, value: "\(filter.rightExpression.constantValue)")
+			var item = NSURLQueryItem(name: "filter[\(filter.leftExpression.keyPath)]", value: "\(filter.rightExpression.constantValue)")
 			self.setQueryItem(item, forQueryItems: &queryItems)
 		}
 		

@@ -9,119 +9,43 @@
 import Foundation
 import BrightFutures
 
-public class ResourceCollection: NSObject, NSCoding, Paginatable, Linkable {
-	public enum Composition {
-		case Unknown
-		case Homogenous(type: String)
-		case Heterogenous
-		
-		func toDictionary() -> NSDictionary {
-			switch self {
-			case .Unknown:
-				return ["Composition": "Unknown"]
-			case .Homogenous(let type):
-				return ["Composition": "Homogenous", "Type": type]
-			case .Heterogenous:
-				return ["Heterogenous": "Heterogenous"]
-			}
-		}
-		static func fromDictionary(dictionary: NSDictionary) -> Composition {
-			switch dictionary["Composition"] as String {
-			case "Homogenous":
-				return .Homogenous(type: dictionary["Type"] as String)
-			case "Heterogenous":
-				return .Heterogenous
-			default:
-				return .Unknown
-			}
-		}
-	}
-	
+public class ResourceCollection: NSObject, NSCoding, Paginatable {
 	/// Whether the resources for this collection are loaded
 	public var isLoaded: Bool
 	
-	public var composition: Composition = .Unknown
-	public var URL: NSURL?
+	/// The URL where the resources in this collection can be fetched
 	public var resourcesURL: NSURL?
-	public var linkage: [(type: String, id: String)]?
 	
 	/// The loaded resources
-	public private(set) var resources: [ResourceProtocol] = []
-	
-	/// Resources that are added to this collection
-	var addedResources: [ResourceProtocol] = []
-	
-	/// Resources that are removed from this collection
-	var removedResources: [ResourceProtocol] = []
+	public internal(set) var resources: [ResourceProtocol] = []
 	
 	var paginationData: PaginationData?
 	
-	
 	// MARK: Initializers
 	
-	public init(resourcesURL: NSURL? = nil, URL: NSURL? = nil, composition: Composition, linkage: [(type: String, id: String)]? = nil) {
+	public init(resourcesURL: NSURL? = nil, resources: [ResourceProtocol]) {
 		self.resourcesURL = resourcesURL
-		self.URL = URL
-		self.composition = composition
-		self.linkage = linkage
-		self.isLoaded = false
-	}
-	
-	public init(resourcesURL: NSURL? = nil, URL: NSURL? = nil, homogenousType: String, linkage: [String]? = nil) {
-		self.resourcesURL = resourcesURL
-		self.URL = URL
-		self.composition = .Homogenous(type: homogenousType )
-		self.linkage = linkage?.map { (type: homogenousType, id: $0) }
-		self.isLoaded = false
-	}
-	
-	public init(_ resources: [ResourceProtocol]) {
-		self.composition = .Unknown
 		self.resources = resources
-		self.isLoaded = true
+		self.isLoaded = false
 	}
 	
 	// MARK: NSCoding
 	
 	public required init(coder: NSCoder) {
 		isLoaded = coder.decodeBoolForKey("isLoaded")
-		composition = Composition.fromDictionary(coder.decodeObjectForKey("composition") as NSDictionary)
-		URL = coder.decodeObjectForKey("URL") as? NSURL
 		resourcesURL = coder.decodeObjectForKey("resourcesURL") as? NSURL
 		resources = coder.decodeObjectForKey("resources") as [ResourceProtocol]
-		addedResources = coder.decodeObjectForKey("addedResources") as [ResourceProtocol]
-		removedResources = coder.decodeObjectForKey("removedResources") as [ResourceProtocol]
 		
 		if let paginationData = coder.decodeObjectForKey("paginationData") as? NSDictionary {
 			self.paginationData = PaginationData.fromDictionary(paginationData)
-		}
-		
-		if let encodedLinkage = coder.decodeObjectForKey("linkage") as? [[String: String]] {
-			linkage = []
-			for linkageItem in encodedLinkage {
-				linkage!.append(type: linkageItem["type"]!, id: linkageItem["id"]!)
-			}
 		}
 	}
 	
 	public func encodeWithCoder(coder: NSCoder) {
 		coder.encodeBool(isLoaded, forKey: "isLoaded")
-		coder.encodeObject(URL, forKey: "URL")
 		coder.encodeObject(resourcesURL, forKey: "resourcesURL")
-		coder.encodeObject(composition.toDictionary(), forKey: "composition")
 		coder.encodeObject(resources, forKey: "resources")
-		coder.encodeObject(addedResources, forKey: "addedResources")
-		coder.encodeObject(removedResources, forKey: "removedResources")
 		coder.encodeObject(paginationData?.toDictionary(), forKey: "paginationData")
-		
-		if let linkage = linkage {
-			var encodedLinkage: [[String: String]] = [[:]]
-			for linkageItem in linkage {
-				encodedLinkage.append(["type": linkageItem.type, "id": linkageItem.id])
-			}
-			
-			coder.encodeObject(encodedLinkage, forKey: "linkage")
-		}
 	}
 	
 	// Subscript and count
@@ -131,63 +55,15 @@ public class ResourceCollection: NSObject, NSCoding, Paginatable, Linkable {
 	}
 	
 	public subscript (id: String) -> ResourceProtocol? {
-		let foundResources = self.resources.filter { resource in
-			return resource.id == id
-		}
-		
-		return foundResources.first
+		return resources.filter { $0.id == id }.first
 	}
 	
 	public var count: Int {
 		return resources.count
 	}
-	
-	// MARK: Mutators
+}
 
-	public func append(resource: ResourceProtocol) {
-		validateResourceAddition(resource)
-		
-		resources.append(resource)
-		addedResources.append(resource)
-		removedResources = removedResources.filter { $0 !== resource }
-	}
-	
-	public func remove(resource: ResourceProtocol) {
-		resources = resources.filter { $0 !== resource }
-		addedResources = addedResources.filter { $0 !== resource }
-		removedResources.append(resource)
-	}
-	
-	internal func addAsExisting(resource: ResourceProtocol) {
-		validateResourceAddition(resource)
-		
-		resources.append(resource)
-		removedResources = removedResources.filter { $0 !== resource }
-		addedResources = addedResources.filter { $0 !== resource }
-	}
-	
-	internal func fulfill(resources: [ResourceProtocol]) {
-		for resource in resources {
-			validateResourceAddition(resource)
-		}
-		
-		self.resources = resources
-		isLoaded = true
-	}
-	
-	internal func validateResourceAddition(resource: ResourceProtocol) -> Bool {
-		switch composition {
-		case .Homogenous(let type):
-			assert(resource.type == type, "Can not add resource with type \(resource.type) to a homogenous collection with type \(type).")
-			return false
-		default: ()
-			return true
-		}
-	}
-	
-	
-	// MARK: ifLoaded
-	
+extension ResourceCollection {
 	/**
 	Calls the passed callback if the resources are loaded.
 	
@@ -217,9 +93,9 @@ public class ResourceCollection: NSObject, NSCoding, Paginatable, Linkable {
 		
 		return self
 	}
-	
-	// MARK: Paginatable
-	
+}
+
+extension ResourceCollection: Paginatable {
 	public var canFetchNextPage: Bool {
 		return paginationData?.afterCursor != nil
 	}
@@ -265,6 +141,103 @@ extension ResourceCollection: SequenceType {
 	}
 }
 
+public class LinkedResourceCollection: ResourceCollection {
+	/// The self URL of this link.
+	public var URL: NSURL?
+	
+	/// The type/id pairs of resources present in this link.
+	public var linkage: [(type: String, id: String)]?
+	
+	/// Resources added to this linked collection, but not yet persisted.
+	var addedResources: [ResourceProtocol] = []
+	
+	/// Resources removed from this linked collection, but not yet persisted.
+	var removedResources: [ResourceProtocol] = []
+	
+	public required init() {
+		super.init(resourcesURL: nil, resources: [])
+	}
+	
+	public init(resourcesURL: NSURL? = nil, URL: NSURL? = nil, linkage: [(type: String, id: String)]? = nil) {
+		super.init(resourcesURL: resourcesURL, resources: [])
+		self.URL = URL
+		self.linkage = linkage
+	}
+	
+	public convenience init(resourcesURL: NSURL? = nil, URL: NSURL? = nil, homogenousType: String, linkage: [String]? = nil) {
+		self.init(resourcesURL: resourcesURL, URL: URL, linkage: linkage?.map { (type: homogenousType, id: $0) })
+	}
+	
+	public required init(coder: NSCoder) {
+		super.init(coder: coder)
+		URL = coder.decodeObjectForKey("URL") as? NSURL
+		addedResources = coder.decodeObjectForKey("addedResources") as [ResourceProtocol]
+		removedResources = coder.decodeObjectForKey("removedResources") as [ResourceProtocol]
+		
+		if let encodedLinkage = coder.decodeObjectForKey("linkage") as? [[String: String]] {
+			linkage = []
+			for linkageItem in encodedLinkage {
+				linkage!.append(type: linkageItem["type"]!, id: linkageItem["id"]!)
+			}
+		}
+	}
+	
+	public override func encodeWithCoder(coder: NSCoder) {
+		super.encodeWithCoder(coder)
+		coder.encodeObject(URL, forKey: "URL")
+		coder.encodeObject(addedResources, forKey: "addedResources")
+		coder.encodeObject(removedResources, forKey: "removedResources")
+		
+		if let linkage = linkage {
+			var encodedLinkage: [[String: String]] = [[:]]
+			for linkageItem in linkage {
+				encodedLinkage.append(["type": linkageItem.type, "id": linkageItem.id])
+			}
+			
+			coder.encodeObject(encodedLinkage, forKey: "linkage")
+		}
+	}
+	
+	// MARK: Mutators
+	
+	public func add(resource: ResourceProtocol) {
+		resources.append(resource)
+		addedResources.append(resource)
+		removedResources = removedResources.filter { $0 !== resource }
+	}
+	
+	public func remove(resource: ResourceProtocol) {
+		resources = resources.filter { $0 !== resource }
+		addedResources = addedResources.filter { $0 !== resource }
+		removedResources.append(resource)
+	}
+	
+	internal func addAsExisting(resource: ResourceProtocol) {
+		resources.append(resource)
+		removedResources = removedResources.filter { $0 !== resource }
+		addedResources = addedResources.filter { $0 !== resource }
+	}
+}
+
+extension LinkedResourceCollection: ExtensibleCollectionType {
+	public var startIndex: Int { return resources.startIndex }
+	public var endIndex: Int { return resources.endIndex }
+
+	public func reserveCapacity(n: Int) {
+		resources.reserveCapacity(n)
+	}
+	
+	public func append(newElement: ResourceProtocol) {
+		self.add(newElement)
+	}
+	
+	public func extend<S : SequenceType where S.Generator.Element == ResourceProtocol>(seq: S) {
+		for element in seq {
+			self.add(element)
+		}
+	}
+}
+
 
 // MARK: - Collection pagination
 
@@ -281,8 +254,10 @@ struct PaginationData {
 	var limit: Int?
 	var beforeCursor: String?
 	var afterCursor: String?
-	var nextHref: NSURL?
-	var previousHref: NSURL?
+	var firstURL: NSURL?
+	var lastURL: NSURL?
+	var nextURL: NSURL?
+	var previousURL: NSURL?
 	
 	func toDictionary() -> NSDictionary {
 		var dictionary = NSDictionary()
@@ -298,17 +273,22 @@ struct PaginationData {
 		if let beforeCursor = beforeCursor {
 			dictionary.setValue(beforeCursor, forKey: "beforeCursor")
 		}
-		
 		if let afterCursor = afterCursor {
 			dictionary.setValue(afterCursor, forKey: "afterCursor")
 		}
 		
-		if let nextHref = nextHref {
-			dictionary.setValue(nextHref, forKey: "nextHref")
+		if let firstURL = firstURL {
+			dictionary.setValue(firstURL, forKey: "firstURL")
+		}
+		if let lastURL = lastURL {
+			dictionary.setValue(lastURL, forKey: "lastURL")
 		}
 		
-		if let previousHref = previousHref {
-			dictionary.setValue(previousHref, forKey: "previousHref")
+		if let nextURL = nextURL {
+			dictionary.setValue(nextURL, forKey: "nextURL")
+		}
+		if let previousURL = previousURL {
+			dictionary.setValue(nextURL, forKey: "previousURL")
 		}
 		
 		return dictionary
@@ -320,8 +300,12 @@ struct PaginationData {
 			limit: (dictionary.valueForKey("limit") as? NSNumber)?.integerValue,
 			beforeCursor: dictionary.valueForKey("beforeCursor") as? String,
 			afterCursor: dictionary.valueForKey("afterCursor") as? String,
-			nextHref: dictionary.valueForKey("nextHref") as? NSURL,
-			previousHref: dictionary.valueForKey("previousHref") as? NSURL
+			
+			firstURL: dictionary.valueForKey("firstURL") as? NSURL,
+			lastURL: dictionary.valueForKey("lastURL") as? NSURL,
+			
+			nextURL: dictionary.valueForKey("nextURL") as? NSURL,
+			previousURL: dictionary.valueForKey("previousURL") as? NSURL
 		)
 	}
 }

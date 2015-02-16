@@ -89,7 +89,7 @@ public class Spine {
 				
 				switch deserializationResult {
 				case .Success(let resources, let paginationData):
-					let collection = ResourceCollection(findResourcesWithType(resources, query.resourceType))
+					let collection = ResourceCollection(resources)
 					collection.paginationData = paginationData
 					promise.success(collection)
 				case .Failure(let error):
@@ -186,7 +186,7 @@ public class Spine {
 					operations.append((relationship: attribute.serializedName, type: "replace", resources: [linkedResource]))
 				}
 			case let toMany as ToManyAttribute:
-				let linkedResources = resource.valueForAttribute(attribute.name) as ResourceCollection
+				let linkedResources = resource.valueForAttribute(attribute.name) as LinkedResourceCollection
 				operations.append((relationship: attribute.serializedName, type: "add", resources: linkedResources.addedResources))
 				operations.append((relationship: attribute.serializedName, type: "remove", resources: linkedResources.removedResources))
 			default: ()

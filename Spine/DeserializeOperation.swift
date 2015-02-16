@@ -26,7 +26,8 @@ class DeserializeOperation: NSOperation {
 	var result: DeserializationResult?
 	
 	// Private
-	private var resources: [ResourceProtocol] = []
+	private var extractedPrimaryResources: [ResourceProtocol] = []
+	private var resourcePool: [ResourceProtocol] = []
 	private var paginationData: PaginationData?
 	
 	init(data: NSData, resourceFactory: ResourceFactory) {
@@ -40,7 +41,7 @@ class DeserializeOperation: NSOperation {
 			assert(resource.isLoaded == false, "Cannot map onto loaded resource \(resource)")
 		}
 		
-		resources += targets
+		resourcePool += targets
 	}
 	
 	override func main() {
@@ -53,10 +54,10 @@ class DeserializeOperation: NSOperation {
 		// Extract main resources
 		if let data = self.data["data"].array {
 			for representation in data {
-				deserializeSingleRepresentation(representation)
+				extractedPrimaryResources.append(deserializeSingleRepresentation(representation))
 			}
 		} else if let data = self.data["data"].dictionary {
-			deserializeSingleRepresentation(self.data["data"])
+			extractedPrimaryResources.append(deserializeSingleRepresentation(self.data["data"]))
 		}
 		
 		// Extract linked resources
@@ -73,7 +74,7 @@ class DeserializeOperation: NSOperation {
 		resolveRelations()
 		
 		// Create a result
-		result = .Success(resources: resources, pagination: paginationData)
+		result = .Success(resources: extractedPrimaryResources, pagination: paginationData)
 	}
 
 	/**
@@ -82,12 +83,12 @@ class DeserializeOperation: NSOperation {
 	:param: representation The JSON representation of a single resource.
 	:param: resourceType   The type of resource onto which to map the representation.
 	*/
-	private func deserializeSingleRepresentation(representation: JSON) {
+	private func deserializeSingleRepresentation(representation: JSON) -> ResourceProtocol {
 		assert(representation.dictionary != nil, "The given JSON representation was not of type 'object' (dictionary).")
 		assert(representation["type"].string != nil, "The given JSON representation did not have a type.")
 		
 		// Dispense a resource
-		let resource = resourceFactory.dispense(representation["type"].string!, id: representation["id"].stringValue, pool: &resources)
+		let resource = resourceFactory.dispense(representation["type"].string!, id: representation["id"].stringValue, pool: &resourcePool)
 		
 		// Extract ID
 		resource.id = representation["id"].stringValue
@@ -102,6 +103,8 @@ class DeserializeOperation: NSOperation {
 		
 		// Set loaded flag
 		resource.isLoaded = true
+		
+		return resource
 	}
 	
 	
@@ -196,7 +199,7 @@ class DeserializeOperation: NSOperation {
 			let type = linkData["type"]?.string ?? linkedType
 			
 			if let id = linkData["id"]?.stringValue {
-				resource = resourceFactory.dispense(type, id: id, pool: &resources)
+				resource = resourceFactory.dispense(type, id: id, pool: &extractedPrimaryResources)
 			} else {
 				resource = resourceFactory.instantiate(type)
 			}
@@ -220,12 +223,12 @@ class DeserializeOperation: NSOperation {
 	
 	:returns: The extracted relationship or nil if no relationship with the given key was found in the data.
 	*/
-	private func extractToManyRelationship(serializedData: JSON, key: String, resource: ResourceProtocol) -> ResourceCollection? {
-		var resourceCollection: ResourceCollection? = nil
+	private func extractToManyRelationship(serializedData: JSON, key: String, resource: ResourceProtocol) -> LinkedResourceCollection? {
+		var resourceCollection: LinkedResourceCollection? = nil
 		
 		// Resource level link as a resource URL only.
 		if let linkedResourcesURL = serializedData["links"][key].URL {
-			resourceCollection = ResourceCollection(resourcesURL: linkedResourcesURL, URL: nil, composition: .Unknown, linkage: nil)
+			resourceCollection = LinkedResourceCollection(resourcesURL: linkedResourcesURL, URL: nil)
 		
 		// Resource level link as a link object. This might contain linkage in the form of type/id.
 		} else if let linkData = serializedData["links"][key].dictionary {
@@ -235,18 +238,18 @@ class DeserializeOperation: NSOperation {
 			// Homogenous
 			if let homogenousType = linkData["type"]?.string {
 				if let ids = linkData["ids"]?.array {
-					resourceCollection = ResourceCollection(resourcesURL: resourcesURL, URL: linkURL, homogenousType: homogenousType, linkage: ids.map { $0.stringValue })
+					resourceCollection = LinkedResourceCollection(resourcesURL: resourcesURL, URL: linkURL, homogenousType: homogenousType, linkage: ids.map { $0.stringValue })
 				}
 			
 			// Heterogenous
 			} else if let heterogenousTypes = linkData["data"]?.array {
 				let linkage = heterogenousTypes.map { (type: $0["type"].stringValue, id: $0["id"].stringValue) }
-				resourceCollection = ResourceCollection(resourcesURL: resourcesURL, URL: linkURL, composition: .Heterogenous, linkage: linkage)
+				resourceCollection = LinkedResourceCollection(resourcesURL: resourcesURL, URL: linkURL, linkage: linkage)
 			}
 			
 			// Other
 			else {
-				resourceCollection = ResourceCollection(resourcesURL: resourcesURL, URL: linkURL, composition: .Unknown, linkage: nil)
+				resourceCollection = LinkedResourceCollection(resourcesURL: resourcesURL, URL: linkURL)
 			}
 		} else {
 			assertionFailure("Could not extract resource level link object. Note: Links that specify only a `self` member are not supported.")
@@ -256,14 +259,14 @@ class DeserializeOperation: NSOperation {
 	}
 	
 	/**
-	Resolves the relations of the resources in the store.
+	Resolves the relations of the primary resources.
 	*/
 	private func resolveRelations() {
-		for resource in resources {
+		for resource in extractedPrimaryResources {
 			for attribute in resource.attributes {
 				
 				if let toManyAttribute = attribute as? ToManyAttribute {
-					if let linkedResource = resource.valueForAttribute(attribute.name) as? ResourceCollection {
+					if let linkedResource = resource.valueForAttribute(attribute.name) as? LinkedResourceCollection {
 						
 						// We can only resolve if the linkage is known
 						if let linkage = linkedResource.linkage {
@@ -271,14 +274,15 @@ class DeserializeOperation: NSOperation {
 							
 							for link in linkage {
 								// Find target of relation in store
-								if let targetResource = findResource(resources, link.type, link.id) {
+								if let targetResource = findResource(extractedPrimaryResources, link.type, link.id) {
 									targetResources.append(targetResource)
 								} else {
 									//println("Cannot resolve to-many link \(resource.type):\(resource.id!) - \(attribute.name) -> \(linkedResource.type):\(id) because the linked resource does not exist in the store.")
 								}
 							}
 							
-							linkedResource.fulfill(targetResources)
+							linkedResource.resources = targetResources
+							linkedResource.isLoaded = true
 						} else {
 							//println("Cannot resolve to-many link \(resource.type):\(resource.id!) - \(attribute.name) -> \(linkedResource.type):? because the foreign IDs are not known.")
 						}
@@ -293,22 +297,32 @@ class DeserializeOperation: NSOperation {
 	// MARK: Meta
 	
 	private func extractMeta() {
-		if let meta = self.data["meta"].dictionary {
+		if let meta = self.data["links"].dictionary {
 			var paginationData = PaginationData(
 				count: meta["count"]?.int,
 				limit: meta["limit"]?.int,
 				beforeCursor: meta["before_cursor"]?.string,
 				afterCursor: meta["after_cursor"]?.string,
-				nextHref: nil,
-				previousHref: nil
+				firstURL: nil,
+				lastURL: nil,
+				nextURL: nil,
+				previousURL: nil
 			)
 			
-			if let nextHref = meta["after_cursor"]?.string {
-				paginationData.nextHref = NSURL(string: nextHref)
+			if let firstURL = meta["first"]?.URL {
+				paginationData.firstURL = firstURL
 			}
 			
-			if let previousHref = meta["previous_cursor"]?.string {
-				paginationData.previousHref = NSURL(string: previousHref)
+			if let lastURL = meta["last"]?.URL {
+				paginationData.lastURL = lastURL
+			}
+			
+			if let nextURL = meta["next"]?.URL {
+				paginationData.nextURL = nextURL
+			}
+			
+			if let previousURL = meta["prev"]?.URL {
+				paginationData.previousURL = previousURL
 			}
 			
 			self.paginationData = paginationData
