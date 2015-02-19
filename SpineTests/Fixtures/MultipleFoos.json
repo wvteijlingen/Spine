@@ -1,0 +1,43 @@
+{
+	"data": [{
+		"id": 1,
+		"type": "foos",
+		"stringAttribute": "stringAttributeValue",
+		"integerAttribute": 10,
+		"floatAttribute": 5.5,
+		"booleanAttribute": true,
+		"nilAttribute": null,
+		"dateAttribute": "1970-01-01T01:00:00+01:00",
+		"links": {
+			"self": "http://example.com/foos/1",
+			"toOneAttribute": {
+				"self": "http://example.com/foos/1/links/toOneAttribute",
+				"resource": "http://example.com/bars/1"
+			},
+			"toManyAttribute": {
+				"self": "http://example.com/foos/1/links/toManyAttribute",
+				"resource": "http://example.com/bars/1/bars"
+			}
+		}
+	}, {
+		"id": 2,
+		"type": "foos",
+		"stringAttribute": "stringAttributeValue",
+		"integerAttribute": 10,
+		"floatAttribute": 5.5,
+		"booleanAttribute": true,
+		"nilAttribute": null,
+		"dateAttribute": "1970-01-01T01:00:00+01:00",
+		"links": {
+			"self": "http://example.com/foos/1",
+			"toOneAttribute": {
+				"self": "http://example.com/foos/1/links/toOneAttribute",
+				"resource": "http://example.com/bars/1"
+			},
+			"toManyAttribute": {
+				"self": "http://example.com/foos/1/links/toManyAttribute",
+				"resource": "http://example.com/bars/1/bars"
+			}
+		}
+	}]
+}

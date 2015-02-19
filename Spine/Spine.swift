@@ -29,10 +29,10 @@ public class Spine {
 	}
 	
 	/// The router that builds the URLs for requests.
-	private var router: Router = JSONAPIRouter()
+	var router: Router = JSONAPIRouter()
 	
 	/// The HTTPClient that performs the HTTP requests.
-	private var HTTPClient: _HTTPClientProtocol = AlamofireClient()
+	var HTTPClient: _HTTPClientProtocol = URLSessionClient()
 	
 	/// The public facing HTTPClient
 	public var client: HTTPClientProtocol {
@@ -345,31 +345,73 @@ public extension Spine {
  *  Finding resources
  */
 public extension Spine {
-
-	// Find one
-	func findOne<T: ResourceProtocol>(ID: String, ofType type: T.Type) -> Future<T> {
-		let query = Query(resourceType: type, resourceIDs: [ID])
-		return findOne(query)
-	}
-
-	// Find multiple
+	/**
+	Fetch multiple resources with the given IDs and type.
+	
+	:test: SpineTests.testFindByIDAndType
+	
+	:param: IDs  IDs of resources to fetch.
+	:param: type The type of resource to fetch.
+	
+	:returns: A future that resolves to a ResourceCollection that contains the fetched resources.
+	*/
 	func find<T: ResourceProtocol>(IDs: [String], ofType type: T.Type) -> Future<ResourceCollection> {
 		let query = Query(resourceType: type, resourceIDs: IDs)
 		return fetchResourcesByExecutingQuery(query)
 	}
 
-	// Find all
+	/**
+	Fetch all resources with the given type.
+	This does not explicitly impose any limit, but the server may choose to limit the response.
+	
+	:test: SpineTests.testFindByType
+	
+	:param: type The type of resource to fetch.
+	
+	:returns: A future that resolves to a ResourceCollection that contains the fetched resources.
+	*/
 	func find<T: ResourceProtocol>(type: T.Type) -> Future<ResourceCollection> {
 		let query = Query(resourceType: type)
 		return fetchResourcesByExecutingQuery(query)
 	}
-
-	// Find by query
+	
+	/**
+	Fetch one resource with the given ID and type.
+	
+	:test: SpineTests.testFindOneByIDAndType
+	
+	:param: ID   ID of resource to fetch.
+	:param: type The type of resource to fetch.
+	
+	:returns: A future that resolves to the fetched resource.
+	*/
+	func findOne<T: ResourceProtocol>(ID: String, ofType type: T.Type) -> Future<T> {
+		let query = Query(resourceType: type, resourceIDs: [ID])
+		return findOne(query)
+	}
+	
+	/**
+	Fetch multiple resources using the given query..
+	
+	// :test: SpineTests.testFindByQuery
+	
+	:param: query The query describing which resources to fetch.
+	
+	:returns: A future that resolves to a ResourceCollection that contains the fetched resources.
+	*/
 	func find<T: ResourceProtocol>(query: Query<T>) -> Future<ResourceCollection> {
 		return fetchResourcesByExecutingQuery(query)
 	}
 
-	// Find one by query
+	/**
+	Fetch one resource using the given query..
+	
+	:test: SpineTests.testFindOneByQuery
+	
+	:param: query The query describing which resource to fetch.
+	
+	:returns: A future that resolves to the fetched resource.
+	*/
 	func findOne<T: ResourceProtocol>(query: Query<T>) -> Future<T> {
 		let promise = Promise<T>()
 		

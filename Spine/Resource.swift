@@ -43,11 +43,22 @@ public class Resource: NSObject, NSCoding, ResourceProtocol {
 	public class var resourceType: String {
 		fatalError("Override resourceType in a subclass.")
 	}
-    public var type: String { return self.dynamicType.resourceType }
-    
+	
+    public var type: String {
+		return self.dynamicType.resourceType
+	}
+	
+	public var attributes: [Attribute] {
+		return []
+	}
+	
 	public var id: String?
 	public var URL: NSURL?
 	public var isLoaded: Bool = false
+	
+	public override init() {
+		
+	}
 	
 	public required init(coder: NSCoder) {
 		super.init()
@@ -68,11 +79,6 @@ public class Resource: NSObject, NSCoding, ResourceProtocol {
 	
 	public func setValue(value: AnyObject?, forAttribute attribute: String) {
 		setValue(value, forKey: attribute)
-	}
-	
-	/// Array of attributes that must be mapped by Spine.
-	public var attributes: [Attribute] {
-		return []
 	}
 }
 

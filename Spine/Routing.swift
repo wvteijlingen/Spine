@@ -17,23 +17,29 @@ protocol Router {
 	func URLForQuery<T: ResourceProtocol>(query: Query<T>) -> NSURL
 }
 
+// :test: RoutingTests
 class JSONAPIRouter: Router {
+	// :test: RoutingTests.testSetBaseURL
 	var baseURL: NSURL! = nil
-	
+
+	// :test: RoutingTests.testSetBaseURL
 	func URLForResourceType(type: String) -> NSURL {
 		return baseURL.URLByAppendingPathComponent(type)
 	}
 	
+	// :test: RoutingTests.URLForRelationship
 	func URLForRelationship(relationship: String, ofResource resource: ResourceProtocol) -> NSURL {
 		assert(resource.id != nil, "Cannot build URL for relationship for resource without id: \(resource)")
 		return URLForResourceType(resource.type).URLByAppendingPathComponent("/\(resource.id!)/links/\(relationship)")
 	}
 	
+	// :test: RoutingTests.testURLForRelationshipWithIDs
 	func URLForRelationship(relationship: String, ofResource resource: ResourceProtocol, ids: [String]) -> NSURL {
 		var URL = URLForRelationship(relationship, ofResource: resource)
 		return URL.URLByAppendingPathComponent(",".join(ids))
 	}
 	
+	// :test: RoutingTests.testURLForQuery
 	func URLForQuery<T: ResourceProtocol>(query: Query<T>) -> NSURL {
 		var URL: NSURL!
 		
@@ -55,8 +61,12 @@ class JSONAPIRouter: Router {
 		
 		// Resource IDs
 		if let IDs = query.resourceIDs {
-			var item = NSURLQueryItem(name: "filter[id]", value: join(",", IDs))
-			self.setQueryItem(item, forQueryItems: &queryItems)
+			if IDs.count == 1 {
+				URLComponents.path = URLComponents.path?.stringByAppendingPathComponent(IDs.first!)
+			} else {
+				var item = NSURLQueryItem(name: "filter[id]", value: join(",", IDs))
+				self.setQueryItem(item, forQueryItems: &queryItems)
+			}
 		}
 		
 		// Includes

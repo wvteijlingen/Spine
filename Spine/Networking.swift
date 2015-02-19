@@ -7,12 +7,15 @@
 //
 
 import Foundation
-import Alamofire
 
 typealias HTTPClientCallback = (statusCode: Int?, responseData: NSData?, error: NSError?) -> Void
 
-enum HTTPClientRequestMethod {
-	case GET, POST, PUT, PATCH, DELETE
+enum HTTPClientRequestMethod: String {
+	case GET = "GET"
+	case POST = "POST"
+	case PUT = "PUT"
+	case PATCH = "PATCH"
+	case DELETE = "DELETE"
 }
 
 public protocol HTTPClientProtocol {
@@ -26,62 +29,46 @@ protocol _HTTPClientProtocol: HTTPClientProtocol {
 	func request(method: HTTPClientRequestMethod, URL: NSURL, payload: [String : AnyObject]?, callback: HTTPClientCallback)
 }
 
-public class AlamofireClient: HTTPClientProtocol {
-	var alamofireManager: Alamofire.Manager
+public class URLSessionClient: _HTTPClientProtocol {
+	let urlSession: NSURLSession
 	var traceEnabled = false
 	
 	init() {
 		let configuration = NSURLSessionConfiguration.defaultSessionConfiguration()
-		configuration.HTTPAdditionalHeaders = Alamofire.Manager.defaultHTTPHeaders()
-		
-		alamofireManager = Alamofire.Manager(configuration: configuration)
-		
+		urlSession = NSURLSession(configuration: configuration)
 		setHeader("Content-Type", to: "application/vnd.api+json")
 	}
 	
 	public func setHeader(header: String, to value: String) {
-		alamofireManager.session.configuration.HTTPAdditionalHeaders?.updateValue(value, forKey: header)
+		urlSession.configuration.HTTPAdditionalHeaders?.updateValue(value, forKey: header)
 	}
 	
 	public func removeHeader(header: String) {
-		alamofireManager.session.configuration.HTTPAdditionalHeaders?.removeValueForKey(header)
+		urlSession.configuration.HTTPAdditionalHeaders?.removeValueForKey(header)
 	}
-
-	private func trace<T>(object: T) {
-		if traceEnabled {
-			println(object)
-		}
-	}
-}
-
-extension AlamofireClient: _HTTPClientProtocol {
+	
 	func request(method: HTTPClientRequestMethod, URL: NSURL, callback: HTTPClientCallback) {
 		return request(method, URL: URL, payload: nil, callback: callback)
 	}
 	
+	// TODO: Move JSON serializing out of networking component
 	func request(method: HTTPClientRequestMethod, URL: NSURL, payload: [String : AnyObject]?, callback: HTTPClientCallback) {
-		switch method {
-		case .GET:
-			trace("⬆️ GET:  \(URL)")
-			return performRequest(alamofireManager.request(.GET, URL, parameters: payload, encoding: .JSON), callback: callback)
-		case .POST:
-			trace("⬆️ POST: \(URL)")
-			return performRequest(alamofireManager.request(.POST, URL, parameters: payload, encoding: .JSON), callback: callback)
-		case .PUT:
-			trace("⬆️ PUT:  \(URL)")
-			return performRequest(alamofireManager.request(.PUT, URL, parameters: payload, encoding: .JSON), callback: callback)
-		case .PATCH:
-			trace("⬆️ PAT:  \(URL)")
-			return performRequest(alamofireManager.request(.PATCH, URL, parameters: payload, encoding: .JSON), callback: callback)
-		case .DELETE:
-			trace("⬆️ DEL:  \(URL)")
-			return performRequest(alamofireManager.request(.DELETE, URL, parameters: payload, encoding: .JSON), callback: callback)
+		let request = NSMutableURLRequest(URL: URL)
+		request.HTTPMethod = method.rawValue
+		
+		if let payload = payload {
+			request.HTTPBody = NSJSONSerialization.dataWithJSONObject(payload, options: NSJSONWritingOptions(0), error: nil)
 		}
+		
+		trace("⬆️ \(method.rawValue):  \(URL)")
+		
+		performRequest(request, callback: callback)
 	}
 	
 	// TODO: Move error handling out of networking component
-	private func performRequest(request: Request, callback: HTTPClientCallback) {
-		request.response { request, response, data, error in
+	private func performRequest(request: NSURLRequest, callback: HTTPClientCallback) {
+		let task = urlSession.dataTaskWithRequest(request) { data, response, error in
+			let response = (response as NSHTTPURLResponse)
 			var resolvedError: NSError?
 			
 			// Framework error
@@ -90,16 +77,24 @@ extension AlamofireClient: _HTTPClientProtocol {
 				resolvedError = NSError(domain: SPINE_ERROR_DOMAIN, code: error.code, userInfo: error.userInfo)
 				
 				// Success
-			} else if 200 ... 299 ~= response!.statusCode {
-				self.trace("✅ \(response!.statusCode):  \(request.URL)")
+			} else if 200 ... 299 ~= response.statusCode {
+				self.trace("✅ \(response.statusCode):  \(request.URL)")
 				
 				// API Error
 			} else {
-				self.trace("❌ \(response!.statusCode):  \(request.URL)")
-				resolvedError = NSError(domain: SPINE_API_ERROR_DOMAIN, code: response!.statusCode, userInfo: nil)
+				self.trace("❌ \(response.statusCode):  \(request.URL)")
+				resolvedError = NSError(domain: SPINE_API_ERROR_DOMAIN, code: response.statusCode, userInfo: nil)
 			}
 			
-			callback(statusCode: response?.statusCode, responseData: data as? NSData, error: resolvedError)
+			callback(statusCode: response.statusCode, responseData: data, error: resolvedError)
+		}
+		
+		task.resume()
+	}
+	
+	private func trace<T>(object: T) {
+		if traceEnabled {
+			println(object)
 		}
 	}
 }
