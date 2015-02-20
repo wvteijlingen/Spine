@@ -8,7 +8,6 @@
 
 import Foundation
 import XCTest
-import Spine
 import SwiftyJSON
 
 class SerializingTests: XCTestCase {

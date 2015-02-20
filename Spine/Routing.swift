@@ -77,6 +77,7 @@ class JSONAPIRouter: Router {
 		
 		// Filters
 		for filter in query.filters {
+			assert(filter.predicateOperatorType == .EqualToPredicateOperatorType, "JSONAPIRouter only supports Query filter expressions of type 'equalTo'")
 			var item = NSURLQueryItem(name: "filter[\(filter.leftExpression.keyPath)]", value: "\(filter.rightExpression.constantValue)")
 			self.setQueryItem(item, forQueryItems: &queryItems)
 		}

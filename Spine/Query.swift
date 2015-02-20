@@ -20,10 +20,10 @@ public struct Query<T: ResourceProtocol> {
 	internal var URL: NSURL?
 
 	// Query parts
-	internal var includes: [String] = []
-	internal var filters: [NSComparisonPredicate] = []
-	internal var fields: [String: [String]] = [:]
-	internal var sortDescriptors: [NSSortDescriptor] = []
+	public internal(set) var includes: [String] = []
+	public internal(set) var filters: [NSComparisonPredicate] = []
+	public internal(set) var fields: [String: [String]] = [:]
+	public internal(set) var sortDescriptors: [NSSortDescriptor] = []
 	
 	// Pagination parts
 	internal var page: Int?
@@ -84,12 +84,12 @@ public struct Query<T: ResourceProtocol> {
 	:returns: The query
 	*/
 	public mutating func removeInclude(relations: String...) -> Query {
-		includes.filter { !contains(relations, $0) }
+		includes = includes.filter { !contains(relations, $0) }
 		return self
 	}
 	
 	
-	// MARK: Where filtering
+	// MARK: Predicate filtering
 	
 	private mutating func addPredicateWithKey(key: String, value: String, type: NSPredicateOperatorType) {
 		let predicate = NSComparisonPredicate(
@@ -99,8 +99,15 @@ public struct Query<T: ResourceProtocol> {
 			type: type,
 			options: NSComparisonPredicateOptions.allZeros)
 		
+		addPredicate(predicate)
+	}
+	
+	public mutating func addPredicate(predicate: NSComparisonPredicate) {
 		filters.append(predicate)
 	}
+	
+	
+	// MARK: Convenience filtering
 	
 	/**
 	Adds a filter where the given property should be equal to the given value.
