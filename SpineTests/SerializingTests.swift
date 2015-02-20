@@ -87,14 +87,14 @@ class SerializingTests: XCTestCase {
 			// To one link
 			XCTAssertNotNil(foo.toOneAttribute, "Deserialized linked resource should not be nil.")
 			let bar = foo.toOneAttribute!
-			XCTAssertEqual(bar.URL!.absoluteString!, json["links"]["toOneAttribute"]["resource"].stringValue, "Deserialized link URL is not equal.")
+			XCTAssertEqual(bar.URL!.absoluteString!, json["data"]["links"]["toOneAttribute"]["resource"].stringValue, "Deserialized link URL is not equal.")
 			XCTAssertFalse(bar.isLoaded, "Deserialized link isLoaded is not false.")
 			
 			// To many link
 			XCTAssertNotNil(foo.toManyAttribute, "Deserialized linked resources should not be nil.")
 			let barCollection = foo.toManyAttribute!
-			XCTAssertEqual(barCollection.URL!.absoluteString!, json["links"]["toManyAttribute"]["self"].stringValue, "Deserialized link URL is not equal.")
-			XCTAssertEqual(barCollection.resourcesURL!.absoluteString!, json["links"]["toManyAttribute"]["resource"].stringValue, "Deserialized resource URL is not equal.")
+			XCTAssertEqual(barCollection.URL!.absoluteString!, json["data"]["links"]["toManyAttribute"]["self"].stringValue, "Deserialized link URL is not equal.")
+			XCTAssertEqual(barCollection.resourcesURL!.absoluteString!, json["data"]["links"]["toManyAttribute"]["resource"].stringValue, "Deserialized resource URL is not equal.")
 			XCTAssertFalse(barCollection.isLoaded, "Deserialized link isLoaded is not false.")
 			
 		default: ()
