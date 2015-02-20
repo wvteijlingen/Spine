@@ -56,14 +56,14 @@ class RoutingTests: XCTestCase {
 	func testURLForQuery() {
 		var query = Query(resourceType: Foo.self, resourceIDs: ["1", "2"])
 		query = query.whereProperty("equalProperty", equalTo: "equalValue")
-		query = query.whereProperty("greaterThanProperty", greaterThan: "greaterThanValue")
-		query = query.whereProperty("greaterThanOrEqualToProperty", greaterThanOrEqualTo: "greaterThanOrEqualToValue")
-		query = query.whereProperty("lessThanProperty", lessThan: "lessThanValue")
-		query = query.whereProperty("lessThanOrEqualToProperty", lessThanOrEqualTo: "lessThanOrEqualToValue")
-		query = query.whereProperty("notEqualToProperty", notEqualTo: "notEqualToValue")
+//		query = query.whereProperty("greaterThanProperty", greaterThan: "greaterThanValue")
+//		query = query.whereProperty("greaterThanOrEqualToProperty", greaterThanOrEqualTo: "greaterThanOrEqualToValue")
+//		query = query.whereProperty("lessThanProperty", lessThan: "lessThanValue")
+//		query = query.whereProperty("lessThanOrEqualToProperty", lessThanOrEqualTo: "lessThanOrEqualToValue")
+//		query = query.whereProperty("notEqualToProperty", notEqualTo: "notEqualToValue")
 		
 		let URL = spine.router.URLForQuery(query)
-		let expectedURL = NSURL(string: "http://example.com/foos/?filter[id]=1,2&filter[equalProperty]=equalValue&filter[greaterThanProperty]=greaterThanValue&filter[greaterThanOrEqualToProperty]=greaterThanOrEqualToValue&filter[lessThanProperty]=lessThanValue&filter[lessThanOrEqualToProperty]=lessThanOrEqualToValue&filter[notEqualToProperty]=notEqualToValue")!
+		let expectedURL = NSURL(string: "http://example.com/foos/?filter[id]=1,2&filter[equalProperty]=equalValue")!
 		
 		XCTAssertEqual(URL, expectedURL, "URL not as expected.")
 	}
