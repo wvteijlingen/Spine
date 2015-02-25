@@ -8,6 +8,16 @@
 
 import Foundation
 import XCTest
+import SwiftyJSON
+
+func compareAttributesOfFooResource(foo: Foo, withJSON json: JSON) {
+	XCTAssertEqual(foo.stringAttribute!, json["stringAttribute"].stringValue, "Deserialized string attribute is not equal.")
+	XCTAssertEqual(foo.integerAttribute!, json["integerAttribute"].intValue, "Deserialized integer attribute is not equal.")
+	XCTAssertEqual(foo.floatAttribute!, json["floatAttribute"].floatValue, "Deserialized float attribute is not equal.")
+	XCTAssertEqual(foo.booleanAttribute!, json["integerAttribute"].boolValue, "Deserialized boolean attribute is not equal.")
+	XCTAssertNil(foo.nilAttribute, "Deserialized nil attribute is not equal.")
+	XCTAssertEqual(foo.dateAttribute!, NSDate(timeIntervalSince1970: 0), "Deserialized date attribute is not equal.")
+}
 
 extension XCTestCase {
 	var testBundle: NSBundle {
@@ -20,6 +30,8 @@ public class CallbackHTTPClient: _HTTPClientProtocol {
 	
 	var handler: HandlerFunction!
 	var traceEnabled = false
+	let queue = dispatch_queue_create("com.wardvanteijlingen.spine.callbackHTTPClient", nil)
+	var delay: NSTimeInterval = 0
 	
 	init() {}
 	
@@ -44,29 +56,34 @@ public class CallbackHTTPClient: _HTTPClientProtocol {
 			request.HTTPBody = NSJSONSerialization.dataWithJSONObject(payload, options: NSJSONWritingOptions(0), error: nil)
 		}
 		
-		trace("⬆️ \(method.rawValue):  \(URL)")
+		trace("⬆️ \(method.rawValue): \(URL)")
 		
 		// Perform the request
-		let (data, statusCode, error) = handler(request: request, rawPayload: payload)
-		var resolvedError: NSError?
-		
-		// Framework error
-		if let error = error {
-			self.trace("❌ Err:  \(request.URL) - \(error.localizedDescription)")
-			resolvedError = NSError(domain: SPINE_ERROR_DOMAIN, code: error.code, userInfo: error.userInfo)
+		dispatch_async(queue) {
+			let (data, statusCode, error) = self.handler(request: request, rawPayload: payload)
+			let startTime = dispatch_time(DISPATCH_TIME_NOW, Int64(self.delay * Double(NSEC_PER_SEC)))
 			
-			// Success
-		} else if 200 ... 299 ~= statusCode {
-			self.trace("✅ \(statusCode):  \(request.URL)")
-			
-			// API Error
-		} else {
-			self.trace("❌ \(statusCode):  \(request.URL)")
-			resolvedError = NSError(domain: SPINE_API_ERROR_DOMAIN, code: statusCode, userInfo: nil)
+			dispatch_after(startTime, dispatch_get_main_queue()) {
+				var resolvedError: NSError?
+				
+				// Framework error
+				if let error = error {
+					self.trace("❌ Err:  \(request.URL) - \(error.localizedDescription)")
+					resolvedError = NSError(domain: SPINE_ERROR_DOMAIN, code: error.code, userInfo: error.userInfo)
+					
+					// Success
+				} else if 200 ... 299 ~= statusCode {
+					self.trace("✅ \(statusCode):  \(request.URL)")
+					
+					// API Error
+				} else {
+					self.trace("❌ \(statusCode):  \(request.URL)")
+					resolvedError = NSError(domain: SPINE_API_ERROR_DOMAIN, code: statusCode, userInfo: nil)
+				}
+				
+				callback(statusCode: statusCode, responseData: data, error: resolvedError)
+			}
 		}
-		
-		callback(statusCode: statusCode, responseData: data, error: resolvedError)
-		
 	}
 	
 	private func trace<T>(object: T) {

@@ -7,6 +7,8 @@
 //
 
 import Foundation
+import XCTest
+import SwiftyJSON
 
 class Foo: Resource {
 	dynamic var stringAttribute: String?

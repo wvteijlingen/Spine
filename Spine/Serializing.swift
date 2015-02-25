@@ -80,9 +80,9 @@ class JSONSerializer: SerializerProtocol {
 	:returns: A NSError deserialized from the given data.
 	*/
 	func deserializeError(data: NSData, withResonseStatus responseStatus: Int) -> NSError {
-		let json = JSON(data as NSData!)
+		let json = JSON(data: data as NSData!)
 		
-		let code = json["errors"][0]["id"].int ?? responseStatus
+		let code = json["errors"][0]["code"].int ?? responseStatus
 		
 		var userInfo: [String : AnyObject]?
 		
@@ -145,28 +145,19 @@ struct ResourceFactory {
 		return factoryFunctions[type]!()
 	}
 	
-	func dispense(type: String, id: String, inout pool: [ResourceProtocol]) -> ResourceProtocol {
-		var resource: ResourceProtocol
-		var isExistingResource: Bool
+	func dispense(type: String, id: String, inout pool: [ResourceProtocol], index: Int? = nil) -> ResourceProtocol {
+		var resource: ResourceProtocol! = findResource(pool, type, id)
 		
-		if let existingResource = findResource(pool, type, id) {
-			resource = existingResource
-			isExistingResource = true
-			
-		} else if let existingResource = findResourcesWithType(pool, type).first {
-			resource = existingResource
-			isExistingResource = true
-			
-		} else {
+		if resource == nil && index != nil && !isEmpty(pool) && (pool.count - 1) <= index! {
+			resource = findResourcesWithType(pool, type)[index!]
+		}
+		
+		if resource == nil {
 			resource = instantiate(type)
 			resource.id = id
-			isExistingResource = false
-		}
-		
-		if !isExistingResource {
 			pool.append(resource)
 		}
-		
+
 		return resource
 	}
 }

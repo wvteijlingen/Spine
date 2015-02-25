@@ -1,0 +1,21 @@
+{
+   "errors": [{
+      "title": "First error title",
+      "detail": "First error detail.",
+      "id": null,
+      "href": null,
+      "code": 100,
+      "path": null,
+      "links": null,
+      "status": "first_error_status"
+   }, {
+      "title": "Second error title",
+      "detail": "Second error detail.",
+      "id": null,
+      "href": null,
+      "code": 500,
+      "path": null,
+      "links": null,
+      "status": "second_error_status"
+   }]
+}

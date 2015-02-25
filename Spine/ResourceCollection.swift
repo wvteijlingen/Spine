@@ -26,7 +26,7 @@ public class ResourceCollection: NSObject, NSCoding, Paginatable {
 	public init(resourcesURL: NSURL? = nil, resources: [ResourceProtocol]) {
 		self.resourcesURL = resourcesURL
 		self.resources = resources
-		self.isLoaded = false
+		self.isLoaded = !isEmpty(resources)
 	}
 	
 	// MARK: NSCoding
@@ -54,8 +54,8 @@ public class ResourceCollection: NSObject, NSCoding, Paginatable {
 		return resources[index]
 	}
 	
-	public subscript (id: String) -> ResourceProtocol? {
-		return resources.filter { $0.id == id }.first
+	public subscript (type: String, id: String) -> ResourceProtocol? {
+		return resources.filter { $0.id == id && $0.type == type }.first
 	}
 	
 	public var count: Int {

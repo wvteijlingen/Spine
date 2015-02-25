@@ -468,3 +468,36 @@ func findResourcesWithType<C: CollectionType where C.Generator.Element: Resource
 func findResource<C: CollectionType where C.Generator.Element: ResourceProtocol>(domain: C, type: String, id: String) -> C.Generator.Element? {
 	return filter(domain) { $0.type == type && $0.id == id }.first
 }
+
+// Compare linkage tuples
+func == (left: (String, String), right: (String, String)) -> Bool {
+	return (left.0 == right.0) && (left.1 == right.1)
+}
+
+// Compare resources based on type and id
+public func == <T: ResourceProtocol> (left: T, right: T) -> Bool {
+	return (left.id == right.id) && (left.type == right.type)
+}
+
+// Compare array of resources based on type and id
+public func == <T: ResourceProtocol> (left: [T], right: [T]) -> Bool {
+	if left.count != right.count {
+		return false
+	}
+	
+	for (index, resource) in enumerate(left) {
+		if (resource.type != right[index].type) || (resource.id != right[index].id) {
+			return false
+		}
+	}
+	
+	return true
+}
+
+public func unloadResource(resource: ResourceProtocol) {
+	for attribute in resource.attributes {
+		resource.setValue(nil, forAttribute: attribute.name)
+	}
+	
+	resource.isLoaded = false
+}

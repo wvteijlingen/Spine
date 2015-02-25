@@ -92,9 +92,9 @@ class JSONAPIRouter: Router {
 		if query.sortDescriptors.count != 0 {
 			let descriptorStrings = query.sortDescriptors.map { descriptor -> String in
 				if descriptor.ascending {
-					return "+\(descriptor.key)"
+					return "+\(descriptor.key!)"
 				} else {
-					return "-\(descriptor.key)"
+					return "-\(descriptor.key!)"
 				}
 			}
 			

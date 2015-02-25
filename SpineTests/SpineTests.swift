@@ -15,17 +15,17 @@ class SpineTests: XCTestCase {
 	var HTTPClient: CallbackHTTPClient!
 	
     override func setUp() {
-        super.setUp()
+		super.setUp()
 		spine = Spine(baseURL: NSURL(string:"http://example.com")!)
 		HTTPClient = CallbackHTTPClient()
 		spine.HTTPClient = HTTPClient
 		spine.registerResource(Foo.resourceType) { Foo() }
 		spine.registerResource(Bar.resourceType) { Bar() }
-    }
+	}
     
-    override func tearDown() {
-        super.tearDown()
-    }
+	override func tearDown() {
+		super.tearDown()
+	}
 	
 	func testFindByIDAndType() {
 		let path = testBundle.URLForResource("MultipleFoos", withExtension: "json")!
@@ -37,15 +37,64 @@ class SpineTests: XCTestCase {
 			return (responseData: data, statusCode: 200, error: nil)
 		}
 		
+		let expectation = expectationWithDescription("testFindByIDAndType")
+		
 		spine.find(["1","2"], ofType: Foo.self).onSuccess { fooCollection in
+			expectation.fulfill()
 			for (index, resource) in enumerate(fooCollection) {
 				XCTAssertEqual(fooCollection.count, 2, "Deserialized resources count not equal.")
 				XCTAssert(resource is Foo, "Deserialized resource should be of class 'Foo'.")
 				let foo = resource as Foo
-				self.compareAttributesOfFooResource(foo, withJSON: json["data"][index])
+				compareAttributesOfFooResource(foo, withJSON: json["data"][index])
 			}
+		}.onFailure { error in
+			expectation.fulfill()
+			XCTFail("Find failed with error: \(error).")
+		}
+		
+		waitForExpectationsWithTimeout(10) { error in
+			XCTAssertNil(error, "\(error)")
 		}
 	}
+
+//	func testFindByIDAndTypeWithAPIError() {
+//		let path = testBundle.URLForResource("MultipleFoos", withExtension: "json")!
+//		let data = NSData(contentsOfURL: path)!
+//		let json = JSON(data: data)
+//		
+//		HTTPClient.handler = { (request: NSURLRequest, rawPayload: [String : AnyObject]?) -> (responseData: NSData, statusCode: Int, error: NSError?) in
+//			return (responseData:data, statusCode: 404, error: nil)
+//		}
+//		
+//		var failure = false
+//		
+//		spine.find(["1","2"], ofType: Foo.self).onSuccess { fooCollection in
+//			XCTFail("Expected success callback to not be called.")
+//		}.onFailure { error in
+//			failure = true
+//		}
+//		
+//		XCTAssertTrue(failure, "Expected failure callback to be called")
+//	}
+//	
+//	func testFindByIDAndTypeWithNetworkError() {
+//		HTTPClient.handler = { (request: NSURLRequest, rawPayload: [String : AnyObject]?) -> (responseData: NSData, statusCode: Int, error: NSError?) in
+//			let networkError = NSError()
+//			return (responseData: NSData(), statusCode: 404, error: networkError)
+//		}
+//		
+//		var failure = false
+//		
+//		spine.find(["1","2"], ofType: Foo.self).onSuccess { fooCollection in
+//			XCTFail("Expected success callback to not be called.")
+//		}.onFailure { error in
+//			failure = true
+//			
+//			
+//		}
+//		
+//		XCTAssertTrue(failure, "Expected failure callback to be called")
+//	}
 	
 	func testFindByType() {
 		let path = testBundle.URLForResource("MultipleFoos", withExtension: "json")!
@@ -57,13 +106,23 @@ class SpineTests: XCTestCase {
 			return (responseData: data, statusCode: 200, error: nil)
 		}
 		
+		let expectation = expectationWithDescription("testFindByType")
+		
 		spine.find(Foo.self).onSuccess { fooCollection in
+			expectation.fulfill()
 			for (index, resource) in enumerate(fooCollection) {
 				XCTAssertEqual(fooCollection.count, 2, "Deserialized resources count not equal.")
 				XCTAssert(resource is Foo, "Deserialized resource should be of class 'Foo'.")
 				let foo = resource as Foo
-				self.compareAttributesOfFooResource(foo, withJSON: json["data"][index])
+				compareAttributesOfFooResource(foo, withJSON: json["data"][index])
 			}
+		}.onFailure { error in
+			expectation.fulfill()
+			XCTFail("Find failed with error: \(error).")
+		}
+		
+		waitForExpectationsWithTimeout(10) { error in
+			XCTAssertNil(error, "\(error)")
 		}
 	}
     
@@ -77,11 +136,20 @@ class SpineTests: XCTestCase {
 			return (responseData: data, statusCode: 200, error: nil)
 		}
 		
+		let expectation = expectationWithDescription("testFindOneByIDAndType")
+		
 		spine.findOne("1", ofType: Foo.self).onSuccess { foo in
-			self.compareAttributesOfFooResource(foo, withJSON: json["data"])
+			expectation.fulfill()
+			compareAttributesOfFooResource(foo, withJSON: json["data"])
+		}.onFailure { error in
+			expectation.fulfill()
+			XCTFail("Find failed with error: \(error).")
+		}
+		
+		waitForExpectationsWithTimeout(10) { error in
+			XCTAssertNil(error, "\(error)")
 		}
     }
-
 	
 	func testFindOneByQuery() {
 		let path = testBundle.URLForResource("SingleFoo", withExtension: "json")!
@@ -94,9 +162,18 @@ class SpineTests: XCTestCase {
 		}
 		
 		let query = Query(resourceType: Foo.self, resourceIDs: ["1"])
+		let expectation = expectationWithDescription("testFindOneByQuery")
 		
 		spine.findOne(query).onSuccess { foo in
-			self.compareAttributesOfFooResource(foo, withJSON: json["data"])
+			expectation.fulfill()
+			compareAttributesOfFooResource(foo, withJSON: json["data"])
+		}.onFailure { error in
+			expectation.fulfill()
+			XCTFail("Find failed with error: \(error).")
+		}
+		
+		waitForExpectationsWithTimeout(10) { error in
+			XCTAssertNil(error, "\(error)")
 		}
 	}
 	
@@ -111,24 +188,23 @@ class SpineTests: XCTestCase {
 		}
 		
 		let query = Query(resourceType: Foo.self, resourceIDs: ["1", "2"])
+		let expectation = expectationWithDescription("testFindByQuery")
 		
 		spine.find(query).onSuccess { fooCollection in
+			expectation.fulfill()
 			for (index, resource) in enumerate(fooCollection) {
 				XCTAssertEqual(fooCollection.count, 2, "Deserialized resources count not equal.")
 				XCTAssert(resource is Foo, "Deserialized resource should be of class 'Foo'.")
 				let foo = resource as Foo
-				self.compareAttributesOfFooResource(foo, withJSON: json["data"][index])
+				compareAttributesOfFooResource(foo, withJSON: json["data"][index])
 			}
+		}.onFailure { error in
+			expectation.fulfill()
+			XCTFail("Find failed with error: \(error).")
+		}
+		
+		waitForExpectationsWithTimeout(10) { error in
+			XCTAssertNil(error, "\(error)")
 		}
 	}
-	
-	func compareAttributesOfFooResource(foo: Foo, withJSON json: JSON) {
-		XCTAssertEqual(foo.stringAttribute!, json["stringAttribute"].stringValue, "Deserialized string attribute is not equal.")
-		XCTAssertEqual(foo.integerAttribute!, json["integerAttribute"].intValue, "Deserialized integer attribute is not equal.")
-		XCTAssertEqual(foo.floatAttribute!, json["floatAttribute"].floatValue, "Deserialized float attribute is not equal.")
-		XCTAssertEqual(foo.booleanAttribute!, json["integerAttribute"].boolValue, "Deserialized boolean attribute is not equal.")
-		XCTAssertNil(foo.nilAttribute, "Deserialized nil attribute is not equal.")
-		XCTAssertEqual(foo.dateAttribute!, NSDate(timeIntervalSince1970: 0), "Deserialized date attribute is not equal.")
-	}
-	
 }

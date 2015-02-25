@@ -1,6 +1,6 @@
 {
 	"data": [{
-		"id": 1,
+		"id": "1",
 		"type": "foos",
 		"stringAttribute": "stringAttributeValue",
 		"integerAttribute": 10,
@@ -16,11 +16,11 @@
 			},
 			"toManyAttribute": {
 				"self": "http://example.com/foos/1/links/toManyAttribute",
-				"resource": "http://example.com/bars/1/bars"
+				"resource": "http://example.com/foos/1/bars"
 			}
 		}
 	}, {
-		"id": 2,
+		"id": "2",
 		"type": "foos",
 		"stringAttribute": "stringAttributeValue",
 		"integerAttribute": 10,
@@ -36,7 +36,7 @@
 			},
 			"toManyAttribute": {
 				"self": "http://example.com/foos/1/links/toManyAttribute",
-				"resource": "http://example.com/bars/1/bars"
+				"resource": "http://example.com/foos/1/bars"
 			}
 		}
 	}]

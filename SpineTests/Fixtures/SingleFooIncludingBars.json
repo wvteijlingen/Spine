@@ -23,5 +23,24 @@
 				"ids": ["11", "12"]
 			}
 		}
-	}
+	},
+	"linked": [{
+		"id": "10",
+		"type": "bars",
+		"links": {
+			"self": "http://example.com/bars/10"
+		}
+	}, {
+		"id": "11",
+		"type": "bars",
+		"links": {
+			"self": "http://example.com/bars/11"
+		}
+	}, {
+		"id": "12",
+		"type": "bars",
+		"links": {
+			"self": "http://example.com/bars/12"
+		}
+	}]
 }

@@ -30,10 +30,14 @@ class DeserializeOperation: NSOperation {
 	private var resourcePool: [ResourceProtocol] = []
 	private var paginationData: PaginationData?
 	
+	// MARK: Initializers
+	
 	init(data: NSData, resourceFactory: ResourceFactory) {
 		self.data = JSON(data: data)
 		self.resourceFactory = resourceFactory
 	}
+	
+	// MARK: Mapping targets
 	
 	func addMappingTargets(targets: [ResourceProtocol]) {
 		// We can only map onto resources that are not loaded yet
@@ -44,6 +48,8 @@ class DeserializeOperation: NSOperation {
 		resourcePool += targets
 	}
 	
+	// MARK: NSOperation
+	
 	override func main() {
 		// Check if the given data is in the expected format
 		if (data.dictionary == nil) {
@@ -51,7 +57,7 @@ class DeserializeOperation: NSOperation {
 			return
 		}
 		
-		// Extract main resources
+		// Extract main resources. The are added to the `extractedPrimaryResources` so we can return them separate from the entire resource pool.
 		if let data = self.data["data"].array {
 			for representation in data {
 				extractedPrimaryResources.append(deserializeSingleRepresentation(representation))
@@ -76,7 +82,10 @@ class DeserializeOperation: NSOperation {
 		// Create a result
 		result = .Success(resources: extractedPrimaryResources, pagination: paginationData)
 	}
-
+	
+	
+	// MARK: Deserializing
+	
 	/**
 	Maps a single resource representation into a resource object of the given type.
 	
@@ -84,18 +93,24 @@ class DeserializeOperation: NSOperation {
 	:param: resourceType   The type of resource onto which to map the representation.
 	*/
 	private func deserializeSingleRepresentation(representation: JSON) -> ResourceProtocol {
-		assert(representation.dictionary != nil, "The given JSON representation was not of type 'object' (dictionary).")
-		assert(representation["type"].string != nil, "The given JSON representation did not have a type.")
+		assert(representation.dictionary != nil, "The given JSON representation is not an object (dictionary/hash).")
+		
+		let type: String! = representation["type"].string
+		let id: String! = representation["id"].string
+		
+		assert(type != nil, "The given JSON representation does have a type.")
+		assert(id != nil, "The given JSON representation does not have an id.")
 		
 		// Dispense a resource
-		let resource = resourceFactory.dispense(representation["type"].string!, id: representation["id"].stringValue, pool: &resourcePool)
+		let resource = resourceFactory.dispense(type, id: id, pool: &resourcePool, index: 0)
 		
 		// Extract ID
-		resource.id = representation["id"].stringValue
-		assert(resource.id != "", "Cannot deserialize resource of type: \(resource.type). Serializated data must contain a primary key named 'id' which must be non-empty.")
+		resource.id = representation["id"].string
 		
-		// Extract href
-		resource.URL = representation["links"]["self"].URL
+		// Extract self link
+		if let URL = representation["links"]["self"].URL {
+			resource.URL = URL
+		}
 
 		// Extract data
 		extractAttributes(representation, intoResource: resource)
@@ -164,12 +179,12 @@ class DeserializeOperation: NSOperation {
 		for attribute in resource.attributes {
 			switch attribute {
 			case let toOne as ToOneAttribute:
-				if let linkedResource = extractToOneRelationship(serializedData, key: attribute.serializedName, linkedType: toOne.linkedType, resource: resource) {
-					resource.setValue(linkedResource, forAttribute: attribute.name)
+				if let linkedResource = extractToOneRelationship(serializedData, key: toOne.serializedName, linkedType: toOne.linkedType, resource: resource) {
+					resource.setValue(linkedResource, forAttribute: toOne.name)
 				}
 			case let toMany as ToManyAttribute:
-				if let linkedResources = extractToManyRelationship(serializedData, key: attribute.serializedName, resource: resource) {
-					resource.setValue(linkedResources, forAttribute: attribute.name)
+				if let linkedResourceCollection = extractToManyRelationship(serializedData, key: toMany.serializedName, resource: resource) {
+					resource.setValue(linkedResourceCollection, forAttribute: toMany.name)
 				}
 			default: ()
 			}
@@ -195,17 +210,18 @@ class DeserializeOperation: NSOperation {
 			resource?.URL = linkedResourceURL
 			
 		// Resource level link as a link object. This might contain linkage in the form of type/id.
-		} else if let linkData = serializedData["links"][key].dictionary {
-			let type = linkData["type"]?.string ?? linkedType
+		} else if serializedData["links"][key].dictionary != nil{
+			let linkData = serializedData["links"][key]
+			let type = linkData["type"].string ?? linkedType
 			
-			if let id = linkData["id"]?.stringValue {
-				resource = resourceFactory.dispense(type, id: id, pool: &extractedPrimaryResources)
+			if let id = linkData["id"].string {
+				resource = resourceFactory.dispense(type, id: id, pool: &resourcePool)
 			} else {
 				resource = resourceFactory.instantiate(type)
 			}
 			
-			if let resourceURL = linkData["resource"]?.stringValue {
-				resource!.URL = NSURL(string: resourceURL)
+			if let resourceURL = linkData["resource"].URL {
+				resource!.URL = resourceURL
 			}
 			
 		}
@@ -231,19 +247,20 @@ class DeserializeOperation: NSOperation {
 			resourceCollection = LinkedResourceCollection(resourcesURL: linkedResourcesURL, URL: nil)
 		
 		// Resource level link as a link object. This might contain linkage in the form of type/id.
-		} else if let linkData = serializedData["links"][key].dictionary {
-			var resourcesURL: NSURL? = linkData["resource"]?.URL
-			var linkURL: NSURL? = linkData["self"]?.URL
+		} else if serializedData["links"][key].dictionary != nil {
+			let linkData = serializedData["links"][key]
+			let resourcesURL: NSURL? = linkData["resource"].URL
+			let linkURL: NSURL? = linkData["self"].URL
 			
 			// Homogenous
-			if let homogenousType = linkData["type"]?.string {
-				if let ids = linkData["ids"]?.array {
+			if let homogenousType = linkData["type"].string {
+				if let ids = linkData["ids"].array {
 					resourceCollection = LinkedResourceCollection(resourcesURL: resourcesURL, URL: linkURL, homogenousType: homogenousType, linkage: ids.map { $0.stringValue })
 				}
 			
 			// Heterogenous
-			} else if let heterogenousTypes = linkData["data"]?.array {
-				let linkage = heterogenousTypes.map { (type: $0["type"].stringValue, id: $0["id"].stringValue) }
+			} else if let heterogenousLinkage = linkData["data"].array {
+				let linkage = heterogenousLinkage.map { (type: $0["type"].stringValue, id: $0["id"].stringValue) }
 				resourceCollection = LinkedResourceCollection(resourcesURL: resourcesURL, URL: linkURL, linkage: linkage)
 			}
 			
@@ -251,8 +268,6 @@ class DeserializeOperation: NSOperation {
 			else {
 				resourceCollection = LinkedResourceCollection(resourcesURL: resourcesURL, URL: linkURL)
 			}
-		} else {
-			assertionFailure("Could not extract resource level link object. Note: Links that specify only a `self` member are not supported.")
 		}
 		
 		return resourceCollection
@@ -262,7 +277,7 @@ class DeserializeOperation: NSOperation {
 	Resolves the relations of the primary resources.
 	*/
 	private func resolveRelations() {
-		for resource in extractedPrimaryResources {
+		for resource in resourcePool {
 			for attribute in resource.attributes {
 				
 				if let toManyAttribute = attribute as? ToManyAttribute {
@@ -274,15 +289,17 @@ class DeserializeOperation: NSOperation {
 							
 							for link in linkage {
 								// Find target of relation in store
-								if let targetResource = findResource(extractedPrimaryResources, link.type, link.id) {
+								if let targetResource = findResource(resourcePool, link.type, link.id) {
 									targetResources.append(targetResource)
 								} else {
 									//println("Cannot resolve to-many link \(resource.type):\(resource.id!) - \(attribute.name) -> \(linkedResource.type):\(id) because the linked resource does not exist in the store.")
 								}
 							}
 							
-							linkedResource.resources = targetResources
-							linkedResource.isLoaded = true
+							if !isEmpty(targetResources) {
+								linkedResource.resources = targetResources
+								linkedResource.isLoaded = true
+							}
 						} else {
 							//println("Cannot resolve to-many link \(resource.type):\(resource.id!) - \(attribute.name) -> \(linkedResource.type):? because the foreign IDs are not known.")
 						}

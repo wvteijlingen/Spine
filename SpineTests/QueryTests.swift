@@ -11,6 +11,38 @@ import XCTest
 
 class QueryTests: XCTestCase {
 	
+	func testInitWithResourceTypeAndIDs() {
+		var query = Query(resourceType: Foo.self, resourceIDs: ["1", "2", "3"])
+		XCTAssertEqual(query.resourceType!, Foo.resourceType, "Resource type not as expected")
+		XCTAssertEqual(query.resourceIDs!, ["1", "2", "3"], "Resource IDs type not as expected")
+	}
+	
+	func testInitWithResource() {
+		let foo = Foo()
+		foo.id = "5"
+		
+		let query = Query(resource: foo)
+		
+		XCTAssertEqual(query.resourceType!, foo.type, "Resource type not as expected")
+		XCTAssertEqual(query.resourceIDs!, [foo.id!], "Resource IDs type not as expected")
+	}
+	
+//	func testInitWithResourceCollection() {
+//		let URL = NSURL(string: "http://example.com/foos")!
+//		let collection = ResourceCollection(resourcesURL: URL, resources: [])
+//		let query = Query(resourceCollection: collection)
+//	
+//		XCTAssertEqual(query.URL!, collection.resourceURL, "URL not as expected")
+//	}
+	
+	func testInitWithResourceTypeAndURLString() {
+		let URLString = "http://example.com/foos"
+		let query = Query(resourceType: Foo.self, URLString: URLString)
+		
+		XCTAssertEqual(query.URL!, NSURL(string: URLString)!, "URL not as expected")
+		XCTAssertEqual(query.resourceType!, Foo.resourceType, "Resource type not as expected")
+	}
+	
 	func testInclude() {
 		var query = Query(resourceType: Foo.self)
 		
@@ -149,6 +181,24 @@ class QueryTests: XCTestCase {
 		query.restrictPropertiesOfResourceType("bars", to: "firstProperty", "secondProperty")
 		
 		XCTAssertEqual(query.fields, ["bars": ["firstProperty", "secondProperty"]], "Fields not as expected")
+	}
+	
+	func testAddAscendingOrder() {
+		var query = Query(resourceType: Foo.self)
+		query.addAscendingOrder("orderKey")
+		
+		let sortDescriptor = NSSortDescriptor(key: "orderKey", ascending: true)
+		
+		XCTAssertEqual(query.sortDescriptors, [sortDescriptor], "Sort descriptors not as expected")
+	}
+	
+	func testAddDescendingOrder() {
+		var query = Query(resourceType: Foo.self)
+		query.addDescendingOrder("orderKey")
+		
+		let sortDescriptor = NSSortDescriptor(key: "orderKey", ascending: false)
+		
+		XCTAssertEqual(query.sortDescriptors, [sortDescriptor], "Sort descriptors not as expected")
 	}
 	
 }
