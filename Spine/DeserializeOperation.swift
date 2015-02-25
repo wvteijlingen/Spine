@@ -59,11 +59,11 @@ class DeserializeOperation: NSOperation {
 		
 		// Extract main resources. The are added to the `extractedPrimaryResources` so we can return them separate from the entire resource pool.
 		if let data = self.data["data"].array {
-			for representation in data {
-				extractedPrimaryResources.append(deserializeSingleRepresentation(representation))
+			for (index, representation) in enumerate(data) {
+				extractedPrimaryResources.append(deserializeSingleRepresentation(representation, mappingTargetIndex: index))
 			}
 		} else if let data = self.data["data"].dictionary {
-			extractedPrimaryResources.append(deserializeSingleRepresentation(self.data["data"]))
+			extractedPrimaryResources.append(deserializeSingleRepresentation(self.data["data"], mappingTargetIndex: 0))
 		}
 		
 		// Extract linked resources
@@ -92,7 +92,7 @@ class DeserializeOperation: NSOperation {
 	:param: representation The JSON representation of a single resource.
 	:param: resourceType   The type of resource onto which to map the representation.
 	*/
-	private func deserializeSingleRepresentation(representation: JSON) -> ResourceProtocol {
+	private func deserializeSingleRepresentation(representation: JSON, mappingTargetIndex: Int? = nil) -> ResourceProtocol {
 		assert(representation.dictionary != nil, "The given JSON representation is not an object (dictionary/hash).")
 		
 		let type: String! = representation["type"].string
@@ -102,7 +102,7 @@ class DeserializeOperation: NSOperation {
 		assert(id != nil, "The given JSON representation does not have an id.")
 		
 		// Dispense a resource
-		let resource = resourceFactory.dispense(type, id: id, pool: &resourcePool, index: 0)
+		let resource = resourceFactory.dispense(type, id: id, pool: &resourcePool, index: mappingTargetIndex)
 		
 		// Extract ID
 		resource.id = representation["id"].string

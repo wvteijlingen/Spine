@@ -148,8 +148,11 @@ struct ResourceFactory {
 	func dispense(type: String, id: String, inout pool: [ResourceProtocol], index: Int? = nil) -> ResourceProtocol {
 		var resource: ResourceProtocol! = findResource(pool, type, id)
 		
-		if resource == nil && index != nil && !isEmpty(pool) && (pool.count - 1) <= index! {
-			resource = findResourcesWithType(pool, type)[index!]
+		if resource == nil && index != nil && !isEmpty(pool) {
+			let applicableResources = findResourcesWithType(pool, type)
+			if index! < applicableResources.count {
+				resource = applicableResources[index!]
+			}
 		}
 		
 		if resource == nil {
