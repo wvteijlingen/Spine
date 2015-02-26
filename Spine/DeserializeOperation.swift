@@ -30,12 +30,14 @@ class DeserializeOperation: NSOperation {
 	private var resourcePool: [ResourceProtocol] = []
 	private var paginationData: PaginationData?
 	
+	
 	// MARK: Initializers
 	
 	init(data: NSData, resourceFactory: ResourceFactory) {
 		self.data = JSON(data: data)
 		self.resourceFactory = resourceFactory
 	}
+	
 	
 	// MARK: Mapping targets
 	
@@ -47,6 +49,7 @@ class DeserializeOperation: NSOperation {
 		
 		resourcePool += targets
 	}
+	
 	
 	// MARK: NSOperation
 	
@@ -112,7 +115,7 @@ class DeserializeOperation: NSOperation {
 			resource.URL = URL
 		}
 
-		// Extract data
+		// Extract fields
 		extractAttributes(representation, intoResource: resource)
 		extractRelationships(representation, intoResource: resource)
 		

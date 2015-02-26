@@ -126,7 +126,7 @@ public class Spine {
 		var isNewResource = (resource.id == nil)
 		var request: HTTPClientRequestMethod
 		var URL: NSURL
-		var payload: [String: AnyObject]
+		var payload: NSData
 		
 		if isNewResource {
 			request = .POST
@@ -235,8 +235,9 @@ public class Spine {
 			}
 			
 			let URL = self.router.URLForRelationship(relationship, ofResource: toResource)
-			
-			self.HTTPClient.request(.POST, URL: URL, payload: [relationship: ids]) { statusCode, responseData, error in
+			let payload = NSJSONSerialization.dataWithJSONObject([relationship: ids], options: NSJSONWritingOptions(0), error: nil)
+			// TODO: Move serialization
+			self.HTTPClient.request(.POST, URL: URL, payload: payload) { statusCode, responseData, error in
 				if let error = error {
 					promise.error(self.handleErrorResponse(statusCode, responseData: responseData, error: error))
 				} else {
@@ -277,8 +278,10 @@ public class Spine {
 		let promise = Promise<Void>()
 		
 		let URL = router.URLForRelationship(relationship, ofResource: ofResource)
+		let payload = NSJSONSerialization.dataWithJSONObject([relationship: resource.id!], options: NSJSONWritingOptions(0), error: nil)
+		// TODO: Move serialization
 		
-		self.HTTPClient.request(.PUT, URL: URL, payload: [relationship: resource.id!]) { statusCode, responseData, error in
+		self.HTTPClient.request(.PUT, URL: URL, payload: payload) { statusCode, responseData, error in
 			if let error = error {
 				promise.error(self.handleErrorResponse(statusCode, responseData: responseData, error: error))
 			} else {

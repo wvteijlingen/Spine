@@ -25,7 +25,7 @@ protocol SerializerProtocol {
 	func deserializeError(data: NSData, withResonseStatus responseStatus: Int) -> NSError
 	
 	// Serializing
-	func serializeResources(resources: [ResourceProtocol], options: SerializationOptions) -> [String: AnyObject]
+	func serializeResources(resources: [ResourceProtocol], options: SerializationOptions) -> NSData
 }
 
 /**
@@ -102,7 +102,7 @@ class JSONSerializer: SerializerProtocol {
 	
 	:returns: A multidimensional dictionary/array structure.
 	*/
-	func serializeResources(resources: [ResourceProtocol], options: SerializationOptions = SerializationOptions()) -> [String: AnyObject] {
+	func serializeResources(resources: [ResourceProtocol], options: SerializationOptions = SerializationOptions()) -> NSData {
 		let serializeOperation = SerializeOperation(resources: resources)
 		serializeOperation.options = options
 		serializeOperation.transformers = transformers

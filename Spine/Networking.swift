@@ -26,7 +26,7 @@ public protocol HTTPClientProtocol {
 protocol _HTTPClientProtocol: HTTPClientProtocol {
 	var traceEnabled: Bool { get set }
 	func request(method: HTTPClientRequestMethod, URL: NSURL, callback: HTTPClientCallback)
-	func request(method: HTTPClientRequestMethod, URL: NSURL, payload: [String : AnyObject]?, callback: HTTPClientCallback)
+	func request(method: HTTPClientRequestMethod, URL: NSURL, payload: NSData?, callback: HTTPClientCallback)
 }
 
 public class URLSessionClient: _HTTPClientProtocol {
@@ -51,13 +51,12 @@ public class URLSessionClient: _HTTPClientProtocol {
 		return request(method, URL: URL, payload: nil, callback: callback)
 	}
 	
-	// TODO: Move JSON serializing out of networking component
-	func request(method: HTTPClientRequestMethod, URL: NSURL, payload: [String : AnyObject]?, callback: HTTPClientCallback) {
+	func request(method: HTTPClientRequestMethod, URL: NSURL, payload: NSData?, callback: HTTPClientCallback) {
 		let request = NSMutableURLRequest(URL: URL)
 		request.HTTPMethod = method.rawValue
 		
 		if let payload = payload {
-			request.HTTPBody = NSJSONSerialization.dataWithJSONObject(payload, options: NSJSONWritingOptions(0), error: nil)
+			request.HTTPBody = payload
 		}
 		
 		trace("⬆️ \(method.rawValue):  \(URL)")

@@ -32,7 +32,7 @@ class SpineTests: XCTestCase {
 		let data = NSData(contentsOfURL: path)!
 		let json = JSON(data: data)
 		
-		HTTPClient.handler = { (request: NSURLRequest, rawPayload: [String : AnyObject]?) -> (responseData: NSData, statusCode: Int, error: NSError?) in
+		HTTPClient.handler = { (request: NSURLRequest, payload: NSData?) -> (responseData: NSData, statusCode: Int, error: NSError?) in
 			XCTAssertEqual(request.URL, NSURL(string:"http://example.com/foos/?filter[id]=1,2")!, "Request URL not as expected.")
 			return (responseData: data, statusCode: 200, error: nil)
 		}
@@ -101,7 +101,7 @@ class SpineTests: XCTestCase {
 		let data = NSData(contentsOfURL: path)!
 		let json = JSON(data: data)
 		
-		HTTPClient.handler = { (request: NSURLRequest, rawPayload: [String : AnyObject]?) -> (responseData: NSData, statusCode: Int, error: NSError?) in
+		HTTPClient.handler = { (request: NSURLRequest, payload: NSData?) -> (responseData: NSData, statusCode: Int, error: NSError?) in
 			XCTAssertEqual(request.URL, NSURL(string:"http://example.com/foos/")!, "Request URL not as expected.")
 			return (responseData: data, statusCode: 200, error: nil)
 		}
@@ -131,7 +131,7 @@ class SpineTests: XCTestCase {
 		let data = NSData(contentsOfURL: path)!
 		let json = JSON(data: data)
 		
-		HTTPClient.handler = { (request: NSURLRequest, rawPayload: [String : AnyObject]?) -> (responseData: NSData, statusCode: Int, error: NSError?) in
+		HTTPClient.handler = { (request: NSURLRequest, payload: NSData?) -> (responseData: NSData, statusCode: Int, error: NSError?) in
 			XCTAssertEqual(request.URL, NSURL(string:"http://example.com/foos/1")!, "Request URL not as expected.")
 			return (responseData: data, statusCode: 200, error: nil)
 		}
@@ -156,7 +156,7 @@ class SpineTests: XCTestCase {
 		let data = NSData(contentsOfURL: path)!
 		let json = JSON(data: data)
 		
-		HTTPClient.handler = { (request: NSURLRequest, rawPayload: [String : AnyObject]?) -> (responseData: NSData, statusCode: Int, error: NSError?) in
+		HTTPClient.handler = { (request: NSURLRequest, payload: NSData?) -> (responseData: NSData, statusCode: Int, error: NSError?) in
 			XCTAssertEqual(request.URL, NSURL(string:"http://example.com/foos/1")!, "Request URL not as expected.")
 			return (responseData: data, statusCode: 200, error: nil)
 		}
@@ -182,7 +182,7 @@ class SpineTests: XCTestCase {
 		let data = NSData(contentsOfURL: path)!
 		let json = JSON(data: data)
 		
-		HTTPClient.handler = { (request: NSURLRequest, rawPayload: [String : AnyObject]?) -> (responseData: NSData, statusCode: Int, error: NSError?) in
+		HTTPClient.handler = { (request: NSURLRequest, payload: NSData?) -> (responseData: NSData, statusCode: Int, error: NSError?) in
 			XCTAssertEqual(request.URL, NSURL(string:"http://example.com/foos/?filter[id]=1,2")!, "Request URL not as expected.")
 			return (responseData: data, statusCode: 200, error: nil)
 		}

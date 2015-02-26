@@ -16,70 +16,59 @@ import SwiftyJSON
 *  This process is the inverse of that of the DeserializeOperation.
 */
 class SerializeOperation: NSOperation {
-	
 	private let resources: [ResourceProtocol]
 	var transformers = TransformerDirectory()
 	var options = SerializationOptions()
 	
-	var result: [String: AnyObject]?
+	var result: NSData?
+	
+	
+	// MARK: Initializers
 	
 	init(resources: [ResourceProtocol]) {
 		self.resources = resources
 	}
 	
+	
+	// MARK: NSOperation
+	
 	override func main() {
-		if self.resources.count == 1 {
-			let resource = self.resources.first!
-			let serializedData = self.serializeResource(resource)
-			self.result = [resource.type: serializedData]
+		if resources.count == 1 {
+			let serializedData = serializeResource(resources.first!)
+			result = NSJSONSerialization.dataWithJSONObject(["data": serializedData], options: NSJSONWritingOptions(0), error: nil)
 			
 		} else  {
-			var dictionary: [String: [[String: AnyObject]]] = [:]
-			
-			for resource in resources {
-				var serializedData = self.serializeResource(resource)
-				
-				//Add the resource representation to the root dictionary
-				if dictionary[resource.type] == nil {
-					dictionary[resource.type] = [serializedData]
-				} else {
-					dictionary[resource.type]!.append(serializedData)
-				}
+			var data = resources.map { resource in
+				self.serializeResource(resource)
 			}
 			
-			self.result = dictionary
+			result = NSJSONSerialization.dataWithJSONObject(["data": data], options: NSJSONWritingOptions(0), error: nil)
 		}
 	}
+	
+	
+	// MARK: Serializing
 	
 	private func serializeResource(resource: ResourceProtocol) -> [String: AnyObject] {
 		var serializedData: [String: AnyObject] = [:]
 		
-		// Special attributes
+		// Serialize ID
 		if options.includeID {
 			if let ID = resource.id {
-				self.addID(&serializedData, ID: ID)
+				serializedData["id"] = ID
 			}
 		}
 		
-		self.addAttributes(&serializedData, resource: resource)
-		self.addRelationships(&serializedData, resource: resource)
+		// Serialize type
+		serializedData["type"] = resource.type
+		
+		// Serialize fields
+		addAttributes(&serializedData, resource: resource)
+		addRelationships(&serializedData, resource: resource)
 		
 		return serializedData
 	}
-	
-	
-	// MARK: Special attributes
-	
-	/**
-	Adds the given ID to the passed serialized data.
-	
-	:param: serializedData The data to add the ID to.
-	:param: ID             The ID to add.
-	*/
-	private func addID(inout serializedData: [String: AnyObject], ID: String) {
-		serializedData["id"] = ID
-	}
-	
+
 	
 	// MARK: Attributes
 	
@@ -104,9 +93,9 @@ class SerializeOperation: NSOperation {
 			let key = attribute.serializedName
 			
 			if let unformattedValue: AnyObject = resource.valueForAttribute(attribute.name) {
-				self.addAttribute(&serializedData, key: key, value: self.transformers.serialize(unformattedValue, forAttribute: attribute))
+				addAttribute(&serializedData, key: key, value: self.transformers.serialize(unformattedValue, forAttribute: attribute))
 			} else {
-				self.addAttribute(&serializedData, key: key, value: NSNull())
+				addAttribute(&serializedData, key: key, value: NSNull())
 			}
 		}
 	}
@@ -129,7 +118,7 @@ class SerializeOperation: NSOperation {
 	Adds the relationships of the the given resource to the passed serialized data.
 	
 	This method loops over all the relationships in the passed resource, maps the attribute name
-	to the key for the serialized form and gets the related attributes It then passes the key and
+	to the key for the serialized form and gets the related attributes. It then passes the key and
 	related resources to either the addToOneRelationship or addToManyRelationship method.
 	
 	
@@ -138,20 +127,16 @@ class SerializeOperation: NSOperation {
 	*/
 	private func addRelationships(inout serializedData: [String: AnyObject], resource: ResourceProtocol) {
 		for attribute in resource.attributes {
-			if attribute is RelationshipAttribute == false {
-				continue
-			}
-			
 			let key = attribute.serializedName
 			
 			switch attribute {
 			case let toOne as ToOneAttribute:
-				if self.options.includeToOne {
-					self.addToOneRelationship(&serializedData, key: key, linkedResource: resource.valueForAttribute(attribute.name) as? ResourceProtocol)
+				if options.includeToOne {
+					addToOneRelationship(&serializedData, key: key, type: toOne.linkedType, linkedResource: resource.valueForAttribute(attribute.name) as? ResourceProtocol)
 				}
 			case let toMany as ToManyAttribute:
-				if self.options.includeToMany {
-					self.addToManyRelationship(&serializedData, key: key, linkedResources: resource.valueForAttribute(attribute.name) as? ResourceCollection)
+				if options.includeToMany {
+					addToManyRelationship(&serializedData, key: key, type: toMany.linkedType, linkedResources: resource.valueForAttribute(attribute.name) as? ResourceCollection)
 				}
 			default: ()
 			}
@@ -165,20 +150,17 @@ class SerializeOperation: NSOperation {
 	:param: key             The key to add to the serialized data.
 	:param: relatedResource The related resource to add to the serialized data.
 	*/
-	private func addToOneRelationship(inout serializedData: [String: AnyObject], key: String, linkedResource: ResourceProtocol?) {
-		var linkData: AnyObject
-		
-		if let ID = linkedResource?.id {
-			linkData = ID
-		} else {
-			linkData = NSNull()
-		}
+	private func addToOneRelationship(inout serializedData: [String: AnyObject], key: String, type: String, linkedResource: ResourceProtocol?) {
+		let serializedRelationship = [
+			"type": type,
+			"id": linkedResource?.id ?? NSNull()
+		]
 		
 		if serializedData["links"] == nil {
-			serializedData["links"] = [key: linkData]
+			serializedData["links"] = [key: serializedRelationship]
 		} else {
-			var links: [String: AnyObject] = serializedData["links"]! as [String: AnyObject]
-			links[key] = linkData
+			var links = serializedData["links"] as [String: AnyObject]
+			links[key] = serializedRelationship
 			serializedData["links"] = links
 		}
 	}
@@ -190,27 +172,24 @@ class SerializeOperation: NSOperation {
 	:param: key              The key to add to the serialized data.
 	:param: relatedResources The related resources to add to the serialized data.
 	*/
-	private func addToManyRelationship(inout serializedData: [String: AnyObject], key: String, linkedResources: ResourceCollection?) {
-		var linkData: AnyObject
+	private func addToManyRelationship(inout serializedData: [String: AnyObject], key: String, type: String, linkedResources: ResourceCollection?) {
+		var serializedIDs: AnyObject = []
 		
 		if let resources = linkedResources?.resources {
-			let IDs: [String] = resources.filter { resource in
-				return resource.id != nil
-				}.map { resource in
-					return resource.id!
-			}
-			
-			linkData = IDs
-			
-		} else {
-			linkData = []
+			let IDs: [String] = resources.filter { $0.id != nil }.map { $0.id! }
+			serializedIDs = IDs
 		}
 		
+		let serializedRelationship = [
+			"type": type,
+			"ids": serializedIDs
+		]
+		
 		if serializedData["links"] == nil {
-			serializedData["links"] = [key: linkData]
+			serializedData["links"] = [key: serializedRelationship]
 		} else {
-			var links: [String: AnyObject] = serializedData["links"]! as [String: AnyObject]
-			links[key] = linkData
+			var links = serializedData["links"] as [String: AnyObject]
+			links[key] = serializedRelationship
 			serializedData["links"] = links
 		}
 	}

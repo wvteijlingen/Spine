@@ -26,7 +26,7 @@ extension XCTestCase {
 }
 
 public class CallbackHTTPClient: _HTTPClientProtocol {
-	typealias HandlerFunction = (request: NSURLRequest, rawPayload: [String : AnyObject]?) -> (responseData: NSData, statusCode: Int, error: NSError?)
+	typealias HandlerFunction = (request: NSURLRequest, payload: NSData?) -> (responseData: NSData, statusCode: Int, error: NSError?)
 	
 	var handler: HandlerFunction!
 	var traceEnabled = false
@@ -47,20 +47,19 @@ public class CallbackHTTPClient: _HTTPClientProtocol {
 		return request(method, URL: URL, payload: nil, callback: callback)
 	}
 	
-	// TODO: Move JSON serializing out of networking component
-	func request(method: HTTPClientRequestMethod, URL: NSURL, payload: [String : AnyObject]?, callback: HTTPClientCallback) {
+	func request(method: HTTPClientRequestMethod, URL: NSURL, payload: NSData?, callback: HTTPClientCallback) {
 		let request = NSMutableURLRequest(URL: URL)
 		request.HTTPMethod = method.rawValue
 		
 		if let payload = payload {
-			request.HTTPBody = NSJSONSerialization.dataWithJSONObject(payload, options: NSJSONWritingOptions(0), error: nil)
+			request.HTTPBody = payload
 		}
 		
 		trace("⬆️ \(method.rawValue): \(URL)")
 		
 		// Perform the request
 		dispatch_async(queue) {
-			let (data, statusCode, error) = self.handler(request: request, rawPayload: payload)
+			let (data, statusCode, error) = self.handler(request: request, payload: payload)
 			let startTime = dispatch_time(DISPATCH_TIME_NOW, Int64(self.delay * Double(NSEC_PER_SEC)))
 			
 			dispatch_after(startTime, dispatch_get_main_queue()) {
