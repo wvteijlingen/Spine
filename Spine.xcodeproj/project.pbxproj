@@ -51,7 +51,6 @@
 		D307FBED1A97756700EE0FAC /* SingleFooIncludingBars.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = SingleFooIncludingBars.json; sourceTree = "<group>"; };
 		D312E2F719BB83A8004BB3E0 /* SerializingTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SerializingTests.swift; sourceTree = "<group>"; };
 		D331836B19B2302500936FBB /* Query.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Query.swift; sourceTree = "<group>"; };
-		D3411E761A4B5C2C00D27F54 /* Alamofire.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Alamofire.framework; path = ../Carthage/Build/iOS/Alamofire.framework; sourceTree = "<group>"; };
 		D3411E771A4B5C2C00D27F54 /* BrightFutures.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = BrightFutures.framework; path = ../Carthage/Build/iOS/BrightFutures.framework; sourceTree = "<group>"; };
 		D3411E7A1A4B5D2200D27F54 /* SwiftyJSON.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftyJSON.framework; path = ../Carthage/Build/iOS/SwiftyJSON.framework; sourceTree = "<group>"; };
 		D341907619D30BA4007B38D6 /* Routing.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Routing.swift; sourceTree = "<group>"; };
@@ -172,7 +171,6 @@
 			isa = PBXGroup;
 			children = (
 				D3411E7A1A4B5D2200D27F54 /* SwiftyJSON.framework */,
-				D3411E761A4B5C2C00D27F54 /* Alamofire.framework */,
 				D3411E771A4B5C2C00D27F54 /* BrightFutures.framework */,
 				D373F78C19B2249900275AFC /* Info.plist */,
 			);
