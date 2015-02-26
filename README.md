@@ -1,64 +1,85 @@
-### Warning: This framework is still growing and a work in progress. There are some serious issues that need to be fixed before I recommend using it in production. Also, most of the code is still untested.
-
 Spine
 =====
-Spine is an Swift framework that works with a JSON API that adheres to the jsonapi.org spec. Although it comes out of the box configured for jsonapi.org, the goal is to make it flexible enough to work with other JSON APIs as well.
+Spine is an Swift framework for consuming a JSON API that adheres to the jsonapi.org spec.
 
 Quickstart
 ==========
-The easiest way to use Spine is via a singleton. Spine exposes a singleton via `Spine.sharedInstance`.
-
-### 1. Configure the API baseURL
+### 1. Instantiate a Spine
 ```swift
-Spine.sharedInstance.baseURL = "http://api.example.com/v1"
+let baseURL = NSURL(string: "http://api.example.com/v1")
+let spine = Spine(baseURL: baseURL)
 ```
 
 ### 2. Register your resource classes
-Every resource should have a class, subclassed from `Resource`. This class should override the public variables `resourceType` and `persistentAttributes`. The `resourceType` should contain the type of resource in plural form. The `persistentAttributes` should contain an array of attributes that must be persisted by Spine. Attributes that are not in this array are ignored by Spine.
+Every resource is mapped to a class that implements the `ResourceProtocol` protocol. Spine comes with a `Resource` class that implements this protocol.
+A `Resource` subclass should override the variables `resourceType` and `attributes`. The `resourceType` should contain the type of resource in plural form. The `attributes` array should contain an array of attributes that must be persisted. Attributes that are not in this array are ignored.
+
+Each class must be registered using a factory method. This is done using the `registerResource` method.
 
 ```swift
+// Resource class
 class Post: Resource {
 	dynamic var title: String?
 	dynamic var body: String?
 	dynamic var author: User?
-	override var resourceType: String {
+	dynamic var comments: LinkedResourceCollection?
+
+	override class var resourceType: String {
 		return "posts"
 	}
-	override var persistentAttributes: [String: ResourceAttribute] {
-		return ["title": ResourceAttribute(type: .Property),
-		        "body": ResourceAttribute(type: .Property, representationName: "content"),
-		        "author": ResourceAttribute(type: .ToOne)]
+
+	override var attributes: [Attribute] {
+		return attributesFromDictionary([
+			"title": PropertyAttribute(),
+			"body": PropertyAttribute().serializeAs("content"),
+			"author": ToOneAttribute(User.resourceType),
+			"comments": ToManyAttribute(Comment.resourceType)
+		])
 	}
 }
+
+
+// Register resource class
+spine.registerResource(Post.resourceType) { Post() }
 ```
 
-## 3. Fetching resources
+### 3. Fetching resources
 ```swift
 // Using simple find methods
-Post.findOne("1") // Fetch a single post with ID 1
-Post.find(["1", "2", "3"]) // Fetch multiple posts with IDs 1, 2, and 3
-Post.findAll() // Fetch all posts
+spine.find(["1", "2"], ofType: Post.self) // Fetch posts with ID 1 and 2
+spine.findOne("1", ofType: Post.self)  // Fetch a single posts with ID 1
+spine.find(Post.self) // Fetch all posts
+spine.findOne(Post.self) // Fetch the first posts
 
 // Using a complex query
-let query = Query(resourceType: "posts")
-    .include(["author", "comments", "comments.author"]) // Sideload relationships
-    .whereProperty("upvotes", greaterThanOrEqualTo: 8) // Only with 8 or more upvotes
-    .whereRelationship("author", isOrContains: user) // Where the author is a given user
-    
-query.findResources() // Execute the query
-
-// Fetch related resources
-post.findRelated("author")
-// or
-let query = Query(resource: post, relationship: "author")
-query.findResources()
+var query = Query(resourceType: Post.self)
+query.include("author", "comments", "comments.author") // Sideload relationships
+query.whereProperty("upvotes", equalTo: 8) // Only with 8 upvotes
+query.addAscendingOrder("creationDate") // Sort on creation date
+spine.find(query)
 ```
 
-## 4. Saving resources
-A resource can be saved by calling the `save` method on a resource instance. Extra care MUST be taken regarding related resources. Saving does not automatically save any related resources. You must explicitly save these yourself beforehand. If you added a new create resource to a parent resource, you must first save the child resource (to obtain an ID), before saving the parent resource.
+All fetch methods return a Future with `onSuccess` and `onFailure` callbacks.
 
-## 5. Deleting resources
-A resource can be deleted by calling the `delete` method on a resource instance. Deleting does not cascade on the client.
+### 4. Saving resources
+```swift
+spine.save(post).onSuccess {
+    println("Saving success")
+.onFailure { error in
+    println("Saving failed: \(error)")
+}
+```
+Extra care MUST be taken regarding related resources. Saving does not automatically save any related resources. You must explicitly save these yourself beforehand. If you added a new create resource to a parent resource, you must first save the child resource (to obtain an ID), before saving the parent resource.
 
-## 6. Read the wiki
-The wiki contains much more information about using Spine. Godspeed, and remember, respect is everything.
+### 5. Deleting resources
+```swift
+spine.delete(post).onSuccess {
+    println("Deleting success")
+.onFailure { error in
+    println("Deleting failed: \(error)")
+}
+```
+Deleting does not cascade on the client.
+
+### 6. Read the wiki
+The wiki contains much more information about using Spine.
