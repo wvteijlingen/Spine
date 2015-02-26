@@ -204,7 +204,15 @@ class SerializingTests: XCTestCase {
 		foo.nilAttribute = nil
 		foo.dateAttribute = NSDate(timeIntervalSince1970: 0)
 		
-		let serializedData = serializer.serializeResources([foo])
+		foo.toOneAttribute = Bar(id: "10")
+		
+		foo.toManyAttribute = LinkedResourceCollection(resourcesURL: nil, URL: nil, homogenousType: "bars", linkage: nil)
+		foo.toManyAttribute?.addAsExisting(Bar(id: "11"))
+		foo.toManyAttribute?.addAsExisting(Bar(id: "12"))
+		
+		
+		let options = SerializationOptions(includeToMany: true, includeToOne: true)
+		let serializedData = serializer.serializeResources([foo], options: options)
 		let json = JSON(data: serializedData)
 		
 		XCTAssertEqual(json["data"]["id"].stringValue, foo.id!, "Serialized id is not equal.")
@@ -214,5 +222,11 @@ class SerializingTests: XCTestCase {
 		XCTAssertTrue(json["data"]["booleanAttribute"].boolValue, "Serialized boolean is not equal.")
 		XCTAssertNotNil(json["data"]["nilAttribute"].null, "Serialized nil is not equal.")
 		XCTAssertEqual(json["data"]["dateAttribute"].stringValue, "1970-01-01T01:00:00+01:00", "Serialized date is not equal.")
+		
+		XCTAssertEqual(json["data"]["links"]["toOneAttribute"]["id"].stringValue, foo.toOneAttribute!.id!, "Serialized to-one id is not equal")
+		XCTAssertEqual(json["data"]["links"]["toOneAttribute"]["type"].stringValue, Bar.resourceType, "Serialized to-one type is not equal")
+		
+		XCTAssertEqual(json["data"]["links"]["toManyAttribute"]["ids"].arrayObject as [String], ["11", "12"], "Serialized to-many ids are not equal")
+		XCTAssertEqual(json["data"]["links"]["toOneAttribute"]["type"].stringValue, Bar.resourceType, "Serialized to-many type is not equal")
 	}
 }

@@ -46,4 +46,17 @@ class Bar: Resource {
 	override var attributes: [Attribute] {
 		return []
 	}
+	
+	override init() {
+		super.init()
+	}
+	
+	init(id: String) {
+		super.init()
+		self.id = id
+	}
+
+	required init(coder: NSCoder) {
+		super.init(coder: coder)
+	}
 }
