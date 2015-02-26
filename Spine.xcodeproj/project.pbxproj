@@ -19,7 +19,7 @@
 		D3502C2F1A93A84000F91266 /* BrightFutures.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3411E771A4B5C2C00D27F54 /* BrightFutures.framework */; };
 		D3502C301A93A84000F91266 /* SwiftyJSON.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3411E7A1A4B5D2200D27F54 /* SwiftyJSON.framework */; };
 		D3502C311A93A86600F91266 /* ResourceCollection.swift in Sources */ = {isa = PBXBuildFile; fileRef = D35F9D3B1A52FCBB00E5FF97 /* ResourceCollection.swift */; };
-		D3502C321A93A86900F91266 /* ResourceAttribute.swift in Sources */ = {isa = PBXBuildFile; fileRef = D39929EA1A52F3A0008BF0A9 /* ResourceAttribute.swift */; };
+		D3502C321A93A86900F91266 /* ResourceField.swift in Sources */ = {isa = PBXBuildFile; fileRef = D39929EA1A52F3A0008BF0A9 /* ResourceField.swift */; };
 		D3502C331A93A86C00F91266 /* DeserializeOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = D35F9D401A53014500E5FF97 /* DeserializeOperation.swift */; };
 		D3502C341A93A86F00F91266 /* SerializeOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = D35F9D421A53016000E5FF97 /* SerializeOperation.swift */; };
 		D3502C351A93A87100F91266 /* Transformer.swift in Sources */ = {isa = PBXBuildFile; fileRef = D35F9D471A532EC600E5FF97 /* Transformer.swift */; };
@@ -43,7 +43,7 @@
 		D373F7A519B224BB00275AFC /* Resource.swift in Sources */ = {isa = PBXBuildFile; fileRef = D373F7A219B224BB00275AFC /* Resource.swift */; };
 		D373F7A619B224BB00275AFC /* Spine.swift in Sources */ = {isa = PBXBuildFile; fileRef = D373F7A319B224BB00275AFC /* Spine.swift */; };
 		D3960DF11A9B5FBC009948B0 /* Errors.json in Resources */ = {isa = PBXBuildFile; fileRef = D3960DF01A9B5FBC009948B0 /* Errors.json */; };
-		D39929EB1A52F3A0008BF0A9 /* ResourceAttribute.swift in Sources */ = {isa = PBXBuildFile; fileRef = D39929EA1A52F3A0008BF0A9 /* ResourceAttribute.swift */; };
+		D39929EB1A52F3A0008BF0A9 /* ResourceField.swift in Sources */ = {isa = PBXBuildFile; fileRef = D39929EA1A52F3A0008BF0A9 /* ResourceField.swift */; };
 		D3DFBB6519B9DC64009785BE /* Networking.swift in Sources */ = {isa = PBXBuildFile; fileRef = D37FB17E19B9D7F10073A888 /* Networking.swift */; };
 /* End PBXBuildFile section */
 
@@ -76,7 +76,7 @@
 		D373F7A319B224BB00275AFC /* Spine.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Spine.swift; sourceTree = "<group>"; };
 		D37FB17E19B9D7F10073A888 /* Networking.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Networking.swift; sourceTree = "<group>"; };
 		D3960DF01A9B5FBC009948B0 /* Errors.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = Errors.json; sourceTree = "<group>"; };
-		D39929EA1A52F3A0008BF0A9 /* ResourceAttribute.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ResourceAttribute.swift; sourceTree = "<group>"; };
+		D39929EA1A52F3A0008BF0A9 /* ResourceField.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ResourceField.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -118,7 +118,7 @@
 			children = (
 				D373F7A219B224BB00275AFC /* Resource.swift */,
 				D35F9D3B1A52FCBB00E5FF97 /* ResourceCollection.swift */,
-				D39929EA1A52F3A0008BF0A9 /* ResourceAttribute.swift */,
+				D39929EA1A52F3A0008BF0A9 /* ResourceField.swift */,
 			);
 			name = Resource;
 			sourceTree = "<group>";
@@ -337,7 +337,7 @@
 				D3DFBB6519B9DC64009785BE /* Networking.swift in Sources */,
 				D373F7A519B224BB00275AFC /* Resource.swift in Sources */,
 				D35F9D3C1A52FCBB00E5FF97 /* ResourceCollection.swift in Sources */,
-				D39929EB1A52F3A0008BF0A9 /* ResourceAttribute.swift in Sources */,
+				D39929EB1A52F3A0008BF0A9 /* ResourceField.swift in Sources */,
 				D35F9D431A53016000E5FF97 /* SerializeOperation.swift in Sources */,
 				D35F9D481A532EC600E5FF97 /* Transformer.swift in Sources */,
 			);
@@ -362,7 +362,7 @@
 				D35DAAEB1A9627FD00E59545 /* Fixtures.swift in Sources */,
 				D35CE46F19B276E4002B358E /* Resource.swift in Sources */,
 				D35DAAF31A96A40700E59545 /* QueryTests.swift in Sources */,
-				D3502C321A93A86900F91266 /* ResourceAttribute.swift in Sources */,
+				D3502C321A93A86900F91266 /* ResourceField.swift in Sources */,
 				D3502C331A93A86C00F91266 /* DeserializeOperation.swift in Sources */,
 				D312E2F819BB83A8004BB3E0 /* SerializingTests.swift in Sources */,
 			);

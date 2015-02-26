@@ -24,16 +24,16 @@ class Foo: Resource {
 		return "foos"
 	}
 	
-	override var attributes: [Attribute] {
-		return attributesFromDictionary([
-			"stringAttribute": PropertyAttribute(),
-			"integerAttribute": PropertyAttribute(),
-			"floatAttribute": PropertyAttribute(),
-			"booleanAttribute": PropertyAttribute(),
-			"nilAttribute": PropertyAttribute(),
+	override var fields: [Field] {
+		return fieldsFromDictionary([
+			"stringAttribute": Attribute(),
+			"integerAttribute": Attribute(),
+			"floatAttribute": Attribute(),
+			"booleanAttribute": Attribute(),
+			"nilAttribute": Attribute(),
 			"dateAttribute": DateAttribute(),
-			"toOneAttribute": ToOneAttribute(Bar.resourceType),
-			"toManyAttribute": ToManyAttribute(Bar.resourceType)
+			"toOneAttribute": ToOneRelationship(Bar.resourceType),
+			"toManyAttribute": ToManyRelationship(Bar.resourceType)
 			])
 	}
 }
@@ -43,7 +43,7 @@ class Bar: Resource {
 		return "bars"
 	}
 	
-	override var attributes: [Attribute] {
+	override var fields: [Field] {
 		return []
 	}
 	

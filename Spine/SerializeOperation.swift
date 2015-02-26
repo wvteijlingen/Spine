@@ -83,19 +83,13 @@ class SerializeOperation: NSOperation {
 	:param: resource       The resource whose attributes to add.
 	*/
 	private func addAttributes(inout serializedData: [String: AnyObject], resource: ResourceProtocol) {
-		for attribute in resource.attributes {
-			if attribute is RelationshipAttribute {
-				continue
-			}
-			
+		enumerateFields(resource, Attribute.self) { attribute in
 			//TODO: Dirty checking
-			
 			let key = attribute.serializedName
-			
-			if let unformattedValue: AnyObject = resource.valueForAttribute(attribute.name) {
-				addAttribute(&serializedData, key: key, value: self.transformers.serialize(unformattedValue, forAttribute: attribute))
+			if let unformattedValue: AnyObject = resource.valueForField(attribute.name) {
+				self.addAttribute(&serializedData, key: key, value: self.transformers.serialize(unformattedValue, forAttribute: attribute))
 			} else {
-				addAttribute(&serializedData, key: key, value: NSNull())
+				self.addAttribute(&serializedData, key: key, value: NSNull())
 			}
 		}
 	}
@@ -126,17 +120,17 @@ class SerializeOperation: NSOperation {
 	:param: resource       The resource whose relationships to add.
 	*/
 	private func addRelationships(inout serializedData: [String: AnyObject], resource: ResourceProtocol) {
-		for attribute in resource.attributes {
-			let key = attribute.serializedName
+		enumerateFields(resource, Relationship.self) { field in
+			let key = field.serializedName
 			
-			switch attribute {
-			case let toOne as ToOneAttribute:
-				if options.includeToOne {
-					addToOneRelationship(&serializedData, key: key, type: toOne.linkedType, linkedResource: resource.valueForAttribute(attribute.name) as? ResourceProtocol)
+			switch field {
+			case let toOne as ToOneRelationship:
+				if self.options.includeToOne {
+					self.addToOneRelationship(&serializedData, key: key, type: toOne.linkedType, linkedResource: resource.valueForField(field.name) as? ResourceProtocol)
 				}
-			case let toMany as ToManyAttribute:
-				if options.includeToMany {
-					addToManyRelationship(&serializedData, key: key, type: toMany.linkedType, linkedResources: resource.valueForAttribute(attribute.name) as? ResourceCollection)
+			case let toMany as ToManyRelationship:
+				if self.options.includeToMany {
+					self.addToManyRelationship(&serializedData, key: key, type: toMany.linkedType, linkedResources: resource.valueForField(field.name) as? ResourceCollection)
 				}
 			default: ()
 			}

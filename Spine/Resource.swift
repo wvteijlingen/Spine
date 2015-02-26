@@ -7,7 +7,6 @@
 //
 
 import Foundation
-import BrightFutures
 
 @objc public protocol ResourceProtocol: class {
 	/// The resource type in plural form.
@@ -16,8 +15,8 @@ import BrightFutures
 	/// The resource type in plural form.
     var type: String { get }
 	
-	/// All attributes that must be persisted in the API.
-    var attributes: [Attribute] { get }
+	/// All fields that must be persisted in the API.
+    var fields: [Field] { get }
 	
 	/// The ID of the resource.
     var id: String? { get set }
@@ -29,10 +28,10 @@ import BrightFutures
     var isLoaded: Bool { get set }
 	
 	/// Returns the attribute value for the given key
-	func valueForAttribute(attribute: String) -> AnyObject?
+	func valueForField(field: String) -> AnyObject?
 	
 	/// Sets the given attribute value for the given key
-	func setValue(value: AnyObject?, forAttribute: String)
+	func setValue(value: AnyObject?, forField: String)
 }
 
 /**
@@ -48,7 +47,7 @@ public class Resource: NSObject, NSCoding, ResourceProtocol {
 		return self.dynamicType.resourceType
 	}
 	
-	public var attributes: [Attribute] {
+	public var fields: [Field] {
 		return []
 	}
 	
@@ -73,12 +72,12 @@ public class Resource: NSObject, NSCoding, ResourceProtocol {
 		coder.encodeBool(self.isLoaded, forKey: "isLoaded")
 	}
 	
-	public func valueForAttribute(attribute: String) -> AnyObject? {
-		return valueForKey(attribute)
+	public func valueForField(field: String) -> AnyObject? {
+		return valueForKey(field)
 	}
 	
-	public func setValue(value: AnyObject?, forAttribute attribute: String) {
-		setValue(value, forKey: attribute)
+	public func setValue(value: AnyObject?, forField field: String) {
+		setValue(value, forKey: field)
 	}
 }
 

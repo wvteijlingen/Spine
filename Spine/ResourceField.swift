@@ -8,17 +8,17 @@
 
 import Foundation
 
-public func attributesFromDictionary(dictionary: [String: Attribute]) -> [Attribute] {
-	return map(dictionary) { (name, attribute) in
-		attribute.name = name
-		return attribute
+public func fieldsFromDictionary(dictionary: [String: Field]) -> [Field] {
+	return map(dictionary) { (name, field) in
+		field.name = name
+		return field
 	}
 }
 
 /**
- *  Base attribute
+ *  Base field
  */
-public class Attribute {
+public class Field {
 	var name: String!
 	
 	private var _serializedName: String?
@@ -39,9 +39,9 @@ public class Attribute {
 	}
 }
 
-// MARK: - Built in attributes
+// MARK: - Built in fields
 
-public class PropertyAttribute: Attribute { }
+public class Attribute: Field { }
 
 public class URLAttribute: Attribute {
 	let baseURL: NSURL?
@@ -59,7 +59,7 @@ public class DateAttribute: Attribute {
 	}
 }
 
-public class RelationshipAttribute: Attribute {
+public class Relationship: Field {
 	let linkedType: String
 	
 	public init(_ type: String) {
@@ -67,6 +67,6 @@ public class RelationshipAttribute: Attribute {
 	}
 }
 
-public class ToOneAttribute: RelationshipAttribute { }
+public class ToOneRelationship: Relationship { }
 
-public class ToManyAttribute: RelationshipAttribute { }
+public class ToManyRelationship: Relationship { }

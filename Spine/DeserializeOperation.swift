@@ -139,10 +139,10 @@ class DeserializeOperation: NSOperation {
 	:param: resource       The resource into which to extract the attributes.
 	*/
 	private func extractAttributes(serializedData: JSON, intoResource resource: ResourceProtocol) {
-		for attribute in resource.attributes.filter({ $0 is RelationshipAttribute == false }) {
-			if let extractedValue: AnyObject = extractAttribute(serializedData, key: attribute.serializedName) {
-				let formattedValue: AnyObject = transformers.deserialize(extractedValue, forAttribute: attribute)
-				resource.setValue(formattedValue, forAttribute: attribute.name)
+		enumerateFields(resource, Attribute.self) { attribute in
+			if let extractedValue: AnyObject = self.extractAttribute(serializedData, key: attribute.serializedName) {
+				let formattedValue: AnyObject = self.transformers.deserialize(extractedValue, forAttribute: attribute)
+				resource.setValue(formattedValue, forField: attribute.name)
 			}
 		}
 	}
@@ -179,15 +179,15 @@ class DeserializeOperation: NSOperation {
 	:param: resource       The resource into which to extract the relationships.
 	*/
 	private func extractRelationships(serializedData: JSON, intoResource resource: ResourceProtocol) {
-		for attribute in resource.attributes {
-			switch attribute {
-			case let toOne as ToOneAttribute:
+		for field in resource.fields {
+			switch field {
+			case let toOne as ToOneRelationship:
 				if let linkedResource = extractToOneRelationship(serializedData, key: toOne.serializedName, linkedType: toOne.linkedType, resource: resource) {
-					resource.setValue(linkedResource, forAttribute: toOne.name)
+					resource.setValue(linkedResource, forField: toOne.name)
 				}
-			case let toMany as ToManyAttribute:
+			case let toMany as ToManyRelationship:
 				if let linkedResourceCollection = extractToManyRelationship(serializedData, key: toMany.serializedName, resource: resource) {
-					resource.setValue(linkedResourceCollection, forAttribute: toMany.name)
+					resource.setValue(linkedResourceCollection, forField: toMany.name)
 				}
 			default: ()
 			}
@@ -281,10 +281,10 @@ class DeserializeOperation: NSOperation {
 	*/
 	private func resolveRelations() {
 		for resource in resourcePool {
-			for attribute in resource.attributes {
+			for field in resource.fields {
 				
-				if let toManyAttribute = attribute as? ToManyAttribute {
-					if let linkedResource = resource.valueForAttribute(attribute.name) as? LinkedResourceCollection {
+				if let toManyAttribute = field as? ToManyRelationship {
+					if let linkedResource = resource.valueForField(field.name) as? LinkedResourceCollection {
 						
 						// We can only resolve if the linkage is known
 						if let linkage = linkedResource.linkage {

@@ -178,17 +178,17 @@ public class Spine {
 		var operations: [Operation] = []
 		
 		// Create operations
-		for attribute in resource.attributes {
-			switch attribute {
-			case let toOne as ToOneAttribute:
-				let linkedResource = resource.valueForAttribute(attribute.name) as ResourceProtocol
+		for field in resource.fields {
+			switch field {
+			case let toOne as ToOneRelationship:
+				let linkedResource = resource.valueForField(field.name) as ResourceProtocol
 				if linkedResource.id != nil {
-					operations.append((relationship: attribute.serializedName, type: "replace", resources: [linkedResource]))
+					operations.append((relationship: field.serializedName, type: "replace", resources: [linkedResource]))
 				}
-			case let toMany as ToManyAttribute:
-				let linkedResources = resource.valueForAttribute(attribute.name) as LinkedResourceCollection
-				operations.append((relationship: attribute.serializedName, type: "add", resources: linkedResources.addedResources))
-				operations.append((relationship: attribute.serializedName, type: "remove", resources: linkedResources.removedResources))
+			case let toMany as ToManyRelationship:
+				let linkedResources = resource.valueForField(field.name) as LinkedResourceCollection
+				operations.append((relationship: field.serializedName, type: "add", resources: linkedResources.addedResources))
+				operations.append((relationship: field.serializedName, type: "remove", resources: linkedResources.removedResources))
 			default: ()
 			}
 		}
@@ -464,12 +464,23 @@ public extension Spine {
 
 // MARK: - Utilities
 
+// Find resources with a specific type in a collection
 func findResourcesWithType<C: CollectionType where C.Generator.Element: ResourceProtocol>(domain: C, type: String) -> [C.Generator.Element] {
 	return filter(domain) { $0.type == type }
 }
 
+// Find a specific resource in a collection
 func findResource<C: CollectionType where C.Generator.Element: ResourceProtocol>(domain: C, type: String, id: String) -> C.Generator.Element? {
 	return filter(domain) { $0.type == type && $0.id == id }.first
+}
+
+// Enumerate over specific fields
+func enumerateFields<T: Field>(resource: ResourceProtocol, type: T.Type, callback: (T) -> ()) {
+	for field in resource.fields {
+		if let attribute = field as? T {
+			callback(attribute)
+		}
+	}
 }
 
 // Compare linkage tuples
@@ -498,8 +509,8 @@ public func == <T: ResourceProtocol> (left: [T], right: [T]) -> Bool {
 }
 
 public func unloadResource(resource: ResourceProtocol) {
-	for attribute in resource.attributes {
-		resource.setValue(nil, forAttribute: attribute.name)
+	for field in resource.fields {
+		resource.setValue(nil, forField: field.name)
 	}
 	
 	resource.isLoaded = false
