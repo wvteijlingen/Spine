@@ -85,6 +85,13 @@ public class CallbackHTTPClient: _HTTPClientProtocol {
 		}
 	}
 	
+	func respondWith(status: Int, data: NSData? = nil, error: NSError? = nil) {
+		let responseData = data ?? NSData()
+		handler = { request, payload in
+			return (responseData: responseData, statusCode: status, error: error)
+		}
+	}
+	
 	private func trace<T>(object: T) {
 		if traceEnabled {
 			println(object)
