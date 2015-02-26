@@ -20,7 +20,9 @@ class SerializingTests: XCTestCase {
 		serializer.resourceFactory.registerResource(Bar.resourceType) { Bar() }
 	}
 	
-	func testDeserializeSinglePrimaryResource() {
+	// MARK: - Deserializing
+	
+	func testDeserializeSingleResource() {
 		let path = testBundle.URLForResource("SingleFoo", withExtension: "json")!
 		let data = NSData(contentsOfURL: path)!
 		
@@ -70,7 +72,7 @@ class SerializingTests: XCTestCase {
 		}
 	}
 	
-	func testDeserializeMultiplePrimaryResources() {
+	func testDeserializeMultipleResources() {
 		let path = testBundle.URLForResource("MultipleFoos", withExtension: "json")!
 		let data = NSData(contentsOfURL: path)!
 		
@@ -187,5 +189,30 @@ class SerializingTests: XCTestCase {
 		XCTAssertEqual(error.domain, SPINE_API_ERROR_DOMAIN, "Expected error domain to be SPINE_API_ERROR_DOMAIN.")
 		XCTAssertEqual(error.code, json["errors"][0]["code"].intValue, "Expected error code to be equal.")
 		XCTAssertEqual(error.localizedDescription, json["errors"][0]["title"].stringValue, "Expected error description to be equal.")
+	}
+	
+	
+	// MARK: - Serializing
+	
+	func testSerializeSingleResource() {
+		let foo = Foo()
+		foo.id = "1"
+		foo.stringAttribute = "stringAttribute"
+		foo.integerAttribute = 10
+		foo.floatAttribute = 5.5
+		foo.booleanAttribute = true
+		foo.nilAttribute = nil
+		foo.dateAttribute = NSDate(timeIntervalSince1970: 0)
+		
+		let serializedData = serializer.serializeResources([foo])
+		let json = JSON(data: serializedData)
+		
+		XCTAssertEqual(json["data"]["id"].stringValue, foo.id!, "Serialized id is not equal.")
+		XCTAssertEqual(json["data"]["type"].stringValue, foo.type, "Serialized type is not equal.")
+		XCTAssertEqual(json["data"]["integerAttribute"].intValue, foo.integerAttribute!, "Serialized integer is not equal.")
+		XCTAssertEqual(json["data"]["floatAttribute"].floatValue, foo.floatAttribute!, "Serialized float is not equal.")
+		XCTAssertTrue(json["data"]["booleanAttribute"].boolValue, "Serialized boolean is not equal.")
+		XCTAssertNotNil(json["data"]["nilAttribute"].null, "Serialized nil is not equal.")
+		XCTAssertEqual(json["data"]["dateAttribute"].stringValue, "1970-01-01T01:00:00+01:00", "Serialized date is not equal.")
 	}
 }
