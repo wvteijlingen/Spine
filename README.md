@@ -21,6 +21,7 @@ Each class must be registered using a factory method. This is done using the `re
 class Post: Resource {
 	dynamic var title: String?
 	dynamic var body: String?
+	dynamic var creationDate: NSDate?
 	dynamic var author: User?
 	dynamic var comments: LinkedResourceCollection?
 
@@ -32,6 +33,7 @@ class Post: Resource {
 		return attributesFromDictionary([
 			"title": PropertyAttribute(),
 			"body": PropertyAttribute().serializeAs("content"),
+			"creationDate": DateAttribute().serializeAs("created-at"),
 			"author": ToOneAttribute(User.resourceType),
 			"comments": ToManyAttribute(Comment.resourceType)
 		])
@@ -55,7 +57,7 @@ spine.findOne(Post.self) // Fetch the first posts
 var query = Query(resourceType: Post.self)
 query.include("author", "comments", "comments.author") // Sideload relationships
 query.whereProperty("upvotes", equalTo: 8) // Only with 8 upvotes
-query.addAscendingOrder("creationDate") // Sort on creation date
+query.addAscendingOrder("created-at") // Sort on creation date
 spine.find(query)
 ```
 
@@ -83,3 +85,11 @@ Deleting does not cascade on the client.
 
 ### 6. Read the wiki
 The wiki contains much more information about using Spine.
+
+
+Memory management
+=================
+Spine suffers from the same memory management issues as Core Data, namely retain cycles for recursive relationships. These cycles can be broken in two ways:
+
+1. Declare one end of the relationship as `weak` or `unowned`.
+2. Use the `unloadResource` function to unload resources and break cycles when you are done with a resource.
