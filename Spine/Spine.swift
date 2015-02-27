@@ -295,7 +295,7 @@ public class Spine {
 	
 	// MARK: Deleting
 	
-	func deleteResource(resource: ResourceProtocol) -> Future<Void> {
+	private func deleteResource(resource: ResourceProtocol) -> Future<Void> {
 		let promise = Promise<Void>()
 		
 		let URL = self.router.URLForQuery(Query(resource: resource))
@@ -441,7 +441,7 @@ public extension Spine {
 	}
 	
 	func delete(resource: ResourceProtocol) -> Future<Void> {
-		return delete(resource)
+		return deleteResource(resource)
 	}
 }
 
