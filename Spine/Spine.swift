@@ -131,7 +131,7 @@ public class Spine {
 		if isNewResource {
 			request = .POST
 			URL = router.URLForResourceType(resource.type)
-			payload = serializer.serializeResources([resource], options: SerializationOptions(includeID: false, dirtyAttributesOnly: false, includeToOne: true, includeToMany: true))
+			payload = serializer.serializeResources([resource], options: SerializationOptions(includeID: false, dirtyFieldsOnly: false, includeToOne: true, includeToMany: true))
 		} else {
 			request = .PUT
 			URL = router.URLForQuery(Query(resource: resource))
