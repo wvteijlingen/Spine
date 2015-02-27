@@ -10,8 +10,7 @@ import Foundation
 import XCTest
 import SwiftyJSON
 
-class SerializingTests: XCTestCase {
-	
+class SerializerTests: XCTestCase {
 	let serializer = JSONSerializer()
 	
 	override func setUp() {
@@ -19,8 +18,90 @@ class SerializingTests: XCTestCase {
 		serializer.resourceFactory.registerResource(Foo.resourceType) { Foo() }
 		serializer.resourceFactory.registerResource(Bar.resourceType) { Bar() }
 	}
+}
+
+class SerializingTests: SerializerTests {
 	
-	// MARK: - Deserializing
+	func testSerializeSingleResourceAttributes() {
+		let foo = Foo(id: "1")
+		foo.stringAttribute = "stringAttribute"
+		foo.integerAttribute = 10
+		foo.floatAttribute = 5.5
+		foo.booleanAttribute = true
+		foo.nilAttribute = nil
+		foo.dateAttribute = NSDate(timeIntervalSince1970: 0)
+		
+		let serializedData = serializer.serializeResources([foo])
+		let json = JSON(data: serializedData)
+		
+		XCTAssertEqual(json["data"]["id"].stringValue, foo.id!, "Serialized id is not equal.")
+		XCTAssertEqual(json["data"]["type"].stringValue, foo.type, "Serialized type is not equal.")
+		XCTAssertEqual(json["data"]["integerAttribute"].intValue, foo.integerAttribute!, "Serialized integer is not equal.")
+		XCTAssertEqual(json["data"]["floatAttribute"].floatValue, foo.floatAttribute!, "Serialized float is not equal.")
+		XCTAssertTrue(json["data"]["booleanAttribute"].boolValue, "Serialized boolean is not equal.")
+		XCTAssertNotNil(json["data"]["nilAttribute"].null, "Serialized nil is not equal.")
+		XCTAssertEqual(json["data"]["dateAttribute"].stringValue, "1970-01-01T01:00:00+01:00", "Serialized date is not equal.")
+	}
+	
+	func testSerializeSingleResourceToOneRelationships() {
+		let foo = Foo(id: "1")
+		foo.toOneAttribute = Bar(id: "10")
+		
+		let serializedData = serializer.serializeResources([foo], options: SerializationOptions(includeToOne: true))
+		let json = JSON(data: serializedData)
+		
+		XCTAssertEqual(json["data"]["links"]["toOneAttribute"]["id"].stringValue, foo.toOneAttribute!.id!, "Serialized to-one id is not equal")
+		XCTAssertEqual(json["data"]["links"]["toOneAttribute"]["type"].stringValue, Bar.resourceType, "Serialized to-one type is not equal")
+	}
+	
+	func testSerializeSingleResourceToManyRelationships() {
+		let foo = Foo(id: "1")
+		foo.toManyAttribute = LinkedResourceCollection(resourcesURL: nil, URL: nil, homogenousType: "bars", linkage: nil)
+		foo.toManyAttribute?.addAsExisting(Bar(id: "11"))
+		foo.toManyAttribute?.addAsExisting(Bar(id: "12"))
+		
+		let serializedData = serializer.serializeResources([foo], options: SerializationOptions(includeToMany: true, includeToOne: true))
+		let json = JSON(data: serializedData)
+		
+		XCTAssertEqual(json["data"]["links"]["toManyAttribute"]["ids"].arrayObject as [String], ["11", "12"], "Serialized to-many ids are not equal")
+		XCTAssertEqual(json["data"]["links"]["toManyAttribute"]["type"].stringValue, Bar.resourceType, "Serialized to-many type is not equal")
+	}
+	
+	func testSerializeSingleResourceWithoutID() {
+		let foo = Foo(id: "1")
+		let options = SerializationOptions(includeID: false, includeToMany: true, includeToOne: true)
+		let serializedData = serializer.serializeResources([foo], options: options)
+		let json = JSON(data: serializedData)
+		
+		XCTAssertNotNil(json["data"]["id"].error, "Expected serialized id to be absent.")
+	}
+	
+	func testSerializeSingleResourceWithoutToOneRelationships() {
+		let foo = Foo(id: "1")
+		foo.toOneAttribute = Bar(id: "10")
+		
+		let options = SerializationOptions(includeToMany: true, includeToOne: false)
+		let serializedData = serializer.serializeResources([foo], options: options)
+		let json = JSON(data: serializedData)
+		
+		XCTAssertNotNil(json["data"]["links"]["toOneAttribute"].error, "Expected serialized to-one to be absent")
+	}
+	
+	func testSerializeSingleResourceWithoutToManyRelationships() {
+		let foo = Foo(id: "1")
+		foo.toManyAttribute = LinkedResourceCollection(resourcesURL: nil, URL: nil, homogenousType: "bars", linkage: nil)
+		foo.toManyAttribute?.addAsExisting(Bar(id: "11"))
+		foo.toManyAttribute?.addAsExisting(Bar(id: "12"))
+		
+		let options = SerializationOptions(includeToMany: false)
+		let serializedData = serializer.serializeResources([foo], options: options)
+		let json = JSON(data: serializedData)
+		
+		XCTAssertNotNil(json["data"]["links"]["toManyAttribute"].error, "Expected serialized to-many to be absent.")
+	}
+}
+
+class DeserializingTests: SerializerTests {
 	
 	func testDeserializeSingleResource() {
 		let path = testBundle.URLForResource("SingleFoo", withExtension: "json")!
@@ -36,12 +117,12 @@ class SerializingTests: XCTestCase {
 			let foo = resources.first as Foo
 			
 			// Attributes
-			compareAttributesOfFooResource(foo, withJSON: json["data"])
+			assertFooResource(foo, isEqualToJSON: json["data"])
 			
 			// To one link
 			XCTAssertNotNil(foo.toOneAttribute, "Expected linked resource to be not nil.")
 			if let bar = foo.toOneAttribute {
-			
+				
 				XCTAssertNotNil(bar.URL, "Expected URL to not be nil")
 				if let URL = bar.URL {
 					XCTAssertEqual(URL, NSURL(string: json["data"]["links"]["toOneAttribute"]["resource"].stringValue)!, "Deserialized link URL is not equal.")
@@ -49,7 +130,7 @@ class SerializingTests: XCTestCase {
 				
 				XCTAssertFalse(bar.isLoaded, "Expected isLoaded to be false.")
 			}
-		
+			
 			// To many link
 			XCTAssertNotNil(foo.toManyAttribute, "Deserialized linked resources should not be nil.")
 			if let barCollection = foo.toManyAttribute {
@@ -90,7 +171,7 @@ class SerializingTests: XCTestCase {
 				let foo = resource as Foo
 				
 				// Attributes
-				compareAttributesOfFooResource(foo, withJSON: resourceJSON)
+				assertFooResource(foo, isEqualToJSON: resourceJSON)
 				
 				// To one link
 				XCTAssertNotNil(foo.toOneAttribute, "Expected linked resource to be not nil.")
@@ -125,7 +206,7 @@ class SerializingTests: XCTestCase {
 			let foo = resources.first as Foo
 			
 			// Attributes
-			compareAttributesOfFooResource(foo, withJSON: json["data"])
+			assertFooResource(foo, isEqualToJSON: json["data"])
 			
 			// To one link
 			XCTAssertNotNil(foo.toOneAttribute, "Deserialized linked resource should not be nil.")
@@ -189,83 +270,5 @@ class SerializingTests: XCTestCase {
 		XCTAssertEqual(error.domain, SPINE_API_ERROR_DOMAIN, "Expected error domain to be SPINE_API_ERROR_DOMAIN.")
 		XCTAssertEqual(error.code, json["errors"][0]["code"].intValue, "Expected error code to be equal.")
 		XCTAssertEqual(error.localizedDescription, json["errors"][0]["title"].stringValue, "Expected error description to be equal.")
-	}
-	
-	
-	// MARK: - Serializing
-	
-	func testSerializeSingleResource() {
-		let foo = Foo()
-		foo.id = "1"
-		foo.stringAttribute = "stringAttribute"
-		foo.integerAttribute = 10
-		foo.floatAttribute = 5.5
-		foo.booleanAttribute = true
-		foo.nilAttribute = nil
-		foo.dateAttribute = NSDate(timeIntervalSince1970: 0)
-		
-		foo.toOneAttribute = Bar(id: "10")
-		
-		foo.toManyAttribute = LinkedResourceCollection(resourcesURL: nil, URL: nil, homogenousType: "bars", linkage: nil)
-		foo.toManyAttribute?.addAsExisting(Bar(id: "11"))
-		foo.toManyAttribute?.addAsExisting(Bar(id: "12"))
-		
-		
-		let options = SerializationOptions(includeToMany: true, includeToOne: true)
-		let serializedData = serializer.serializeResources([foo], options: options)
-		let json = JSON(data: serializedData)
-		
-		XCTAssertEqual(json["data"]["id"].stringValue, foo.id!, "Serialized id is not equal.")
-		XCTAssertEqual(json["data"]["type"].stringValue, foo.type, "Serialized type is not equal.")
-		XCTAssertEqual(json["data"]["integerAttribute"].intValue, foo.integerAttribute!, "Serialized integer is not equal.")
-		XCTAssertEqual(json["data"]["floatAttribute"].floatValue, foo.floatAttribute!, "Serialized float is not equal.")
-		XCTAssertTrue(json["data"]["booleanAttribute"].boolValue, "Serialized boolean is not equal.")
-		XCTAssertNotNil(json["data"]["nilAttribute"].null, "Serialized nil is not equal.")
-		XCTAssertEqual(json["data"]["dateAttribute"].stringValue, "1970-01-01T01:00:00+01:00", "Serialized date is not equal.")
-		
-		XCTAssertEqual(json["data"]["links"]["toOneAttribute"]["id"].stringValue, foo.toOneAttribute!.id!, "Serialized to-one id is not equal")
-		XCTAssertEqual(json["data"]["links"]["toOneAttribute"]["type"].stringValue, Bar.resourceType, "Serialized to-one type is not equal")
-		
-		XCTAssertEqual(json["data"]["links"]["toManyAttribute"]["ids"].arrayObject as [String], ["11", "12"], "Serialized to-many ids are not equal")
-		XCTAssertEqual(json["data"]["links"]["toManyAttribute"]["type"].stringValue, Bar.resourceType, "Serialized to-many type is not equal")
-	}
-	
-	func testSerializeSingleResourceWithoutID() {
-		let foo = Foo()
-		foo.id = "1"
-		
-		let options = SerializationOptions(includeID: false, includeToMany: true, includeToOne: true)
-		let serializedData = serializer.serializeResources([foo], options: options)
-		let json = JSON(data: serializedData)
-		
-		XCTAssertNotNil(json["data"]["id"].error, "Expected serialized id to be absent.")
-	}
-	
-	func testSerializeSingleResourceWithoutToOneRelationships() {
-		let foo = Foo()
-		foo.id = "1"
-		
-		foo.toOneAttribute = Bar(id: "10")
-		
-		let options = SerializationOptions(includeToMany: true, includeToOne: false)
-		let serializedData = serializer.serializeResources([foo], options: options)
-		let json = JSON(data: serializedData)
-		
-		XCTAssertNotNil(json["data"]["links"]["toOneAttribute"].error, "Expected serialized to-one to be absent")
-	}
-	
-	func testSerializeSingleResourceWithoutToManyRelationships() {
-		let foo = Foo()
-		foo.id = "1"
-		
-		foo.toManyAttribute = LinkedResourceCollection(resourcesURL: nil, URL: nil, homogenousType: "bars", linkage: nil)
-		foo.toManyAttribute?.addAsExisting(Bar(id: "11"))
-		foo.toManyAttribute?.addAsExisting(Bar(id: "12"))
-		
-		let options = SerializationOptions(includeToMany: false)
-		let serializedData = serializer.serializeResources([foo], options: options)
-		let json = JSON(data: serializedData)
-		
-		XCTAssertNotNil(json["data"]["links"]["toManyAttribute"].error, "Expected serialized to-many to be absent.")
 	}
 }

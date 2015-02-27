@@ -44,6 +44,7 @@
 		D373F7A619B224BB00275AFC /* Spine.swift in Sources */ = {isa = PBXBuildFile; fileRef = D373F7A319B224BB00275AFC /* Spine.swift */; };
 		D3960DF11A9B5FBC009948B0 /* Errors.json in Resources */ = {isa = PBXBuildFile; fileRef = D3960DF01A9B5FBC009948B0 /* Errors.json */; };
 		D39929EB1A52F3A0008BF0A9 /* ResourceField.swift in Sources */ = {isa = PBXBuildFile; fileRef = D39929EA1A52F3A0008BF0A9 /* ResourceField.swift */; };
+		D39CD5381AA0FA8F00049432 /* CallbackHTTPClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = D39CD5371AA0FA8F00049432 /* CallbackHTTPClient.swift */; };
 		D3DFBB6519B9DC64009785BE /* Networking.swift in Sources */ = {isa = PBXBuildFile; fileRef = D37FB17E19B9D7F10073A888 /* Networking.swift */; };
 /* End PBXBuildFile section */
 
@@ -77,6 +78,7 @@
 		D37FB17E19B9D7F10073A888 /* Networking.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Networking.swift; sourceTree = "<group>"; };
 		D3960DF01A9B5FBC009948B0 /* Errors.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = Errors.json; sourceTree = "<group>"; };
 		D39929EA1A52F3A0008BF0A9 /* ResourceField.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ResourceField.swift; sourceTree = "<group>"; };
+		D39CD5371AA0FA8F00049432 /* CallbackHTTPClient.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = CallbackHTTPClient.swift; path = SpineTests/CallbackHTTPClient.swift; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -186,6 +188,7 @@
 				D312E2F719BB83A8004BB3E0 /* SerializingTests.swift */,
 				D35DAAEC1A962BD400E59545 /* RoutingTests.swift */,
 				D35DAAEE1A96323600E59545 /* Utilities.swift */,
+				D39CD5391AA0FAA200049432 /* Mocks */,
 				D3502C2B1A93A7F700F91266 /* Fixtures */,
 				D373F79519B2249900275AFC /* Supporting Files */,
 			);
@@ -198,6 +201,14 @@
 				D373F79619B2249900275AFC /* Info.plist */,
 			);
 			name = "Supporting Files";
+			sourceTree = "<group>";
+		};
+		D39CD5391AA0FAA200049432 /* Mocks */ = {
+			isa = PBXGroup;
+			children = (
+				D39CD5371AA0FA8F00049432 /* CallbackHTTPClient.swift */,
+			);
+			name = Mocks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -351,6 +362,7 @@
 				D341907D19D31176007B38D6 /* Routing.swift in Sources */,
 				D35CE46E19B276E4002B358E /* Query.swift in Sources */,
 				D373F79819B2249900275AFC /* SpineTests.swift in Sources */,
+				D39CD5381AA0FA8F00049432 /* CallbackHTTPClient.swift in Sources */,
 				D3502C311A93A86600F91266 /* ResourceCollection.swift in Sources */,
 				D3502C341A93A86F00F91266 /* SerializeOperation.swift in Sources */,
 				D35CE47019B276E4002B358E /* Serializing.swift in Sources */,

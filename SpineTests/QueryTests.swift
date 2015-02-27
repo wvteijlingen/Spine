@@ -18,9 +18,7 @@ class QueryTests: XCTestCase {
 	}
 	
 	func testInitWithResource() {
-		let foo = Foo()
-		foo.id = "5"
-		
+		let foo = Foo(id: "5")
 		let query = Query(resource: foo)
 		
 		XCTAssertEqual(query.resourceType!, foo.type, "Resource type not as expected")
@@ -48,7 +46,12 @@ class QueryTests: XCTestCase {
 		
 		query.include("bar", "qux", "bar.qux")
 		XCTAssertEqual(query.includes, ["bar", "qux", "bar.qux"], "Includes not as expected")
+	}
+	
+	func testRemoveInclude() {
+		var query = Query(resourceType: Foo.self)
 		
+		query.include("bar", "qux", "bar.qux")
 		query.removeInclude("bar")
 		XCTAssertEqual(query.includes, ["qux", "bar.qux"], "Includes not as expected")
 	}

@@ -15,7 +15,7 @@ class SpineTests: XCTestCase {
 	var spine: Spine!
 	var HTTPClient: CallbackHTTPClient!
 	
-    override func setUp() {
+	override func setUp() {
 		super.setUp()
 		spine = Spine(baseURL: NSURL(string:"http://example.com")!)
 		HTTPClient = CallbackHTTPClient()
@@ -23,25 +23,13 @@ class SpineTests: XCTestCase {
 		spine.registerResource(Foo.resourceType) { Foo() }
 		spine.registerResource(Bar.resourceType) { Bar() }
 	}
-	
-	func assertFutureFailure<T>(future: Future<T>, withError expectedError: NSError, expectation: XCTestExpectation) {
-		future.onSuccess { resources in
-			expectation.fulfill()
-			XCTFail("Expected success callback to not be called.")
-		}.onFailure { error in
-			expectation.fulfill()
-			XCTAssertEqual(error.domain, expectedError.domain, "Expected error domain to be \(expectedError.domain).")
-			XCTAssertEqual(error.code, expectedError.code, "Expected error code to be \(expectedError.code).")
-		}
-	}
-	
-	func assertFutureFailure<T>(future: Future<T>, withErrorDomain domain: String, errorCode code: Int, expectation: XCTestExpectation) {
-		let expectedError = NSError(domain: domain, code: code, userInfo: nil)
-		assertFutureFailure(future, withError: expectedError, expectation: expectation)
-	}
-	
-	
-	// MARK: - Find by type
+}
+
+// MARK: -
+
+class FindTests: SpineTests {
+
+	// MARK: Find by type
 	
 	func testFindByType() {
 		let path = testBundle.URLForResource("MultipleFoos", withExtension: "json")!
@@ -61,7 +49,7 @@ class SpineTests: XCTestCase {
 				XCTAssertEqual(fooCollection.count, 2, "Deserialized resources count not equal.")
 				XCTAssert(resource is Foo, "Deserialized resource should be of class 'Foo'.")
 				let foo = resource as Foo
-				compareAttributesOfFooResource(foo, withJSON: json["data"][index])
+				assertFooResource(foo, isEqualToJSON: json["data"][index])
 			}
 			}.onFailure { error in
 				expectation.fulfill()
@@ -78,7 +66,7 @@ class SpineTests: XCTestCase {
 		
 		let expectation = expectationWithDescription("testFindByTypeWithAPIError")
 		let future = spine.find(Foo.self)
-		assertFutureFailure(future, withErrorDomain: SPINE_API_ERROR_DOMAIN, errorCode: 404, expectation: expectation)
+		assertFutureFailure(future, withErrorDomain: SPINE_API_ERROR_DOMAIN, errorCode: 404, expectation)
 		
 		waitForExpectationsWithTimeout(10) { error in
 			XCTAssertNil(error, "\(error)")
@@ -90,7 +78,7 @@ class SpineTests: XCTestCase {
 		
 		let expectation = expectationWithDescription("testFindByTypeWithNetworkError")
 		let future = spine.find(Foo.self)
-		assertFutureFailure(future, withErrorDomain: SPINE_ERROR_DOMAIN, errorCode: 999, expectation: expectation)
+		assertFutureFailure(future, withErrorDomain: SPINE_ERROR_DOMAIN, errorCode: 999, expectation)
 		
 		waitForExpectationsWithTimeout(10) { error in
 			XCTAssertNil(error, "\(error)")
@@ -98,7 +86,7 @@ class SpineTests: XCTestCase {
 	}
 	
 	
-	// MARK: - Find by ID and type
+	// MARK: Find by ID and type
 	
 	func testFindByIDAndType() {
 		let data = NSData(contentsOfURL: testBundle.URLForResource("MultipleFoos", withExtension: "json")!)!
@@ -117,7 +105,7 @@ class SpineTests: XCTestCase {
 				XCTAssertEqual(fooCollection.count, 2, "Expected resource count to be 2.")
 				XCTAssert(resource is Foo, "Expected resource to be of class 'Foo'.")
 				let foo = resource as Foo
-				compareAttributesOfFooResource(foo, withJSON: json["data"][index])
+				assertFooResource(foo, isEqualToJSON: json["data"][index])
 			}
 		}.onFailure { error in
 			expectation.fulfill()
@@ -134,7 +122,7 @@ class SpineTests: XCTestCase {
 		
 		let expectation = expectationWithDescription("testFindByIDAndTypeWithAPIError")
 		let future = spine.find(["1","2"], ofType: Foo.self)
-		assertFutureFailure(future, withErrorDomain: SPINE_API_ERROR_DOMAIN, errorCode: 404, expectation: expectation)
+		assertFutureFailure(future, withErrorDomain: SPINE_API_ERROR_DOMAIN, errorCode: 404, expectation)
 		
 		waitForExpectationsWithTimeout(10) { error in
 			XCTAssertNil(error, "\(error)")
@@ -147,7 +135,7 @@ class SpineTests: XCTestCase {
 		
 		let expectation = expectationWithDescription("testFindByIDAndTypeWithNetworkError")
 		let future = spine.find(["1","2"], ofType: Foo.self)
-		assertFutureFailure(future, withErrorDomain: SPINE_ERROR_DOMAIN, errorCode: 999, expectation: expectation)
+		assertFutureFailure(future, withErrorDomain: SPINE_ERROR_DOMAIN, errorCode: 999, expectation)
 		
 		waitForExpectationsWithTimeout(10) { error in
 			XCTAssertNil(error, "\(error)")
@@ -155,7 +143,7 @@ class SpineTests: XCTestCase {
 	}
 	
 	
-	// MARK: - Find one by ID and type
+	// MARK: Find one by ID and type
 	
 	func testFindOneByIDAndType() {
 		let path = testBundle.URLForResource("SingleFoo", withExtension: "json")!
@@ -171,7 +159,7 @@ class SpineTests: XCTestCase {
 		
 		spine.findOne("1", ofType: Foo.self).onSuccess { foo in
 			expectation.fulfill()
-			compareAttributesOfFooResource(foo, withJSON: json["data"])
+			assertFooResource(foo, isEqualToJSON: json["data"])
 			}.onFailure { error in
 				expectation.fulfill()
 				XCTFail("Find failed with error: \(error).")
@@ -187,7 +175,7 @@ class SpineTests: XCTestCase {
 		
 		let expectation = expectationWithDescription("testFindOneByTypeWithAPIError")
 		let future = spine.findOne("1", ofType: Foo.self)
-		assertFutureFailure(future, withErrorDomain: SPINE_API_ERROR_DOMAIN, errorCode: 404, expectation: expectation)
+		assertFutureFailure(future, withErrorDomain: SPINE_API_ERROR_DOMAIN, errorCode: 404, expectation)
 		
 		waitForExpectationsWithTimeout(10) { error in
 			XCTAssertNil(error, "\(error)")
@@ -199,7 +187,7 @@ class SpineTests: XCTestCase {
 		
 		let expectation = expectationWithDescription("testFindOneByTypeWithNetworkError")
 		let future = spine.findOne("1", ofType: Foo.self)
-		assertFutureFailure(future, withErrorDomain: SPINE_ERROR_DOMAIN, errorCode: 999, expectation: expectation)
+		assertFutureFailure(future, withErrorDomain: SPINE_ERROR_DOMAIN, errorCode: 999, expectation)
 		
 		waitForExpectationsWithTimeout(10) { error in
 			XCTAssertNil(error, "\(error)")
@@ -207,7 +195,7 @@ class SpineTests: XCTestCase {
 	}
 	
 	
-	// MARK: - Find by query
+	// MARK: Find by query
 	
 	func testFindByQuery() {
 		let path = testBundle.URLForResource("MultipleFoos", withExtension: "json")!
@@ -228,7 +216,7 @@ class SpineTests: XCTestCase {
 				XCTAssertEqual(fooCollection.count, 2, "Deserialized resources count not equal.")
 				XCTAssert(resource is Foo, "Deserialized resource should be of class 'Foo'.")
 				let foo = resource as Foo
-				compareAttributesOfFooResource(foo, withJSON: json["data"][index])
+				assertFooResource(foo, isEqualToJSON: json["data"][index])
 			}
 		}.onFailure { error in
 			expectation.fulfill()
@@ -247,7 +235,7 @@ class SpineTests: XCTestCase {
 		
 		let query = Query(resourceType: Foo.self, resourceIDs: ["1"])
 		let future = spine.find(query)
-		assertFutureFailure(future, withErrorDomain: SPINE_API_ERROR_DOMAIN, errorCode: 404, expectation: expectation)
+		assertFutureFailure(future, withErrorDomain: SPINE_API_ERROR_DOMAIN, errorCode: 404, expectation)
 		
 		waitForExpectationsWithTimeout(10) { error in
 			XCTAssertNil(error, "\(error)")
@@ -261,7 +249,7 @@ class SpineTests: XCTestCase {
 		
 		let query = Query(resourceType: Foo.self, resourceIDs: ["1"])
 		let future = spine.find(query)
-		assertFutureFailure(future, withErrorDomain: SPINE_ERROR_DOMAIN, errorCode: 999, expectation: expectation)
+		assertFutureFailure(future, withErrorDomain: SPINE_ERROR_DOMAIN, errorCode: 999, expectation)
 		
 		waitForExpectationsWithTimeout(10) { error in
 			XCTAssertNil(error, "\(error)")
@@ -269,7 +257,7 @@ class SpineTests: XCTestCase {
 	}
 	
 	
-	// MARK: - Find one by query
+	// MARK: Find one by query
 	
 	func testFindOneByQuery() {
 		let path = testBundle.URLForResource("SingleFoo", withExtension: "json")!
@@ -286,7 +274,7 @@ class SpineTests: XCTestCase {
 		
 		spine.findOne(query).onSuccess { foo in
 			expectation.fulfill()
-			compareAttributesOfFooResource(foo, withJSON: json["data"])
+			assertFooResource(foo, isEqualToJSON: json["data"])
 		}.onFailure { error in
 			expectation.fulfill()
 			XCTFail("Find failed with error: \(error).")
@@ -304,7 +292,7 @@ class SpineTests: XCTestCase {
 		
 		let query = Query(resourceType: Foo.self, resourceIDs: ["1"])
 		let future = spine.findOne(query)
-		assertFutureFailure(future, withErrorDomain: SPINE_API_ERROR_DOMAIN, errorCode: 404, expectation: expectation)
+		assertFutureFailure(future, withErrorDomain: SPINE_API_ERROR_DOMAIN, errorCode: 404, expectation)
 		
 		waitForExpectationsWithTimeout(10) { error in
 			XCTAssertNil(error, "\(error)")
@@ -318,15 +306,19 @@ class SpineTests: XCTestCase {
 		
 		let query = Query(resourceType: Foo.self, resourceIDs: ["1"])
 		let future = spine.findOne(query)
-		assertFutureFailure(future, withErrorDomain: SPINE_ERROR_DOMAIN, errorCode: 999, expectation: expectation)
+		assertFutureFailure(future, withErrorDomain: SPINE_ERROR_DOMAIN, errorCode: 999, expectation)
 		
 		waitForExpectationsWithTimeout(10) { error in
 			XCTAssertNil(error, "\(error)")
 		}
 	}
-	
-	
-	// MARK: - Delete
+}
+
+// MARK: -
+
+class PersistingTests: SpineTests {
+
+	// MARK: Delete
 	
 	func testDeleteResource() {
 		HTTPClient.handler = { (request: NSURLRequest, payload: NSData?) -> (responseData: NSData, statusCode: Int, error: NSError?) in
@@ -356,7 +348,7 @@ class SpineTests: XCTestCase {
 		let bar = Bar(id: "1")
 		let expectation = expectationWithDescription("testDeleteResource")
 		let future = spine.delete(bar)
-		assertFutureFailure(future, withErrorDomain: SPINE_API_ERROR_DOMAIN, errorCode: 404, expectation: expectation)
+		assertFutureFailure(future, withErrorDomain: SPINE_API_ERROR_DOMAIN, errorCode: 404, expectation)
 		
 		waitForExpectationsWithTimeout(10) { error in
 			XCTAssertNil(error, "\(error)")
@@ -369,10 +361,14 @@ class SpineTests: XCTestCase {
 		let bar = Bar(id: "1")
 		let expectation = expectationWithDescription("testDeleteResource")
 		let future = spine.delete(bar)
-		assertFutureFailure(future, withErrorDomain: SPINE_ERROR_DOMAIN, errorCode: 999, expectation: expectation)
+		assertFutureFailure(future, withErrorDomain: SPINE_ERROR_DOMAIN, errorCode: 999, expectation)
 		
 		waitForExpectationsWithTimeout(10) { error in
 			XCTAssertNil(error, "\(error)")
 		}
 	}
+	
+	// MARK: Save
+	
+	//TODO
 }

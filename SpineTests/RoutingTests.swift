@@ -10,20 +10,8 @@ import UIKit
 import XCTest
 
 class RoutingTests: XCTestCase {
-	var spine: Spine!
-	var HTTPClient: CallbackHTTPClient!
-	
-	override func setUp() {
-		super.setUp()
-		spine = Spine(baseURL: NSURL(string:"http://example.com")!)
-		HTTPClient = CallbackHTTPClient()
-		spine.HTTPClient = HTTPClient
-	}
-	
-    override func tearDown() {
-        super.tearDown()
-    }
-	
+	let spine = Spine(baseURL: NSURL(string:"http://example.com")!)
+
 	func testSetBaseURL() {
 		spine.router.baseURL = NSURL(string:"http://github.com")!
 		XCTAssertEqual(spine.router.baseURL, NSURL(string:"http://github.com")!, "Base URL not as expected.")
@@ -36,18 +24,14 @@ class RoutingTests: XCTestCase {
 	}
 	
 	func testURLForRelationship() {
-		let resource = Foo()
-		resource.id = "1"
-		
+		let resource = Foo(id: "1")
 		let URL = spine.router.URLForRelationship("relatedBars", ofResource: resource)
 		let expectedURL = NSURL(string: "http://example.com/foos/1/links/relatedBars")!
 		XCTAssertEqual(URL, expectedURL, "URL not as expected.")
 	}
 	
 	func testURLForRelationshipWithIDs() {
-		let resource = Foo()
-		resource.id = "1"
-		
+		let resource = Foo(id: "1")
 		let URL = spine.router.URLForRelationship("relatedBars", ofResource: resource, ids: ["5", "6", "7"])
 		let expectedURL = NSURL(string: "http://example.com/foos/1/links/relatedBars/5,6,7")!
 		XCTAssertEqual(URL, expectedURL, "URL not as expected.")

@@ -36,6 +36,19 @@ class Foo: Resource {
 			"toManyAttribute": ToManyRelationship(Bar.resourceType)
 			])
 	}
+	
+	override init() {
+		super.init()
+	}
+	
+	init(id: String) {
+		super.init()
+		self.id = id
+	}
+
+	required init(coder: NSCoder) {
+		super.init(coder: coder)
+	}
 }
 
 class Bar: Resource {

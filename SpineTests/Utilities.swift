@@ -9,15 +9,7 @@
 import Foundation
 import XCTest
 import SwiftyJSON
-
-func compareAttributesOfFooResource(foo: Foo, withJSON json: JSON) {
-	XCTAssertEqual(foo.stringAttribute!, json["stringAttribute"].stringValue, "Deserialized string attribute is not equal.")
-	XCTAssertEqual(foo.integerAttribute!, json["integerAttribute"].intValue, "Deserialized integer attribute is not equal.")
-	XCTAssertEqual(foo.floatAttribute!, json["floatAttribute"].floatValue, "Deserialized float attribute is not equal.")
-	XCTAssertEqual(foo.booleanAttribute!, json["integerAttribute"].boolValue, "Deserialized boolean attribute is not equal.")
-	XCTAssertNil(foo.nilAttribute, "Deserialized nil attribute is not equal.")
-	XCTAssertEqual(foo.dateAttribute!, NSDate(timeIntervalSince1970: 0), "Deserialized date attribute is not equal.")
-}
+import BrightFutures
 
 extension XCTestCase {
 	var testBundle: NSBundle {
@@ -25,76 +17,29 @@ extension XCTestCase {
 	}
 }
 
-public class CallbackHTTPClient: _HTTPClientProtocol {
-	typealias HandlerFunction = (request: NSURLRequest, payload: NSData?) -> (responseData: NSData, statusCode: Int, error: NSError?)
-	
-	var handler: HandlerFunction!
-	var traceEnabled = false
-	let queue = dispatch_queue_create("com.wardvanteijlingen.spine.callbackHTTPClient", nil)
-	var delay: NSTimeInterval = 0
-	
-	init() {}
-	
-	public func setHeader(header: String, to value: String) {
-		//
+// MARK: - Custom assertions
+
+func assertFutureFailure<T>(future: Future<T>, withError expectedError: NSError, expectation: XCTestExpectation) {
+	future.onSuccess { resources in
+		expectation.fulfill()
+		XCTFail("Expected success callback to not be called.")
+		}.onFailure { error in
+			expectation.fulfill()
+			XCTAssertEqual(error.domain, expectedError.domain, "Expected error domain to be \(expectedError.domain).")
+			XCTAssertEqual(error.code, expectedError.code, "Expected error code to be \(expectedError.code).")
 	}
-	
-	public func removeHeader(header: String) {
-		//
-	}
-	
-	func request(method: HTTPClientRequestMethod, URL: NSURL, callback: HTTPClientCallback) {
-		return request(method, URL: URL, payload: nil, callback: callback)
-	}
-	
-	func request(method: HTTPClientRequestMethod, URL: NSURL, payload: NSData?, callback: HTTPClientCallback) {
-		let request = NSMutableURLRequest(URL: URL)
-		request.HTTPMethod = method.rawValue
-		
-		if let payload = payload {
-			request.HTTPBody = payload
-		}
-		
-		trace("⬆️ \(method.rawValue): \(URL)")
-		
-		// Perform the request
-		dispatch_async(queue) {
-			let (data, statusCode, error) = self.handler(request: request, payload: payload)
-			let startTime = dispatch_time(DISPATCH_TIME_NOW, Int64(self.delay * Double(NSEC_PER_SEC)))
-			
-			dispatch_after(startTime, dispatch_get_main_queue()) {
-				var resolvedError: NSError?
-				
-				// Framework error
-				if let error = error {
-					self.trace("❌ Err:  \(request.URL) - \(error.localizedDescription)")
-					resolvedError = NSError(domain: SPINE_ERROR_DOMAIN, code: error.code, userInfo: error.userInfo)
-					
-					// Success
-				} else if 200 ... 299 ~= statusCode {
-					self.trace("✅ \(statusCode):  \(request.URL)")
-					
-					// API Error
-				} else {
-					self.trace("❌ \(statusCode):  \(request.URL)")
-					resolvedError = NSError(domain: SPINE_API_ERROR_DOMAIN, code: statusCode, userInfo: nil)
-				}
-				
-				callback(statusCode: statusCode, responseData: data, error: resolvedError)
-			}
-		}
-	}
-	
-	func respondWith(status: Int, data: NSData? = nil, error: NSError? = nil) {
-		let responseData = data ?? NSData()
-		handler = { request, payload in
-			return (responseData: responseData, statusCode: status, error: error)
-		}
-	}
-	
-	private func trace<T>(object: T) {
-		if traceEnabled {
-			println(object)
-		}
-	}
+}
+
+func assertFutureFailure<T>(future: Future<T>, withErrorDomain domain: String, errorCode code: Int, expectation: XCTestExpectation) {
+	let expectedError = NSError(domain: domain, code: code, userInfo: nil)
+	assertFutureFailure(future, withError: expectedError, expectation)
+}
+
+func assertFooResource(foo: Foo, isEqualToJSON json: JSON) {
+	XCTAssertEqual(foo.stringAttribute!, json["stringAttribute"].stringValue, "Deserialized string attribute is not equal.")
+	XCTAssertEqual(foo.integerAttribute!, json["integerAttribute"].intValue, "Deserialized integer attribute is not equal.")
+	XCTAssertEqual(foo.floatAttribute!, json["floatAttribute"].floatValue, "Deserialized float attribute is not equal.")
+	XCTAssertEqual(foo.booleanAttribute!, json["integerAttribute"].boolValue, "Deserialized boolean attribute is not equal.")
+	XCTAssertNil(foo.nilAttribute, "Deserialized nil attribute is not equal.")
+	XCTAssertEqual(foo.dateAttribute!, NSDate(timeIntervalSince1970: 0), "Deserialized date attribute is not equal.")
 }

@@ -31,13 +31,7 @@ class ResourceCollectionTests: XCTestCase {
 	}
 	
 	func testTypeAndIDSubscript() {
-		let foo = Foo()
-		foo.id = "5"
-		
-		let bar = Bar()
-		bar.id = "6"
-		
-		let resources: [ResourceProtocol] = [foo, bar]
+		let resources: [ResourceProtocol] = [Foo(id: "5"), Bar(id: "6")]
 		let collection = ResourceCollection(resources: resources)
 		
 		XCTAssert(collection["foos", "5"] === resources[0], "Expected resource to be equal.")
