@@ -287,9 +287,9 @@ class SpineTests: XCTestCase {
 		spine.findOne(query).onSuccess { foo in
 			expectation.fulfill()
 			compareAttributesOfFooResource(foo, withJSON: json["data"])
-			}.onFailure { error in
-				expectation.fulfill()
-				XCTFail("Find failed with error: \(error).")
+		}.onFailure { error in
+			expectation.fulfill()
+			XCTFail("Find failed with error: \(error).")
 		}
 		
 		waitForExpectationsWithTimeout(10) { error in
@@ -318,6 +318,57 @@ class SpineTests: XCTestCase {
 		
 		let query = Query(resourceType: Foo.self, resourceIDs: ["1"])
 		let future = spine.findOne(query)
+		assertFutureFailure(future, withErrorDomain: SPINE_ERROR_DOMAIN, errorCode: 999, expectation: expectation)
+		
+		waitForExpectationsWithTimeout(10) { error in
+			XCTAssertNil(error, "\(error)")
+		}
+	}
+	
+	
+	// MARK: - Delete
+	
+	func testDeleteResource() {
+		HTTPClient.handler = { (request: NSURLRequest, payload: NSData?) -> (responseData: NSData, statusCode: Int, error: NSError?) in
+			XCTAssertEqual(request.URL, NSURL(string:"http://example.com/bars/1")!, "Request URL not as expected.")
+			XCTAssertEqual(request.HTTPMethod!, "DELETE", "Expected HTTP method to be 'DELETE'.")
+			return (responseData: NSData(), statusCode: 204, error: nil)
+		}
+		
+		let bar = Bar(id: "1")
+		let expectation = expectationWithDescription("testDeleteResource")
+		
+		spine.delete(bar).onSuccess {
+			expectation.fulfill()
+		}.onFailure { error in
+			expectation.fulfill()
+			XCTFail("Delete failed with error: \(error).")
+		}
+		
+		waitForExpectationsWithTimeout(10) { error in
+			XCTAssertNil(error, "\(error)")
+		}
+	}
+	
+	func testDeleteResourceWithAPIError() {
+		HTTPClient.respondWith(404)
+		
+		let bar = Bar(id: "1")
+		let expectation = expectationWithDescription("testDeleteResource")
+		let future = spine.delete(bar)
+		assertFutureFailure(future, withErrorDomain: SPINE_API_ERROR_DOMAIN, errorCode: 404, expectation: expectation)
+		
+		waitForExpectationsWithTimeout(10) { error in
+			XCTAssertNil(error, "\(error)")
+		}
+	}
+	
+	func testDeleteResourceWithNetworkError() {
+		HTTPClient.respondWith(404, error: NSError(domain: "mock", code: 999, userInfo: nil))
+		
+		let bar = Bar(id: "1")
+		let expectation = expectationWithDescription("testDeleteResource")
+		let future = spine.delete(bar)
 		assertFutureFailure(future, withErrorDomain: SPINE_ERROR_DOMAIN, errorCode: 999, expectation: expectation)
 		
 		waitForExpectationsWithTimeout(10) { error in
