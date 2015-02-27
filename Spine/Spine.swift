@@ -82,7 +82,7 @@ public class Spine {
 		
 		HTTPClient.request(.GET, URL: URL) { statusCode, responseData, error in
 			if let error = error {
-				promise.error(self.handleErrorResponse(statusCode, responseData: responseData, error: error))
+				promise.failure(self.handleErrorResponse(statusCode, responseData: responseData, error: error))
 				
 			} else {
 				let deserializationResult = self.serializer.deserializeData(responseData!, mappingTargets: mappingTargets)
@@ -93,7 +93,7 @@ public class Spine {
 					collection.paginationData = paginationData
 					promise.success(collection)
 				case .Failure(let error):
-					promise.error(error)
+					promise.failure(error)
 				}
 			}
 		}
@@ -110,7 +110,7 @@ public class Spine {
 			fetchResourcesByExecutingQuery(query, mapOnto: [resource]).onSuccess { resources in
 				promise.success(resource)
 			}.onFailure { error in
-				promise.error(error)
+				promise.failure(error)
 			}
 		}
 		
@@ -140,7 +140,7 @@ public class Spine {
 		
 		HTTPClient.request(request, URL: URL, payload: payload) { statusCode, responseData, error in
 			if let error = error {
-				promise.error(self.handleErrorResponse(statusCode, responseData: responseData, error: error))
+				promise.failure(self.handleErrorResponse(statusCode, responseData: responseData, error: error))
 				return
 			}
 			
@@ -157,7 +157,7 @@ public class Spine {
 					promise.success(resource)
 				}.onFailure { error in
 					println("Error updating resource relationships: \(error)")
-					promise.error(error)
+					promise.failure(error)
 				}
 			}
 		}
@@ -203,17 +203,17 @@ public class Spine {
 			switch operation.type {
 			case "add":
 				self.addRelatedResources(operation.resources, toResource: resource, relationship: operation.relationship).onFailure { error in
-					promise.error(error)
+					promise.failure(error)
 					stop = true
 				}
 			case "remove":
 				self.removeRelatedResources(operation.resources, fromResource: resource, relationship: operation.relationship).onFailure { error in
-					promise.error(error)
+					promise.failure(error)
 					stop = true
 				}
 			case "replace":
 				self.setRelatedResource(operation.resources.first!, ofResource: resource, relationship: operation.relationship).onFailure { error in
-					promise.error(error)
+					promise.failure(error)
 					stop = true
 				}
 			default: ()
@@ -239,7 +239,7 @@ public class Spine {
 			// TODO: Move serialization
 			self.HTTPClient.request(.POST, URL: URL, payload: payload) { statusCode, responseData, error in
 				if let error = error {
-					promise.error(self.handleErrorResponse(statusCode, responseData: responseData, error: error))
+					promise.failure(self.handleErrorResponse(statusCode, responseData: responseData, error: error))
 				} else {
 					promise.success()
 				}
@@ -264,7 +264,7 @@ public class Spine {
 			
 			self.HTTPClient.request(.DELETE, URL: URL) { statusCode, responseData, error in
 				if let error = error {
-					promise.error(self.handleErrorResponse(statusCode, responseData: responseData, error: error))
+					promise.failure(self.handleErrorResponse(statusCode, responseData: responseData, error: error))
 				} else {
 					promise.success()
 				}
@@ -283,7 +283,7 @@ public class Spine {
 		
 		self.HTTPClient.request(.PUT, URL: URL, payload: payload) { statusCode, responseData, error in
 			if let error = error {
-				promise.error(self.handleErrorResponse(statusCode, responseData: responseData, error: error))
+				promise.failure(self.handleErrorResponse(statusCode, responseData: responseData, error: error))
 			} else {
 				promise.success()
 			}
@@ -302,7 +302,7 @@ public class Spine {
 		
 		self.HTTPClient.request(.DELETE, URL: URL) { statusCode, responseData, error in
 			if let error = error {
-				promise.error(self.handleErrorResponse(statusCode, responseData: responseData, error: error))
+				promise.failure(self.handleErrorResponse(statusCode, responseData: responseData, error: error))
 			} else {
 				promise.success()
 			}
@@ -422,10 +422,10 @@ public extension Spine {
 			if let resource = resourceCollection.resources.first as? T {
 				promise.success(resource)
 			} else {
-				promise.error(NSError(domain: SPINE_ERROR_DOMAIN, code: 404, userInfo: nil))
+				promise.failure(NSError(domain: SPINE_ERROR_DOMAIN, code: 404, userInfo: nil))
 			}
 		}.onFailure { error in
-			promise.error(error)
+			promise.failure(error)
 		}
 		
 		return promise.future
