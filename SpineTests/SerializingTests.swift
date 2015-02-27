@@ -227,7 +227,7 @@ class SerializingTests: XCTestCase {
 		XCTAssertEqual(json["data"]["links"]["toOneAttribute"]["type"].stringValue, Bar.resourceType, "Serialized to-one type is not equal")
 		
 		XCTAssertEqual(json["data"]["links"]["toManyAttribute"]["ids"].arrayObject as [String], ["11", "12"], "Serialized to-many ids are not equal")
-		XCTAssertEqual(json["data"]["links"]["toOneAttribute"]["type"].stringValue, Bar.resourceType, "Serialized to-many type is not equal")
+		XCTAssertEqual(json["data"]["links"]["toManyAttribute"]["type"].stringValue, Bar.resourceType, "Serialized to-many type is not equal")
 	}
 	
 	func testSerializeSingleResourceWithoutID() {
@@ -238,40 +238,34 @@ class SerializingTests: XCTestCase {
 		let serializedData = serializer.serializeResources([foo], options: options)
 		let json = JSON(data: serializedData)
 		
-		XCTAssertNotNil(json["data"]["id"].error, "Serialized id is present.")
+		XCTAssertNotNil(json["data"]["id"].error, "Expected serialized id to be absent.")
 	}
 	
 	func testSerializeSingleResourceWithoutToOneRelationships() {
 		let foo = Foo()
 		foo.id = "1"
-		foo.stringAttribute = "stringAttribute"
-		foo.integerAttribute = 10
-		foo.floatAttribute = 5.5
-		foo.booleanAttribute = true
-		foo.nilAttribute = nil
-		foo.dateAttribute = NSDate(timeIntervalSince1970: 0)
 		
 		foo.toOneAttribute = Bar(id: "10")
-		
-		foo.toManyAttribute = LinkedResourceCollection(resourcesURL: nil, URL: nil, homogenousType: "bars", linkage: nil)
-		foo.toManyAttribute?.addAsExisting(Bar(id: "11"))
-		foo.toManyAttribute?.addAsExisting(Bar(id: "12"))
 		
 		let options = SerializationOptions(includeToMany: true, includeToOne: false)
 		let serializedData = serializer.serializeResources([foo], options: options)
 		let json = JSON(data: serializedData)
 		
-		XCTAssertEqual(json["data"]["id"].stringValue, foo.id!, "Serialized id is not equal.")
-		XCTAssertEqual(json["data"]["type"].stringValue, foo.type, "Serialized type is not equal.")
-		XCTAssertEqual(json["data"]["integerAttribute"].intValue, foo.integerAttribute!, "Serialized integer is not equal.")
-		XCTAssertEqual(json["data"]["floatAttribute"].floatValue, foo.floatAttribute!, "Serialized float is not equal.")
-		XCTAssertTrue(json["data"]["booleanAttribute"].boolValue, "Serialized boolean is not equal.")
-		XCTAssertNotNil(json["data"]["nilAttribute"].null, "Serialized nil is not equal.")
-		XCTAssertEqual(json["data"]["dateAttribute"].stringValue, "1970-01-01T01:00:00+01:00", "Serialized date is not equal.")
+		XCTAssertNotNil(json["data"]["links"]["toOneAttribute"].error, "Expected serialized to-one to be absent")
+	}
+	
+	func testSerializeSingleResourceWithoutToManyRelationships() {
+		let foo = Foo()
+		foo.id = "1"
 		
-		XCTAssertNotNil(json["data"]["links"]["toOneAttribute"].error, "Serialized to-one is present")
+		foo.toManyAttribute = LinkedResourceCollection(resourcesURL: nil, URL: nil, homogenousType: "bars", linkage: nil)
+		foo.toManyAttribute?.addAsExisting(Bar(id: "11"))
+		foo.toManyAttribute?.addAsExisting(Bar(id: "12"))
 		
-		XCTAssertEqual(json["data"]["links"]["toManyAttribute"]["ids"].arrayObject as [String], ["11", "12"], "Serialized to-many ids are not equal")
-		XCTAssertEqual(json["data"]["links"]["toOneAttribute"]["type"].stringValue, Bar.resourceType, "Serialized to-many type is not equal")
+		let options = SerializationOptions(includeToMany: false)
+		let serializedData = serializer.serializeResources([foo], options: options)
+		let json = JSON(data: serializedData)
+		
+		XCTAssertNotNil(json["data"]["links"]["toManyAttribute"].error, "Expected serialized to-many to be absent.")
 	}
 }
