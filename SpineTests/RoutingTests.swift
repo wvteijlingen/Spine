@@ -12,11 +12,6 @@ import XCTest
 class RoutingTests: XCTestCase {
 	let spine = Spine(baseURL: NSURL(string:"http://example.com")!)
 
-	func testSetBaseURL() {
-		spine.router.baseURL = NSURL(string:"http://github.com")!
-		XCTAssertEqual(spine.router.baseURL, NSURL(string:"http://github.com")!, "Base URL not as expected.")
-	}
-	
 	func testURLForResourceType() {
 		let URL = spine.router.URLForResourceType("foos")
 		let expectedURL = NSURL(string: "http://example.com/foos")!

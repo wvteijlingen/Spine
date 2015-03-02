@@ -18,44 +18,26 @@ public let SPINE_API_ERROR_DOMAIN = "com.wardvanteijlingen.Spine.Api"
 /// The main class
 public class Spine {
 	
-	/// The base URL of the API. All other URLs will be made absolute to this URL.
-	public var baseURL: NSURL {
-		get {
-			return self.router.baseURL
-		}
-		set {
-			self.router.baseURL = newValue
-		}
-	}
-	
 	/// The router that builds the URLs for requests.
-	var router: Router = JSONAPIRouter()
+	let router: RouterProtocol
 	
 	/// The HTTPClient that performs the HTTP requests.
 	var HTTPClient: _HTTPClientProtocol = URLSessionClient()
 	
-	/// The public facing HTTPClient
+	/// The public facing HTTPClient.
 	public var client: HTTPClientProtocol {
 		return HTTPClient
 	}
 	
 	/// The serializer to use for serializing and deserializing of JSON representations.
-	private var serializer: JSONSerializer = JSONSerializer()
-	
-	/// Whether the print debug information. Default false.
-	public var traceEnabled: Bool = false {
-		didSet {
-			self.HTTPClient.traceEnabled = traceEnabled
-		}
-	}
+	private let serializer: JSONSerializer = JSONSerializer()
 	
 	
 	// MARK: Initializers
 	
-	public init(baseURL: NSURL? = nil) {
-		if let baseURL = baseURL {
-			self.baseURL = baseURL
-		}
+	public init(baseURL: NSURL, router: RouterProtocol = Router()) {
+		self.router = router
+		self.router.baseURL = baseURL
 	}
 	
 	
@@ -316,13 +298,14 @@ public class Spine {
 // MARK: - Public functions
 
 /**
- *  Registering resource types
+ *  Extension regarding (registering of) resource types.
  */
 public extension Spine {
 	/**
-	Registers the given class as a resource class.
+	Registers a factory function `factory` for resource type `type`.
 	
-	:param: type The class type.
+	:param: type    The resource type to register the factory function for.
+	:param: factory The factory method that returns an instance of a resource.
 	*/
 	func registerResource(type: String, factory: () -> ResourceProtocol) {
 		self.serializer.resourceFactory.registerResource(type, factory: factory)
@@ -331,13 +314,13 @@ public extension Spine {
 
 
 /**
- *  Registering transformers
+ *  Extension regarding (registering of) transformers.
  */
 public extension Spine {
 	/**
-	Registers the given class as a resource class.
+	Registers transformer `transformer`.
 	
-	:param: type The class type.
+	:param: type The Transformer to register.
 	*/
 	func registerTransformer<T: Transformer>(transformer: T) {
 		self.serializer.transformers.registerTransformer(transformer)
@@ -345,13 +328,11 @@ public extension Spine {
 }
 
 /**
- *  Finding resources
+ *  Extension regarding finding resources.
  */
 public extension Spine {
 	/**
 	Fetch multiple resources with the given IDs and type.
-	
-	:test: SpineTests.testFindByIDAndType
 	
 	:param: IDs  IDs of resources to fetch.
 	:param: type The type of resource to fetch.
@@ -367,8 +348,6 @@ public extension Spine {
 	Fetch all resources with the given type.
 	This does not explicitly impose any limit, but the server may choose to limit the response.
 	
-	:test: SpineTests.testFindByType
-	
 	:param: type The type of resource to fetch.
 	
 	:returns: A future that resolves to a ResourceCollection that contains the fetched resources.
@@ -380,8 +359,6 @@ public extension Spine {
 	
 	/**
 	Fetch one resource with the given ID and type.
-	
-	:test: SpineTests.testFindOneByIDAndType
 	
 	:param: ID   ID of resource to fetch.
 	:param: type The type of resource to fetch.
@@ -396,8 +373,6 @@ public extension Spine {
 	/**
 	Fetch multiple resources using the given query..
 	
-	// :test: SpineTests.testFindByQuery
-	
 	:param: query The query describing which resources to fetch.
 	
 	:returns: A future that resolves to a ResourceCollection that contains the fetched resources.
@@ -408,8 +383,6 @@ public extension Spine {
 
 	/**
 	Fetch one resource using the given query..
-	
-	:test: SpineTests.testFindOneByQuery
 	
 	:param: query The query describing which resource to fetch.
 	
@@ -433,7 +406,7 @@ public extension Spine {
 }
 
 /**
- *  Persisting resources
+ *  Extension regarding persisting resources.
  */
 public extension Spine {
 	func save(resource: ResourceProtocol) -> Future<ResourceProtocol> {
@@ -446,7 +419,7 @@ public extension Spine {
 }
 
 /**
- *  Ensuring resources
+ *  Extension regarding ensuring resources.
  */
 public extension Spine {
 	
@@ -464,17 +437,19 @@ public extension Spine {
 
 // MARK: - Utilities
 
-// Find resources with a specific type in a collection
+/// Return an `Array` containing resources of `domain`,
+/// in order, that are of the resource type `type`.
 func findResourcesWithType<C: CollectionType where C.Generator.Element: ResourceProtocol>(domain: C, type: String) -> [C.Generator.Element] {
 	return filter(domain) { $0.type == type }
 }
 
-// Find a specific resource in a collection
+/// Return the first resource of `domain`,
+/// that is of the resource type `type` and has id `id`.
 func findResource<C: CollectionType where C.Generator.Element: ResourceProtocol>(domain: C, type: String, id: String) -> C.Generator.Element? {
 	return filter(domain) { $0.type == type && $0.id == id }.first
 }
 
-// Enumerate over specific fields
+/// Calls `callback` for each field, filtered by type `type`, of resource `resource`.
 func enumerateFields<T: Field>(resource: ResourceProtocol, type: T.Type, callback: (T) -> ()) {
 	for field in resource.fields {
 		if let attribute = field as? T {
@@ -483,17 +458,17 @@ func enumerateFields<T: Field>(resource: ResourceProtocol, type: T.Type, callbac
 	}
 }
 
-// Compare linkage tuples
+/// Compare linkage tuples.
 func == (left: (String, String), right: (String, String)) -> Bool {
 	return (left.0 == right.0) && (left.1 == right.1)
 }
 
-// Compare resources based on type and id
+/// Compare resources based on `type` and `id`.
 public func == <T: ResourceProtocol> (left: T, right: T) -> Bool {
 	return (left.id == right.id) && (left.type == right.type)
 }
 
-// Compare array of resources based on type and id
+/// Compare array of resources based on `type` and `id`.
 public func == <T: ResourceProtocol> (left: [T], right: [T]) -> Bool {
 	if left.count != right.count {
 		return false
@@ -508,6 +483,8 @@ public func == <T: ResourceProtocol> (left: [T], right: [T]) -> Bool {
 	return true
 }
 
+/// Sets all fields of resource `resource` to nil,
+/// and sets `isLoaded` to false.
 public func unloadResource(resource: ResourceProtocol) {
 	for field in resource.fields {
 		resource.setValue(nil, forField: field.name)

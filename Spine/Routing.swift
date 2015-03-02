@@ -8,7 +8,7 @@
 
 import Foundation
 
-protocol Router {
+public protocol RouterProtocol {
 	var baseURL: NSURL! { get set }
 	
 	func URLForResourceType(type: String) -> NSURL
@@ -17,47 +17,37 @@ protocol Router {
 	func URLForQuery<T: ResourceProtocol>(query: Query<T>) -> NSURL
 }
 
-// :test: RoutingTests
-class JSONAPIRouter: Router {
-	// :test: RoutingTests.testSetBaseURL
-	var baseURL: NSURL! = nil
+public class Router: RouterProtocol {
+	public var baseURL: NSURL! = nil
 
-	// :test: RoutingTests.testSetBaseURL
-	func URLForResourceType(type: String) -> NSURL {
+	public func URLForResourceType(type: String) -> NSURL {
 		return baseURL.URLByAppendingPathComponent(type)
 	}
 	
-	// :test: RoutingTests.URLForRelationship
-	func URLForRelationship(relationship: String, ofResource resource: ResourceProtocol) -> NSURL {
+	public func URLForRelationship(relationship: String, ofResource resource: ResourceProtocol) -> NSURL {
 		assert(resource.id != nil, "Cannot build URL for relationship for resource without id: \(resource)")
 		return URLForResourceType(resource.type).URLByAppendingPathComponent("/\(resource.id!)/links/\(relationship)")
 	}
-	
-	// :test: RoutingTests.testURLForRelationshipWithIDs
-	func URLForRelationship(relationship: String, ofResource resource: ResourceProtocol, ids: [String]) -> NSURL {
+
+	public func URLForRelationship(relationship: String, ofResource resource: ResourceProtocol, ids: [String]) -> NSURL {
 		var URL = URLForRelationship(relationship, ofResource: resource)
 		return URL.URLByAppendingPathComponent(",".join(ids))
 	}
-	
-	// :test: RoutingTests.testURLForQuery
-	func URLForQuery<T: ResourceProtocol>(query: Query<T>) -> NSURL {
+
+	public func URLForQuery<T: ResourceProtocol>(query: Query<T>) -> NSURL {
 		var URL: NSURL!
 		
 		// Base URL
-		if let queryURL = query.URL {
-			URL = NSURL(string: queryURL.absoluteString!, relativeToURL: self.baseURL)
+		if let URLString = query.URL?.absoluteString {
+			URL = NSURL(string: URLString, relativeToURL: baseURL)
 		} else if let type = query.resourceType {
-			URL = self.baseURL.URLByAppendingPathComponent(type, isDirectory: true)
+			URL = baseURL.URLByAppendingPathComponent(type, isDirectory: true)
 		} else {
 			assertionFailure("Cannot build URL for query. Query does not have a URL, nor a resource type.")
 		}
 		
 		var URLComponents = NSURLComponents(URL: URL, resolvingAgainstBaseURL: true)!
-		var queryItems: [NSURLQueryItem] = []
-		
-		if let existingQueryItems = URLComponents.queryItems {
-			queryItems = existingQueryItems as [NSURLQueryItem]
-		}
+		var queryItems: [NSURLQueryItem] = (URLComponents.queryItems as? [NSURLQueryItem]) ?? []
 		
 		// Resource IDs
 		if let IDs = query.resourceIDs {
@@ -65,31 +55,30 @@ class JSONAPIRouter: Router {
 				URLComponents.path = URLComponents.path?.stringByAppendingPathComponent(IDs.first!)
 			} else {
 				var item = NSURLQueryItem(name: "filter[id]", value: join(",", IDs))
-				self.setQueryItem(item, forQueryItems: &queryItems)
+				setQueryItem(item, forQueryItems: &queryItems)
 			}
 		}
 		
 		// Includes
-		if query.includes.count != 0 {
+		if !query.includes.isEmpty {
 			var item = NSURLQueryItem(name: "include", value: ",".join(query.includes))
-			self.setQueryItem(item, forQueryItems: &queryItems)
+			setQueryItem(item, forQueryItems: &queryItems)
 		}
 		
 		// Filters
 		for filter in query.filters {
-			assert(filter.predicateOperatorType == .EqualToPredicateOperatorType, "JSONAPIRouter only supports Query filter expressions of type 'equalTo'")
-			var item = NSURLQueryItem(name: "filter[\(filter.leftExpression.keyPath)]", value: "\(filter.rightExpression.constantValue)")
-			self.setQueryItem(item, forQueryItems: &queryItems)
+			let item = queryItemForFilter(filter)
+			setQueryItem(item, forQueryItems: &queryItems)
 		}
 		
 		// Fields
 		for (resourceType, fields) in query.fields {
 			var item = NSURLQueryItem(name: "fields[\(resourceType)]", value: ",".join(fields))
-			self.setQueryItem(item, forQueryItems: &queryItems)
+			setQueryItem(item, forQueryItems: &queryItems)
 		}
 		
 		// Sorting
-		if query.sortDescriptors.count != 0 {
+		if !query.sortDescriptors.isEmpty {
 			let descriptorStrings = query.sortDescriptors.map { descriptor -> String in
 				if descriptor.ascending {
 					return "+\(descriptor.key!)"
@@ -99,29 +88,34 @@ class JSONAPIRouter: Router {
 			}
 			
 			var item = NSURLQueryItem(name: "sort", value: ",".join(descriptorStrings))
-			self.setQueryItem(item, forQueryItems: &queryItems)
+			setQueryItem(item, forQueryItems: &queryItems)
 		}
 		
 		// Pagination
 		if let page = query.page {
 			var item = NSURLQueryItem(name: "page", value: String(page))
-			self.setQueryItem(item, forQueryItems: &queryItems)
+			setQueryItem(item, forQueryItems: &queryItems)
 		}
 		
 		if let pageSize = query.pageSize {
 			var item = NSURLQueryItem(name: "page_size", value: String(pageSize))
-			self.setQueryItem(item, forQueryItems: &queryItems)
+			setQueryItem(item, forQueryItems: &queryItems)
 		}
 		
-		if queryItems.count > 0 {
+		// Compose URL
+		if !queryItems.isEmpty {
 			URLComponents.queryItems = queryItems
 		}
 		
 		return URLComponents.URL!
 	}
 	
+	public func queryItemForFilter(filter: NSComparisonPredicate) -> NSURLQueryItem {
+		assert(filter.predicateOperatorType == .EqualToPredicateOperatorType, "The built in router only supports Query filter expressions of type 'equalTo'")
+		return NSURLQueryItem(name: "filter[\(filter.leftExpression.keyPath)]", value: "\(filter.rightExpression.constantValue)")
+	}
+	
 	private func setQueryItem(queryItem: NSURLQueryItem, inout forQueryItems queryItems: [NSURLQueryItem]) {
-		// Remove old item
 		queryItems.filter { return $0.name != queryItem.name }
 		queryItems.append(queryItem)
 	}

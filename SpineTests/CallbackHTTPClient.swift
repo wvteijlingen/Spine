@@ -12,7 +12,7 @@ public class CallbackHTTPClient: _HTTPClientProtocol {
 	typealias HandlerFunction = (request: NSURLRequest, payload: NSData?) -> (responseData: NSData, statusCode: Int, error: NSError?)
 	
 	var handler: HandlerFunction!
-	var traceEnabled = false
+	public var printRequests = false
 	let queue = dispatch_queue_create("com.wardvanteijlingen.spine.callbackHTTPClient", nil)
 	var delay: NSTimeInterval = 0
 	
@@ -76,7 +76,7 @@ public class CallbackHTTPClient: _HTTPClientProtocol {
 	}
 	
 	private func trace<T>(object: T) {
-		if traceEnabled {
+		if printRequests {
 			println(object)
 		}
 	}

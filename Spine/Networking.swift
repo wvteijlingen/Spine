@@ -19,19 +19,19 @@ enum HTTPClientRequestMethod: String {
 }
 
 public protocol HTTPClientProtocol {
+	var printRequests: Bool { get set }
 	func setHeader(header: String, to: String)
 	func removeHeader(header: String)
 }
 
 protocol _HTTPClientProtocol: HTTPClientProtocol {
-	var traceEnabled: Bool { get set }
 	func request(method: HTTPClientRequestMethod, URL: NSURL, callback: HTTPClientCallback)
 	func request(method: HTTPClientRequestMethod, URL: NSURL, payload: NSData?, callback: HTTPClientCallback)
 }
 
 public class URLSessionClient: _HTTPClientProtocol {
 	let urlSession: NSURLSession
-	var traceEnabled = false
+	public var printRequests = false
 	
 	init() {
 		let configuration = NSURLSessionConfiguration.defaultSessionConfiguration()
@@ -92,7 +92,7 @@ public class URLSessionClient: _HTTPClientProtocol {
 	}
 	
 	private func trace<T>(object: T) {
-		if traceEnabled {
+		if printRequests {
 			println(object)
 		}
 	}
