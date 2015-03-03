@@ -12,9 +12,11 @@ public class CallbackHTTPClient: _HTTPClientProtocol {
 	typealias HandlerFunction = (request: NSURLRequest, payload: NSData?) -> (responseData: NSData, statusCode: Int, error: NSError?)
 	
 	var handler: HandlerFunction!
-	public var printRequests = false
-	let queue = dispatch_queue_create("com.wardvanteijlingen.spine.callbackHTTPClient", nil)
 	var delay: NSTimeInterval = 0
+	public var printRequests = false
+	
+	internal private(set) var lastRequest: NSURLRequest?
+	let queue = dispatch_queue_create("com.wardvanteijlingen.spine.callbackHTTPClient", nil)
 	
 	init() {}
 	
@@ -38,6 +40,7 @@ public class CallbackHTTPClient: _HTTPClientProtocol {
 			request.HTTPBody = payload
 		}
 		
+		lastRequest = request
 		trace("⬆️ \(method.rawValue): \(URL)")
 		
 		// Perform the request
@@ -72,6 +75,12 @@ public class CallbackHTTPClient: _HTTPClientProtocol {
 		let responseData = data ?? NSData()
 		handler = { request, payload in
 			return (responseData: responseData, statusCode: status, error: error)
+		}
+	}
+	
+	func simulateNetworkErrorWithCode(code: Int) {
+		handler = { request, payload in
+			return (responseData: NSData(), statusCode: 404, error: NSError(domain: "mock", code: code, userInfo: nil))
 		}
 	}
 	
