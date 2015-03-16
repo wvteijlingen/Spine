@@ -12,8 +12,12 @@ import SwiftyJSON
 import BrightFutures
 
 extension XCTestCase {
-	var testBundle: NSBundle {
-		return NSBundle(forClass: self.dynamicType)
+	
+	func JSONFixtureWithName(name: String) -> (data: NSData, json: JSON) {
+		let path = NSBundle(forClass: self.dynamicType).URLForResource(name, withExtension: "json")!
+		let data = NSData(contentsOfURL: path)!
+		let json = JSON(data: data)
+		return (data: data, json: json)
 	}
 }
 

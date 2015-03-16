@@ -9,8 +9,7 @@
 import Foundation
 import XCTest
 
-class QueryTests: XCTestCase {
-	
+class QueryInitializationTests: XCTestCase {
 	func testInitWithResourceTypeAndIDs() {
 		var query = Query(resourceType: Foo.self, resourceIDs: ["1", "2", "3"])
 		XCTAssertEqual(query.resourceType!, Foo.resourceType, "Resource type not as expected")
@@ -25,13 +24,13 @@ class QueryTests: XCTestCase {
 		XCTAssertEqual(query.resourceIDs!, [foo.id!], "Resource IDs type not as expected")
 	}
 	
-//	func testInitWithResourceCollection() {
-//		let URL = NSURL(string: "http://example.com/foos")!
-//		let collection = ResourceCollection(resourcesURL: URL, resources: [])
-//		let query = Query(resourceCollection: collection)
-//	
-//		XCTAssertEqual(query.URL!, collection.resourceURL, "URL not as expected")
-//	}
+	//	func testInitWithResourceCollection() {
+	//		let URL = NSURL(string: "http://example.com/foos")!
+	//		let collection = ResourceCollection(resourcesURL: URL, resources: [])
+	//		let query = Query(resourceCollection: collection)
+	//
+	//		XCTAssertEqual(query.URL!, collection.resourceURL, "URL not as expected")
+	//	}
 	
 	func testInitWithResourceTypeAndURLString() {
 		let URLString = "http://example.com/foos"
@@ -40,7 +39,10 @@ class QueryTests: XCTestCase {
 		XCTAssertEqual(query.URL!, NSURL(string: URLString)!, "URL not as expected")
 		XCTAssertEqual(query.resourceType!, Foo.resourceType, "Resource type not as expected")
 	}
-	
+}
+
+class QueryIncludeTests: XCTestCase {
+
 	func testInclude() {
 		var query = Query(resourceType: Foo.self)
 		
@@ -55,7 +57,10 @@ class QueryTests: XCTestCase {
 		query.removeInclude("bar")
 		XCTAssertEqual(query.includes, ["qux", "bar.qux"], "Includes not as expected")
 	}
-	
+}
+
+class QueryFilterTests: XCTestCase {
+
 	func testAddPredicate() {
 		var query = Query(resourceType: Foo.self)
 		
@@ -172,6 +177,10 @@ class QueryTests: XCTestCase {
 		XCTAssertEqual(query.filters, [predicate], "Filters not as expected")
 	}
 	
+}
+
+class QuerySparseFieldsetsTests: XCTestCase {
+
 	func testRestrictPropertiesTo() {
 		var query = Query(resourceType: Foo.self)
 		query.restrictPropertiesTo("firstProperty", "secondProperty")
@@ -185,7 +194,10 @@ class QueryTests: XCTestCase {
 		
 		XCTAssertEqual(query.fields, ["bars": ["firstProperty", "secondProperty"]], "Fields not as expected")
 	}
-	
+}
+
+class QuerySortOrderTests: XCTestCase {
+
 	func testAddAscendingOrder() {
 		var query = Query(resourceType: Foo.self)
 		query.addAscendingOrder("orderKey")
@@ -203,5 +215,4 @@ class QueryTests: XCTestCase {
 		
 		XCTAssertEqual(query.sortDescriptors, [sortDescriptor], "Sort descriptors not as expected")
 	}
-	
 }

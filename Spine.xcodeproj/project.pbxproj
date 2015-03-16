@@ -46,6 +46,7 @@
 		D39929EB1A52F3A0008BF0A9 /* ResourceField.swift in Sources */ = {isa = PBXBuildFile; fileRef = D39929EA1A52F3A0008BF0A9 /* ResourceField.swift */; };
 		D39CD5381AA0FA8F00049432 /* CallbackHTTPClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = D39CD5371AA0FA8F00049432 /* CallbackHTTPClient.swift */; };
 		D3DFBB6519B9DC64009785BE /* Networking.swift in Sources */ = {isa = PBXBuildFile; fileRef = D37FB17E19B9D7F10073A888 /* Networking.swift */; };
+		D3E1D1421AAA04B20077B1C3 /* ResourceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3E1D1411AAA04B20077B1C3 /* ResourceTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -79,6 +80,7 @@
 		D3960DF01A9B5FBC009948B0 /* Errors.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = Errors.json; sourceTree = "<group>"; };
 		D39929EA1A52F3A0008BF0A9 /* ResourceField.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ResourceField.swift; sourceTree = "<group>"; };
 		D39CD5371AA0FA8F00049432 /* CallbackHTTPClient.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = CallbackHTTPClient.swift; path = SpineTests/CallbackHTTPClient.swift; sourceTree = SOURCE_ROOT; };
+		D3E1D1411AAA04B20077B1C3 /* ResourceTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ResourceTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -184,6 +186,7 @@
 			children = (
 				D373F79719B2249900275AFC /* SpineTests.swift */,
 				D35DAAF21A96A40700E59545 /* QueryTests.swift */,
+				D3E1D1411AAA04B20077B1C3 /* ResourceTests.swift */,
 				D36B3A211A98AFA60014B4EA /* ResourceCollectionTests.swift */,
 				D312E2F719BB83A8004BB3E0 /* SerializingTests.swift */,
 				D35DAAEC1A962BD400E59545 /* RoutingTests.swift */,
@@ -375,6 +378,7 @@
 				D35CE46F19B276E4002B358E /* Resource.swift in Sources */,
 				D35DAAF31A96A40700E59545 /* QueryTests.swift in Sources */,
 				D3502C321A93A86900F91266 /* ResourceField.swift in Sources */,
+				D3E1D1421AAA04B20077B1C3 /* ResourceTests.swift in Sources */,
 				D3502C331A93A86C00F91266 /* DeserializeOperation.swift in Sources */,
 				D312E2F819BB83A8004BB3E0 /* SerializingTests.swift in Sources */,
 			);

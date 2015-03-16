@@ -32,13 +32,11 @@ class FindTests: SpineTests {
 	// MARK: Find by type
 	
 	func testFindByType() {
-		let path = testBundle.URLForResource("MultipleFoos", withExtension: "json")!
-		let data = NSData(contentsOfURL: path)!
-		let json = JSON(data: data)
+		let fixture = JSONFixtureWithName("MultipleFoos")
 		
 		HTTPClient.handler = { (request: NSURLRequest, payload: NSData?) -> (responseData: NSData, statusCode: Int, error: NSError?) in
 			XCTAssertEqual(request.URL, NSURL(string:"http://example.com/foos/")!, "Request URL not as expected.")
-			return (responseData: data, statusCode: 200, error: nil)
+			return (responseData: fixture.data, statusCode: 200, error: nil)
 		}
 		
 		let expectation = expectationWithDescription("testFindByType")
@@ -49,7 +47,7 @@ class FindTests: SpineTests {
 				XCTAssertEqual(fooCollection.count, 2, "Deserialized resources count not equal.")
 				XCTAssert(resource is Foo, "Deserialized resource should be of class 'Foo'.")
 				let foo = resource as Foo
-				assertFooResource(foo, isEqualToJSON: json["data"][index])
+				assertFooResource(foo, isEqualToJSON: fixture.json["data"][index])
 			}
 			}.onFailure { error in
 				expectation.fulfill()
@@ -89,12 +87,11 @@ class FindTests: SpineTests {
 	// MARK: Find by ID and type
 	
 	func testFindByIDAndType() {
-		let data = NSData(contentsOfURL: testBundle.URLForResource("MultipleFoos", withExtension: "json")!)!
-		let json = JSON(data: data)
+		let fixture = JSONFixtureWithName("MultipleFoos")
 		
 		HTTPClient.handler = { request, payload in
 			XCTAssertEqual(request.URL, NSURL(string:"http://example.com/foos/?filter[id]=1,2")!, "Request URL not as expected.")
-			return (responseData: data, statusCode: 200, error: nil)
+			return (responseData: fixture.data, statusCode: 200, error: nil)
 		}
 		
 		let expectation = expectationWithDescription("testFindByIDAndType")
@@ -105,7 +102,7 @@ class FindTests: SpineTests {
 				XCTAssertEqual(fooCollection.count, 2, "Expected resource count to be 2.")
 				XCTAssert(resource is Foo, "Expected resource to be of class 'Foo'.")
 				let foo = resource as Foo
-				assertFooResource(foo, isEqualToJSON: json["data"][index])
+				assertFooResource(foo, isEqualToJSON: fixture.json["data"][index])
 			}
 		}.onFailure { error in
 			expectation.fulfill()
@@ -146,20 +143,18 @@ class FindTests: SpineTests {
 	// MARK: Find one by ID and type
 	
 	func testFindOneByIDAndType() {
-		let path = testBundle.URLForResource("SingleFoo", withExtension: "json")!
-		let data = NSData(contentsOfURL: path)!
-		let json = JSON(data: data)
+		let fixture = JSONFixtureWithName("SingleFoo")
 		
 		HTTPClient.handler = { (request: NSURLRequest, payload: NSData?) -> (responseData: NSData, statusCode: Int, error: NSError?) in
 			XCTAssertEqual(request.URL, NSURL(string:"http://example.com/foos/1")!, "Request URL not as expected.")
-			return (responseData: data, statusCode: 200, error: nil)
+			return (responseData: fixture.data, statusCode: 200, error: nil)
 		}
 		
 		let expectation = expectationWithDescription("testFindOneByIDAndType")
 		
 		spine.findOne("1", ofType: Foo.self).onSuccess { foo in
 			expectation.fulfill()
-			assertFooResource(foo, isEqualToJSON: json["data"])
+			assertFooResource(foo, isEqualToJSON: fixture.json["data"])
 			}.onFailure { error in
 				expectation.fulfill()
 				XCTFail("Find failed with error: \(error).")
@@ -198,13 +193,11 @@ class FindTests: SpineTests {
 	// MARK: Find by query
 	
 	func testFindByQuery() {
-		let path = testBundle.URLForResource("MultipleFoos", withExtension: "json")!
-		let data = NSData(contentsOfURL: path)!
-		let json = JSON(data: data)
+		let fixture = JSONFixtureWithName("MultipleFoos")
 		
 		HTTPClient.handler = { (request: NSURLRequest, payload: NSData?) -> (responseData: NSData, statusCode: Int, error: NSError?) in
 			XCTAssertEqual(request.URL, NSURL(string:"http://example.com/foos/?filter[id]=1,2")!, "Request URL not as expected.")
-			return (responseData: data, statusCode: 200, error: nil)
+			return (responseData: fixture.data, statusCode: 200, error: nil)
 		}
 		
 		let query = Query(resourceType: Foo.self, resourceIDs: ["1", "2"])
@@ -216,7 +209,7 @@ class FindTests: SpineTests {
 				XCTAssertEqual(fooCollection.count, 2, "Deserialized resources count not equal.")
 				XCTAssert(resource is Foo, "Deserialized resource should be of class 'Foo'.")
 				let foo = resource as Foo
-				assertFooResource(foo, isEqualToJSON: json["data"][index])
+				assertFooResource(foo, isEqualToJSON: fixture.json["data"][index])
 			}
 		}.onFailure { error in
 			expectation.fulfill()
@@ -260,13 +253,11 @@ class FindTests: SpineTests {
 	// MARK: Find one by query
 	
 	func testFindOneByQuery() {
-		let path = testBundle.URLForResource("SingleFoo", withExtension: "json")!
-		let data = NSData(contentsOfURL: path)!
-		let json = JSON(data: data)
+		let fixture = JSONFixtureWithName("SingleFoo")
 		
 		HTTPClient.handler = { (request: NSURLRequest, payload: NSData?) -> (responseData: NSData, statusCode: Int, error: NSError?) in
 			XCTAssertEqual(request.URL, NSURL(string:"http://example.com/foos/1")!, "Request URL not as expected.")
-			return (responseData: data, statusCode: 200, error: nil)
+			return (responseData: fixture.data, statusCode: 200, error: nil)
 		}
 		
 		let query = Query(resourceType: Foo.self, resourceIDs: ["1"])
@@ -274,7 +265,7 @@ class FindTests: SpineTests {
 		
 		spine.findOne(query).onSuccess { foo in
 			expectation.fulfill()
-			assertFooResource(foo, isEqualToJSON: json["data"])
+			assertFooResource(foo, isEqualToJSON: fixture.json["data"])
 		}.onFailure { error in
 			expectation.fulfill()
 			XCTFail("Find failed with error: \(error).")

@@ -22,7 +22,7 @@ class SerializerTests: XCTestCase {
 
 class SerializingTests: SerializerTests {
 	
-	var foo: Foo = Foo(id: "1")
+	let foo: Foo = Foo(id: "1")
 	
 	override func setUp() {
 		super.setUp()
@@ -93,11 +93,9 @@ class SerializingTests: SerializerTests {
 class DeserializingTests: SerializerTests {
 	
 	func testDeserializeSingleResource() {
-		let path = testBundle.URLForResource("SingleFoo", withExtension: "json")!
-		let data = NSData(contentsOfURL: path)!
-		
-		let deserialisationResult = serializer.deserializeData(data, mappingTargets: nil)
-		let json = JSON(data: data)
+		let fixture = JSONFixtureWithName("SingleFoo")
+		let json = fixture.json
+		let deserialisationResult = serializer.deserializeData(fixture.data, mappingTargets: nil)
 		
 		switch deserialisationResult {
 		case .Success(let resources, let pagination):
@@ -143,18 +141,15 @@ class DeserializingTests: SerializerTests {
 	}
 	
 	func testDeserializeMultipleResources() {
-		let path = testBundle.URLForResource("MultipleFoos", withExtension: "json")!
-		let data = NSData(contentsOfURL: path)!
-		
-		let deserialisationResult = serializer.deserializeData(data, mappingTargets: nil)
-		let json = JSON(data: data)
-		
+		let fixture = JSONFixtureWithName("MultipleFoos")
+		let deserialisationResult = serializer.deserializeData(fixture.data, mappingTargets: nil)
+
 		switch deserialisationResult {
 		case .Success(let resources, let pagination):
 			XCTAssertEqual(resources.count, 2, "Expected resources count to be 2.")
 			
 			for (index, resource) in enumerate(resources) {
-				let resourceJSON = json["data"][index]
+				let resourceJSON = fixture.json["data"][index]
 				
 				XCTAssert(resource is Foo, "Expected resource to be of class 'Foo'.")
 				let foo = resource as Foo
@@ -182,11 +177,9 @@ class DeserializingTests: SerializerTests {
 	}
 	
 	func testDeserializeCompoundDocument() {
-		let path = testBundle.URLForResource("SingleFooIncludingBars", withExtension: "json")!
-		let data = NSData(contentsOfURL: path)!
-		
-		let deserialisationResult = serializer.deserializeData(data, mappingTargets: nil)
-		let json = JSON(data: data)
+		let fixture = JSONFixtureWithName("SingleFooIncludingBars")
+		let json = fixture.json
+		let deserialisationResult = serializer.deserializeData(fixture.data, mappingTargets: nil)
 		
 		switch deserialisationResult {
 		case .Success(let resources, let pagination):
@@ -250,14 +243,11 @@ class DeserializingTests: SerializerTests {
 	}
 	
 	func testDeserializeErrorsDocument() {
-		let path = testBundle.URLForResource("Errors", withExtension: "json")!
-		let data = NSData(contentsOfURL: path)!
-		
-		let error = serializer.deserializeError(data, withResonseStatus: 999)
-		let json = JSON(data: data)
+		let fixture = JSONFixtureWithName("Errors")
+		let error = serializer.deserializeError(fixture.data, withResonseStatus: 999)
 		
 		XCTAssertEqual(error.domain, SPINE_API_ERROR_DOMAIN, "Expected error domain to be SPINE_API_ERROR_DOMAIN.")
-		XCTAssertEqual(error.code, json["errors"][0]["code"].intValue, "Expected error code to be equal.")
-		XCTAssertEqual(error.localizedDescription, json["errors"][0]["title"].stringValue, "Expected error description to be equal.")
+		XCTAssertEqual(error.code, fixture.json["errors"][0]["code"].intValue, "Expected error code to be equal.")
+		XCTAssertEqual(error.localizedDescription, fixture.json["errors"][0]["title"].stringValue, "Expected error description to be equal.")
 	}
 }
