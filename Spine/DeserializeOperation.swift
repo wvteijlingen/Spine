@@ -69,8 +69,8 @@ class DeserializeOperation: NSOperation {
 			extractedPrimaryResources.append(deserializeSingleRepresentation(self.data["data"], mappingTargetIndex: 0))
 		}
 		
-		// Extract linked resources
-		if let data = self.data["linked"].array {
+		// Extract included resources
+		if let data = self.data["included"].array {
 			for representation in data {
 				deserializeSingleRepresentation(representation)
 			}
@@ -215,15 +215,15 @@ class DeserializeOperation: NSOperation {
 		// Resource level link as a link object. This might contain linkage in the form of type/id.
 		} else if serializedData["links"][key].dictionary != nil{
 			let linkData = serializedData["links"][key]
-			let type = linkData["type"].string ?? linkedType
+			let type = linkData["linkage"]["type"].string ?? linkedType
 			
-			if let id = linkData["id"].string {
+			if let id = linkData["linkage"]["id"].string {
 				resource = resourceFactory.dispense(type, id: id, pool: &resourcePool)
 			} else {
 				resource = resourceFactory.instantiate(type)
 			}
 			
-			if let resourceURL = linkData["resource"].URL {
+			if let resourceURL = linkData["related"].URL {
 				resource!.URL = resourceURL
 			}
 			
@@ -252,23 +252,13 @@ class DeserializeOperation: NSOperation {
 		// Resource level link as a link object. This might contain linkage in the form of type/id.
 		} else if serializedData["links"][key].dictionary != nil {
 			let linkData = serializedData["links"][key]
-			let resourcesURL: NSURL? = linkData["resource"].URL
+			let resourcesURL: NSURL? = linkData["related"].URL
 			let linkURL: NSURL? = linkData["self"].URL
 			
-			// Homogenous
-			if let homogenousType = linkData["type"].string {
-				if let ids = linkData["ids"].array {
-					resourceCollection = LinkedResourceCollection(resourcesURL: resourcesURL, URL: linkURL, homogenousType: homogenousType, linkage: ids.map { $0.stringValue })
-				}
-			
-			// Heterogenous
-			} else if let heterogenousLinkage = linkData["data"].array {
-				let linkage = heterogenousLinkage.map { (type: $0["type"].stringValue, id: $0["id"].stringValue) }
-				resourceCollection = LinkedResourceCollection(resourcesURL: resourcesURL, URL: linkURL, linkage: linkage)
-			}
-			
-			// Other
-			else {
+			if let linkage = linkData["linkage"].array {
+				let mappedLinkage = linkage.map { (type: $0["type"].stringValue, id: $0["id"].stringValue) }
+				resourceCollection = LinkedResourceCollection(resourcesURL: resourcesURL, URL: linkURL, linkage: mappedLinkage)
+			} else {
 				resourceCollection = LinkedResourceCollection(resourcesURL: resourcesURL, URL: linkURL)
 			}
 		}

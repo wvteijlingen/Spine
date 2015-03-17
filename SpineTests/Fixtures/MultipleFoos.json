@@ -12,11 +12,11 @@
 			"self": "http://example.com/foos/1",
 			"toOneAttribute": {
 				"self": "http://example.com/foos/1/links/toOneAttribute",
-				"resource": "http://example.com/bars/1"
+				"related": "http://example.com/bars/1"
 			},
 			"toManyAttribute": {
 				"self": "http://example.com/foos/1/links/toManyAttribute",
-				"resource": "http://example.com/foos/1/bars"
+				"related": "http://example.com/foos/1/bars"
 			}
 		}
 	}, {
@@ -32,11 +32,11 @@
 			"self": "http://example.com/foos/1",
 			"toOneAttribute": {
 				"self": "http://example.com/foos/1/links/toOneAttribute",
-				"resource": "http://example.com/bars/1"
+				"related": "http://example.com/bars/1"
 			},
 			"toManyAttribute": {
 				"self": "http://example.com/foos/1/links/toManyAttribute",
-				"resource": "http://example.com/foos/1/bars"
+				"related": "http://example.com/foos/1/bars"
 			}
 		}
 	}]

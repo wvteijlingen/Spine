@@ -12,19 +12,20 @@
 			"self": "http://example.com/foos/1",
 			"toOneAttribute": {
 				"self": "http://example.com/foos/1/links/toOneAttribute",
-				"resource": "http://example.com/bars/10",
-				"type": "bars",
-				"id": "10"
+				"related": "http://example.com/bars/10",
+				"linkage": { "type": "bars", "id": "10" }
 			},
 			"toManyAttribute": {
 				"self": "http://example.com/foos/1/links/toManyAttribute",
-				"resource": "http://example.com/bars/11,12",
-				"type": "bars",
-				"ids": ["11", "12"]
+				"related": "http://example.com/bars/11,12",
+				"linkage": [
+					{"type": "bars", "id": "11" },
+					{"type": "bars", "id": "12" }
+				]
 			}
 		}
 	},
-	"linked": [{
+	"included": [{
 		"id": "10",
 		"type": "bars",
 		"links": {
