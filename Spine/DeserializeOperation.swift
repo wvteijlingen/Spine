@@ -56,6 +56,7 @@ class DeserializeOperation: NSOperation {
 	override func main() {
 		// Check if the given data is in the expected format
 		if (data.dictionary == nil) {
+			Spine.logError(.Serializing, "Cannot deserialize: The given JSON representation was not as expected.")
 			result = .Failure(NSError(domain: SPINE_ERROR_DOMAIN, code: 0, userInfo: [NSLocalizedDescriptionKey: "The given JSON representation was not as expected."]))
 			return
 		}
@@ -92,8 +93,10 @@ class DeserializeOperation: NSOperation {
 	/**
 	Maps a single resource representation into a resource object of the given type.
 	
-	:param: representation The JSON representation of a single resource.
-	:param: resourceType   The type of resource onto which to map the representation.
+	:param: representation     The JSON representation of a single resource.
+	:param: mappingTargetIndex The index of the matching mapping target.
+	
+	:returns: A ResourceProtocol object with values mapped from the representation.
 	*/
 	private func deserializeSingleRepresentation(representation: JSON, mappingTargetIndex: Int? = nil) -> ResourceProtocol {
 		assert(representation.dictionary != nil, "The given JSON representation is not an object (dictionary/hash).")
@@ -285,7 +288,7 @@ class DeserializeOperation: NSOperation {
 								if let targetResource = findResource(resourcePool, link.type, link.id) {
 									targetResources.append(targetResource)
 								} else {
-									//println("Cannot resolve to-many link \(resource.type):\(resource.id!) - \(attribute.name) -> \(linkedResource.type):\(id) because the linked resource does not exist in the store.")
+									Spine.logInfo(.Serializing, "Cannot resolve to-many link \(resource.type):\(resource.id!) - \(toManyAttribute.name) -> \(link.type):\(link.id) because the linked resource does not exist in the document or mappingTargets.")
 								}
 							}
 							
@@ -294,10 +297,10 @@ class DeserializeOperation: NSOperation {
 								linkedResource.isLoaded = true
 							}
 						} else {
-							//println("Cannot resolve to-many link \(resource.type):\(resource.id!) - \(attribute.name) -> \(linkedResource.type):? because the foreign IDs are not known.")
+							Spine.logInfo(.Serializing, "Cannot resolve to-many link \(resource.type):\(resource.id!) - \(toManyAttribute.name) because the foreign IDs are not known.")
 						}
 					} else {
-						//println("Cannot resolve to-many link \(resource.type):\(resource.id!) - \(attribute.name) -> ? because the link data is not fetched.")
+						Spine.logInfo(.Serializing, "Cannot resolve to-many link \(resource.type):\(resource.id!) - \(toManyAttribute.name) because the link data is not fetched.")
 					}
 				}
 			}

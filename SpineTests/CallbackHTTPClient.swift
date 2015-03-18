@@ -13,8 +13,6 @@ public class CallbackHTTPClient: _HTTPClientProtocol {
 	
 	var handler: HandlerFunction!
 	var delay: NSTimeInterval = 0
-	public var printRequests = false
-	
 	internal private(set) var lastRequest: NSURLRequest?
 	let queue = dispatch_queue_create("com.wardvanteijlingen.spine.callbackHTTPClient", nil)
 	
@@ -28,20 +26,20 @@ public class CallbackHTTPClient: _HTTPClientProtocol {
 		//
 	}
 	
-	func request(method: HTTPClientRequestMethod, URL: NSURL, callback: HTTPClientCallback) {
+	func request(method: String, URL: NSURL, callback: HTTPClientCallback) {
 		return request(method, URL: URL, payload: nil, callback: callback)
 	}
 	
-	func request(method: HTTPClientRequestMethod, URL: NSURL, payload: NSData?, callback: HTTPClientCallback) {
+	func request(method: String, URL: NSURL, payload: NSData?, callback: HTTPClientCallback) {
 		let request = NSMutableURLRequest(URL: URL)
-		request.HTTPMethod = method.rawValue
+		request.HTTPMethod = method
 		
 		if let payload = payload {
 			request.HTTPBody = payload
 		}
 		
 		lastRequest = request
-		trace("⬆️ \(method.rawValue): \(URL)")
+		Spine.logInfo(.Networking, "\(method): \(URL)")
 		
 		// Perform the request
 		dispatch_async(queue) {
@@ -53,16 +51,16 @@ public class CallbackHTTPClient: _HTTPClientProtocol {
 				
 				// Framework error
 				if let error = error {
-					self.trace("❌ Err:  \(request.URL) - \(error.localizedDescription)")
+					Spine.logError(.Networking, "\(request.URL!) - \(error.localizedDescription)")
 					resolvedError = NSError(domain: SPINE_ERROR_DOMAIN, code: error.code, userInfo: error.userInfo)
 					
 					// Success
 				} else if 200 ... 299 ~= statusCode {
-					self.trace("✅ \(statusCode):  \(request.URL)")
+					Spine.logInfo(.Networking, "\(statusCode): \(request.URL!)")
 					
 					// API Error
 				} else {
-					self.trace("❌ \(statusCode):  \(request.URL)")
+					Spine.logWarning(.Networking, "\(statusCode): \(request.URL!)")
 					resolvedError = NSError(domain: SPINE_API_ERROR_DOMAIN, code: statusCode, userInfo: nil)
 				}
 				
@@ -81,12 +79,6 @@ public class CallbackHTTPClient: _HTTPClientProtocol {
 	func simulateNetworkErrorWithCode(code: Int) {
 		handler = { request, payload in
 			return (responseData: NSData(), statusCode: 404, error: NSError(domain: "mock", code: code, userInfo: nil))
-		}
-	}
-	
-	private func trace<T>(object: T) {
-		if printRequests {
-			println(object)
 		}
 	}
 }

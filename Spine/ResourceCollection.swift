@@ -48,7 +48,7 @@ public class ResourceCollection: NSObject, NSCoding, Paginatable {
 		coder.encodeObject(paginationData?.toDictionary(), forKey: "paginationData")
 	}
 	
-	// Subscript and count
+	// MARK: Subscript and count
 	
 	public subscript (index: Int) -> ResourceProtocol {
 		return resources[index]

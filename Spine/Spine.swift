@@ -59,10 +59,11 @@ public class Spine {
 
 	func fetchResourcesByExecutingQuery<T: ResourceProtocol>(query: Query<T>, mapOnto mappingTargets: [ResourceProtocol] = []) -> Future<(ResourceCollection)> {
 		let promise = Promise<ResourceCollection>()
-		
 		let URL = self.router.URLForQuery(query)
 		
-		HTTPClient.request(.GET, URL: URL) { statusCode, responseData, error in
+		Spine.logInfo(.Spine, "Fetching resources using URL: \(URL)")
+		
+		HTTPClient.request("GET", URL: URL) { statusCode, responseData, error in
 			if let error = error {
 				promise.failure(self.handleErrorResponse(statusCode, responseData: responseData, error: error))
 				
@@ -106,21 +107,23 @@ public class Spine {
 		let promise = Promise<ResourceProtocol>()
 
 		var isNewResource = (resource.id == nil)
-		var request: HTTPClientRequestMethod
+		var requestVerb: String
 		var URL: NSURL
 		var payload: NSData
 		
 		if isNewResource {
-			request = .POST
+			requestVerb = "POST"
 			URL = router.URLForResourceType(resource.type)
 			payload = serializer.serializeResources([resource], options: SerializationOptions(includeID: false, dirtyFieldsOnly: false, includeToOne: true, includeToMany: true))
 		} else {
-			request = .PUT
+			requestVerb = "PUT"
 			URL = router.URLForQuery(Query(resource: resource))
 			payload = serializer.serializeResources([resource])
 		}
 		
-		HTTPClient.request(request, URL: URL, payload: payload) { statusCode, responseData, error in
+		Spine.logInfo(.Spine, "Saving resource \(resource) using URL: \(URL)")
+		
+		HTTPClient.request(requestVerb, URL: URL, payload: payload) { statusCode, responseData, error in
 			if let error = error {
 				promise.failure(self.handleErrorResponse(statusCode, responseData: responseData, error: error))
 				return
@@ -138,7 +141,7 @@ public class Spine {
 				self.updateRelationshipsOfResource(resource).onSuccess {
 					promise.success(resource)
 				}.onFailure { error in
-					println("Error updating resource relationships: \(error)")
+					Spine.logError(.Spine, "Error updating resource relationships: \(error)")
 					promise.failure(error)
 				}
 			}
@@ -219,7 +222,8 @@ public class Spine {
 			let URL = self.router.URLForRelationship(relationship, ofResource: toResource)
 			let payload = NSJSONSerialization.dataWithJSONObject([relationship: ids], options: NSJSONWritingOptions(0), error: nil)
 			// TODO: Move serialization
-			self.HTTPClient.request(.POST, URL: URL, payload: payload) { statusCode, responseData, error in
+			
+			HTTPClient.request("POST", URL: URL, payload: payload) { statusCode, responseData, error in
 				if let error = error {
 					promise.failure(self.handleErrorResponse(statusCode, responseData: responseData, error: error))
 				} else {
@@ -244,7 +248,7 @@ public class Spine {
 			
 			let URL = router.URLForRelationship(relationship, ofResource: fromResource, ids: ids)
 			
-			self.HTTPClient.request(.DELETE, URL: URL) { statusCode, responseData, error in
+			HTTPClient.request("DELETE", URL: URL) { statusCode, responseData, error in
 				if let error = error {
 					promise.failure(self.handleErrorResponse(statusCode, responseData: responseData, error: error))
 				} else {
@@ -263,7 +267,7 @@ public class Spine {
 		let payload = NSJSONSerialization.dataWithJSONObject([relationship: resource.id!], options: NSJSONWritingOptions(0), error: nil)
 		// TODO: Move serialization
 		
-		self.HTTPClient.request(.PUT, URL: URL, payload: payload) { statusCode, responseData, error in
+		HTTPClient.request("PUT", URL: URL, payload: payload) { statusCode, responseData, error in
 			if let error = error {
 				promise.failure(self.handleErrorResponse(statusCode, responseData: responseData, error: error))
 			} else {
@@ -279,10 +283,11 @@ public class Spine {
 	
 	private func deleteResource(resource: ResourceProtocol) -> Future<Void> {
 		let promise = Promise<Void>()
-		
 		let URL = self.router.URLForQuery(Query(resource: resource))
 		
-		self.HTTPClient.request(.DELETE, URL: URL) { statusCode, responseData, error in
+		Spine.logInfo(.Spine, "Deleting resource \(resource) using URL: \(URL)")
+		
+		HTTPClient.request("DELETE", URL: URL) { statusCode, responseData, error in
 			if let error = error {
 				promise.failure(self.handleErrorResponse(statusCode, responseData: responseData, error: error))
 			} else {
@@ -491,4 +496,74 @@ public func unloadResource(resource: ResourceProtocol) {
 	}
 	
 	resource.isLoaded = false
+}
+
+
+// MARK: - Logging
+
+public enum LogLevel: Int {
+	case Debug = 0
+	case Info = 1
+	case Warning = 2
+	case Error = 3
+	case None = 4
+	
+	var description: String {
+		switch self {
+		case .Debug:   return "❔ Debug"
+		case .Info:    return "❕ Info"
+		case .Warning: return "❗️ Warning"
+		case .Error:   return "❌ Error"
+		case .None:    return "None"
+		}
+	}
+}
+
+/**
+Logging domains
+
+- Spine:       The main Spine component
+- Networking:  The networking component, requests, responses etc
+- Serializing: The (de)serializing component
+*/
+public enum LogDomain {
+	case Spine, Networking, Serializing
+}
+
+/// Configured log levels
+internal var logLevels: [LogDomain: LogLevel] = [
+	.Spine: .None,
+	.Networking: .None,
+	.Serializing: .None
+]
+
+/**
+ *  Extension regarding logging.
+ */
+extension Spine {
+	public class func setLogLevel(level: LogLevel, forDomain domain: LogDomain) {
+		logLevels[domain] = level
+	}
+	
+	class func log<T>(object: T, level: LogLevel, domain: LogDomain) {
+		if level.rawValue >= logLevels[domain]?.rawValue {
+			println("\(level.description): \(object)")
+		}
+	}
+	
+	class func logDebug<T>(domain: LogDomain, _ object: T) {
+		log(object, level: .Debug, domain: domain)
+	}
+	
+	class func logInfo<T>(domain: LogDomain, _ object: T) {
+		log(object, level: .Info, domain: domain)
+	}
+	
+	class func logWarning<T>(domain: LogDomain, _ object: T) {
+		log(object, level: .Warning, domain: domain)
+	}
+	
+	class func logError<T>(domain: LogDomain, _ object: T) {
+		log(object, level: .Error, domain: domain)
+	}
 }
