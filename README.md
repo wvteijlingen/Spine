@@ -2,6 +2,10 @@ Spine
 =====
 Spine is an Swift framework for consuming a JSON API that adheres to the jsonapi.org spec.
 
+Installation
+============
+Spine uses [Carthage](https://github.com/Carthage/Carthage). Add `github "wvteijlingen/Spine"` to your Cartfile. See the [Carthage documentation](https://github.com/Carthage/Carthage#adding-frameworks-to-an-application) for instructions on how to integrate with your project using Xcode.
+
 Quickstart
 ==========
 ### 1. Instantiate a Spine
