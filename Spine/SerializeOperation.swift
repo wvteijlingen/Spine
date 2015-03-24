@@ -10,10 +10,10 @@ import Foundation
 import SwiftyJSON
 
 /**
-*  A SerializeOperation is responsible for serializing resource into a multidimensional dictionary/array structure.
-*  The resouces are converted to their serialized form using a layered process.
-*
-*  This process is the inverse of that of the DeserializeOperation.
+A SerializeOperation is responsible for serializing resource into a multidimensional dictionary/array structure.
+The resouces are converted to their serialized form using a layered process.
+
+This process is the inverse of that of the DeserializeOperation.
 */
 class SerializeOperation: NSOperation {
 	private let resources: [ResourceProtocol]
@@ -144,7 +144,7 @@ class SerializeOperation: NSOperation {
 	:param: key             The key to add to the serialized data.
 	:param: relatedResource The related resource to add to the serialized data.
 	*/
-	private func addToOneRelationship(inout serializedData: [String: AnyObject], key: String, type: String, linkedResource: ResourceProtocol?) {
+	private func addToOneRelationship(inout serializedData: [String: AnyObject], key: String, type: ResourceType, linkedResource: ResourceProtocol?) {
 		let serializedRelationship = [
 			"type": type,
 			"id": linkedResource?.id ?? NSNull()
@@ -166,7 +166,7 @@ class SerializeOperation: NSOperation {
 	:param: key              The key to add to the serialized data.
 	:param: relatedResources The related resources to add to the serialized data.
 	*/
-	private func addToManyRelationship(inout serializedData: [String: AnyObject], key: String, type: String, linkedResources: ResourceCollection?) {
+	private func addToManyRelationship(inout serializedData: [String: AnyObject], key: String, type: ResourceType, linkedResources: ResourceCollection?) {
 		var serializedIDs: AnyObject = []
 		
 		if let resources = linkedResources?.resources {

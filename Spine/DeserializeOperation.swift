@@ -10,10 +10,10 @@ import Foundation
 import SwiftyJSON
 
 /**
-*  A DeserializeOperation is responsible for deserializing a single server response.
-*  The serialized data is converted into Resource instances using a layered process.
-*
-*  This process is the inverse of that of the SerializeOperation.
+A DeserializeOperation is responsible for deserializing a single server response.
+The serialized data is converted into Resource instances using a layered process.
+
+This process is the inverse of that of the SerializeOperation.
 */
 class DeserializeOperation: NSOperation {
 	
@@ -101,7 +101,7 @@ class DeserializeOperation: NSOperation {
 	private func deserializeSingleRepresentation(representation: JSON, mappingTargetIndex: Int? = nil) -> ResourceProtocol {
 		assert(representation.dictionary != nil, "The given JSON representation is not an object (dictionary/hash).")
 		
-		let type: String! = representation["type"].string
+		let type: ResourceType! = representation["type"].string
 		let id: String! = representation["id"].string
 		
 		assert(type != nil, "The given JSON representation does have a type.")
@@ -207,7 +207,7 @@ class DeserializeOperation: NSOperation {
 	
 	:returns: The extracted relationship or nil if no relationship with the given key was found in the data.
 	*/
-	private func extractToOneRelationship(serializedData: JSON, key: String, linkedType: String, resource: ResourceProtocol) -> ResourceProtocol? {
+	private func extractToOneRelationship(serializedData: JSON, key: String, linkedType: ResourceType, resource: ResourceProtocol) -> ResourceProtocol? {
 		var resource: ResourceProtocol? = nil
 		
 		// Resource level link as a resource URL only.

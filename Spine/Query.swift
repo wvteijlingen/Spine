@@ -14,7 +14,7 @@ import Foundation
 public struct Query<T: ResourceProtocol> {
 	
 	/// The type of resource to fetch. This can be nil if in case of a expected heterogenous response.
-	var resourceType: String?
+	var resourceType: ResourceType?
 	
 	/// The specific IDs the fetch.
 	var resourceIDs: [String]?
@@ -29,7 +29,7 @@ public struct Query<T: ResourceProtocol> {
 	public internal(set) var filters: [NSComparisonPredicate] = []
 	
 	/// Fields that will be returned, per resource type. If no fields are specified, all fields are returned.
-	public internal(set) var fields: [String: [String]] = [:]
+	public internal(set) var fields: [ResourceType: [String]] = [:]
 	
 	/// Sort descriptors to sort resources.
 	public internal(set) var sortDescriptors: [NSSortDescriptor] = []

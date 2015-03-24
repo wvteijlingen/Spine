@@ -163,7 +163,7 @@ public class LinkedResourceCollection: ResourceCollection {
 	public var URL: NSURL?
 	
 	/// The type/id pairs of resources present in this link.
-	public var linkage: [(type: String, id: String)]?
+	public var linkage: [(type: ResourceType, id: String)]?
 	
 	/// Resources added to this linked collection, but not yet persisted.
 	public internal(set) var addedResources: [ResourceProtocol] = []
@@ -175,13 +175,13 @@ public class LinkedResourceCollection: ResourceCollection {
 		super.init(resourcesURL: nil, resources: [])
 	}
 	
-	public init(resourcesURL: NSURL? = nil, URL: NSURL? = nil, linkage: [(type: String, id: String)]? = nil) {
+	public init(resourcesURL: NSURL? = nil, URL: NSURL? = nil, linkage: [(type: ResourceType, id: String)]? = nil) {
 		super.init(resourcesURL: resourcesURL, resources: [])
 		self.URL = URL
 		self.linkage = linkage
 	}
 	
-	public convenience init(resourcesURL: NSURL? = nil, URL: NSURL? = nil, homogenousType: String, linkage: [String]? = nil) {
+	public convenience init(resourcesURL: NSURL? = nil, URL: NSURL? = nil, homogenousType: ResourceType, linkage: [String]? = nil) {
 		self.init(resourcesURL: resourcesURL, URL: URL, linkage: linkage?.map { (type: homogenousType, id: $0) })
 	}
 	

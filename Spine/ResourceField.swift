@@ -92,7 +92,7 @@ public class DateAttribute: Attribute {
  *  Do not use this field type directly, instead use either `ToOneRelationship` or `ToManyRelationship`.
  */
 public class Relationship: Field {
-	let linkedType: String
+	let linkedType: ResourceType
 	
 	public init(_ type: String) {
 		linkedType = type

@@ -8,15 +8,17 @@
 
 import Foundation
 
+public typealias ResourceType = String
+
 /**
 The ResourceProtocol declares methods and properties that a resource must implement.
 */
 @objc public protocol ResourceProtocol: class {
 	/// The resource type in plural form.
-    class var resourceType: String { get }
+    class var resourceType: ResourceType { get }
 	
 	/// The resource type in plural form.
-    var type: String { get }
+    var type: ResourceType { get }
 	
 	/// All fields that must be persisted in the API.
     var fields: [Field] { get }
@@ -53,11 +55,11 @@ A base recource class that provides some defaults for resources.
 You can create custom resource classes by subclassing from Resource.
 */
 public class Resource: NSObject, NSCoding, ResourceProtocol {
-	public class var resourceType: String {
+	public class var resourceType: ResourceType {
 		fatalError("Override resourceType in a subclass.")
 	}
 	
-    public var type: String {
+    public var type: ResourceType {
 		return self.dynamicType.resourceType
 	}
 	

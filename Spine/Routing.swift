@@ -23,8 +23,7 @@ public protocol RouterProtocol {
 	
 	:returns: The NSURL.
 	*/
-	func URLForResourceType(type: String) -> NSURL
-
+	func URLForResourceType(type: ResourceType) -> NSURL
 	func URLForRelationship(relationship: String, ofResource resource: ResourceProtocol) -> NSURL
 	func URLForRelationship(relationship: String, ofResource resource: ResourceProtocol, ids: [String]) -> NSURL
 	func URLForQuery<T: ResourceProtocol>(query: Query<T>) -> NSURL
@@ -36,7 +35,7 @@ The built in Router that builds URLs according to the JSON:API specification.
 public class Router: RouterProtocol {
 	public var baseURL: NSURL! = nil
 
-	public func URLForResourceType(type: String) -> NSURL {
+	public func URLForResourceType(type: ResourceType) -> NSURL {
 		return baseURL.URLByAppendingPathComponent(type)
 	}
 	

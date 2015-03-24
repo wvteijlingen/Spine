@@ -149,7 +149,7 @@ A ResourceFactory creates resources from given factory funtions.
 */
 struct ResourceFactory {
 	
-	private var factoryFunctions: [String: () -> ResourceProtocol] = [:]
+	private var factoryFunctions: [ResourceType: () -> ResourceProtocol] = [:]
 
 	/**
 	Registers a given factory function that creates resource with a given type.
@@ -158,7 +158,7 @@ struct ResourceFactory {
 	:param: type    The resource type for which to register a factory function.
 	:param: factory The factory function that returns a resource.
 	*/
-	mutating func registerResource(type: String, factory: () -> ResourceProtocol) {
+	mutating func registerResource(type: ResourceType, factory: () -> ResourceProtocol) {
 		factoryFunctions[type] = factory
 	}
 
@@ -169,7 +169,7 @@ struct ResourceFactory {
 	
 	:returns: An instantiated resource.
 	*/
-	func instantiate(type: String) -> ResourceProtocol {
+	func instantiate(type: ResourceType) -> ResourceProtocol {
 		assert(factoryFunctions[type] != nil, "Cannot instantiate resource of type \(type). You must register this type with Spine first.")
 		return factoryFunctions[type]!()
 	}
@@ -188,7 +188,7 @@ struct ResourceFactory {
 	
 	:returns: A resource with the given type and id.
 	*/
-	func dispense(type: String, id: String, inout pool: [ResourceProtocol], index: Int? = nil) -> ResourceProtocol {
+	func dispense(type: ResourceType, id: String, inout pool: [ResourceProtocol], index: Int? = nil) -> ResourceProtocol {
 		var resource: ResourceProtocol! = findResource(pool, type, id)
 		
 		if resource == nil && index != nil && !isEmpty(pool) {

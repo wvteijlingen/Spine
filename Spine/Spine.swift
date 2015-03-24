@@ -444,13 +444,13 @@ public extension Spine {
 
 /// Return an `Array` containing resources of `domain`,
 /// in order, that are of the resource type `type`.
-func findResourcesWithType<C: CollectionType where C.Generator.Element: ResourceProtocol>(domain: C, type: String) -> [C.Generator.Element] {
+func findResourcesWithType<C: CollectionType where C.Generator.Element: ResourceProtocol>(domain: C, type: ResourceType) -> [C.Generator.Element] {
 	return filter(domain) { $0.type == type }
 }
 
 /// Return the first resource of `domain`,
 /// that is of the resource type `type` and has id `id`.
-func findResource<C: CollectionType where C.Generator.Element: ResourceProtocol>(domain: C, type: String, id: String) -> C.Generator.Element? {
+func findResource<C: CollectionType where C.Generator.Element: ResourceProtocol>(domain: C, type: ResourceType, id: String) -> C.Generator.Element? {
 	return filter(domain) { $0.type == type && $0.id == id }.first
 }
 
@@ -464,7 +464,7 @@ func enumerateFields<T: Field>(resource: ResourceProtocol, type: T.Type, callbac
 }
 
 /// Compare linkage tuples.
-func == (left: (String, String), right: (String, String)) -> Bool {
+func == <T: Equatable, U: Equatable>(left: (T, U), right: (T, U)) -> Bool {
 	return (left.0 == right.0) && (left.1 == right.1)
 }
 
@@ -538,8 +538,8 @@ internal var logLevels: [LogDomain: LogLevel] = [
 ]
 
 /**
- *  Extension regarding logging.
- */
+Extension regarding logging.
+*/
 extension Spine {
 	public class func setLogLevel(level: LogLevel, forDomain domain: LogDomain) {
 		logLevels[domain] = level
