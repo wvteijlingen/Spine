@@ -15,5 +15,5 @@ Pod::Spec.new do |s|
   s.requires_arc = true
 
   s.dependency 'SwiftyJSON', '>= 2.1.3'
-  s.dependency 'BrightFutures'
+  s.dependency 'BrightFutures', :git => 'https://github.com/Thomvis/BrightFutures.git', :commit => 'b9a158bcf3de8c2af9f3985ab61c1c97e5a36737'
 end
