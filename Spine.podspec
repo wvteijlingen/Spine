@@ -13,4 +13,7 @@ Pod::Spec.new do |s|
   s.source_files = 'Spine/*.swift'
 
   s.requires_arc = true
+
+  s.dependency 'SwiftyJSON', '>= 2.1.3'
+  s.dependency 'BrightFutures'
 end
