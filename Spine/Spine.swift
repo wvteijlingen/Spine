@@ -313,7 +313,7 @@ public extension Spine {
 	:param: factory The factory method that returns an instance of a resource.
 	*/
 	func registerResource(type: String, factory: () -> ResourceProtocol) {
-		self.serializer.resourceFactory.registerResource(type, factory: factory)
+		serializer.resourceFactory.registerResource(type, factory: factory)
 	}
 }
 
@@ -328,7 +328,7 @@ public extension Spine {
 	:param: type The Transformer to register.
 	*/
 	func registerTransformer<T: Transformer>(transformer: T) {
-		self.serializer.transformers.registerTransformer(transformer)
+		serializer.transformers.registerTransformer(transformer)
 	}
 }
 
@@ -387,7 +387,7 @@ public extension Spine {
 	}
 
 	/**
-	Fetch one resource using the given query..
+	Fetch one resource using the given query.
 	
 	:param: query The query describing which resource to fetch.
 	

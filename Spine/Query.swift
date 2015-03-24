@@ -8,6 +8,9 @@
 
 import Foundation
 
+/**
+ *  A Query defines search criteria used to retrieve data from an API.
+ */
 public struct Query<T: ResourceProtocol> {
 	
 	/// The type of resource to fetch. This can be nil if in case of a expected heterogenous response.
@@ -18,25 +21,33 @@ public struct Query<T: ResourceProtocol> {
 	
 	/// The optional base URL
 	internal var URL: NSURL?
-
-	// Query parts
+	
+	/// Related resources that must be included in a compound document.
 	public internal(set) var includes: [String] = []
+	
+	/// Comparison predicates used to filter resources.
 	public internal(set) var filters: [NSComparisonPredicate] = []
+	
+	/// Fields that will be returned, per resource type. If no fields are specified, all fields are returned.
 	public internal(set) var fields: [String: [String]] = [:]
+	
+	/// Sort descriptors to sort resources.
 	public internal(set) var sortDescriptors: [NSSortDescriptor] = []
 	
-	// Pagination parts
-	internal var page: Int?
-	internal var pageSize: Int?
+	/// The page to fetch.
+	var page: Int?
+	
+	/// The maximum number of resources per page.
+	var pageSize: Int?
 	
 	
 	//MARK: Init
 	
 	/**
-	Inits a new query for the given resource type and resource IDs
+	Inits a new query for the given resource type and optional resource IDs.
 	
 	:param: resourceType The type of resource to query.
-	:param: resourceIDs  The IDs of the resources to query.
+	:param: resourceIDs  The IDs of the resources to query. Pass nil to fetch all resources of the given type.
 	
 	:returns: Query
 	*/
@@ -45,19 +56,42 @@ public struct Query<T: ResourceProtocol> {
 		self.resourceIDs = resourceIDs
 	}
 	
+	/**
+	Inits a new query that fetches the given resource.
+	
+	:param: resource The resource to fetch.
+	
+	:returns: Query
+	*/
 	public init(resource: T) {
 		assert(resource.id != nil, "Cannot instantiate query for resource, id is nil.")
+		self.URL = resource.URL
 		self.resourceType = resource.type
 		self.resourceIDs = [resource.id!]
 	}
 	
+	/**
+	Inits a new query that fetches resources from the given resource collection.
+	
+	:param: resourceCollection The resource collection whose resources to fetch.
+	
+	:returns: Query
+	*/
 	public init(resourceCollection: ResourceCollection) {
 		self.URL = resourceCollection.resourcesURL
 	}
 	
-	public init(resourceType: T.Type, URLString: String) {
+	/**
+	Inits a new query that fetches resource of type `resourceType`, by using the given URL.
+	
+	:param: resourceType The type of resource to query.
+	:param: URL          The URL used to fetch the resources.
+	
+	:returns: Query
+	*/
+	public init(resourceType: T.Type, URL: NSURL) {
 		self.resourceType = resourceType.resourceType
-		self.URL = NSURL(string: URLString)
+		self.URL = URL
 	}
 	
 	
@@ -102,6 +136,11 @@ public struct Query<T: ResourceProtocol> {
 		addPredicate(predicate)
 	}
 	
+	/**
+	Adds the given predicate as a filter.
+	
+	:param: predicate The predicate to add.
+	*/
 	public mutating func addPredicate(predicate: NSComparisonPredicate) {
 		filters.append(predicate)
 	}

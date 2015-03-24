@@ -54,4 +54,23 @@ class ResourceTests: XCTestCase {
 		foo.setValue("newStringValue", forField: "stringAttribute")
 		
 	}
+	
+	func testEncoding() {
+		foo.URL = NSURL(string: "http://example.com/api/foos/1")
+		foo.isLoaded = true
+		
+		let encodedData = NSKeyedArchiver.archivedDataWithRootObject(foo)
+		let decodedFoo: AnyObject? = NSKeyedUnarchiver.unarchiveObjectWithData(encodedData)
+		
+		XCTAssertNotNil(decodedFoo, "Expected decoded object to be not nil")
+		XCTAssert(decodedFoo is Foo, "Expected decoded object to be of type 'Foo'")
+		
+		if let decodedFoo = decodedFoo as? Foo {
+			XCTAssertEqual(decodedFoo.id!, foo.id!, "Expected id to be equal")
+			XCTAssertEqual(decodedFoo.URL!, foo.URL!, "Expected URL to be equal")
+			XCTAssertEqual(decodedFoo.isLoaded, foo.isLoaded, "Expected isLoaded to be equal")
+		} else {
+			XCTFail("Fail")
+		}
+	}
 }

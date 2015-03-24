@@ -9,6 +9,11 @@
 import Foundation
 import BrightFutures
 
+/**
+ *  A ResourceCollection represents a collection of resources.
+ *  It contains a URL where the resources can be fetched.
+ *  For collections that can be paginated, pagination data is stored as well.
+ */
 public class ResourceCollection: NSObject, NSCoding, Paginatable {
 	/// Whether the resources for this collection are loaded
 	public var isLoaded: Bool
@@ -50,14 +55,18 @@ public class ResourceCollection: NSObject, NSCoding, Paginatable {
 	
 	// MARK: Subscript and count
 	
+	/// Returns the loaded resource at the given index.
 	public subscript (index: Int) -> ResourceProtocol {
 		return resources[index]
 	}
 	
+	/// Returns a loaded resource identified by the given type and id,
+	/// or nil if no loaded resource was found.
 	public subscript (type: String, id: String) -> ResourceProtocol? {
 		return resources.filter { $0.id == id && $0.type == type }.first
 	}
 	
+	/// Returns how many resources are loaded.
 	public var count: Int {
 		return resources.count
 	}
@@ -141,6 +150,14 @@ extension ResourceCollection: SequenceType {
 	}
 }
 
+/**
+ *  A LinkedResourceCollection represents a collection of resources that is linked from another resource.
+ *  The main differences with ResourceCollection is that it is mutable, and the addition of `linkage`,
+ *  and a self `URL` property.
+ *
+ *  A LinkedResourceCollection keeps track of resources that are added to and removed from the collection.
+ *  This allows Spine to make partial updates to the collection when it is persisted.
+ */
 public class LinkedResourceCollection: ResourceCollection {
 	/// The self URL of this link.
 	public var URL: NSURL?
@@ -149,10 +166,10 @@ public class LinkedResourceCollection: ResourceCollection {
 	public var linkage: [(type: String, id: String)]?
 	
 	/// Resources added to this linked collection, but not yet persisted.
-	var addedResources: [ResourceProtocol] = []
+	public internal(set) var addedResources: [ResourceProtocol] = []
 	
 	/// Resources removed from this linked collection, but not yet persisted.
-	var removedResources: [ResourceProtocol] = []
+	public internal(set) var removedResources: [ResourceProtocol] = []
 	
 	public required init() {
 		super.init(resourcesURL: nil, resources: [])
@@ -200,18 +217,21 @@ public class LinkedResourceCollection: ResourceCollection {
 	
 	// MARK: Mutators
 	
+	/// Adds the given resource to this collection.
 	public func add(resource: ResourceProtocol) {
 		resources.append(resource)
 		addedResources.append(resource)
 		removedResources = removedResources.filter { $0 !== resource }
 	}
 	
+	/// Removes the given resource from this collection.
 	public func remove(resource: ResourceProtocol) {
 		resources = resources.filter { $0 !== resource }
 		addedResources = addedResources.filter { $0 !== resource }
 		removedResources.append(resource)
 	}
 	
+	/// Adds the given resource to this collection, but does not mark it as added.
 	internal func addAsExisting(resource: ResourceProtocol) {
 		resources.append(resource)
 		removedResources = removedResources.filter { $0 !== resource }

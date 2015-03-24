@@ -34,7 +34,7 @@ class QueryInitializationTests: XCTestCase {
 	
 	func testInitWithResourceTypeAndURLString() {
 		let URLString = "http://example.com/foos"
-		let query = Query(resourceType: Foo.self, URLString: URLString)
+		let query = Query(resourceType: Foo.self, URL: NSURL(string: URLString)!)
 		
 		XCTAssertEqual(query.URL!, NSURL(string: URLString)!, "URL not as expected")
 		XCTAssertEqual(query.resourceType!, Foo.resourceType, "Resource type not as expected")

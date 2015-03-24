@@ -8,15 +8,31 @@
 
 import Foundation
 
+/**
+The RouterProtocol declares methods and properties that a router should implement.
+The router is used to build URLs for API requests.
+*/
 public protocol RouterProtocol {
+	/// The base URL of the API.
 	var baseURL: NSURL! { get set }
 	
+	/**
+	Returns an NSURL that points to the collection of resources with a given type.
+	
+	:param: type The type of resources.
+	
+	:returns: The NSURL.
+	*/
 	func URLForResourceType(type: String) -> NSURL
+
 	func URLForRelationship(relationship: String, ofResource resource: ResourceProtocol) -> NSURL
 	func URLForRelationship(relationship: String, ofResource resource: ResourceProtocol, ids: [String]) -> NSURL
 	func URLForQuery<T: ResourceProtocol>(query: Query<T>) -> NSURL
 }
 
+/**
+The built in Router that builds URLs according to the JSON:API specification.
+*/
 public class Router: RouterProtocol {
 	public var baseURL: NSURL! = nil
 
@@ -110,6 +126,14 @@ public class Router: RouterProtocol {
 		return URLComponents.URL!
 	}
 	
+	/**
+	Returns an NSURLQueryItem that represents the given comparison predicate in an URL.
+	By default this method only supports 'equal to' predicates. You can override this method to add support for other filtering strategies.
+	
+	:param: filter The NSComparisonPredicate.
+	
+	:returns: The NSURLQueryItem.
+	*/
 	public func queryItemForFilter(filter: NSComparisonPredicate) -> NSURLQueryItem {
 		assert(filter.predicateOperatorType == .EqualToPredicateOperatorType, "The built in router only supports Query filter expressions of type 'equalTo'")
 		return NSURLQueryItem(name: "filter[\(filter.leftExpression.keyPath)]", value: "\(filter.rightExpression.constantValue)")

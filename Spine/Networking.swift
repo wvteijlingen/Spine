@@ -8,18 +8,28 @@
 
 import Foundation
 
+/// Callback used by the _HTTPClientProtocol
 typealias HTTPClientCallback = (statusCode: Int?, responseData: NSData?, error: NSError?) -> Void
 
+/**
+The HTTPClientProtocol declares methods and properties that a HTTP client must implement.
+*/
 public protocol HTTPClientProtocol {
 	func setHeader(header: String, to: String)
 	func removeHeader(header: String)
 }
 
+/**
+The _HTTPClientProtocol declares methods and properties that a HTTP client must implement.
+*/
 protocol _HTTPClientProtocol: HTTPClientProtocol {
 	func request(method: String, URL: NSURL, callback: HTTPClientCallback)
 	func request(method: String, URL: NSURL, payload: NSData?, callback: HTTPClientCallback)
 }
 
+/**
+The built in HTTP client that uses an NSURLSession for networking.
+*/
 public class URLSessionClient: _HTTPClientProtocol {
 	let urlSession: NSURLSession
 	

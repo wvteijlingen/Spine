@@ -16,12 +16,17 @@ public func fieldsFromDictionary(dictionary: [String: Field]) -> [Field] {
 }
 
 /**
- *  Base field
+ *  Base field.
+ *  Do not use this field type directly, instead use a specific subclass.
  */
 public class Field {
-	var name: String!
+	/// The name of the field as it appears in the model class.
+	/// This is declared as an implicit optional to support the `fieldsFromDictionary` function,
+	/// however it should *never* be nil.
+	var name: String! = nil
 	
-	private var _serializedName: String?
+	/// The name of the field as it appears in the JSON representation.
+	/// This can be nil, in which case the regular name will be used.
 	var serializedName: String {
 		get {
 			return _serializedName ?? name
@@ -30,9 +35,17 @@ public class Field {
 			_serializedName = newValue
 		}
 	}
+	private var _serializedName: String?
+
 
 	public init() {}
 	
+	/**
+	Sets the serialized name.
+	
+	:param: name The serialized name to use.
+	:returns: The field.
+	*/
 	public func serializeAs(name: String) -> Self {
 		serializedName = name
 		return self
@@ -41,7 +54,17 @@ public class Field {
 
 // MARK: - Built in fields
 
+/**
+ *  A basic attribute field.
+ */
 public class Attribute: Field { }
+
+
+/**
+ *  An URL attribute that maps to an NSURL property.
+ *  You can optionally specify a base URL with which relative
+ *  URLs will be made absolute.
+ */
 
 public class URLAttribute: Attribute {
 	let baseURL: NSURL?
@@ -51,6 +74,11 @@ public class URLAttribute: Attribute {
 	}
 }
 
+/**
+ *  A date attribute that maps to an NSDate property.
+ *  By default, it uses ISO8601 format. You can specify a custom
+ *  format by passing it to the initializer.
+ */
 public class DateAttribute: Attribute {
 	let format: String
 
@@ -59,6 +87,10 @@ public class DateAttribute: Attribute {
 	}
 }
 
+/**
+ *  A basic relationship field.
+ *  Do not use this field type directly, instead use either `ToOneRelationship` or `ToManyRelationship`.
+ */
 public class Relationship: Field {
 	let linkedType: String
 	
@@ -67,6 +99,12 @@ public class Relationship: Field {
 	}
 }
 
+/**
+ *  A to-one relationship field.
+ */
 public class ToOneRelationship: Relationship { }
 
+/**
+ *  A to-many relationship field.
+ */
 public class ToManyRelationship: Relationship { }

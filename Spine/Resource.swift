@@ -8,6 +8,9 @@
 
 import Foundation
 
+/**
+The ResourceProtocol declares methods and properties that a resource must implement.
+*/
 @objc public protocol ResourceProtocol: class {
 	/// The resource type in plural form.
     class var resourceType: String { get }
@@ -27,17 +30,28 @@ import Foundation
 	/// Whether the attributes of the resource are loaded.
     var isLoaded: Bool { get set }
 	
-	/// Returns the attribute value for the given key
+	/**
+	Returns the attribute value for the given key
+	
+	:param: field The name of the field to get the value for.
+	
+	:returns: The value of the field.
+	*/
 	func valueForField(field: String) -> AnyObject?
 	
-	/// Sets the given attribute value for the given key
+	/**
+	Sets the given attribute value for the given key.
+	
+	:param: value    The value to set.
+	:param: forField The name of the field to set the value for.
+	*/
 	func setValue(value: AnyObject?, forField: String)
 }
 
 /**
- *  A base recource class that provides some defaults for resources.
- *  You can create custom resource classes by subclassing from Resource.
- */
+A base recource class that provides some defaults for resources.
+You can create custom resource classes by subclassing from Resource.
+*/
 public class Resource: NSObject, NSCoding, ResourceProtocol {
 	public class var resourceType: String {
 		fatalError("Override resourceType in a subclass.")
