@@ -411,7 +411,7 @@ public extension Spine {
 }
 
 /**
- *  Extension regarding persisting resources.
+Extension regarding persisting resources.
  */
 public extension Spine {
 	func save(resource: ResourceProtocol) -> Future<ResourceProtocol> {
@@ -424,15 +424,34 @@ public extension Spine {
 }
 
 /**
- *  Extension regarding ensuring resources.
- */
+Extension regarding ensuring resources.
+*/
 public extension Spine {
 	
+	/**
+	Ensures that the given resource is loaded. If it's `isLoaded` property is false,
+	it loads the given resource from the API, otherwise it returns the resource as is.
+	
+	:param: resource The resource to ensure.
+	
+	:returns: <#return value description#>
+	*/
 	func ensure<T: ResourceProtocol>(resource: T) -> Future<T> {
 		let query = Query(resource: resource)
 		return loadResourceByExecutingQuery(resource, query: query)
 	}
 
+	/**
+	Ensures that the given resource is loaded. If it's `isLoaded` property is false,
+	it loads the given resource from the API, otherwise it returns the resource as is.
+	
+	:param: resource The resource to ensure.
+	
+	:param: resource      <#resource description#>
+	:param: queryCallback <#queryCallback description#>
+	
+	:returns: <#return value description#>
+	*/
 	func ensure<T: ResourceProtocol>(resource: T, queryCallback: (Query<T>) -> Query<T>) -> Future<T> {
 		let query = queryCallback(Query(resource: resource))
 		return loadResourceByExecutingQuery(resource, query: query)
@@ -510,11 +529,11 @@ public enum LogLevel: Int {
 	
 	var description: String {
 		switch self {
-		case .Debug:   return "❔ Debug"
-		case .Info:    return "❕ Info"
+		case .Debug:   return "❔ Debug  "
+		case .Info:    return "❕ Info   "
 		case .Warning: return "❗️ Warning"
-		case .Error:   return "❌ Error"
-		case .None:    return "None"
+		case .Error:   return "❌ Error  "
+		case .None:    return "None      "
 		}
 	}
 }
@@ -545,9 +564,13 @@ extension Spine {
 		logLevels[domain] = level
 	}
 	
+	class func shouldLog(level: LogLevel, domain: LogDomain) -> Bool {
+		return (level.rawValue >= logLevels[domain]?.rawValue)
+	}
+	
 	class func log<T>(object: T, level: LogLevel, domain: LogDomain) {
-		if level.rawValue >= logLevels[domain]?.rawValue {
-			println("\(level.description): \(object)")
+		if shouldLog(level, domain: domain) {
+			println("\(level.description) - \(object)")
 		}
 	}
 	
