@@ -32,19 +32,20 @@ The built in HTTP client that uses an NSURLSession for networking.
 */
 public class URLSessionClient: _HTTPClientProtocol {
 	let urlSession: NSURLSession
+	var headers: [String: String] = [:]
 	
 	init() {
 		let configuration = NSURLSessionConfiguration.defaultSessionConfiguration()
+		configuration.HTTPAdditionalHeaders = ["Content-Type": "application/vnd.api+json"]
 		urlSession = NSURLSession(configuration: configuration)
-		setHeader("Content-Type", to: "application/vnd.api+json")
 	}
 	
 	public func setHeader(header: String, to value: String) {
-		urlSession.configuration.HTTPAdditionalHeaders?.updateValue(value, forKey: header)
+		headers[header] = value
 	}
 	
 	public func removeHeader(header: String) {
-		urlSession.configuration.HTTPAdditionalHeaders?.removeValueForKey(header)
+		headers.removeValueForKey(header)
 	}
 	
 	func request(method: String, URL: NSURL, callback: HTTPClientCallback) {
@@ -54,6 +55,10 @@ public class URLSessionClient: _HTTPClientProtocol {
 	func request(method: String, URL: NSURL, payload: NSData?, callback: HTTPClientCallback) {
 		let request = NSMutableURLRequest(URL: URL)
 		request.HTTPMethod = method
+		
+		for (key, value) in headers {
+			request.setValue(value, forHTTPHeaderField: key)
+		}
 		
 		if let payload = payload {
 			request.HTTPBody = payload
@@ -83,6 +88,12 @@ public class URLSessionClient: _HTTPClientProtocol {
 			} else {
 				Spine.logWarning(.Networking, "\(response.statusCode): \(request.URL)")
 				resolvedError = NSError(domain: SPINE_API_ERROR_DOMAIN, code: response.statusCode, userInfo: nil)
+			}
+			
+			if Spine.shouldLog(.Debug, domain: .Networking) {
+				if let stringRepresentation = NSString(data: data, encoding: NSUTF8StringEncoding) {
+					Spine.logDebug(.Networking, stringRepresentation)
+				}
 			}
 			
 			callback(statusCode: response.statusCode, responseData: data, error: resolvedError)
