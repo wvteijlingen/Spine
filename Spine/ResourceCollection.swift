@@ -10,10 +10,10 @@ import Foundation
 import BrightFutures
 
 /**
- *  A ResourceCollection represents a collection of resources.
- *  It contains a URL where the resources can be fetched.
- *  For collections that can be paginated, pagination data is stored as well.
- */
+A ResourceCollection represents a collection of resources.
+It contains a URL where the resources can be fetched.
+For collections that can be paginated, pagination data is stored as well.
+*/
 public class ResourceCollection: NSObject, NSCoding, Paginatable {
 	/// Whether the resources for this collection are loaded
 	public var isLoaded: Bool
@@ -151,13 +151,13 @@ extension ResourceCollection: SequenceType {
 }
 
 /**
- *  A LinkedResourceCollection represents a collection of resources that is linked from another resource.
- *  The main differences with ResourceCollection is that it is mutable, and the addition of `linkage`,
- *  and a self `URL` property.
- *
- *  A LinkedResourceCollection keeps track of resources that are added to and removed from the collection.
- *  This allows Spine to make partial updates to the collection when it is persisted.
- */
+A LinkedResourceCollection represents a collection of resources that is linked from another resource.
+The main differences with ResourceCollection is that it is mutable,
+and the addition of `linkage`, and a self `URL` property.
+
+A LinkedResourceCollection keeps track of resources that are added to and removed from the collection.
+This allows Spine to make partial updates to the collection when it is persisted.
+*/
 public class LinkedResourceCollection: ResourceCollection {
 	/// The self URL of this link.
 	public var URL: NSURL?
@@ -217,22 +217,45 @@ public class LinkedResourceCollection: ResourceCollection {
 	
 	// MARK: Mutators
 	
-	/// Adds the given resource to this collection.
-	public func add(resource: ResourceProtocol) {
+	/**
+	Adds the given resource to this collection. This marks the resource as added.
+	
+	:param: resource The resource to add.
+	*/
+	public func addResource(resource: ResourceProtocol) {
 		resources.append(resource)
 		addedResources.append(resource)
 		removedResources = removedResources.filter { $0 !== resource }
 	}
 	
-	/// Removes the given resource from this collection.
-	public func remove(resource: ResourceProtocol) {
+	/**
+	Adds the given resources to this collection. This marks the resources as added.
+	
+	:param: resources The resources to add.
+	*/
+	public func addResources(resources: [ResourceProtocol]) {
+		for resource in resources {
+			addResource(resource)
+		}
+	}
+
+	/**
+	Removes the given resource from this collection. This marks the resource as removed.
+	
+	:param: resource The resource to remove.
+	*/
+	public func removeResource(resource: ResourceProtocol) {
 		resources = resources.filter { $0 !== resource }
 		addedResources = addedResources.filter { $0 !== resource }
 		removedResources.append(resource)
 	}
 	
-	/// Adds the given resource to this collection, but does not mark it as added.
-	internal func addAsExisting(resource: ResourceProtocol) {
+	/**
+	Adds the given resource to this collection, but does not mark it as added.
+	
+	:param: resource The resource to add.
+	*/
+	internal func addResourceAsExisting(resource: ResourceProtocol) {
 		resources.append(resource)
 		removedResources = removedResources.filter { $0 !== resource }
 		addedResources = addedResources.filter { $0 !== resource }
@@ -248,12 +271,12 @@ extension LinkedResourceCollection: ExtensibleCollectionType {
 	}
 	
 	public func append(newElement: ResourceProtocol) {
-		self.add(newElement)
+		self.addResource(newElement)
 	}
 	
 	public func extend<S : SequenceType where S.Generator.Element == ResourceProtocol>(seq: S) {
 		for element in seq {
-			self.add(element)
+			self.addResource(element)
 		}
 	}
 }
