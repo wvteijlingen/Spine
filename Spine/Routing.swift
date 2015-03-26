@@ -51,10 +51,12 @@ public class Router: RouterProtocol {
 
 	public func URLForQuery<T: ResourceProtocol>(query: Query<T>) -> NSURL {
 		var URL: NSURL!
+		var preBuiltURL = false
 		
 		// Base URL
 		if let URLString = query.URL?.absoluteString {
 			URL = NSURL(string: URLString, relativeToURL: baseURL)
+			preBuiltURL = true
 		} else if let type = query.resourceType {
 			URL = baseURL.URLByAppendingPathComponent(type, isDirectory: true)
 		} else {
@@ -65,12 +67,14 @@ public class Router: RouterProtocol {
 		var queryItems: [NSURLQueryItem] = (URLComponents.queryItems as? [NSURLQueryItem]) ?? []
 		
 		// Resource IDs
-		if let IDs = query.resourceIDs {
-			if IDs.count == 1 {
-				URLComponents.path = URLComponents.path?.stringByAppendingPathComponent(IDs.first!)
-			} else {
-				var item = NSURLQueryItem(name: "filter[id]", value: join(",", IDs))
-				setQueryItem(item, forQueryItems: &queryItems)
+		if !preBuiltURL {
+			if let IDs = query.resourceIDs {
+				if IDs.count == 1 {
+					URLComponents.path = URLComponents.path?.stringByAppendingPathComponent(IDs.first!)
+				} else {
+					var item = NSURLQueryItem(name: "filter[id]", value: join(",", IDs))
+					setQueryItem(item, forQueryItems: &queryItems)
+				}
 			}
 		}
 		
