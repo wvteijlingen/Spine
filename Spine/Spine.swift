@@ -116,7 +116,7 @@ public class Spine {
 			URL = router.URLForResourceType(resource.type)
 			payload = serializer.serializeResources([resource], options: SerializationOptions(includeID: false, dirtyFieldsOnly: false, includeToOne: true, includeToMany: true))
 		} else {
-			requestVerb = "PUT"
+			requestVerb = "PATCH"
 			URL = router.URLForQuery(Query(resource: resource))
 			payload = serializer.serializeResources([resource])
 		}
@@ -158,7 +158,7 @@ public class Spine {
 	private func updateRelationshipsOfResource(resource: ResourceProtocol) -> Future<Void> {
 		let promise = Promise<Void>()
 		
-		typealias Operation = (relationship: String, type: String, resources: [ResourceProtocol])
+		typealias Operation = (relationship: Relationship, type: String, resources: [ResourceProtocol])
 		
 		var operations: [Operation] = []
 		
@@ -166,14 +166,14 @@ public class Spine {
 		for field in resource.fields {
 			switch field {
 			case let toOne as ToOneRelationship:
-				let linkedResource = resource.valueForField(field.name) as ResourceProtocol
+				let linkedResource = resource.valueForField(toOne.name) as ResourceProtocol
 				if linkedResource.id != nil {
-					operations.append((relationship: field.serializedName, type: "replace", resources: [linkedResource]))
+					operations.append((relationship: toOne, type: "replace", resources: [linkedResource]))
 				}
 			case let toMany as ToManyRelationship:
-				let linkedResources = resource.valueForField(field.name) as LinkedResourceCollection
-				operations.append((relationship: field.serializedName, type: "add", resources: linkedResources.addedResources))
-				operations.append((relationship: field.serializedName, type: "remove", resources: linkedResources.removedResources))
+				let linkedResources = resource.valueForField(toMany.name) as LinkedResourceCollection
+				operations.append((relationship: toMany, type: "add", resources: linkedResources.addedResources))
+				operations.append((relationship: toMany, type: "remove", resources: linkedResources.removedResources))
 			default: ()
 			}
 		}
@@ -208,22 +208,22 @@ public class Spine {
 		return promise.future
 	}
 	
-	private func addRelatedResources(resources: [ResourceProtocol], toResource: ResourceProtocol, relationship: String) -> Future<Void> {
+	private func addRelatedResources(resources: [ResourceProtocol], toResource: ResourceProtocol, relationship: Relationship) -> Future<Void> {
 		let promise = Promise<Void>()
 		
 		if resources.count == 0 {
 			promise.success()
 		} else {
-			let ids: [String] = resources.map { resource in
+			let linkage: [[String: String]] = resources.map { resource in
 				assert(resource.id != nil, "Attempt to relate resource without id. Only existing resources can be related.")
-				return resource.id!
+				return [resource.type: resource.id!]
 			}
 			
 			let URL = self.router.URLForRelationship(relationship, ofResource: toResource)
-			let payload = NSJSONSerialization.dataWithJSONObject([relationship: ids], options: NSJSONWritingOptions(0), error: nil)
+			let jsonPayload = NSJSONSerialization.dataWithJSONObject(["data": linkage], options: NSJSONWritingOptions(0), error: nil)
 			// TODO: Move serialization
 			
-			HTTPClient.request("POST", URL: URL, payload: payload) { statusCode, responseData, error in
+			HTTPClient.request("POST", URL: URL, payload: jsonPayload) { statusCode, responseData, error in
 				if let error = error {
 					promise.failure(self.handleErrorResponse(statusCode, responseData: responseData, error: error))
 				} else {
@@ -235,18 +235,20 @@ public class Spine {
 		return promise.future
 	}
 	
-	private func removeRelatedResources(resources: [ResourceProtocol], fromResource: ResourceProtocol, relationship: String) -> Future<Void> {
+	private func removeRelatedResources(resources: [ResourceProtocol], fromResource: ResourceProtocol, relationship: Relationship) -> Future<Void> {
 		let promise = Promise<Void>()
 		
 		if resources.count == 0 {
 			promise.success()
 		} else {
-			let ids: [String] = resources.map { (resource) in
+			let linkage: [[String: String]] = resources.map { (resource) in
 				assert(resource.id != nil, "Attempt to unrelate resource without id. Only existing resources can be unrelated.")
-				return resource.id!
+				return [resource.type: resource.id!]
 			}
 			
-			let URL = router.URLForRelationship(relationship, ofResource: fromResource, ids: ids)
+			let URL = router.URLForRelationship(relationship, ofResource: fromResource)
+			let jsonPayload = NSJSONSerialization.dataWithJSONObject(["data": linkage], options: NSJSONWritingOptions(0), error: nil)
+			// TODO: Move serialization
 			
 			HTTPClient.request("DELETE", URL: URL) { statusCode, responseData, error in
 				if let error = error {
@@ -260,14 +262,16 @@ public class Spine {
 		return promise.future
 	}
 	
-	private func setRelatedResource(resource: ResourceProtocol, ofResource: ResourceProtocol, relationship: String) -> Future<Void> {
+	private func setRelatedResource(resource: ResourceProtocol, ofResource: ResourceProtocol, relationship: Relationship) -> Future<Void> {
 		let promise = Promise<Void>()
 		
 		let URL = router.URLForRelationship(relationship, ofResource: ofResource)
-		let payload = NSJSONSerialization.dataWithJSONObject([relationship: resource.id!], options: NSJSONWritingOptions(0), error: nil)
+		
+		let payload = ["data": [resource.type: resource.id!]]
+		let jsonPayload = NSJSONSerialization.dataWithJSONObject(payload, options: NSJSONWritingOptions(0), error: nil)
 		// TODO: Move serialization
 		
-		HTTPClient.request("PUT", URL: URL, payload: payload) { statusCode, responseData, error in
+		HTTPClient.request("PATCH", URL: URL, payload: jsonPayload) { statusCode, responseData, error in
 			if let error = error {
 				promise.failure(self.handleErrorResponse(statusCode, responseData: responseData, error: error))
 			} else {
@@ -303,8 +307,8 @@ public class Spine {
 // MARK: - Public functions
 
 /**
- *  Extension regarding (registering of) resource types.
- */
+Extension regarding (registering of) resource types.
+*/
 public extension Spine {
 	/**
 	Registers a factory function `factory` for resource type `type`.
@@ -319,8 +323,8 @@ public extension Spine {
 
 
 /**
- *  Extension regarding (registering of) transformers.
- */
+Extension regarding (registering of) transformers.
+*/
 public extension Spine {
 	/**
 	Registers transformer `transformer`.
@@ -333,8 +337,8 @@ public extension Spine {
 }
 
 /**
- *  Extension regarding finding resources.
- */
+Extension regarding finding resources.
+*/
 public extension Spine {
 	/**
 	Fetch multiple resources with the given IDs and type.
@@ -412,7 +416,7 @@ public extension Spine {
 
 /**
 Extension regarding persisting resources.
- */
+*/
 public extension Spine {
 	func save(resource: ResourceProtocol) -> Future<ResourceProtocol> {
 		return saveResource(resource)
@@ -482,11 +486,6 @@ func enumerateFields<T: Field>(resource: ResourceProtocol, type: T.Type, callbac
 	}
 }
 
-/// Compare linkage tuples.
-func == <T: Equatable, U: Equatable>(left: (T, U), right: (T, U)) -> Bool {
-	return (left.0 == right.0) && (left.1 == right.1)
-}
-
 /// Compare resources based on `type` and `id`.
 public func == <T: ResourceProtocol> (left: T, right: T) -> Bool {
 	return (left.id == right.id) && (left.type == right.type)
@@ -507,14 +506,17 @@ public func == <T: ResourceProtocol> (left: [T], right: [T]) -> Bool {
 	return true
 }
 
-/// Sets all fields of resource `resource` to nil,
-/// and sets `isLoaded` to false.
+/// Sets all fields of resource `resource` to nil and sets `isLoaded` to false.
 public func unloadResource(resource: ResourceProtocol) {
 	for field in resource.fields {
 		resource.setValue(nil, forField: field.name)
 	}
 	
 	resource.isLoaded = false
+}
+
+public func fieldWithName(name: String, ofResource resource: Resource) -> Field? {
+	return resource.fields.filter { $0.name == name }.first
 }
 
 

@@ -24,8 +24,7 @@ public protocol RouterProtocol {
 	:returns: The NSURL.
 	*/
 	func URLForResourceType(type: ResourceType) -> NSURL
-	func URLForRelationship(relationship: String, ofResource resource: ResourceProtocol) -> NSURL
-	func URLForRelationship(relationship: String, ofResource resource: ResourceProtocol, ids: [String]) -> NSURL
+	func URLForRelationship(relationship: Relationship, ofResource resource: ResourceProtocol) -> NSURL
 	func URLForQuery<T: ResourceProtocol>(query: Query<T>) -> NSURL
 }
 
@@ -39,14 +38,9 @@ public class Router: RouterProtocol {
 		return baseURL.URLByAppendingPathComponent(type)
 	}
 	
-	public func URLForRelationship(relationship: String, ofResource resource: ResourceProtocol) -> NSURL {
-		assert(resource.id != nil, "Cannot build URL for relationship for resource without id: \(resource)")
-		return URLForResourceType(resource.type).URLByAppendingPathComponent("/\(resource.id!)/links/\(relationship)")
-	}
-
-	public func URLForRelationship(relationship: String, ofResource resource: ResourceProtocol, ids: [String]) -> NSURL {
-		var URL = URLForRelationship(relationship, ofResource: resource)
-		return URL.URLByAppendingPathComponent(",".join(ids))
+	public func URLForRelationship(relationship: Relationship, ofResource resource: ResourceProtocol) -> NSURL {
+		let resourceURL = resource.URL ?? URLForResourceType(resource.type).URLByAppendingPathComponent("/\(resource.id!)")
+		return resourceURL.URLByAppendingPathComponent("/links/\(relationship.serializedName)")
 	}
 
 	public func URLForQuery<T: ResourceProtocol>(query: Query<T>) -> NSURL {

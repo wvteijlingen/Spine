@@ -20,18 +20,13 @@ class RoutingTests: XCTestCase {
 	
 	func testURLForRelationship() {
 		let resource = Foo(id: "1")
-		let URL = spine.router.URLForRelationship("relatedBars", ofResource: resource)
-		let expectedURL = NSURL(string: "http://example.com/foos/1/links/relatedBars")!
+		let relationship = fieldWithName("toOneAttribute", ofResource: resource) as Relationship
+		let URL = spine.router.URLForRelationship(relationship, ofResource: resource)
+		
+		let expectedURL = NSURL(string: "http://example.com/foos/1/links/toOneAttribute")!
 		XCTAssertEqual(URL, expectedURL, "URL not as expected.")
 	}
-	
-	func testURLForRelationshipWithIDs() {
-		let resource = Foo(id: "1")
-		let URL = spine.router.URLForRelationship("relatedBars", ofResource: resource, ids: ["5", "6", "7"])
-		let expectedURL = NSURL(string: "http://example.com/foos/1/links/relatedBars/5,6,7")!
-		XCTAssertEqual(URL, expectedURL, "URL not as expected.")
-	}
-	
+
 	func testURLForQuery() {
 		var query = Query(resourceType: Foo.self, resourceIDs: ["1", "2"])
 		query.include("firstInclude", "secondInclude")

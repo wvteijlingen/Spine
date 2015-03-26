@@ -11,6 +11,32 @@ import Foundation
 public typealias ResourceType = String
 
 /**
+A ResourceIdentifier uniquely identifies a resource that exists on the server.
+*/
+public struct ResourceIdentifier: Equatable {
+	var type: ResourceType
+	var id: String
+	
+	init(type: ResourceType, id: String) {
+		self.type = type
+		self.id = id
+	}
+	
+	init(dictionary: NSDictionary) {
+		type = dictionary["type"] as ResourceType
+		id = dictionary["id"] as String
+	}
+	
+	func toDictionary() -> NSDictionary {
+		return ["type": type, "id": id]
+	}
+}
+
+public func ==(lhs: ResourceIdentifier, rhs: ResourceIdentifier) -> Bool {
+	return lhs.type == rhs.type && lhs.id == rhs.id
+}
+
+/**
 The ResourceProtocol declares methods and properties that a resource must implement.
 */
 @objc public protocol ResourceProtocol: class {
@@ -63,17 +89,12 @@ public class Resource: NSObject, NSCoding, ResourceProtocol {
 		return self.dynamicType.resourceType
 	}
 	
-	public var fields: [Field] {
-		return []
-	}
-	
+	public var fields: [Field] { return [] }
 	public var id: String?
 	public var URL: NSURL?
 	public var isLoaded: Bool = false
 	
-	public override init() {
-		
-	}
+	public override init() {}
 	
 	public required init(coder: NSCoder) {
 		super.init()

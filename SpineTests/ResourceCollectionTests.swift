@@ -88,7 +88,7 @@ class LinkedResourceCollectionTests: XCTestCase {
 	func testInitWithResourcesURLAndURLAndLinkage() {
 		let resourcesURL = NSURL(string: "http://example.com/foos")!
 		let URL = NSURL(string: "http://example.com/bars/1/link/foos")!
-		let linkage = [(type: "foos", id: "1"), (type: "bars", id: "2")]
+		let linkage = [ResourceIdentifier(type: "foos", id: "1"), ResourceIdentifier(type: "bars", id: "2")]
 		let collection = LinkedResourceCollection(resourcesURL: resourcesURL, URL: URL, linkage: linkage)
 		
 		XCTAssertNotNil(collection.resourcesURL, "Expected resources URL to be not nil.")
@@ -98,8 +98,8 @@ class LinkedResourceCollectionTests: XCTestCase {
 		XCTAssertEqual(collection.URL!, URL, "Expected URL to be equal.")
 		
 		XCTAssert(collection.linkage != nil, "Expected linkage to be not nil.")
-		XCTAssert(collection.linkage![0] == linkage[0], "Expected first linkage item to be equal.")
-		XCTAssert(collection.linkage![1] == linkage[1], "Expected second linkage item to be equal.")
+		XCTAssertEqual(collection.linkage![0], linkage[0], "Expected first linkage item to be equal.")
+		XCTAssertEqual(collection.linkage![1], linkage[1], "Expected second linkage item to be equal.")
 	}
 	
 	func testInitWithResourcesURLAndURLAndHomogenousTypeAndLinkage() {
@@ -114,17 +114,15 @@ class LinkedResourceCollectionTests: XCTestCase {
 		XCTAssertEqual(collection.URL!, URL, "Expected URL to be equal.")
 		
 		XCTAssert(collection.linkage != nil, "Expected linkage to be not nil.")
-		XCTAssertEqual(collection.linkage![0].type, "foos", "Expected first linkage type to be 'foos'.")
-		XCTAssertEqual(collection.linkage![0].id, "1", "Expected first linkage id to be '1'.")
-		XCTAssertEqual(collection.linkage![1].type, "foos", "Expected second linkage type to be 'foos'.")
-		XCTAssertEqual(collection.linkage![1].id, "2", "Expected second linkage id to be '2'.")
+		XCTAssertEqual(collection.linkage![0], ResourceIdentifier(type: "foos", id: "1"), "Expected first linkage item to be equal.")
+		XCTAssertEqual(collection.linkage![1], ResourceIdentifier(type: "foos", id: "2"), "Expected second linkage item to be equal.")
 	}
 	
 	func testAddAsExisting() {
 		let collection = LinkedResourceCollection(resourcesURL: nil, URL: nil, linkage: nil)
 		let foo = Foo()
 		
-		collection.addAsExisting(foo)
+		collection.addResourceAsExisting(foo)
 		
 		XCTAssert(collection.resources == [foo], "")
 		XCTAssert(isEmpty(collection.addedResources) , "")
@@ -134,7 +132,7 @@ class LinkedResourceCollectionTests: XCTestCase {
 		let collection = LinkedResourceCollection(resourcesURL: nil, URL: nil, linkage: nil)
 		let foo = Foo()
 		
-		collection.add(foo)
+		collection.addResource(foo)
 		
 		XCTAssert(collection.resources == [foo], "")
 		XCTAssert(collection.addedResources == [foo], "")
@@ -144,8 +142,8 @@ class LinkedResourceCollectionTests: XCTestCase {
 		let collection = LinkedResourceCollection(resourcesURL: nil, URL: nil, linkage: nil)
 		let foo = Foo()
 		
-		collection.add(foo)
-		collection.remove(foo)
+		collection.addResource(foo)
+		collection.removeResource(foo)
 		
 		XCTAssert(isEmpty(collection.resources), "")
 		XCTAssert(collection.removedResources == [foo] , "")

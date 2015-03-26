@@ -163,7 +163,7 @@ public class LinkedResourceCollection: ResourceCollection {
 	public var URL: NSURL?
 	
 	/// The type/id pairs of resources present in this link.
-	public var linkage: [(type: ResourceType, id: String)]?
+	public var linkage: [ResourceIdentifier]?
 	
 	/// Resources added to this linked collection, but not yet persisted.
 	public internal(set) var addedResources: [ResourceProtocol] = []
@@ -175,14 +175,14 @@ public class LinkedResourceCollection: ResourceCollection {
 		super.init(resourcesURL: nil, resources: [])
 	}
 	
-	public init(resourcesURL: NSURL? = nil, URL: NSURL? = nil, linkage: [(type: ResourceType, id: String)]? = nil) {
+	public init(resourcesURL: NSURL?, URL: NSURL?, linkage: [ResourceIdentifier]?) {
 		super.init(resourcesURL: resourcesURL, resources: [])
 		self.URL = URL
 		self.linkage = linkage
 	}
 	
-	public convenience init(resourcesURL: NSURL? = nil, URL: NSURL? = nil, homogenousType: ResourceType, linkage: [String]? = nil) {
-		self.init(resourcesURL: resourcesURL, URL: URL, linkage: linkage?.map { (type: homogenousType, id: $0) })
+	public convenience init(resourcesURL: NSURL?, URL: NSURL?, homogenousType: ResourceType, linkage: [String]?) {
+		self.init(resourcesURL: resourcesURL, URL: URL, linkage: linkage?.map { ResourceIdentifier(type: homogenousType, id: $0) })
 	}
 	
 	public required init(coder: NSCoder) {
@@ -191,11 +191,8 @@ public class LinkedResourceCollection: ResourceCollection {
 		addedResources = coder.decodeObjectForKey("addedResources") as [ResourceProtocol]
 		removedResources = coder.decodeObjectForKey("removedResources") as [ResourceProtocol]
 		
-		if let encodedLinkage = coder.decodeObjectForKey("linkage") as? [[String: String]] {
-			linkage = []
-			for linkageItem in encodedLinkage {
-				linkage!.append(type: linkageItem["type"]!, id: linkageItem["id"]!)
-			}
+		if let encodedLinkage = coder.decodeObjectForKey("linkage") as? [NSDictionary] {
+			linkage = encodedLinkage.map { ResourceIdentifier(dictionary: $0) }
 		}
 	}
 	
@@ -206,11 +203,7 @@ public class LinkedResourceCollection: ResourceCollection {
 		coder.encodeObject(removedResources, forKey: "removedResources")
 		
 		if let linkage = linkage {
-			var encodedLinkage: [[String: String]] = [[:]]
-			for linkageItem in linkage {
-				encodedLinkage.append(["type": linkageItem.type, "id": linkageItem.id])
-			}
-			
+			let encodedLinkage = linkage.map { $0.toDictionary() }
 			coder.encodeObject(encodedLinkage, forKey: "linkage")
 		}
 	}
@@ -271,12 +264,12 @@ extension LinkedResourceCollection: ExtensibleCollectionType {
 	}
 	
 	public func append(newElement: ResourceProtocol) {
-		self.addResource(newElement)
+		addResource(newElement)
 	}
 	
 	public func extend<S : SequenceType where S.Generator.Element == ResourceProtocol>(seq: S) {
 		for element in seq {
-			self.addResource(element)
+			addResource(element)
 		}
 	}
 }

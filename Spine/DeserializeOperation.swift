@@ -250,7 +250,7 @@ class DeserializeOperation: NSOperation {
 		
 		// Resource level link as a resource URL only.
 		if let linkedResourcesURL = serializedData["links"][key].URL {
-			resourceCollection = LinkedResourceCollection(resourcesURL: linkedResourcesURL, URL: nil)
+			resourceCollection = LinkedResourceCollection(resourcesURL: linkedResourcesURL, URL: nil, linkage: nil)
 		
 		// Resource level link as a link object. This might contain linkage in the form of type/id.
 		} else if serializedData["links"][key].dictionary != nil {
@@ -259,10 +259,10 @@ class DeserializeOperation: NSOperation {
 			let linkURL: NSURL? = linkData["self"].URL
 			
 			if let linkage = linkData["linkage"].array {
-				let mappedLinkage = linkage.map { (type: $0["type"].stringValue, id: $0["id"].stringValue) }
+				let mappedLinkage = linkage.map { ResourceIdentifier(type: $0["type"].stringValue, id: $0["id"].stringValue) }
 				resourceCollection = LinkedResourceCollection(resourcesURL: resourcesURL, URL: linkURL, linkage: mappedLinkage)
 			} else {
-				resourceCollection = LinkedResourceCollection(resourcesURL: resourcesURL, URL: linkURL)
+				resourceCollection = LinkedResourceCollection(resourcesURL: resourcesURL, URL: linkURL, linkage: nil)
 			}
 		}
 		
