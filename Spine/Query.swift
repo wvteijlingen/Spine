@@ -9,8 +9,8 @@
 import Foundation
 
 /**
- *  A Query defines search criteria used to retrieve data from an API.
- */
+A Query defines search criteria used to retrieve data from an API.
+*/
 public struct Query<T: ResourceProtocol> {
 	
 	/// The type of resource to fetch. This can be nil if in case of a expected heterogenous response.
@@ -89,9 +89,9 @@ public struct Query<T: ResourceProtocol> {
 	
 	:returns: Query
 	*/
-	public init(resourceType: T.Type, URL: NSURL) {
+	public init(resourceType: T.Type, path: String) {
 		self.resourceType = resourceType.resourceType
-		self.URL = URL
+		self.URL = NSURL(string: path)
 	}
 	
 	
