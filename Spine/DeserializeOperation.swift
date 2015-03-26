@@ -104,8 +104,8 @@ class DeserializeOperation: NSOperation {
 		let type: ResourceType! = representation["type"].string
 		let id: String! = representation["id"].string
 		
-		assert(type != nil, "The given JSON representation does have a type.")
-		assert(id != nil, "The given JSON representation does not have an id.")
+		assert(type != nil, "The given JSON representation does have a string 'type'.")
+		assert(id != nil, "The given JSON representation does not have a string 'id'.")
 		
 		// Dispense a resource
 		let resource = resourceFactory.dispense(type, id: id, pool: &resourcePool, index: mappingTargetIndex)
