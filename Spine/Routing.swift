@@ -32,7 +32,11 @@ public protocol RouterProtocol {
 The built in Router that builds URLs according to the JSON:API specification.
 */
 public class Router: RouterProtocol {
-	public var baseURL: NSURL! = nil
+	public var baseURL: NSURL!
+	
+	init(baseURL: NSURL) {
+		self.baseURL = baseURL
+	}
 
 	public func URLForResourceType(type: ResourceType) -> NSURL {
 		return baseURL.URLByAppendingPathComponent(type)

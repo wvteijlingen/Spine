@@ -22,24 +22,26 @@ public class Spine {
 	let router: RouterProtocol
 	
 	/// The HTTPClient that performs the HTTP requests.
-	var HTTPClient: _HTTPClientProtocol = URLSessionClient()
+	var _HTTPClient: _HTTPClientProtocol = URLSessionClient()
 	
-	/// The public facing HTTPClient.
-	public var client: HTTPClientProtocol {
-		return HTTPClient
+	/// The HTTPClient used for all network requests.
+	public var HTTPClient: HTTPClientProtocol {
+		return _HTTPClient
 	}
 	
 	/// The serializer to use for serializing and deserializing of JSON representations.
 	private let serializer: JSONSerializer = JSONSerializer()
 	
-	
 	// MARK: Initializers
 	
-	public init(baseURL: NSURL, router: RouterProtocol = Router()) {
+	public init(baseURL: NSURL) {
+		self.router = Router(baseURL: baseURL)
+	}
+	
+	public init(baseURL: NSURL, router: RouterProtocol) {
 		self.router = router
 		self.router.baseURL = baseURL
 	}
-	
 	
 	// MARK: Error handling
 	
@@ -48,7 +50,7 @@ public class Spine {
 		case SPINE_ERROR_DOMAIN:
 			return error
 		case SPINE_API_ERROR_DOMAIN:
-			return self.serializer.deserializeError(responseData!, withResonseStatus: statusCode!)
+			return serializer.deserializeError(responseData!, withResonseStatus: statusCode!)
 		default:
 			return error
 		}
@@ -59,11 +61,11 @@ public class Spine {
 
 	func fetchResourcesByExecutingQuery<T: ResourceProtocol>(query: Query<T>, mapOnto mappingTargets: [ResourceProtocol] = []) -> Future<(ResourceCollection)> {
 		let promise = Promise<ResourceCollection>()
-		let URL = self.router.URLForQuery(query)
+		let URL = router.URLForQuery(query)
 		
 		Spine.logInfo(.Spine, "Fetching resources using URL: \(URL)")
 		
-		HTTPClient.request("GET", URL: URL) { statusCode, responseData, error in
+		_HTTPClient.request("GET", URL: URL) { statusCode, responseData, error in
 			if let error = error {
 				promise.failure(self.handleErrorResponse(statusCode, responseData: responseData, error: error))
 				
@@ -105,25 +107,23 @@ public class Spine {
 
 	func saveResource(resource: ResourceProtocol) -> Future<ResourceProtocol> {
 		let promise = Promise<ResourceProtocol>()
-
+		
 		var isNewResource = (resource.id == nil)
-		var requestVerb: String
+		var requestVerb = (isNewResource) ? "POST" : "PUT"
 		var URL: NSURL
 		var payload: NSData
 		
 		if isNewResource {
-			requestVerb = "POST"
 			URL = router.URLForResourceType(resource.type)
 			payload = serializer.serializeResources([resource], options: SerializationOptions(includeID: false, dirtyFieldsOnly: false, includeToOne: true, includeToMany: true))
 		} else {
-			requestVerb = "PATCH"
 			URL = router.URLForQuery(Query(resource: resource))
 			payload = serializer.serializeResources([resource])
 		}
 		
 		Spine.logInfo(.Spine, "Saving resource \(resource) using URL: \(URL)")
 		
-		HTTPClient.request(requestVerb, URL: URL, payload: payload) { statusCode, responseData, error in
+		_HTTPClient.request(requestVerb, URL: URL, payload: payload) { statusCode, responseData, error in
 			if let error = error {
 				promise.failure(self.handleErrorResponse(statusCode, responseData: responseData, error: error))
 				return
@@ -223,7 +223,7 @@ public class Spine {
 			let jsonPayload = NSJSONSerialization.dataWithJSONObject(["data": linkage], options: NSJSONWritingOptions(0), error: nil)
 			// TODO: Move serialization
 			
-			HTTPClient.request("POST", URL: URL, payload: jsonPayload) { statusCode, responseData, error in
+			_HTTPClient.request("POST", URL: URL, payload: jsonPayload) { statusCode, responseData, error in
 				if let error = error {
 					promise.failure(self.handleErrorResponse(statusCode, responseData: responseData, error: error))
 				} else {
@@ -250,7 +250,7 @@ public class Spine {
 			let jsonPayload = NSJSONSerialization.dataWithJSONObject(["data": linkage], options: NSJSONWritingOptions(0), error: nil)
 			// TODO: Move serialization
 			
-			HTTPClient.request("DELETE", URL: URL) { statusCode, responseData, error in
+			_HTTPClient.request("DELETE", URL: URL) { statusCode, responseData, error in
 				if let error = error {
 					promise.failure(self.handleErrorResponse(statusCode, responseData: responseData, error: error))
 				} else {
@@ -271,7 +271,7 @@ public class Spine {
 		let jsonPayload = NSJSONSerialization.dataWithJSONObject(payload, options: NSJSONWritingOptions(0), error: nil)
 		// TODO: Move serialization
 		
-		HTTPClient.request("PATCH", URL: URL, payload: jsonPayload) { statusCode, responseData, error in
+		_HTTPClient.request("PATCH", URL: URL, payload: jsonPayload) { statusCode, responseData, error in
 			if let error = error {
 				promise.failure(self.handleErrorResponse(statusCode, responseData: responseData, error: error))
 			} else {
@@ -291,7 +291,7 @@ public class Spine {
 		
 		Spine.logInfo(.Spine, "Deleting resource \(resource) using URL: \(URL)")
 		
-		HTTPClient.request("DELETE", URL: URL) { statusCode, responseData, error in
+		_HTTPClient.request("DELETE", URL: URL) { statusCode, responseData, error in
 			if let error = error {
 				promise.failure(self.handleErrorResponse(statusCode, responseData: responseData, error: error))
 			} else {
