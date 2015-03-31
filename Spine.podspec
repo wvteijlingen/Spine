@@ -8,12 +8,12 @@ Pod::Spec.new do |s|
   s.source = { :git => 'https://github.com/wvteijlingen/Spine.git', :tag => s.version }
 
   s.ios.deployment_target = '8.0'
-  s.osx.deployment_target = '10.9'
+  s.osx.deployment_target = '10.10'
 
   s.source_files = 'Spine/*.swift'
 
   s.requires_arc = true
 
   s.dependency 'SwiftyJSON', '>= 2.1.3'
-  s.dependency 'BrightFutures', :git => 'https://github.com/Thomvis/BrightFutures.git', :commit => 'b9a158bcf3de8c2af9f3985ab61c1c97e5a36737'
+  s.dependency 'BrightFutures', '1.0.0-beta.3'
 end
