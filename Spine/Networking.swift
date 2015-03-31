@@ -15,7 +15,10 @@ typealias HTTPClientCallback = (statusCode: Int?, responseData: NSData?, error: 
 The HTTPClientProtocol declares methods and properties that a HTTP client must implement.
 */
 public protocol HTTPClientProtocol {
+	/// Sets a HTTP header for all upcoming network requests.
 	func setHeader(header: String, to: String)
+	
+	/// Removes a HTTP header for all upcoming  network requests.
 	func removeHeader(header: String)
 }
 
@@ -23,7 +26,10 @@ public protocol HTTPClientProtocol {
 The _HTTPClientProtocol declares methods and properties that a HTTP client must implement.
 */
 protocol _HTTPClientProtocol: HTTPClientProtocol {
+	/// Performs a network request to the given URL with the given HTTP method.
 	func request(method: String, URL: NSURL, callback: HTTPClientCallback)
+	
+	/// Performs a network request to the given URL with the given HTTP method and request body data.
 	func request(method: String, URL: NSURL, payload: NSData?, callback: HTTPClientCallback)
 }
 
