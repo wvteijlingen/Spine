@@ -19,7 +19,7 @@ class SpineTests: XCTestCase {
 		super.setUp()
 		spine = Spine(baseURL: NSURL(string:"http://example.com")!)
 		HTTPClient = CallbackHTTPClient()
-		spine.HTTPClient = HTTPClient
+		spine._HTTPClient = HTTPClient
 		spine.registerResource(Foo.resourceType) { Foo() }
 		spine.registerResource(Bar.resourceType) { Bar() }
 	}
