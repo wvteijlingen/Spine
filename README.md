@@ -1,6 +1,6 @@
 Spine
 =====
-Spine is an Swift framework for consuming a JSON API that adheres to the jsonapi.org spec.
+Spine is a Swift library for working with JSON:API APIs. It supports mapping to custom model classes, fetching, advanced querying, linking and persisting
 
 Installation
 ============
@@ -38,13 +38,13 @@ class Post: Resource {
 		return "posts"
 	}
 
-	override var attributes: [Attribute] {
-		return attributesFromDictionary([
-			"title": PropertyAttribute(),
-			"body": PropertyAttribute().serializeAs("content"),
+	override var fields: [Field] {
+		return fieldsFromDictionary([
+			"title": Attribute(),
+			"body": Attribute().serializeAs("content"),
 			"creationDate": DateAttribute().serializeAs("created-at"),
-			"author": ToOneAttribute(User.resourceType),
-			"comments": ToManyAttribute(Comment.resourceType)
+			"author": ToOneRelationship(User.resourceType),
+			"comments": ToManyRelationship(Comment.resourceType)
 		])
 	}
 }
