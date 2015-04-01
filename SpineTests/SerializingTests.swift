@@ -241,7 +241,7 @@ class DeserializingTests: SerializerTests {
 		case .Success(let resources, let pagination):
 			XCTFail("Expected deserialization to fail.")
 		case .Failure(let error):
-			XCTAssertEqual(error.domain, SPINE_ERROR_DOMAIN, "Expected error domain to be SPINE_ERROR_DOMAIN.")
+			XCTAssertEqual(error.domain, SpineClientErrorDomain, "Expected error domain to be SpineClientErrorDomain.")
 			XCTAssertEqual(error.code, 0, "Expected error code to be '0'.")
 		}
 	}
@@ -250,7 +250,7 @@ class DeserializingTests: SerializerTests {
 		let fixture = JSONFixtureWithName("Errors")
 		let error = serializer.deserializeError(fixture.data, withResonseStatus: 999)
 		
-		XCTAssertEqual(error.domain, SPINE_API_ERROR_DOMAIN, "Expected error domain to be SPINE_API_ERROR_DOMAIN.")
+		XCTAssertEqual(error.domain, SpineServerErrorDomain, "Expected error domain to be SpineServerErrorDomain.")
 		XCTAssertEqual(error.code, fixture.json["errors"][0]["code"].intValue, "Expected error code to be equal.")
 		XCTAssertEqual(error.localizedDescription, fixture.json["errors"][0]["title"].stringValue, "Expected error description to be equal.")
 	}

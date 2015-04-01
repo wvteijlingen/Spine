@@ -57,7 +57,7 @@ class DeserializeOperation: NSOperation {
 		// Check if the given data is in the expected format
 		if (data.dictionary == nil) {
 			Spine.logError(.Serializing, "Cannot deserialize: The given JSON representation was not as expected.")
-			result = .Failure(NSError(domain: SPINE_ERROR_DOMAIN, code: 0, userInfo: [NSLocalizedDescriptionKey: "The given JSON representation was not as expected."]))
+			result = .Failure(NSError(domain: SpineClientErrorDomain, code: 0, userInfo: [NSLocalizedDescriptionKey: "The given JSON representation was not as expected."]))
 			return
 		}
 		

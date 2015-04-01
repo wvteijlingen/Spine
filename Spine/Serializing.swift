@@ -6,7 +6,7 @@
 //  Copyright (c) 2014 Ward van Teijlingen. All rights reserved.
 //
 
-import UIKit
+import Foundation
 import SwiftyJSON
 
 /**
@@ -131,7 +131,7 @@ class JSONSerializer: SerializerProtocol {
 			userInfo = [NSLocalizedDescriptionKey: errorTitle]
 		}
 		
-		return NSError(domain: SPINE_API_ERROR_DOMAIN, code: code, userInfo: userInfo)
+		return NSError(domain: SpineServerErrorDomain, code: code, userInfo: userInfo)
 	}
 	
 	func serializeResources(resources: [ResourceProtocol], options: SerializationOptions = SerializationOptions()) -> NSData {

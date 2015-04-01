@@ -10,10 +10,10 @@ import Foundation
 import BrightFutures
 
 /// The domain used for errors that occur within the Spine framework.
-public let SPINE_ERROR_DOMAIN = "com.wardvanteijlingen.Spine"
+public let SpineClientErrorDomain = "com.wardvanteijlingen.spine.client"
 
 /// The domain used for errors that are returned by the API.
-public let SPINE_API_ERROR_DOMAIN = "com.wardvanteijlingen.Spine.Api"
+public let SpineServerErrorDomain = "com.wardvanteijlingen.spine.server"
 
 /// The main class
 public class Spine {
@@ -47,9 +47,9 @@ public class Spine {
 	
 	func handleErrorResponse(statusCode: Int?, responseData: NSData?, error: NSError) -> NSError {
 		switch error.domain {
-		case SPINE_ERROR_DOMAIN:
+		case SpineClientErrorDomain:
 			return error
-		case SPINE_API_ERROR_DOMAIN:
+		case SpineServerErrorDomain:
 			return serializer.deserializeError(responseData!, withResonseStatus: statusCode!)
 		default:
 			return error
@@ -404,7 +404,7 @@ public extension Spine {
 			if let resource = resourceCollection.resources.first as? T {
 				promise.success(resource)
 			} else {
-				promise.failure(NSError(domain: SPINE_ERROR_DOMAIN, code: 404, userInfo: nil))
+				promise.failure(NSError(domain: SpineClientErrorDomain, code: 404, userInfo: nil))
 			}
 		}.onFailure { error in
 			promise.failure(error)

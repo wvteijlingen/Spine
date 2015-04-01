@@ -52,7 +52,7 @@ public class CallbackHTTPClient: _HTTPClientProtocol {
 				// Framework error
 				if let error = error {
 					Spine.logError(.Networking, "\(request.URL!) - \(error.localizedDescription)")
-					resolvedError = NSError(domain: SPINE_ERROR_DOMAIN, code: error.code, userInfo: error.userInfo)
+					resolvedError = NSError(domain: SpineClientErrorDomain, code: error.code, userInfo: error.userInfo)
 					
 					// Success
 				} else if 200 ... 299 ~= statusCode {
@@ -61,7 +61,7 @@ public class CallbackHTTPClient: _HTTPClientProtocol {
 					// API Error
 				} else {
 					Spine.logWarning(.Networking, "\(statusCode): \(request.URL!)")
-					resolvedError = NSError(domain: SPINE_API_ERROR_DOMAIN, code: statusCode, userInfo: nil)
+					resolvedError = NSError(domain: SpineServerErrorDomain, code: statusCode, userInfo: nil)
 				}
 				
 				callback(statusCode: statusCode, responseData: data, error: resolvedError)
