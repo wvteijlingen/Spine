@@ -41,22 +41,22 @@ The ResourceProtocol declares methods and properties that a resource must implem
 */
 @objc public protocol ResourceProtocol: class {
 	/// The resource type in plural form.
-    class var resourceType: ResourceType { get }
+	class var resourceType: ResourceType { get }
 	
 	/// The resource type in plural form.
-    var type: ResourceType { get }
+	var type: ResourceType { get }
 	
 	/// All fields that must be persisted in the API.
-    var fields: [Field] { get }
+	var fields: [Field] { get }
 	
 	/// The ID of the resource.
-    var id: String? { get set }
+	var id: String? { get set }
 	
 	/// The self URL of the resource.
-    var URL: NSURL? { get set }
+	var URL: NSURL? { get set }
 	
 	/// Whether the attributes of the resource are loaded.
-    var isLoaded: Bool { get set }
+	var isLoaded: Bool { get set }
 	
 	/**
 	Returns the attribute value for the given key
@@ -85,7 +85,7 @@ public class Resource: NSObject, NSCoding, ResourceProtocol {
 		fatalError("Override resourceType in a subclass.")
 	}
 	
-    public var type: ResourceType {
+	public var type: ResourceType {
 		return self.dynamicType.resourceType
 	}
 	
