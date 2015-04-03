@@ -47,8 +47,6 @@ public class Spine {
 	
 	func handleErrorResponse(statusCode: Int?, responseData: NSData?, error: NSError) -> NSError {
 		switch error.domain {
-		case SpineClientErrorDomain:
-			return error
 		case SpineServerErrorDomain:
 			return serializer.deserializeError(responseData!, withResonseStatus: statusCode!)
 		default:

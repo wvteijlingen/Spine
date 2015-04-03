@@ -84,13 +84,13 @@ public class URLSessionClient: _HTTPClientProtocol {
 			// Framework error
 			if let error = error {
 				Spine.logError(.Networking, "\(request.URL) - \(error.localizedDescription)")
-				resolvedError = NSError(domain: SpineClientErrorDomain, code: error.code, userInfo: error.userInfo)
+				resolvedError = error
 				
-				// Success
+			// Success
 			} else if 200 ... 299 ~= response.statusCode {
 				Spine.logInfo(.Networking, "\(response.statusCode): \(request.URL)")
 				
-				// API Error
+			// API Error
 			} else {
 				Spine.logWarning(.Networking, "\(response.statusCode): \(request.URL)")
 				resolvedError = NSError(domain: SpineServerErrorDomain, code: response.statusCode, userInfo: nil)
