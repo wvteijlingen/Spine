@@ -13,7 +13,7 @@ A Query defines search criteria used to retrieve data from an API.
 */
 public struct Query<T: ResourceProtocol> {
 	
-	/// The type of resource to fetch. This can be nil if in case of a expected heterogenous response.
+	/// The type of resource to fetch. This can be nil if in case of an expected heterogenous response.
 	var resourceType: ResourceType?
 	
 	/// The specific IDs the fetch.
@@ -105,20 +105,38 @@ public struct Query<T: ResourceProtocol> {
 	
 	:returns: The query.
 	*/
-	public mutating func include(relations: String...) -> Query {
-		includes += relations
+	public mutating func include(relationships: String...) -> Query {
+		for relationship in relationships {
+			if let relationshipName = T.fields.filter({ $0.name == relationship }).first?.name {
+				includes.append(relationshipName)
+			} else {
+				assertionFailure("Resource of type \(T.resourceType) does not contain a relationship named \(relationship)")
+			}
+		}
+
 		return self
 	}
 	
 	/**
 	Removes a previously included relation.
 	
-	:param: relation The name of the relation not to include.
+	:param: relation The name of the included relationship to remove.
 	
 	:returns: The query
 	*/
-	public mutating func removeInclude(relations: String...) -> Query {
-		includes = includes.filter { !contains(relations, $0) }
+	public mutating func removeInclude(relationships: String...) -> Query {
+		for relationship in relationships {
+			if let relationshipName = T.fields.filter({ $0.name == relationship }).first?.name {
+				if let index = find(includes, relationshipName) {
+					includes.removeAtIndex(index)
+				} else {
+					assertionFailure("Attempt to remove include that was not included: \(relationshipName)")
+				}
+			} else {
+				assertionFailure("Resource of type \(T.resourceType) does not contain a relationship named \(relationship)")
+			}
+		}
+
 		return self
 	}
 	
@@ -129,9 +147,9 @@ public struct Query<T: ResourceProtocol> {
 		let predicate = NSComparisonPredicate(
 			leftExpression: NSExpression(forKeyPath: key),
 			rightExpression: NSExpression(forConstantValue: value),
-			modifier: NSComparisonPredicateModifier.DirectPredicateModifier,
+			modifier: .DirectPredicateModifier,
 			type: type,
-			options: NSComparisonPredicateOptions.allZeros)
+			options: .allZeros)
 		
 		addPredicate(predicate)
 	}

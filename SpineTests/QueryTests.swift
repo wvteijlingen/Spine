@@ -46,16 +46,16 @@ class QueryIncludeTests: XCTestCase {
 	func testInclude() {
 		var query = Query(resourceType: Foo.self)
 		
-		query.include("bar", "qux", "bar.qux")
-		XCTAssertEqual(query.includes, ["bar", "qux", "bar.qux"], "Includes not as expected")
+		query.include("toOneAttribute", "toManyAttribute")
+		XCTAssertEqual(query.includes, ["toOneAttribute", "toManyAttribute"], "Includes not as expected")
 	}
 	
 	func testRemoveInclude() {
 		var query = Query(resourceType: Foo.self)
 		
-		query.include("bar", "qux", "bar.qux")
-		query.removeInclude("bar")
-		XCTAssertEqual(query.includes, ["qux", "bar.qux"], "Includes not as expected")
+		query.include("toOneAttribute", "toManyAttribute")
+		query.removeInclude("toManyAttribute")
+		XCTAssertEqual(query.includes, ["toOneAttribute"], "Includes not as expected")
 	}
 }
 
