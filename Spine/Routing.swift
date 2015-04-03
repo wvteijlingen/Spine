@@ -42,8 +42,8 @@ public class Router: RouterProtocol {
 		return baseURL.URLByAppendingPathComponent(type)
 	}
 	
-	public func URLForRelationship(relationship: Relationship, ofResource resource: ResourceProtocol) -> NSURL {
-		let resourceURL = resource.URL ?? URLForResourceType(resource.type).URLByAppendingPathComponent("/\(resource.id!)")
+	public func URLForRelationship<T: ResourceProtocol>(relationship: Relationship, ofResource resource: T) -> NSURL {
+		let resourceURL = resource.URL ?? URLForResourceType(resource.dynamicType.resourceType).URLByAppendingPathComponent("/\(resource.id!)")
 		return resourceURL.URLByAppendingPathComponent("/links/\(relationship.serializedName)")
 	}
 

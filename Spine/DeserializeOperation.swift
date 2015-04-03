@@ -182,14 +182,14 @@ class DeserializeOperation: NSOperation {
 	:param: resource       The resource into which to extract the relationships.
 	*/
 	private func extractRelationships(serializedData: JSON, intoResource resource: ResourceProtocol) {
-		for field in resource.fields {
+		enumerateFields(resource) { field in
 			switch field {
 			case let toOne as ToOneRelationship:
-				if let linkedResource = extractToOneRelationship(serializedData, key: toOne.serializedName, linkedType: toOne.linkedType, resource: resource) {
+				if let linkedResource = self.extractToOneRelationship(serializedData, key: toOne.serializedName, linkedType: toOne.linkedType, resource: resource) {
 					resource.setValue(linkedResource, forField: toOne.name)
 				}
 			case let toMany as ToManyRelationship:
-				if let linkedResourceCollection = extractToManyRelationship(serializedData, key: toMany.serializedName, resource: resource) {
+				if let linkedResourceCollection = self.extractToManyRelationship(serializedData, key: toMany.serializedName, resource: resource) {
 					resource.setValue(linkedResourceCollection, forField: toMany.name)
 				}
 			default: ()
@@ -274,8 +274,7 @@ class DeserializeOperation: NSOperation {
 	*/
 	private func resolveRelations() {
 		for resource in resourcePool {
-			for field in resource.fields {
-				
+			enumerateFields(resource) { field in
 				if let toManyAttribute = field as? ToManyRelationship {
 					if let linkedResource = resource.valueForField(field.name) as? LinkedResourceCollection {
 						
@@ -285,7 +284,7 @@ class DeserializeOperation: NSOperation {
 							
 							for link in linkage {
 								// Find target of relation in store
-								if let targetResource = findResource(resourcePool, link.type, link.id) {
+								if let targetResource = findResource(self.resourcePool, link.type, link.id) {
 									targetResources.append(targetResource)
 								} else {
 									Spine.logInfo(.Serializing, "Cannot resolve to-many link \(resource.type):\(resource.id!) - \(toManyAttribute.name) -> \(link.type):\(link.id) because the linked resource does not exist in the document or mappingTargets.")

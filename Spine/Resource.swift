@@ -47,7 +47,7 @@ The ResourceProtocol declares methods and properties that a resource must implem
 	var type: ResourceType { get }
 	
 	/// All fields that must be persisted in the API.
-	var fields: [Field] { get }
+	class var fields: [Field] { get }
 	
 	/// The ID of the resource.
 	var id: String? { get set }
@@ -89,7 +89,7 @@ public class Resource: NSObject, NSCoding, ResourceProtocol {
 		return self.dynamicType.resourceType
 	}
 	
-	public var fields: [Field] { return [] }
+	public class var fields: [Field] { return [] }
 	public var id: String?
 	public var URL: NSURL?
 	public var isLoaded: Bool = false

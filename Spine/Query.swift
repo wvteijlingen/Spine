@@ -66,7 +66,7 @@ public struct Query<T: ResourceProtocol> {
 	public init(resource: T) {
 		assert(resource.id != nil, "Cannot instantiate query for resource, id is nil.")
 		self.URL = resource.URL
-		self.resourceType = resource.type
+		self.resourceType = resource.dynamicType.resourceType
 		self.resourceIDs = [resource.id!]
 	}
 	

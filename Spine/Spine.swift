@@ -161,7 +161,7 @@ public class Spine {
 		var operations: [Operation] = []
 		
 		// Create operations
-		for field in resource.fields {
+		enumerateFields(resource) { field in
 			switch field {
 			case let toOne as ToOneRelationship:
 				let linkedResource = resource.valueForField(toOne.name) as ResourceProtocol
@@ -477,12 +477,19 @@ func findResource<C: CollectionType where C.Generator.Element: ResourceProtocol>
 
 /// Calls `callback` for each field, filtered by type `type`, of resource `resource`.
 func enumerateFields<T: Field>(resource: ResourceProtocol, type: T.Type, callback: (T) -> ()) {
-	for field in resource.fields {
+	enumerateFields(resource) { field in
 		if let attribute = field as? T {
 			callback(attribute)
 		}
 	}
 }
+
+func enumerateFields<T: ResourceProtocol>(resource: T, callback: (Field) -> ()) {
+	for field in resource.dynamicType.fields {
+		callback(field)
+	}
+}
+
 
 /// Compare resources based on `type` and `id`.
 public func == <T: ResourceProtocol> (left: T, right: T) -> Bool {
@@ -506,15 +513,11 @@ public func == <T: ResourceProtocol> (left: [T], right: [T]) -> Bool {
 
 /// Sets all fields of resource `resource` to nil and sets `isLoaded` to false.
 public func unloadResource(resource: ResourceProtocol) {
-	for field in resource.fields {
+	enumerateFields(resource) { field in
 		resource.setValue(nil, forField: field.name)
 	}
 	
 	resource.isLoaded = false
-}
-
-public func fieldWithName(name: String, ofResource resource: Resource) -> Field? {
-	return resource.fields.filter { $0.name == name }.first
 }
 
 
@@ -588,5 +591,40 @@ extension Spine {
 	
 	class func logError<T>(domain: LogDomain, _ object: T) {
 		log(object, level: .Error, domain: domain)
+	}
+}
+
+
+// MARK: - Futures
+
+extension Future {
+	func onServerFailure(callback: FailureCallback) -> BrightFutures.Future<T> {
+		self.onFailure { error in
+			if error.domain == SpineServerErrorDomain {
+				callback(error)
+			}
+		}
+		
+		return self
+	}
+	
+	func onNetworkFailure(callback: FailureCallback) -> BrightFutures.Future<T> {
+		self.onFailure { error in
+			if error.domain == NSURLErrorDomain {
+				callback(error)
+			}
+		}
+		
+		return self
+	}
+	
+	func onClientFailure(callback: FailureCallback) -> BrightFutures.Future<T> {
+		self.onFailure { error in
+			if error.domain == SpineClientErrorDomain {
+				callback(error)
+			}
+		}
+		
+		return self
 	}
 }
