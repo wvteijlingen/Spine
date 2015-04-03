@@ -20,23 +20,23 @@ class RoutingTests: XCTestCase {
 	
 	func testURLForRelationship() {
 		let resource = Foo(id: "1")
-		let relationship = fieldWithName("toOneAttribute", ofResource: resource) as Relationship
+		let relationship = ToOneRelationship(Bar.resourceType).serializeAs("relationship")
 		let URL = spine.router.URLForRelationship(relationship, ofResource: resource)
 		
-		let expectedURL = NSURL(string: "http://example.com/foos/1/links/toOneAttribute")!
+		let expectedURL = NSURL(string: "http://example.com/foos/1/links/relationship")!
 		XCTAssertEqual(URL, expectedURL, "URL not as expected.")
 	}
 
 	func testURLForQuery() {
 		var query = Query(resourceType: Foo.self, resourceIDs: ["1", "2"])
-		query.include("firstInclude", "secondInclude")
+		query.include("toOneAttribute", "toManyAttribute")
 		query.whereProperty("equalProperty", equalTo: "equalValue")
 		query.restrictPropertiesTo("firstField", "secondField")
 		query.addAscendingOrder("ascendingSort")
 		query.addDescendingOrder("descendingSort")
 		
 		let URL = spine.router.URLForQuery(query)
-		let expectedURL = NSURL(string: "http://example.com/foos/?filter[id]=1,2&include=firstInclude,secondInclude&filter[equalProperty]=equalValue&fields[foos]=firstField,secondField&sort=+ascendingSort,-descendingSort")!
+		let expectedURL = NSURL(string: "http://example.com/foos/?filter[id]=1,2&include=toOneAttribute,toManyAttribute&filter[equalProperty]=equalValue&fields[foos]=firstField,secondField&sort=+ascendingSort,-descendingSort")!
 		
 		XCTAssertEqual(URL, expectedURL, "URL not as expected.")
 	}

@@ -24,7 +24,7 @@ class Foo: Resource {
 		return "foos"
 	}
 	
-	override var fields: [Field] {
+	override class var fields: [Field] {
 		return fieldsFromDictionary([
 			"stringAttribute": Attribute(),
 			"integerAttribute": Attribute(),
@@ -56,7 +56,7 @@ class Bar: Resource {
 		return "bars"
 	}
 	
-	override var fields: [Field] {
+	override class var fields: [Field] {
 		return []
 	}
 	
