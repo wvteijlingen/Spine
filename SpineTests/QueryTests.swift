@@ -78,10 +78,10 @@ class QueryFilterTests: XCTestCase {
 	
 	func testWherePropertyEqualTo() {
 		var query = Query(resourceType: Foo.self)
-		query.whereProperty("property", equalTo: "value")
+		query.whereAttribute("stringAttribute", equalTo: "value")
 		
 		let predicate = NSComparisonPredicate(
-			leftExpression: NSExpression(forKeyPath: "property"),
+			leftExpression: NSExpression(forKeyPath: "stringAttribute"),
 			rightExpression: NSExpression(forConstantValue: "value"),
 			modifier: .DirectPredicateModifier,
 			type: .EqualToPredicateOperatorType,
@@ -92,10 +92,10 @@ class QueryFilterTests: XCTestCase {
 	
 	func testWherePropertyNotEqualTo() {
 		var query = Query(resourceType: Foo.self)
-		query.whereProperty("property", notEqualTo: "value")
+		query.whereAttribute("stringAttribute", notEqualTo: "value")
 		
 		let predicate = NSComparisonPredicate(
-			leftExpression: NSExpression(forKeyPath: "property"),
+			leftExpression: NSExpression(forKeyPath: "stringAttribute"),
 			rightExpression: NSExpression(forConstantValue: "value"),
 			modifier: .DirectPredicateModifier,
 			type: .NotEqualToPredicateOperatorType,
@@ -106,10 +106,10 @@ class QueryFilterTests: XCTestCase {
 	
 	func testWherePropertyLessThan() {
 		var query = Query(resourceType: Foo.self)
-		query.whereProperty("property", lessThan: "10")
+		query.whereAttribute("integerAttribute", lessThan: "10")
 		
 		let predicate = NSComparisonPredicate(
-			leftExpression: NSExpression(forKeyPath: "property"),
+			leftExpression: NSExpression(forKeyPath: "integerAttribute"),
 			rightExpression: NSExpression(forConstantValue: "10"),
 			modifier: .DirectPredicateModifier,
 			type: .LessThanPredicateOperatorType,
@@ -120,10 +120,10 @@ class QueryFilterTests: XCTestCase {
 	
 	func testWherePropertyLessThanOrEqualTo() {
 		var query = Query(resourceType: Foo.self)
-		query.whereProperty("property", lessThanOrEqualTo: "10")
+		query.whereAttribute("integerAttribute", lessThanOrEqualTo: "10")
 		
 		let predicate = NSComparisonPredicate(
-			leftExpression: NSExpression(forKeyPath: "property"),
+			leftExpression: NSExpression(forKeyPath: "integerAttribute"),
 			rightExpression: NSExpression(forConstantValue: "10"),
 			modifier: .DirectPredicateModifier,
 			type: .LessThanOrEqualToPredicateOperatorType,
@@ -134,10 +134,10 @@ class QueryFilterTests: XCTestCase {
 	
 	func testWherePropertyGreaterThan() {
 		var query = Query(resourceType: Foo.self)
-		query.whereProperty("property", greaterThan: "10")
+		query.whereAttribute("integerAttribute", greaterThan: "10")
 		
 		let predicate = NSComparisonPredicate(
-			leftExpression: NSExpression(forKeyPath: "property"),
+			leftExpression: NSExpression(forKeyPath: "integerAttribute"),
 			rightExpression: NSExpression(forConstantValue: "10"),
 			modifier: .DirectPredicateModifier,
 			type: .GreaterThanPredicateOperatorType,
@@ -148,10 +148,10 @@ class QueryFilterTests: XCTestCase {
 	
 	func testWherePropertyGreaterThanOrEqualTo() {
 		var query = Query(resourceType: Foo.self)
-		query.whereProperty("property", greaterThanOrEqualTo: "10")
+		query.whereAttribute("integerAttribute", greaterThanOrEqualTo: "10")
 		
 		let predicate = NSComparisonPredicate(
-			leftExpression: NSExpression(forKeyPath: "property"),
+			leftExpression: NSExpression(forKeyPath: "integerAttribute"),
 			rightExpression: NSExpression(forConstantValue: "10"),
 			modifier: .DirectPredicateModifier,
 			type: .GreaterThanOrEqualToPredicateOperatorType,
@@ -165,10 +165,10 @@ class QueryFilterTests: XCTestCase {
 		bar.id = "3"
 		
 		var query = Query(resourceType: Foo.self)
-		query.whereRelationship("relationshipName", isOrContains: bar)
+		query.whereRelationship("toOneAttribute", isOrContains: bar)
 		
 		let predicate = NSComparisonPredicate(
-			leftExpression: NSExpression(forKeyPath: "relationshipName"),
+			leftExpression: NSExpression(forKeyPath: "toOneAttribute"),
 			rightExpression: NSExpression(forConstantValue: bar.id!),
 			modifier: .DirectPredicateModifier,
 			type: .EqualToPredicateOperatorType,
@@ -183,14 +183,14 @@ class QuerySparseFieldsetsTests: XCTestCase {
 
 	func testRestrictPropertiesTo() {
 		var query = Query(resourceType: Foo.self)
-		query.restrictPropertiesTo("firstProperty", "secondProperty")
+		query.restrictFieldsTo("firstProperty", "secondProperty")
 		
 		XCTAssertEqual(query.fields, [Foo.resourceType: ["firstProperty", "secondProperty"]], "Fields not as expected")
 	}
 	
 	func testRestrictPropertiesOfResourceTypeTo() {
 		var query = Query(resourceType: Foo.self)
-		query.restrictPropertiesOfResourceType("bars", to: "firstProperty", "secondProperty")
+		query.restrictFieldsOfResourceType("bars", to: "firstProperty", "secondProperty")
 		
 		XCTAssertEqual(query.fields, ["bars": ["firstProperty", "secondProperty"]], "Fields not as expected")
 	}

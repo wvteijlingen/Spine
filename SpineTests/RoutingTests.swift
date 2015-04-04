@@ -30,13 +30,13 @@ class RoutingTests: XCTestCase {
 	func testURLForQuery() {
 		var query = Query(resourceType: Foo.self, resourceIDs: ["1", "2"])
 		query.include("toOneAttribute", "toManyAttribute")
-		query.whereProperty("equalProperty", equalTo: "equalValue")
-		query.restrictPropertiesTo("firstField", "secondField")
+		query.whereAttribute("stringAttribute", equalTo: "stringValue")
+		query.restrictFieldsTo("firstField", "secondField")
 		query.addAscendingOrder("ascendingSort")
 		query.addDescendingOrder("descendingSort")
 		
 		let URL = spine.router.URLForQuery(query)
-		let expectedURL = NSURL(string: "http://example.com/foos/?filter[id]=1,2&include=toOneAttribute,toManyAttribute&filter[equalProperty]=equalValue&fields[foos]=firstField,secondField&sort=+ascendingSort,-descendingSort")!
+		let expectedURL = NSURL(string: "http://example.com/foos/?filter[id]=1,2&include=toOneAttribute,toManyAttribute&filter[stringAttribute]=stringValue&fields[foos]=firstField,secondField&sort=+ascendingSort,-descendingSort")!
 		
 		XCTAssertEqual(URL, expectedURL, "URL not as expected.")
 	}
