@@ -143,7 +143,7 @@ public struct Query<T: ResourceProtocol> {
 	
 	// MARK: Filtering
 	
-	private mutating func addPredicateWithField(fieldName: String, value: String, type: NSPredicateOperatorType) {
+	private mutating func addPredicateWithField(fieldName: String, value: AnyObject, type: NSPredicateOperatorType) {
 		if let field = T.fields.filter({ $0.name == fieldName }).first {
 			let predicate = NSComparisonPredicate(
 				leftExpression: NSExpression(forKeyPath: field.serializedName),
@@ -175,7 +175,7 @@ public struct Query<T: ResourceProtocol> {
 	
 	:returns: The query
 	*/
-	public mutating func whereAttribute(attributeName: String, equalTo: String) -> Query {
+	public mutating func whereAttribute(attributeName: String, equalTo: AnyObject) -> Query {
 		addPredicateWithField(attributeName, value: equalTo, type: .EqualToPredicateOperatorType)
 		return self
 	}
@@ -188,7 +188,7 @@ public struct Query<T: ResourceProtocol> {
 	
 	:returns: The query
 	*/
-	public mutating func whereAttribute(attributeName: String, notEqualTo: String) -> Query {
+	public mutating func whereAttribute(attributeName: String, notEqualTo: AnyObject) -> Query {
 		addPredicateWithField(attributeName, value: notEqualTo, type: .NotEqualToPredicateOperatorType)
 		return self
 	}
@@ -201,7 +201,7 @@ public struct Query<T: ResourceProtocol> {
 	
 	:returns: The query
 	*/
-	public mutating func whereAttribute(attributeName: String, lessThan: String) -> Query {
+	public mutating func whereAttribute(attributeName: String, lessThan: AnyObject) -> Query {
 		addPredicateWithField(attributeName, value: lessThan, type: .LessThanPredicateOperatorType)
 		return self
 	}
@@ -214,7 +214,7 @@ public struct Query<T: ResourceProtocol> {
 	
 	:returns: The query
 	*/
-	public mutating func whereAttribute(attributeName: String, lessThanOrEqualTo: String) -> Query {
+	public mutating func whereAttribute(attributeName: String, lessThanOrEqualTo: AnyObject) -> Query {
 		addPredicateWithField(attributeName, value: lessThanOrEqualTo, type: .LessThanOrEqualToPredicateOperatorType)
 		return self
 	}
@@ -227,7 +227,7 @@ public struct Query<T: ResourceProtocol> {
 	
 	:returns: The query
 	*/
-	public mutating func whereAttribute(attributeName: String, greaterThan: String) -> Query {
+	public mutating func whereAttribute(attributeName: String, greaterThan: AnyObject) -> Query {
 		addPredicateWithField(attributeName, value: greaterThan, type: .GreaterThanPredicateOperatorType)
 		return self
 	}
@@ -240,7 +240,7 @@ public struct Query<T: ResourceProtocol> {
 	
 	:returns: The query
 	*/
-	public mutating func whereAttribute(attributeName: String, greaterThanOrEqualTo: String) -> Query {
+	public mutating func whereAttribute(attributeName: String, greaterThanOrEqualTo: AnyObject) -> Query {
 		addPredicateWithField(attributeName, value: greaterThanOrEqualTo, type: .GreaterThanOrEqualToPredicateOperatorType)
 		return self
 	}
