@@ -16,7 +16,7 @@ A result returned from the deserializer.
 - Failure: Deserialising failed with the given error.
 */
 enum DeserializationResult {
-	case Success(resources: [ResourceProtocol], pagination: PaginationData?)
+	case Success([ResourceProtocol])
 	case Failure(NSError)
 }
 

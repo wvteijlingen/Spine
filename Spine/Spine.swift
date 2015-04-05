@@ -71,9 +71,8 @@ public class Spine {
 				let deserializationResult = self.serializer.deserializeData(responseData!, mappingTargets: mappingTargets)
 				
 				switch deserializationResult {
-				case .Success(let resources, let paginationData):
+				case .Success(let resources):
 					let collection = ResourceCollection(resources: resources)
-					collection.paginationData = paginationData
 					promise.success(collection)
 				case .Failure(let error):
 					promise.failure(error)

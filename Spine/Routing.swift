@@ -24,12 +24,32 @@ public protocol RouterProtocol {
 	:returns: The NSURL.
 	*/
 	func URLForResourceType(type: ResourceType) -> NSURL
+	
+	
 	func URLForRelationship(relationship: Relationship, ofResource resource: ResourceProtocol) -> NSURL
+	
+	/**
+	Returns an NSURL that represents the given query.
+	
+	:param: query The query to turn into an NSURL.
+	
+	:returns: The NSURL.
+	*/
 	func URLForQuery<T: ResourceProtocol>(query: Query<T>) -> NSURL
 }
 
 /**
 The built in Router that builds URLs according to the JSON:API specification.
+
+Filters
+=======
+Only 'equal to' filters are supported. You can subclass Router and override
+`queryItemForFilter` to add support for other filtering strategies.
+
+Pagination
+==========
+Only PageBasedPagination and OffsetBasedPagination are supported. You can subclass Router
+and override `queryItemsForPagination` to add support for other pagination strategies.
 */
 public class Router: RouterProtocol {
 	public var baseURL: NSURL!
@@ -109,16 +129,12 @@ public class Router: RouterProtocol {
 		}
 		
 		// Pagination
-		if let page = query.page {
-			var item = NSURLQueryItem(name: "page", value: String(page))
-			setQueryItem(item, forQueryItems: &queryItems)
+		if let pagination = query.pagination {
+			for item in queryItemsForPagination(pagination) {
+				setQueryItem(item, forQueryItems: &queryItems)
+			}
 		}
-		
-		if let pageSize = query.pageSize {
-			var item = NSURLQueryItem(name: "page_size", value: String(pageSize))
-			setQueryItem(item, forQueryItems: &queryItems)
-		}
-		
+
 		// Compose URL
 		if !queryItems.isEmpty {
 			URLComponents.queryItems = queryItems
@@ -129,7 +145,8 @@ public class Router: RouterProtocol {
 	
 	/**
 	Returns an NSURLQueryItem that represents the given comparison predicate in an URL.
-	By default this method only supports 'equal to' predicates. You can override this method to add support for other filtering strategies.
+	By default this method only supports 'equal to' predicates. You can override
+	this method to add support for other filtering strategies.
 	
 	:param: filter The NSComparisonPredicate.
 	
@@ -138,6 +155,35 @@ public class Router: RouterProtocol {
 	public func queryItemForFilter(filter: NSComparisonPredicate) -> NSURLQueryItem {
 		assert(filter.predicateOperatorType == .EqualToPredicateOperatorType, "The built in router only supports Query filter expressions of type 'equalTo'")
 		return NSURLQueryItem(name: "filter[\(filter.leftExpression.keyPath)]", value: "\(filter.rightExpression.constantValue)")
+	}
+
+	/**
+	Returns an array of NSURLQueryItems that represent the given pagination configuration.
+	By default this method only supports the PageBasedPagination and OffsetBasedPagination configurations.
+	You can override this method to add support for other pagination strategies.
+	
+	:param: pagination The QueryPagination configuration.
+	
+	:returns: Array of NSURLQueryItems.
+	*/
+	public func queryItemsForPagination(pagination: Pagination) -> [NSURLQueryItem] {
+		var queryItems = [NSURLQueryItem]()
+		
+		switch pagination {
+		case let pagination as PageBasedPagination:
+			queryItems.append(NSURLQueryItem(name: "page[number]", value: String(pagination.pageNumber)))
+			queryItems.append(NSURLQueryItem(name: "page[size]", value: String(pagination.pageSize)))
+			
+		case let pagination as OffsetBasedPagination:
+			queryItems.append(NSURLQueryItem(name: "page[offset]", value: String(pagination.offset)))
+			queryItems.append(NSURLQueryItem(name: "page[limit]", value: String(pagination.limit)))
+			
+			
+		default:
+			assertionFailure("The built in router only supports PageBasedPagination and OffsetBasedPagination")
+		}
+		
+		return queryItems
 	}
 	
 	private func setQueryItem(queryItem: NSURLQueryItem, inout forQueryItems queryItems: [NSURLQueryItem]) {

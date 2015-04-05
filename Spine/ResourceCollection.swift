@@ -14,7 +14,7 @@ A ResourceCollection represents a collection of resources.
 It contains a URL where the resources can be fetched.
 For collections that can be paginated, pagination data is stored as well.
 */
-public class ResourceCollection: NSObject, NSCoding, Paginatable {
+public class ResourceCollection: NSObject, NSCoding {
 	/// Whether the resources for this collection are loaded
 	public var isLoaded: Bool
 	
@@ -23,8 +23,6 @@ public class ResourceCollection: NSObject, NSCoding, Paginatable {
 	
 	/// The loaded resources
 	public internal(set) var resources: [ResourceProtocol] = []
-	
-	var paginationData: PaginationData?
 	
 	// MARK: Initializers
 	
@@ -40,17 +38,12 @@ public class ResourceCollection: NSObject, NSCoding, Paginatable {
 		isLoaded = coder.decodeBoolForKey("isLoaded")
 		resourcesURL = coder.decodeObjectForKey("resourcesURL") as? NSURL
 		resources = coder.decodeObjectForKey("resources") as [ResourceProtocol]
-		
-		if let paginationData = coder.decodeObjectForKey("paginationData") as? NSDictionary {
-			self.paginationData = PaginationData.fromDictionary(paginationData)
-		}
 	}
 	
 	public func encodeWithCoder(coder: NSCoder) {
 		coder.encodeBool(isLoaded, forKey: "isLoaded")
 		coder.encodeObject(resourcesURL, forKey: "resourcesURL")
 		coder.encodeObject(resources, forKey: "resources")
-		coder.encodeObject(paginationData?.toDictionary(), forKey: "paginationData")
 	}
 	
 	// MARK: Subscript and count
@@ -70,9 +63,7 @@ public class ResourceCollection: NSObject, NSCoding, Paginatable {
 	public var count: Int {
 		return resources.count
 	}
-}
-
-extension ResourceCollection {
+	
 	/**
 	Calls the passed callback if the resources are loaded.
 	
@@ -101,44 +92,6 @@ extension ResourceCollection {
 		}
 		
 		return self
-	}
-}
-
-extension ResourceCollection: Paginatable {
-	public var canFetchNextPage: Bool {
-		return paginationData?.afterCursor != nil
-	}
-	
-	public var canFetchPreviousPage: Bool {
-		return paginationData?.beforeCursor != nil
-	}
-	
-	public func fetchNextPage() -> Future<Void> {
-		assert(canFetchNextPage, "Cannot fetch the next page.")
-		let promise = Promise<(Void)>()
-		return promise.future
-	}
-	
-	public func fetchPreviousPage() -> Future<Void> {
-		assert(canFetchPreviousPage, "Cannot fetch the previous page.")
-		let promise = Promise<(Void)>()
-		return promise.future
-	}
-	
-	private func nextPageURL() -> NSURL? {
-		if let cursor = paginationData?.afterCursor {
-			let queryParts = "limit=\(self.paginationData?.limit)&after=\(cursor)"
-		}
-		
-		return nil
-	}
-	
-	private func previousPageURL() -> NSURL? {
-		if let cursor = paginationData?.beforeCursor {
-			let queryParts = "limit=\(self.paginationData?.limit)&before=\(cursor)"
-		}
-		
-		return nil
 	}
 }
 
@@ -271,77 +224,5 @@ extension LinkedResourceCollection: ExtensibleCollectionType {
 		for element in seq {
 			addResource(element)
 		}
-	}
-}
-
-
-// MARK: - Collection pagination
-
-protocol Paginatable {
-	var paginationData: PaginationData? { get set }
-	var canFetchNextPage: Bool { get }
-	var canFetchPreviousPage: Bool { get }
-	func fetchNextPage() -> Future<Void>
-	func fetchPreviousPage() -> Future<Void>
-}
-
-struct PaginationData {
-	var count: Int?
-	var limit: Int?
-	var beforeCursor: String?
-	var afterCursor: String?
-	var firstURL: NSURL?
-	var lastURL: NSURL?
-	var nextURL: NSURL?
-	var previousURL: NSURL?
-	
-	func toDictionary() -> NSDictionary {
-		var dictionary = NSDictionary()
-		
-		if let count = count {
-			dictionary.setValue(NSNumber(integer: count), forKey: "count")
-		}
-		
-		if let limit = limit {
-			dictionary.setValue(NSNumber(integer: limit), forKey: "limit")
-		}
-		
-		if let beforeCursor = beforeCursor {
-			dictionary.setValue(beforeCursor, forKey: "beforeCursor")
-		}
-		if let afterCursor = afterCursor {
-			dictionary.setValue(afterCursor, forKey: "afterCursor")
-		}
-		
-		if let firstURL = firstURL {
-			dictionary.setValue(firstURL, forKey: "firstURL")
-		}
-		if let lastURL = lastURL {
-			dictionary.setValue(lastURL, forKey: "lastURL")
-		}
-		
-		if let nextURL = nextURL {
-			dictionary.setValue(nextURL, forKey: "nextURL")
-		}
-		if let previousURL = previousURL {
-			dictionary.setValue(nextURL, forKey: "previousURL")
-		}
-		
-		return dictionary
-	}
-	
-	static func fromDictionary(dictionary: NSDictionary) -> PaginationData {
-		return PaginationData(
-			count: (dictionary.valueForKey("count") as? NSNumber)?.integerValue,
-			limit: (dictionary.valueForKey("limit") as? NSNumber)?.integerValue,
-			beforeCursor: dictionary.valueForKey("beforeCursor") as? String,
-			afterCursor: dictionary.valueForKey("afterCursor") as? String,
-			
-			firstURL: dictionary.valueForKey("firstURL") as? NSURL,
-			lastURL: dictionary.valueForKey("lastURL") as? NSURL,
-			
-			nextURL: dictionary.valueForKey("nextURL") as? NSURL,
-			previousURL: dictionary.valueForKey("previousURL") as? NSURL
-		)
 	}
 }

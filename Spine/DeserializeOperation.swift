@@ -28,7 +28,7 @@ class DeserializeOperation: NSOperation {
 	// Private
 	private var extractedPrimaryResources: [ResourceProtocol] = []
 	private var resourcePool: [ResourceProtocol] = []
-	private var paginationData: PaginationData?
+	private var paginationData: Pagination?
 	
 	
 	// MARK: Initializers
@@ -84,7 +84,7 @@ class DeserializeOperation: NSOperation {
 		resolveRelations()
 		
 		// Create a result
-		result = .Success(resources: extractedPrimaryResources, pagination: paginationData)
+		result = .Success(extractedPrimaryResources)
 	}
 	
 	
@@ -275,23 +275,23 @@ class DeserializeOperation: NSOperation {
 	private func resolveRelations() {
 		for resource in resourcePool {
 			enumerateFields(resource, ToManyRelationship.self) { field in
-					if let linkedResource = resource.valueForField(field.name) as? LinkedResourceCollection {
+				if let linkedResource = resource.valueForField(field.name) as? LinkedResourceCollection {
+					
+					// We can only resolve if the linkage is known
+					if let linkage = linkedResource.linkage {
 						
-						// We can only resolve if the linkage is known
-						if let linkage = linkedResource.linkage {
-							
 						let targetResources: [ResourceProtocol] = linkage.map { link in
 							findResource(self.resourcePool, link.type, link.id)
 						}.filter { $0 != nil }.map { $0! }
-							
-							if !isEmpty(targetResources) {
-								linkedResource.resources = targetResources
-								linkedResource.isLoaded = true
-							}
-						} else {
-						Spine.logInfo(.Serializing, "Cannot resolve to-many link \(resource.type):\(resource.id!) - \(field.name) because the foreign IDs are not known.")
+						
+						if !isEmpty(targetResources) {
+							linkedResource.resources = targetResources
+							linkedResource.isLoaded = true
 						}
 					} else {
+						Spine.logInfo(.Serializing, "Cannot resolve to-many link \(resource.type):\(resource.id!) - \(field.name) because the foreign IDs are not known.")
+					}
+				} else {
 					Spine.logInfo(.Serializing, "Cannot resolve to-many link \(resource.type):\(resource.id!) - \(field.name) because the link data is not fetched.")
 				}
 			}
@@ -301,35 +301,6 @@ class DeserializeOperation: NSOperation {
 	// MARK: Meta
 	
 	private func extractMeta() {
-		if let meta = self.data["links"].dictionary {
-			var paginationData = PaginationData(
-				count: meta["count"]?.int,
-				limit: meta["limit"]?.int,
-				beforeCursor: meta["before_cursor"]?.string,
-				afterCursor: meta["after_cursor"]?.string,
-				firstURL: nil,
-				lastURL: nil,
-				nextURL: nil,
-				previousURL: nil
-			)
-			
-			if let firstURL = meta["first"]?.URL {
-				paginationData.firstURL = firstURL
-			}
-			
-			if let lastURL = meta["last"]?.URL {
-				paginationData.lastURL = lastURL
-			}
-			
-			if let nextURL = meta["next"]?.URL {
-				paginationData.nextURL = nextURL
-			}
-			
-			if let previousURL = meta["prev"]?.URL {
-				paginationData.previousURL = previousURL
-			}
-			
-			self.paginationData = paginationData
-		}
+		//
 	}
 }

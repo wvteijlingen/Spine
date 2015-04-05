@@ -98,7 +98,7 @@ class DeserializingTests: SerializerTests {
 		let deserialisationResult = serializer.deserializeData(fixture.data, mappingTargets: nil)
 		
 		switch deserialisationResult {
-		case .Success(let resources, let pagination):
+		case .Success(let resources):
 			XCTAssertEqual(resources.count, 1, "Expected resources count to be 1.")
 			XCTAssert(resources.first is Foo, "Expected resource to be of class 'Foo'.")
 			let foo = resources.first as Foo
@@ -145,7 +145,7 @@ class DeserializingTests: SerializerTests {
 		let deserialisationResult = serializer.deserializeData(fixture.data, mappingTargets: nil)
 
 		switch deserialisationResult {
-		case .Success(let resources, let pagination):
+		case .Success(let resources):
 			XCTAssertEqual(resources.count, 2, "Expected resources count to be 2.")
 			
 			for (index, resource) in enumerate(resources) {
@@ -182,7 +182,7 @@ class DeserializingTests: SerializerTests {
 		let deserialisationResult = serializer.deserializeData(fixture.data, mappingTargets: nil)
 		
 		switch deserialisationResult {
-		case .Success(let resources, let pagination):
+		case .Success(let resources):
 			XCTAssertEqual(resources.count, 1, "Deserialized resources count not equal.")
 			XCTAssert(resources.first is Foo, "Deserialized resource should be of class 'Foo'.")
 			let foo = resources.first as Foo
@@ -238,7 +238,7 @@ class DeserializingTests: SerializerTests {
 		let deserialisationResult = serializer.deserializeData(data, mappingTargets: nil)
 		
 		switch deserialisationResult {
-		case .Success(let resources, let pagination):
+		case .Success(let resources):
 			XCTFail("Expected deserialization to fail.")
 		case .Failure(let error):
 			XCTAssertEqual(error.domain, SpineClientErrorDomain, "Expected error domain to be SpineClientErrorDomain.")

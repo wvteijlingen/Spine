@@ -40,4 +40,24 @@ class RoutingTests: XCTestCase {
 		
 		XCTAssertEqual(URL, expectedURL, "URL not as expected.")
 	}
+	
+	func testPagePagination() {
+		var query = Query(resourceType: Foo.self)
+		query.paginate(PageBasedPagination(pageNumber: 1, pageSize: 5))
+		
+		let URL = spine.router.URLForQuery(query)
+		let expectedURL = NSURL(string: "http://example.com/foos/?page[number]=1&page[size]=5")!
+		
+		XCTAssertEqual(URL, expectedURL, "URL not as expected.")
+	}
+	
+	func testOffsetPagination() {
+		var query = Query(resourceType: Foo.self)
+		query.paginate(OffsetBasedPagination(offset: 20, limit: 5))
+		
+		let URL = spine.router.URLForQuery(query)
+		let expectedURL = NSURL(string: "http://example.com/foos/?page[offset]=20&page[limit]=5")!
+		
+		XCTAssertEqual(URL, expectedURL, "URL not as expected.")
+	}
 }
