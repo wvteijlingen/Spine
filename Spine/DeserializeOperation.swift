@@ -274,33 +274,25 @@ class DeserializeOperation: NSOperation {
 	*/
 	private func resolveRelations() {
 		for resource in resourcePool {
-			enumerateFields(resource) { field in
-				if let toManyAttribute = field as? ToManyRelationship {
+			enumerateFields(resource, ToManyRelationship.self) { field in
 					if let linkedResource = resource.valueForField(field.name) as? LinkedResourceCollection {
 						
 						// We can only resolve if the linkage is known
 						if let linkage = linkedResource.linkage {
-							var targetResources: [ResourceProtocol] = []
 							
-							for link in linkage {
-								// Find target of relation in store
-								if let targetResource = findResource(self.resourcePool, link.type, link.id) {
-									targetResources.append(targetResource)
-								} else {
-									Spine.logInfo(.Serializing, "Cannot resolve to-many link \(resource.type):\(resource.id!) - \(toManyAttribute.name) -> \(link.type):\(link.id) because the linked resource does not exist in the document or mappingTargets.")
-								}
-							}
+						let targetResources: [ResourceProtocol] = linkage.map { link in
+							findResource(self.resourcePool, link.type, link.id)
+						}.filter { $0 != nil }.map { $0! }
 							
 							if !isEmpty(targetResources) {
 								linkedResource.resources = targetResources
 								linkedResource.isLoaded = true
 							}
 						} else {
-							Spine.logInfo(.Serializing, "Cannot resolve to-many link \(resource.type):\(resource.id!) - \(toManyAttribute.name) because the foreign IDs are not known.")
+						Spine.logInfo(.Serializing, "Cannot resolve to-many link \(resource.type):\(resource.id!) - \(field.name) because the foreign IDs are not known.")
 						}
 					} else {
-						Spine.logInfo(.Serializing, "Cannot resolve to-many link \(resource.type):\(resource.id!) - \(toManyAttribute.name) because the link data is not fetched.")
-					}
+					Spine.logInfo(.Serializing, "Cannot resolve to-many link \(resource.type):\(resource.id!) - \(field.name) because the link data is not fetched.")
 				}
 			}
 		}
