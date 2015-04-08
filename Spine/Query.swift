@@ -109,7 +109,7 @@ public struct Query<T: ResourceProtocol> {
 	
 	:returns: The query.
 	*/
-	public mutating func include(relationshipNames: String...) -> Query {
+	public mutating func include(relationshipNames: String...) {
 		for relationshipName in relationshipNames {
 			if let relationship = T.fields.filter({ $0.name == relationshipName }).first {
 				includes.append(relationship.serializedName)
@@ -117,8 +117,6 @@ public struct Query<T: ResourceProtocol> {
 				assertionFailure("Resource of type \(T.resourceType) does not contain a relationship named \(relationshipName)")
 			}
 		}
-
-		return self
 	}
 	
 	/**
@@ -128,7 +126,7 @@ public struct Query<T: ResourceProtocol> {
 	
 	:returns: The query
 	*/
-	public mutating func removeInclude(relationshipNames: String...) -> Query {
+	public mutating func removeInclude(relationshipNames: String...) {
 		for relationshipName in relationshipNames {
 			if let relationship = T.fields.filter({ $0.name == relationshipName }).first {
 				if let index = find(includes, relationship.serializedName) {
@@ -140,8 +138,6 @@ public struct Query<T: ResourceProtocol> {
 				assertionFailure("Resource of type \(T.resourceType) does not contain a relationship named \(relationshipName)")
 			}
 		}
-
-		return self
 	}
 	
 	
@@ -179,9 +175,8 @@ public struct Query<T: ResourceProtocol> {
 	
 	:returns: The query
 	*/
-	public mutating func whereAttribute(attributeName: String, equalTo: AnyObject) -> Query {
+	public mutating func whereAttribute(attributeName: String, equalTo: AnyObject) {
 		addPredicateWithField(attributeName, value: equalTo, type: .EqualToPredicateOperatorType)
-		return self
 	}
 
 	/**
@@ -192,9 +187,8 @@ public struct Query<T: ResourceProtocol> {
 	
 	:returns: The query
 	*/
-	public mutating func whereAttribute(attributeName: String, notEqualTo: AnyObject) -> Query {
+	public mutating func whereAttribute(attributeName: String, notEqualTo: AnyObject) {
 		addPredicateWithField(attributeName, value: notEqualTo, type: .NotEqualToPredicateOperatorType)
-		return self
 	}
 
 	/**
@@ -205,9 +199,8 @@ public struct Query<T: ResourceProtocol> {
 	
 	:returns: The query
 	*/
-	public mutating func whereAttribute(attributeName: String, lessThan: AnyObject) -> Query {
+	public mutating func whereAttribute(attributeName: String, lessThan: AnyObject) {
 		addPredicateWithField(attributeName, value: lessThan, type: .LessThanPredicateOperatorType)
-		return self
 	}
 
 	/**
@@ -218,9 +211,8 @@ public struct Query<T: ResourceProtocol> {
 	
 	:returns: The query
 	*/
-	public mutating func whereAttribute(attributeName: String, lessThanOrEqualTo: AnyObject) -> Query {
+	public mutating func whereAttribute(attributeName: String, lessThanOrEqualTo: AnyObject) {
 		addPredicateWithField(attributeName, value: lessThanOrEqualTo, type: .LessThanOrEqualToPredicateOperatorType)
-		return self
 	}
 	
 	/**
@@ -231,9 +223,8 @@ public struct Query<T: ResourceProtocol> {
 	
 	:returns: The query
 	*/
-	public mutating func whereAttribute(attributeName: String, greaterThan: AnyObject) -> Query {
+	public mutating func whereAttribute(attributeName: String, greaterThan: AnyObject) {
 		addPredicateWithField(attributeName, value: greaterThan, type: .GreaterThanPredicateOperatorType)
-		return self
 	}
 
 	/**
@@ -244,9 +235,8 @@ public struct Query<T: ResourceProtocol> {
 	
 	:returns: The query
 	*/
-	public mutating func whereAttribute(attributeName: String, greaterThanOrEqualTo: AnyObject) -> Query {
+	public mutating func whereAttribute(attributeName: String, greaterThanOrEqualTo: AnyObject) {
 		addPredicateWithField(attributeName, value: greaterThanOrEqualTo, type: .GreaterThanOrEqualToPredicateOperatorType)
-		return self
 	}
 	
 	/**
@@ -258,10 +248,9 @@ public struct Query<T: ResourceProtocol> {
 	
 	:returns: The query
 	*/
-	public mutating func whereRelationship(relationshipName: String, isOrContains resource: ResourceProtocol) -> Query {
+	public mutating func whereRelationship(relationshipName: String, isOrContains resource: ResourceProtocol) {
 		assert(resource.id != nil, "Attempt to add a where filter on a relationship, but the target resource does not have an id.")
 		addPredicateWithField(relationshipName, value: resource.id!, type: .EqualToPredicateOperatorType)
-		return self
 	}
 	
 	
@@ -275,7 +264,7 @@ public struct Query<T: ResourceProtocol> {
 	
 	:returns: The query
 	*/
-	public mutating func restrictFieldsTo(fieldNames: String...) -> Query {
+	public mutating func restrictFieldsTo(fieldNames: String...) {
 		assert(resourceType != nil, "Cannot restrict fields for query without resource type, use `restrictFieldsOfResourceType` or set a resource type.")
 		
 		if var fields = fields[resourceType!] {
@@ -283,8 +272,6 @@ public struct Query<T: ResourceProtocol> {
 		} else {
 			fields[resourceType!] = fieldNames
 		}
-		
-		return self
 	}
 	
 	/**
@@ -298,14 +285,12 @@ public struct Query<T: ResourceProtocol> {
 	
 	:returns: The query
 	*/
-	public mutating func restrictFieldsOfResourceType(type: String, to fieldNames: String...) -> Query {
+	public mutating func restrictFieldsOfResourceType(type: String, to fieldNames: String...) {
 		if var fields = fields[type] {
 			fields += fieldNames
 		} else {
 			fields[type] = fieldNames
 		}
-		
-		return self
 	}
 	
 	
@@ -318,9 +303,8 @@ public struct Query<T: ResourceProtocol> {
 	
 	:returns: The query
 	*/
-	public mutating func addAscendingOrder(property: String) -> Query {
+	public mutating func addAscendingOrder(property: String) {
 		sortDescriptors.append(NSSortDescriptor(key: property, ascending: true))
-		return self
 	}
 	
 	/**
@@ -330,9 +314,8 @@ public struct Query<T: ResourceProtocol> {
 	
 	:returns: The query
 	*/
-	public mutating func addDescendingOrder(property: String) -> Query {
+	public mutating func addDescendingOrder(property: String) {
 		sortDescriptors.append(NSSortDescriptor(key: property, ascending: false))
-		return self
 	}
 	
 	
@@ -345,9 +328,8 @@ public struct Query<T: ResourceProtocol> {
 	
 	:returns: The query
 	*/
-	public mutating func paginate(pagination: Pagination?) -> Query {
+	public mutating func paginate(pagination: Pagination?) {
 		self.pagination = pagination
-		return self
 	}
 }
 
