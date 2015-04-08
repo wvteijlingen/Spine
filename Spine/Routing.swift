@@ -53,11 +53,9 @@ and override `queryItemsForPagination` to add support for other pagination strat
 */
 public class Router: RouterProtocol {
 	public var baseURL: NSURL!
-	
-	init(baseURL: NSURL) {
-		self.baseURL = baseURL
-	}
 
+	public init() { }
+	
 	public func URLForResourceType(type: ResourceType) -> NSURL {
 		return baseURL.URLByAppendingPathComponent(type)
 	}

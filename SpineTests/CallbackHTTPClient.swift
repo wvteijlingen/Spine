@@ -64,7 +64,7 @@ public class CallbackHTTPClient: _HTTPClientProtocol {
 					resolvedError = NSError(domain: SpineServerErrorDomain, code: statusCode, userInfo: nil)
 				}
 				
-				callback(statusCode: statusCode, responseData: data, error: resolvedError)
+				callback(statusCode: statusCode, responseData: data, networkError: resolvedError)
 			}
 		}
 	}

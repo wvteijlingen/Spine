@@ -12,12 +12,23 @@ import SwiftyJSON
 /**
 A result returned from the deserializer.
 
-- Success: Deserialising succeeded with the given resources and optional pagination data.
+- Success: Deserialising succeeded with the given response document.
 - Failure: Deserialising failed with the given error.
 */
 enum DeserializationResult {
-	case Success([ResourceProtocol])
+	case Success(JSONAPIDocument)
 	case Failure(NSError)
+}
+
+struct JSONAPIDocument {
+	/// Primary resources extracted from the response.
+	var data: [ResourceProtocol]?
+	
+	/// Errors extracted from the response.
+	var errors: [NSError]?
+	
+	/// Metadata extracted from the reponse
+	var meta: [String: AnyObject]?
 }
 
 /**
@@ -73,21 +84,6 @@ protocol SerializerProtocol {
 	func deserializeData(data: NSData, mappingTargets: [ResourceProtocol]?) -> DeserializationResult
 	
 	/**
-	Deserializes the given data into an NSError. Use this method if the server response is not in the
-	200 successful range.
-	
-	The error returned will contain the error code specified in the `error` section of the response.
-	If no error code is available, the given HTTP response status code will be used instead.
-	If the `error` section contains a `title` key, it's value will be used for the NSLocalizedDescriptionKey.
-	
-	:param: data           The data to deserialize.
-	:param: responseStatus The HTTP response status which will be used when an error code is absent in the data.
-	
-	:returns: An NSError deserialized from the given data.
-	*/
-	func deserializeError(data: NSData, withResonseStatus responseStatus: Int) -> NSError // TODO: Support array of errors
-	
-	/**
 	Serializes the given Resources into a multidimensional dictionary/array structure
 	that can be passed to NSJSONSerialization.
 	
@@ -118,20 +114,6 @@ class JSONSerializer: SerializerProtocol {
 		
 		deserializeOperation.start()
 		return deserializeOperation.result!
-	}
-
-	func deserializeError(data: NSData, withResonseStatus responseStatus: Int) -> NSError {
-		let json = JSON(data: data as NSData!)
-		
-		let code = json["errors"][0]["code"].int ?? responseStatus
-		
-		var userInfo: [String : AnyObject]?
-		
-		if let errorTitle = json["errors"][0]["title"].string {
-			userInfo = [NSLocalizedDescriptionKey: errorTitle]
-		}
-		
-		return NSError(domain: SpineServerErrorDomain, code: code, userInfo: userInfo)
 	}
 	
 	func serializeResources(resources: [ResourceProtocol], options: SerializationOptions = SerializationOptions()) -> NSData {

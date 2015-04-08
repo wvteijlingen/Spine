@@ -25,10 +25,12 @@ class DeserializeOperation: NSOperation {
 	// Output
 	var result: DeserializationResult?
 	
-	// Private
+	// Extracted objects
 	private var extractedPrimaryResources: [ResourceProtocol] = []
+	private var extractedErrors: [NSError]?
+	private var extractedMeta: [String: AnyObject]?
+	
 	private var resourcePool: [ResourceProtocol] = []
-	private var paginationData: Pagination?
 	
 	
 	// MARK: Initializers
@@ -57,7 +59,7 @@ class DeserializeOperation: NSOperation {
 		// Check if the given data is in the expected format
 		if (data.dictionary == nil) {
 			Spine.logError(.Serializing, "Cannot deserialize: The given JSON representation was not as expected.")
-			result = .Failure(NSError(domain: SpineClientErrorDomain, code: 0, userInfo: [NSLocalizedDescriptionKey: "The given JSON representation was not as expected."]))
+			result = .Failure(NSError(domain: SpineClientErrorDomain, code: SpineErrorCodes.InvalidDocumentStructure, userInfo: [NSLocalizedDescriptionKey: "The given JSON representation was not as expected."]))
 			return
 		}
 		
@@ -67,9 +69,9 @@ class DeserializeOperation: NSOperation {
 				extractedPrimaryResources.append(deserializeSingleRepresentation(representation, mappingTargetIndex: index))
 			}
 		} else if let data = self.data["data"].dictionary {
-			extractedPrimaryResources.append(deserializeSingleRepresentation(self.data["data"], mappingTargetIndex: 0))
+			extractedPrimaryResources.append(deserializeSingleRepresentation(self.data["data"], mappingTargetIndex: resourcePool.startIndex))
 		}
-		
+			
 		// Extract included resources
 		if let data = self.data["included"].array {
 			for representation in data {
@@ -77,14 +79,29 @@ class DeserializeOperation: NSOperation {
 			}
 		}
 		
+		// Extract errors
+		extractedErrors = self.data["errors"].array?.map { error -> NSError in
+			let code = error["code"].intValue
+			var userInfo = error.dictionaryObject
+			if let title = error["title"].string {
+				userInfo = [NSLocalizedDescriptionKey: title]
+			}
+			
+			return NSError(domain: SpineServerErrorDomain, code: code, userInfo: userInfo)
+		}
+		
 		// Extract meta
-		extractMeta()
+		extractedMeta = self.data["meta"].dictionaryObject
 		
 		// Resolve relations in the store
 		resolveRelations()
 		
 		// Create a result
-		result = .Success(extractedPrimaryResources)
+		var responseDocument = JSONAPIDocument(data: nil, errors: extractedErrors, meta: extractedMeta)
+		if !isEmpty(extractedPrimaryResources) {
+			responseDocument.data = extractedPrimaryResources
+		}
+		result = .Success(responseDocument)
 	}
 	
 	
@@ -296,11 +313,5 @@ class DeserializeOperation: NSOperation {
 				}
 			}
 		}
-	}
-	
-	// MARK: Meta
-	
-	private func extractMeta() {
-		//
 	}
 }

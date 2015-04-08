@@ -29,6 +29,7 @@
 		D3502C341A93A86F00F91266 /* SerializeOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = D35F9D421A53016000E5FF97 /* SerializeOperation.swift */; };
 		D3502C351A93A87100F91266 /* Transformer.swift in Sources */ = {isa = PBXBuildFile; fileRef = D35F9D471A532EC600E5FF97 /* Transformer.swift */; };
 		D350478A1A94FF70002FDF57 /* MultipleFoos.json in Resources */ = {isa = PBXBuildFile; fileRef = D35047891A94FF70002FDF57 /* MultipleFoos.json */; };
+		D35468821AD429D7000E8B6F /* Errors.swift in Sources */ = {isa = PBXBuildFile; fileRef = D35468811AD429D7000E8B6F /* Errors.swift */; };
 		D35CE46D19B276E4002B358E /* Spine.swift in Sources */ = {isa = PBXBuildFile; fileRef = D373F7A319B224BB00275AFC /* Spine.swift */; };
 		D35CE46E19B276E4002B358E /* Query.swift in Sources */ = {isa = PBXBuildFile; fileRef = D331836B19B2302500936FBB /* Query.swift */; };
 		D35CE46F19B276E4002B358E /* Resource.swift in Sources */ = {isa = PBXBuildFile; fileRef = D373F7A219B224BB00275AFC /* Resource.swift */; };
@@ -47,6 +48,7 @@
 		D373F7A419B224BB00275AFC /* Serializing.swift in Sources */ = {isa = PBXBuildFile; fileRef = D373F7A119B224BB00275AFC /* Serializing.swift */; };
 		D373F7A519B224BB00275AFC /* Resource.swift in Sources */ = {isa = PBXBuildFile; fileRef = D373F7A219B224BB00275AFC /* Resource.swift */; };
 		D373F7A619B224BB00275AFC /* Spine.swift in Sources */ = {isa = PBXBuildFile; fileRef = D373F7A319B224BB00275AFC /* Spine.swift */; };
+		D39256211AD44DCE00AB3867 /* Errors.swift in Sources */ = {isa = PBXBuildFile; fileRef = D35468811AD429D7000E8B6F /* Errors.swift */; };
 		D3960DF11A9B5FBC009948B0 /* Errors.json in Resources */ = {isa = PBXBuildFile; fileRef = D3960DF01A9B5FBC009948B0 /* Errors.json */; };
 		D39929EB1A52F3A0008BF0A9 /* ResourceField.swift in Sources */ = {isa = PBXBuildFile; fileRef = D39929EA1A52F3A0008BF0A9 /* ResourceField.swift */; };
 		D39CD5381AA0FA8F00049432 /* CallbackHTTPClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = D39CD5371AA0FA8F00049432 /* CallbackHTTPClient.swift */; };
@@ -66,6 +68,7 @@
 		D3452C321AD19B2800CD413B /* FutureExtensions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FutureExtensions.swift; sourceTree = "<group>"; };
 		D3502C2C1A93A7F700F91266 /* SingleFoo.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = SingleFoo.json; sourceTree = "<group>"; };
 		D35047891A94FF70002FDF57 /* MultipleFoos.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = MultipleFoos.json; sourceTree = "<group>"; };
+		D35468811AD429D7000E8B6F /* Errors.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Errors.swift; sourceTree = "<group>"; };
 		D35DAAEA1A9627FD00E59545 /* Fixtures.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Fixtures.swift; path = ../Fixtures.swift; sourceTree = "<group>"; };
 		D35DAAEC1A962BD400E59545 /* RoutingTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RoutingTests.swift; sourceTree = "<group>"; };
 		D35DAAEE1A96323600E59545 /* Utilities.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Utilities.swift; sourceTree = "<group>"; };
@@ -175,6 +178,7 @@
 				D341907619D30BA4007B38D6 /* Routing.swift */,
 				D3452C301AD19B0900CD413B /* Logging.swift */,
 				D3452C321AD19B2800CD413B /* FutureExtensions.swift */,
+				D35468811AD429D7000E8B6F /* Errors.swift */,
 				D35F9D3F1A52FCFD00E5FF97 /* Resource */,
 				D35F9D441A53017F00E5FF97 /* Serializing */,
 				D373F78B19B2249900275AFC /* Supporting Files */,
@@ -355,6 +359,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				D341907719D30BA4007B38D6 /* Routing.swift in Sources */,
+				D35468821AD429D7000E8B6F /* Errors.swift in Sources */,
 				D3452C311AD19B0900CD413B /* Logging.swift in Sources */,
 				D331836C19B2302500936FBB /* Query.swift in Sources */,
 				D373F7A619B224BB00275AFC /* Spine.swift in Sources */,
@@ -393,6 +398,7 @@
 				D35DAAEB1A9627FD00E59545 /* Fixtures.swift in Sources */,
 				D35CE46F19B276E4002B358E /* Resource.swift in Sources */,
 				D35DAAF31A96A40700E59545 /* QueryTests.swift in Sources */,
+				D39256211AD44DCE00AB3867 /* Errors.swift in Sources */,
 				D3502C321A93A86900F91266 /* ResourceField.swift in Sources */,
 				D3E1D1421AAA04B20077B1C3 /* ResourceTests.swift in Sources */,
 				D3502C331A93A86C00F91266 /* DeserializeOperation.swift in Sources */,

@@ -9,7 +9,7 @@
 import Foundation
 
 /// Callback used by the _HTTPClientProtocol
-typealias HTTPClientCallback = (statusCode: Int?, responseData: NSData?, error: NSError?) -> Void
+typealias HTTPClientCallback = (statusCode: Int?, responseData: NSData?, networkError: NSError?) -> Void
 
 /**
 The HTTPClientProtocol declares methods and properties that a HTTP client must implement.
@@ -79,12 +79,10 @@ public class URLSessionClient: _HTTPClientProtocol {
 	private func performRequest(request: NSURLRequest, callback: HTTPClientCallback) {
 		let task = urlSession.dataTaskWithRequest(request) { data, response, error in
 			let response = (response as NSHTTPURLResponse)
-			var resolvedError: NSError?
-			
-			// Framework error
+		
+			 // Network error
 			if let error = error {
 				Spine.logError(.Networking, "\(request.URL) - \(error.localizedDescription)")
-				resolvedError = error
 				
 			// Success
 			} else if 200 ... 299 ~= response.statusCode {
@@ -93,7 +91,6 @@ public class URLSessionClient: _HTTPClientProtocol {
 			// API Error
 			} else {
 				Spine.logWarning(.Networking, "\(response.statusCode): \(request.URL)")
-				resolvedError = NSError(domain: SpineServerErrorDomain, code: response.statusCode, userInfo: nil)
 			}
 			
 			if Spine.shouldLog(.Debug, domain: .Networking) {
@@ -102,7 +99,7 @@ public class URLSessionClient: _HTTPClientProtocol {
 				}
 			}
 			
-			callback(statusCode: response.statusCode, responseData: data, error: resolvedError)
+			callback(statusCode: response.statusCode, responseData: data, networkError: error)
 		}
 		
 		task.resume()

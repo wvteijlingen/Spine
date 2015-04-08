@@ -98,41 +98,47 @@ class DeserializingTests: SerializerTests {
 		let deserialisationResult = serializer.deserializeData(fixture.data, mappingTargets: nil)
 		
 		switch deserialisationResult {
-		case .Success(let resources):
-			XCTAssertEqual(resources.count, 1, "Expected resources count to be 1.")
-			XCTAssert(resources.first is Foo, "Expected resource to be of class 'Foo'.")
-			let foo = resources.first as Foo
+		case .Success(let document):
 			
-			// Attributes
-			assertFooResource(foo, isEqualToJSON: json["data"])
+			XCTAssertNotNil(document.data, "Expected data to be not nil.")
 			
-			// To one link
-			XCTAssertNotNil(foo.toOneAttribute, "Expected linked resource to be not nil.")
-			if let bar = foo.toOneAttribute {
+			if let resources = document.data {
+				XCTAssertEqual(resources.count, 1, "Expected resources count to be 1.")
 				
-				XCTAssertNotNil(bar.URL, "Expected URL to not be nil")
-				if let URL = bar.URL {
-					XCTAssertEqual(URL, NSURL(string: json["data"]["links"]["toOneAttribute"]["related"].stringValue)!, "Deserialized link URL is not equal.")
+				XCTAssert(resources.first is Foo, "Expected resource to be of class 'Foo'.")
+				let foo = resources.first as Foo
+				
+				// Attributes
+				assertFooResource(foo, isEqualToJSON: json["data"])
+				
+				// To one link
+				XCTAssertNotNil(foo.toOneAttribute, "Expected linked resource to be not nil.")
+				if let bar = foo.toOneAttribute {
+					
+					XCTAssertNotNil(bar.URL, "Expected URL to not be nil")
+					if let URL = bar.URL {
+						XCTAssertEqual(URL, NSURL(string: json["data"]["links"]["toOneAttribute"]["related"].stringValue)!, "Deserialized link URL is not equal.")
+					}
+					
+					XCTAssertFalse(bar.isLoaded, "Expected isLoaded to be false.")
 				}
 				
-				XCTAssertFalse(bar.isLoaded, "Expected isLoaded to be false.")
-			}
-			
-			// To many link
-			XCTAssertNotNil(foo.toManyAttribute, "Deserialized linked resources should not be nil.")
-			if let barCollection = foo.toManyAttribute {
-				
-				XCTAssertNotNil(barCollection.URL, "Expected URL to not be nil")
-				if let URL = barCollection.URL {
-					XCTAssertEqual(URL, NSURL(string: json["data"]["links"]["toManyAttribute"]["self"].stringValue)!, "Deserialized link URL is not equal.")
+				// To many link
+				XCTAssertNotNil(foo.toManyAttribute, "Deserialized linked resources should not be nil.")
+				if let barCollection = foo.toManyAttribute {
+					
+					XCTAssertNotNil(barCollection.URL, "Expected URL to not be nil")
+					if let URL = barCollection.URL {
+						XCTAssertEqual(URL, NSURL(string: json["data"]["links"]["toManyAttribute"]["self"].stringValue)!, "Deserialized link URL is not equal.")
+					}
+					
+					XCTAssertNotNil(barCollection.resourcesURL, "Expected resourcesURL to not be nil")
+					if let resourcesURL = barCollection.resourcesURL {
+						XCTAssertEqual(resourcesURL, NSURL(string: json["data"]["links"]["toManyAttribute"]["related"].stringValue)!, "Deserialized resource URL is not equal.")
+					}
+					
+					XCTAssertFalse(barCollection.isLoaded, "Expected isLoaded to be false.")
 				}
-				
-				XCTAssertNotNil(barCollection.resourcesURL, "Expected resourcesURL to not be nil")
-				if let resourcesURL = barCollection.resourcesURL {
-					XCTAssertEqual(resourcesURL, NSURL(string: json["data"]["links"]["toManyAttribute"]["related"].stringValue)!, "Deserialized resource URL is not equal.")
-				}
-				
-				XCTAssertFalse(barCollection.isLoaded, "Expected isLoaded to be false.")
 			}
 			
 		case .Failure(let error):
@@ -145,30 +151,34 @@ class DeserializingTests: SerializerTests {
 		let deserialisationResult = serializer.deserializeData(fixture.data, mappingTargets: nil)
 
 		switch deserialisationResult {
-		case .Success(let resources):
-			XCTAssertEqual(resources.count, 2, "Expected resources count to be 2.")
+		case .Success(let document):
 			
-			for (index, resource) in enumerate(resources) {
-				let resourceJSON = fixture.json["data"][index]
+			XCTAssertNotNil(document.data, "Expected data to be not nil.")
+			if let resources = document.data {
+				XCTAssertEqual(resources.count, 2, "Expected resources count to be 2.")
 				
-				XCTAssert(resource is Foo, "Expected resource to be of class 'Foo'.")
-				let foo = resource as Foo
-				
-				// Attributes
-				assertFooResource(foo, isEqualToJSON: resourceJSON)
-				
-				// To one link
-				XCTAssertNotNil(foo.toOneAttribute, "Expected linked resource to be not nil.")
-				let bar = foo.toOneAttribute!
-				XCTAssertEqual(bar.URL!.absoluteString!, resourceJSON["links"]["toOneAttribute"]["related"].stringValue, "Deserialized link URL is not equal.")
-				XCTAssertFalse(bar.isLoaded, "Expected isLoaded to be false.")
-				
-				// To many link
-				XCTAssertNotNil(foo.toManyAttribute, "Deserialized linked resources should not be nil.")
-				let barCollection = foo.toManyAttribute!
-				XCTAssertEqual(barCollection.URL!.absoluteString!, resourceJSON["links"]["toManyAttribute"]["self"].stringValue, "Deserialized link URL is not equal.")
-				XCTAssertEqual(barCollection.resourcesURL!.absoluteString!, resourceJSON["links"]["toManyAttribute"]["related"].stringValue, "Deserialized resource URL is not equal.")
-				XCTAssertFalse(barCollection.isLoaded, "Expected isLoaded to be false.")
+				for (index, resource) in enumerate(resources) {
+					let resourceJSON = fixture.json["data"][index]
+					
+					XCTAssert(resource is Foo, "Expected resource to be of class 'Foo'.")
+					let foo = resource as Foo
+					
+					// Attributes
+					assertFooResource(foo, isEqualToJSON: resourceJSON)
+					
+					// To one link
+					XCTAssertNotNil(foo.toOneAttribute, "Expected linked resource to be not nil.")
+					let bar = foo.toOneAttribute!
+					XCTAssertEqual(bar.URL!.absoluteString!, resourceJSON["links"]["toOneAttribute"]["related"].stringValue, "Deserialized link URL is not equal.")
+					XCTAssertFalse(bar.isLoaded, "Expected isLoaded to be false.")
+					
+					// To many link
+					XCTAssertNotNil(foo.toManyAttribute, "Deserialized linked resources should not be nil.")
+					let barCollection = foo.toManyAttribute!
+					XCTAssertEqual(barCollection.URL!.absoluteString!, resourceJSON["links"]["toManyAttribute"]["self"].stringValue, "Deserialized link URL is not equal.")
+					XCTAssertEqual(barCollection.resourcesURL!.absoluteString!, resourceJSON["links"]["toManyAttribute"]["related"].stringValue, "Deserialized resource URL is not equal.")
+					XCTAssertFalse(barCollection.isLoaded, "Expected isLoaded to be false.")
+				}
 			}
 			
 		case .Failure(let error):
@@ -182,50 +192,54 @@ class DeserializingTests: SerializerTests {
 		let deserialisationResult = serializer.deserializeData(fixture.data, mappingTargets: nil)
 		
 		switch deserialisationResult {
-		case .Success(let resources):
-			XCTAssertEqual(resources.count, 1, "Deserialized resources count not equal.")
-			XCTAssert(resources.first is Foo, "Deserialized resource should be of class 'Foo'.")
-			let foo = resources.first as Foo
+		case .Success(let document):
 			
-			// Attributes
-			assertFooResource(foo, isEqualToJSON: json["data"])
-			
-			// To one link
-			XCTAssertNotNil(foo.toOneAttribute, "Deserialized linked resource should not be nil.")
-			if let bar = foo.toOneAttribute {
+			XCTAssertNotNil(document.data, "Expected data to be not nil.")
+			if let resources = document.data {
+				XCTAssertEqual(resources.count, 1, "Deserialized resources count not equal.")
+				XCTAssert(resources.first is Foo, "Deserialized resource should be of class 'Foo'.")
+				let foo = resources.first as Foo
 				
-				XCTAssertNotNil(bar.URL, "Expected URL to not be nil.")
-				if let URL = bar.URL {
-					XCTAssertEqual(URL, NSURL(string: json["data"]["links"]["toOneAttribute"]["related"].stringValue)!, "Deserialized link URL is not equal.")
+				// Attributes
+				assertFooResource(foo, isEqualToJSON: json["data"])
+				
+				// To one link
+				XCTAssertNotNil(foo.toOneAttribute, "Deserialized linked resource should not be nil.")
+				if let bar = foo.toOneAttribute {
+					
+					XCTAssertNotNil(bar.URL, "Expected URL to not be nil.")
+					if let URL = bar.URL {
+						XCTAssertEqual(URL, NSURL(string: json["data"]["links"]["toOneAttribute"]["related"].stringValue)!, "Deserialized link URL is not equal.")
+					}
+					
+					XCTAssertNotNil(bar.id, "Expected id to not be nil.")
+					if let id = bar.id {
+						XCTAssertEqual(id, json["data"]["links"]["toOneAttribute"]["linkage"]["id"].stringValue, "Deserialized link id is not equal.")
+					}
+					
+					XCTAssertTrue(bar.isLoaded, "Expected isLoaded is be true.")
 				}
 				
-				XCTAssertNotNil(bar.id, "Expected id to not be nil.")
-				if let id = bar.id {
-					XCTAssertEqual(id, json["data"]["links"]["toOneAttribute"]["linkage"]["id"].stringValue, "Deserialized link id is not equal.")
+				// To many link
+				XCTAssertNotNil(foo.toManyAttribute, "Deserialized linked resources should not be nil.")
+				if let barCollection = foo.toManyAttribute {
+					
+					XCTAssertNotNil(barCollection.URL, "Expected URL to not be nil.")
+					if let URL = barCollection.URL {
+						XCTAssertEqual(URL, NSURL(string: json["data"]["links"]["toManyAttribute"]["self"].stringValue)!, "Deserialized link URL is not equal.")
+					}
+					
+					XCTAssertNotNil(barCollection.resourcesURL, "Expected resourcesURL to not be nil.")
+					if let URLString = barCollection.resourcesURL?.absoluteString {
+						XCTAssertEqual(URLString, json["data"]["links"]["toManyAttribute"]["related"].stringValue, "Deserialized resource URL is not equal.")
+					}
+					
+					XCTAssertTrue(barCollection.isLoaded, "Expected isLoaded to be true.")
+					XCTAssertEqual(barCollection.linkage![0].type, "bars", "Expected first linkage item to be of type 'bars'.")
+					XCTAssertEqual(barCollection.linkage![0].id, "11", "Expected first linkage item to have id '11'.")
+					XCTAssertEqual(barCollection.linkage![1].type, "bars", "Expected second linkage item to be of type 'bars'.")
+					XCTAssertEqual(barCollection.linkage![1].id, "12", "Expected second linkage item to have id '12'.")
 				}
-				
-				XCTAssertTrue(bar.isLoaded, "Expected isLoaded is be true.")
-			}
-			
-			// To many link
-			XCTAssertNotNil(foo.toManyAttribute, "Deserialized linked resources should not be nil.")
-			if let barCollection = foo.toManyAttribute {
-				
-				XCTAssertNotNil(barCollection.URL, "Expected URL to not be nil.")
-				if let URL = barCollection.URL {
-					XCTAssertEqual(URL, NSURL(string: json["data"]["links"]["toManyAttribute"]["self"].stringValue)!, "Deserialized link URL is not equal.")
-				}
-				
-				XCTAssertNotNil(barCollection.resourcesURL, "Expected resourcesURL to not be nil.")
-				if let URLString = barCollection.resourcesURL?.absoluteString {
-					XCTAssertEqual(URLString, json["data"]["links"]["toManyAttribute"]["related"].stringValue, "Deserialized resource URL is not equal.")
-				}
-				
-				XCTAssertTrue(barCollection.isLoaded, "Expected isLoaded to be true.")
-				XCTAssertEqual(barCollection.linkage![0].type, "bars", "Expected first linkage item to be of type 'bars'.")
-				XCTAssertEqual(barCollection.linkage![0].id, "11", "Expected first linkage item to have id '11'.")
-				XCTAssertEqual(barCollection.linkage![1].type, "bars", "Expected second linkage item to be of type 'bars'.")
-				XCTAssertEqual(barCollection.linkage![1].id, "12", "Expected second linkage item to have id '12'.")
 			}
 			
 		case .Failure(let error):
@@ -238,20 +252,36 @@ class DeserializingTests: SerializerTests {
 		let deserialisationResult = serializer.deserializeData(data, mappingTargets: nil)
 		
 		switch deserialisationResult {
-		case .Success(let resources):
+		case .Success(let document):
 			XCTFail("Expected deserialization to fail.")
 		case .Failure(let error):
 			XCTAssertEqual(error.domain, SpineClientErrorDomain, "Expected error domain to be SpineClientErrorDomain.")
-			XCTAssertEqual(error.code, 0, "Expected error code to be '0'.")
+			XCTAssertEqual(error.code, SpineErrorCodes.InvalidDocumentStructure, "Expected error code to be 'InvalidDocumentStructure'.")
 		}
 	}
 	
 	func testDeserializeErrorsDocument() {
 		let fixture = JSONFixtureWithName("Errors")
-		let error = serializer.deserializeError(fixture.data, withResonseStatus: 999)
+		let deserialisationResult = serializer.deserializeData(fixture.data, mappingTargets: nil)
 		
-		XCTAssertEqual(error.domain, SpineServerErrorDomain, "Expected error domain to be SpineServerErrorDomain.")
-		XCTAssertEqual(error.code, fixture.json["errors"][0]["code"].intValue, "Expected error code to be equal.")
-		XCTAssertEqual(error.localizedDescription, fixture.json["errors"][0]["title"].stringValue, "Expected error description to be equal.")
+		switch deserialisationResult {
+		case .Success(let document):
+			
+			XCTAssertNotNil(document.errors, "Expected data to be not nil.")
+			
+			if let errors = document.errors {
+				XCTAssertEqual(errors.count, 2, "Deserialized errors count not equal.")
+				
+				for (index, error) in enumerate(errors) {
+					let errorJSON = fixture.json["errors"][index]
+					XCTAssertEqual(error.domain, SpineServerErrorDomain, "Expected error domain to be SpineServerErrorDomain.")
+					XCTAssertEqual(error.code, errorJSON["code"].intValue, "Expected error code to be equal.")
+					XCTAssertEqual(error.localizedDescription, errorJSON["title"].stringValue, "Expected error description to be equal.")
+				}
+			}
+			
+		case .Failure(let error):
+			XCTFail("Deserialisation failed with error: \(error).")
+		}
 	}
 }

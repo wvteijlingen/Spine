@@ -9,12 +9,6 @@
 import Foundation
 import BrightFutures
 
-/// The domain used for errors that occur within the Spine framework.
-public let SpineClientErrorDomain = "com.wardvanteijlingen.spine.client"
-
-/// The domain used for errors that are returned by the API.
-public let SpineServerErrorDomain = "com.wardvanteijlingen.spine.server"
-
 /// The main class
 public class Spine {
 	
@@ -32,23 +26,31 @@ public class Spine {
 	/// The serializer to use for serializing and deserializing of JSON representations.
 	let serializer: JSONSerializer = JSONSerializer()
 	
+	/// The operation queue on which all operations are queued.
 	let operationQueue = NSOperationQueue()
 	
 	
 	// MARK: Initializers
 	
-	public init(baseURL: NSURL) {
-		self.router = Router(baseURL: baseURL)
-	}
-	
 	public init(baseURL: NSURL, router: RouterProtocol) {
 		self.router = router
 		self.router.baseURL = baseURL
+		self.operationQueue.name = "com.wardvanteijlingen.spine"
+	}
+	
+	public convenience init(baseURL: NSURL) {
+		self.init(baseURL: baseURL, router: Router())
 	}
 	
 	
 	// MARK: Operations
 	
+	/**
+	Adds the given operation to the operation queue.
+	This sets the spine property of the operation to this Spine instance.
+	
+	:param: operation The operation to enqueue.
+	*/
 	func addOperation(operation: Operation) {
 		operation.spine = self
 		operationQueue.addOperation(operation)
@@ -100,7 +102,7 @@ public class Spine {
 			} else if let resource = operation.result?.resources.first as? T {
 				promise.success(resource)
 			} else {
-				promise.failure(NSError(domain: SpineClientErrorDomain, code: 404, userInfo: nil))
+				promise.failure(NSError(domain: SpineClientErrorDomain, code: SpineErrorCodes.ResourceNotFound, userInfo: nil))
 			}
 		}
 		

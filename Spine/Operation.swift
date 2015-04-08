@@ -61,15 +61,6 @@ class Operation: NSOperation {
 	
 	func execute() {}
 	
-	func handleError(statusCode: Int?, responseData: NSData?, error: NSError) -> NSError {
-		switch error.domain {
-		case SpineServerErrorDomain:
-			return serializer.deserializeError(responseData!, withResonseStatus: statusCode!)
-		default:
-			return error
-		}
-	}
-	
 	// MARK: Concurrency
 
 	enum State: String {
@@ -120,18 +111,26 @@ class FetchOperation<T: ResourceProtocol>: Operation {
 		
 		Spine.logInfo(.Spine, "Fetching resources using URL: \(URL)")
 		
-		HTTPClient.request("GET", URL: URL) { statusCode, responseData, error in
-			if let error = error {
-				self.error = self.handleError(statusCode, responseData: responseData, error: error)
+		HTTPClient.request("GET", URL: URL) { statusCode, responseData, networkError in
+			
+			if let networkError = networkError {
+				self.error = networkError
+				
 			} else {
+			
 				let deserializationResult = self.serializer.deserializeData(responseData!, mappingTargets: self.mappingTargets)
 				
 				switch deserializationResult {
-				case .Success(let resources):
-					self.result = ResourceCollection(resources: resources)
-				case .Failure(let error):
-					self.error = error
-				}
+					case .Success(let responseDocument):
+						self.error = responseDocument.errors?.first
+					
+						if let resources = responseDocument.data {
+							self.result = ResourceCollection(resources: resources)
+						}
+					
+					case .Failure(let error):
+						self.error = error
+					}
 			}
 			
 			self.state = .Finished
@@ -154,11 +153,8 @@ class DeleteOperation: Operation {
 		
 		Spine.logInfo(.Spine, "Deleting resource \(resource) using URL: \(URL)")
 		
-		HTTPClient.request("DELETE", URL: URL) { statusCode, responseData, error in
-			if let error = error {
-				self.error = self.handleError(statusCode, responseData: responseData, error: error)
-			}
-			
+		HTTPClient.request("DELETE", URL: URL) { statusCode, responseData, networkError in
+			self.error = networkError
 			self.state = .Finished
 		}
 	}
@@ -182,9 +178,9 @@ class SaveOperation: Operation {
 		
 		Spine.logInfo(.Spine, "Saving resource \(resource) using URL: \(request.URL)")
 		
-		HTTPClient.request(request.method, URL: request.URL, payload: request.payload) { statusCode, responseData, error in
-			if let error = error {
-				self.error = self.handleError(statusCode, responseData: responseData, error: error)
+		HTTPClient.request(request.method, URL: request.URL, payload: request.payload) { statusCode, responseData, networkError in
+			if let networkError = networkError {
+				self.error = networkError
 				self.state = .Finished
 				return
 			}
@@ -300,62 +296,66 @@ class RelationshipOperation: Operation {
 	}
 	
 	private func addRelatedResources(relatedResources: [ResourceProtocol], relationship: Relationship, callback: (NSError?) -> ()) {
-		if relatedResources.count == 0 {
+		if isEmpty(relatedResources) {
 			callback(nil)
-		} else {
-			let linkage: [[String: String]] = relatedResources.map { resource in
-				assert(resource.id != nil, "Attempt to relate resource without id. Only existing resources can be related.")
-				return [resource.type: resource.id!]
-			}
-			
-			let URL = self.router.URLForRelationship(relationship, ofResource: self.resource)
-			let jsonPayload = NSJSONSerialization.dataWithJSONObject(["data": linkage], options: NSJSONWritingOptions(0), error: nil)
-			// TODO: Move serialization
-			
-			self.HTTPClient.request("POST", URL: URL, payload: jsonPayload) { statusCode, responseData, error in
-				if let error = error {
-					callback(self.handleError(statusCode, responseData: responseData, error: error))
-				} else {
-					callback(nil)
-				}
+			return
+		}
+		
+		let jsonPayload = serializeLinkageToJSON(convertResourcesToLinkage(relatedResources))
+		let URL = self.router.URLForRelationship(relationship, ofResource: self.resource)
+		// TODO: Move serialization
+		
+		self.HTTPClient.request("POST", URL: URL, payload: jsonPayload) { statusCode, responseData, networkError in
+			if let networkError = networkError {
+				callback(networkError)
+			} else {
+				callback(nil)
 			}
 		}
 	}
 	
 	private func removeRelatedResources(relatedResources: [ResourceProtocol], relationship: Relationship, callback: (NSError?) -> ()) {
-		if relatedResources.count == 0 {
+		if isEmpty(relatedResources) {
 			callback(nil)
-		} else {
-			let linkage: [[String: String]] = relatedResources.map { (resource) in
-				assert(resource.id != nil, "Attempt to unrelate resource without id. Only existing resources can be unrelated.")
-				return [resource.type: resource.id!]
-			}
-			
-			let URL = router.URLForRelationship(relationship, ofResource: self.resource)
-			let jsonPayload = NSJSONSerialization.dataWithJSONObject(["data": linkage], options: NSJSONWritingOptions(0), error: nil)
-			// TODO: Move serialization
-			
-			self.HTTPClient.request("DELETE", URL: URL) { statusCode, responseData, error in
-				if let error = error {
-					callback(self.handleError(statusCode, responseData: responseData, error: error))
-				} else {
-					callback(nil)
-				}
+			return
+		}
+	
+		let jsonPayload = serializeLinkageToJSON(convertResourcesToLinkage(relatedResources))
+		let URL = router.URLForRelationship(relationship, ofResource: self.resource)
+		// TODO: Move serialization
+		
+		self.HTTPClient.request("DELETE", URL: URL) { statusCode, responseData, networkError in
+			if let networkError = networkError {
+				callback(networkError)
+			} else {
+				callback(nil)
 			}
 		}
 	}
 	
 	private func setRelatedResource(relatedResource: ResourceProtocol, relationship: Relationship, callback: (NSError?) -> ()) {
 		let URL = router.URLForRelationship(relationship, ofResource: self.resource)
-		let payload = ["data": [relatedResource.type: relatedResource.id!]]
-		let jsonPayload = NSJSONSerialization.dataWithJSONObject(payload, options: NSJSONWritingOptions(0), error: nil)
+		let jsonPayload = serializeLinkageToJSON(convertResourcesToLinkage([relatedResource]))
 		
-		HTTPClient.request("PATCH", URL: URL, payload: jsonPayload) { statusCode, responseData, error in
-			if let error = error {
-				callback(self.handleError(statusCode, responseData: responseData, error: error))
+		HTTPClient.request("PATCH", URL: URL, payload: jsonPayload) { statusCode, responseData, networkError in
+			if let networkError = networkError {
+				callback(networkError)
 			} else {
 				callback(nil)
 			}
 		}
+	}
+	
+	private func convertResourcesToLinkage(resources: [ResourceProtocol]) -> [[String: String]] {
+		let linkage: [[String: String]] = resources.map { resource in
+			assert(resource.id != nil, "Attempt to (un)relate resource without id. Only existing resources can be (un)related.")
+			return [resource.type: resource.id!]
+		}
+		
+		return linkage
+	}
+	
+	private func serializeLinkageToJSON(linkage: [[String: String]]) -> NSData? {
+		return NSJSONSerialization.dataWithJSONObject(["data": linkage], options: NSJSONWritingOptions(0), error: nil)
 	}
 }
