@@ -33,7 +33,7 @@ class SerializingTests: SerializerTests {
 		foo.nilAttribute = nil
 		foo.dateAttribute = NSDate(timeIntervalSince1970: 0)
 		foo.toOneAttribute = Bar(id: "10")
-		foo.toManyAttribute = LinkedResourceCollection(resourcesURL: nil, URL: nil, homogenousType: "bars", linkage: nil)
+		foo.toManyAttribute = LinkedResourceCollection(resourcesURL: nil, linkURL: nil, homogenousType: "bars", IDs: [])
 		foo.toManyAttribute?.addResourceAsExisting(Bar(id: "11"))
 		foo.toManyAttribute?.addResourceAsExisting(Bar(id: "12"))
 	}
@@ -98,7 +98,8 @@ class DeserializingTests: SerializerTests {
 		let deserialisationResult = serializer.deserializeData(fixture.data, mappingTargets: nil)
 		
 		switch deserialisationResult {
-		case .Success(let document):
+		case .Success(let documentBox):
+			let document = documentBox.value
 			
 			XCTAssertNotNil(document.data, "Expected data to be not nil.")
 			
@@ -127,8 +128,8 @@ class DeserializingTests: SerializerTests {
 				XCTAssertNotNil(foo.toManyAttribute, "Deserialized linked resources should not be nil.")
 				if let barCollection = foo.toManyAttribute {
 					
-					XCTAssertNotNil(barCollection.URL, "Expected URL to not be nil")
-					if let URL = barCollection.URL {
+					XCTAssertNotNil(barCollection.linkURL, "Expected link URL to not be nil")
+					if let URL = barCollection.linkURL {
 						XCTAssertEqual(URL, NSURL(string: json["data"]["links"]["toManyAttribute"]["self"].stringValue)!, "Deserialized link URL is not equal.")
 					}
 					
@@ -151,7 +152,8 @@ class DeserializingTests: SerializerTests {
 		let deserialisationResult = serializer.deserializeData(fixture.data, mappingTargets: nil)
 
 		switch deserialisationResult {
-		case .Success(let document):
+		case .Success(let documentBox):
+			let document = documentBox.value
 			
 			XCTAssertNotNil(document.data, "Expected data to be not nil.")
 			if let resources = document.data {
@@ -175,7 +177,7 @@ class DeserializingTests: SerializerTests {
 					// To many link
 					XCTAssertNotNil(foo.toManyAttribute, "Deserialized linked resources should not be nil.")
 					let barCollection = foo.toManyAttribute!
-					XCTAssertEqual(barCollection.URL!.absoluteString!, resourceJSON["links"]["toManyAttribute"]["self"].stringValue, "Deserialized link URL is not equal.")
+					XCTAssertEqual(barCollection.linkURL!.absoluteString!, resourceJSON["links"]["toManyAttribute"]["self"].stringValue, "Deserialized link URL is not equal.")
 					XCTAssertEqual(barCollection.resourcesURL!.absoluteString!, resourceJSON["links"]["toManyAttribute"]["related"].stringValue, "Deserialized resource URL is not equal.")
 					XCTAssertFalse(barCollection.isLoaded, "Expected isLoaded to be false.")
 				}
@@ -192,7 +194,8 @@ class DeserializingTests: SerializerTests {
 		let deserialisationResult = serializer.deserializeData(fixture.data, mappingTargets: nil)
 		
 		switch deserialisationResult {
-		case .Success(let document):
+		case .Success(let documentBox):
+			let document = documentBox.value
 			
 			XCTAssertNotNil(document.data, "Expected data to be not nil.")
 			if let resources = document.data {
@@ -224,8 +227,8 @@ class DeserializingTests: SerializerTests {
 				XCTAssertNotNil(foo.toManyAttribute, "Deserialized linked resources should not be nil.")
 				if let barCollection = foo.toManyAttribute {
 					
-					XCTAssertNotNil(barCollection.URL, "Expected URL to not be nil.")
-					if let URL = barCollection.URL {
+					XCTAssertNotNil(barCollection.linkURL, "Expected link URL to not be nil.")
+					if let URL = barCollection.linkURL {
 						XCTAssertEqual(URL, NSURL(string: json["data"]["links"]["toManyAttribute"]["self"].stringValue)!, "Deserialized link URL is not equal.")
 					}
 					
@@ -265,7 +268,8 @@ class DeserializingTests: SerializerTests {
 		let deserialisationResult = serializer.deserializeData(fixture.data, mappingTargets: nil)
 		
 		switch deserialisationResult {
-		case .Success(let document):
+		case .Success(let documentBox):
+			let document = documentBox.value
 			
 			XCTAssertNotNil(document.errors, "Expected data to be not nil.")
 			

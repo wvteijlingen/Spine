@@ -368,3 +368,68 @@ class PersistingTests: SpineTests {
 	
 	//TODO
 }
+
+
+// MARK: -
+
+class PaginatingTests: SpineTests {
+	func testLoadNextPageInCollection() {
+		let fixture = JSONFixtureWithName("PagedFoos-2")
+		let nextURL = NSURL(string: "http://example.com/foos?page[limit]=2&page[number]=2")!
+		
+		HTTPClient.handler = { (request: NSURLRequest, payload: NSData?) -> (responseData: NSData, statusCode: Int, error: NSError?) in
+			XCTAssertEqual(request.URL, nextURL, "Request URL not as expected.")
+			return (responseData: fixture.data, statusCode: 200, error: nil)
+		}
+		
+		let collection = ResourceCollection(resources: [Foo(id: "1"), Foo(id: "2")], resourcesURL: NSURL(string: "http://example.com/foos?page[limit]=2")!)
+		collection.nextURL = nextURL
+		
+		let expectation = expectationWithDescription("testLoadNextPageInCollection")
+		
+		spine.loadNextPageOfCollection(collection).onSuccess { collection in
+			expectation.fulfill()
+			XCTAssertEqual(collection.count, 4, "Expected count to be 4.")
+			XCTAssertEqual(collection.resourcesURL!, nextURL, "Expected resourcesURL to be updated to new page")
+			XCTAssertEqual(collection.previousURL!, NSURL(string: "http://example.com/foos?page[limit]=2")!, "Expected previousURL to be updated to previous page")
+			XCTAssertNil(collection.nextURL, "Expected nextURL to be nil.")
+			
+		}.onFailure { error in
+			expectation.fulfill()
+			XCTFail("Loading failed with error: \(error).")
+		}
+		
+		waitForExpectationsWithTimeout(10) { error in
+			XCTAssertNil(error, "\(error)")
+		}
+	}
+	
+	func testLoadPreviousPageInColleciton() {
+		let fixture = JSONFixtureWithName("PagedFoos-1")
+		
+		HTTPClient.handler = { (request: NSURLRequest, payload: NSData?) -> (responseData: NSData, statusCode: Int, error: NSError?) in
+			XCTAssertEqual(request.URL, NSURL(string: "http://example.com/foos?page[limit]=2")!, "Request URL not as expected.")
+			return (responseData: fixture.data, statusCode: 200, error: nil)
+		}
+		
+		
+		let secondPageResources = [Foo(id: "3"), Foo(id: "4")]
+		let collection = ResourceCollection(resources: secondPageResources, resourcesURL: NSURL(string: "http://example.com/foos?page[limit]=2")!)
+		collection.previousURL = NSURL(string: "http://example.com/foos?page[limit]=2")!
+		
+		let expectation = expectationWithDescription("testLoadPreviousPageInColleciton")
+		
+		spine.loadPreviousPageOfCollection(collection).onSuccess { collection in
+			expectation.fulfill()
+			XCTAssertEqual(collection.count, 4, "Expected count to be 4.")
+			
+			}.onFailure { error in
+				expectation.fulfill()
+				XCTFail("Loading failed with error: \(error).")
+		}
+		
+		waitForExpectationsWithTimeout(10) { error in
+			XCTAssertNil(error, "\(error)")
+		}
+	}
+}

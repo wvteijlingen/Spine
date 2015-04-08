@@ -72,10 +72,12 @@ public class Spine {
 		let operation = FetchOperation(query: query)
 		
 		operation.completionBlock = {
-			if let error = operation.error {
+
+			switch operation.result! {
+			case .Success(let resourceCollectionWrapper):
+				promise.success(resourceCollectionWrapper.value)
+			case .Failure(let error):
 				promise.failure(error)
-			} else {
-				promise.success(operation.result!)
 			}
 		}
 		
@@ -97,12 +99,14 @@ public class Spine {
 		let operation = FetchOperation(query: query)
 		
 		operation.completionBlock = {
-			if let error = operation.error {
-				promise.failure(error)
-			} else if let resource = operation.result?.resources.first as? T {
-				promise.success(resource)
-			} else {
+			switch operation.result! {
+			case .Success(let resourceCollectionBox) where resourceCollectionBox.value.count == 0:
 				promise.failure(NSError(domain: SpineClientErrorDomain, code: SpineErrorCodes.ResourceNotFound, userInfo: nil))
+			case .Success(let resourceCollectionBox):
+				let firstResource = resourceCollectionBox.value.resources.first as T
+				promise.success(firstResource)
+			case .Failure(let error):
+				promise.failure(error)
 			}
 		}
 		
@@ -151,15 +155,103 @@ public class Spine {
 	}
 	
 	
+	// MARK: Paginating
+	
+	/**
+	Loads the next page of the given resource collection. The newly loaded resources are appended to the passed collection.
+	When the next page is not available, the returned future will fail with a `NextPageNotAvailable` error code.
+	
+	:param: collection The collection for which to load the next page.
+	
+	:returns: A future that resolves to the ResourceCollection including the newly loaded resources.
+	*/
+	public func loadNextPageOfCollection(collection: ResourceCollection) -> Future<ResourceCollection> {
+		let promise = Promise<ResourceCollection>()
+		
+		if let nextURL = collection.nextURL {
+			let query = Query<ResourceProtocol>(URL: nextURL)
+			let operation = FetchOperation(query: query)
+			
+			operation.completionBlock = {
+				switch operation.result! {
+				case .Success(let resourceCollectionBox):
+					let nextCollection = resourceCollectionBox.value
+					collection.resources += nextCollection.resources
+					collection.resourcesURL = nextCollection.resourcesURL
+					collection.nextURL = nextCollection.nextURL
+					collection.previousURL = nextCollection.previousURL
+					
+					promise.success(collection)
+				case .Failure(let error):
+					promise.failure(error)
+				}
+			}
+			
+			addOperation(operation)
+			
+		} else {
+			promise.failure(NSError(domain: SpineClientErrorDomain, code: SpineErrorCodes.NextPageNotAvailable, userInfo: nil))
+		}
+		
+		return promise.future
+	}
+	
+	/**
+	Loads the previous page of the given resource collection. The newly loaded resources are prepended to the passed collection.
+	When the previous page is not available, the returned future will fail with a `PreviousPageNotAvailable` error code.
+	
+	:param: collection The collection for which to load the previous page.
+	
+	:returns: A future that resolves to the ResourceCollection including the newly loaded resources.
+	*/
+	public func loadPreviousPageOfCollection(collection: ResourceCollection) -> Future<ResourceCollection> {
+		let promise = Promise<ResourceCollection>()
+		
+		if let previousURL = collection.previousURL {
+			let query = Query<ResourceProtocol>(URL: previousURL)
+			let operation = FetchOperation(query: query)
+			
+			operation.completionBlock = {
+				switch operation.result! {
+				case .Success(let resourceCollectionBox):
+					let previousCollection = resourceCollectionBox.value
+					collection.resources = previousCollection.resources + collection.resources
+					collection.resourcesURL = previousCollection.resourcesURL
+					collection.nextURL = previousCollection.nextURL
+					collection.previousURL = previousCollection.previousURL
+					
+					promise.success(collection)
+				case .Failure(let error):
+					promise.failure(error)
+				}
+			}
+
+			addOperation(operation)
+			
+		} else {
+			promise.failure(NSError(domain: SpineClientErrorDomain, code: SpineErrorCodes.PreviousPageNotAvailable, userInfo: nil))
+		}
+		
+		return promise.future
+	}
+	
+	
 	// MARK: Persisting
 	
+	/**
+	Saves the given resource.
+	
+	:param: resource The resource to save.
+	
+	:returns: A future that resolves to the saved resource.
+	*/
 	public func save(resource: ResourceProtocol) -> Future<ResourceProtocol> {
 		let promise = Promise<ResourceProtocol>()
 		
 		let operation = SaveOperation(resource: resource)
 		
 		operation.completionBlock = {
-			if let error = operation.error {
+			if let error = operation.result?.error {
 				promise.failure(error)
 			} else {
 				promise.success(resource)
@@ -171,13 +263,20 @@ public class Spine {
 		return promise.future
 	}
 	
+	/**
+	Deletes the given resource.
+	
+	:param: resource The resource to delete.
+	
+	:returns: A future
+	*/
 	public func delete(resource: ResourceProtocol) -> Future<Void> {
 		let promise = Promise<Void>()
 		
 		let operation = DeleteOperation(resource: resource)
 		
 		operation.completionBlock = {
-			if let error = operation.error {
+			if let error = operation.result?.error {
 				promise.failure(error)
 			} else {
 				promise.success()
@@ -221,7 +320,6 @@ public class Spine {
 		return loadResourceByExecutingQuery(resource, query: query)
 	}
 
-	
 	func loadResourceByExecutingQuery<T: ResourceProtocol>(resource: T, query: Query<T>) -> Future<T> {
 		let promise = Promise<(T)>()
 		
@@ -233,13 +331,13 @@ public class Spine {
 		let operation = FetchOperation(query: query)
 		operation.mappingTargets = [resource]
 		operation.completionBlock = {
-			if let error = operation.error {
+			if let error = operation.result?.error {
 				promise.failure(error)
 			} else {
 				promise.success(resource)
 			}
 		}
-		
+
 		addOperation(operation)
 		
 		return promise.future
@@ -335,4 +433,42 @@ public func unloadResource(resource: ResourceProtocol) {
 	}
 	
 	resource.isLoaded = false
+}
+
+
+// MARK: - Failable
+
+/**
+Represents the result of a failable operation.
+To work around the unimplemented "non-fixed multi-payload enum layout"
+compiler error, we have to box the success value.
+
+- Success: The operation succeeded with the given result.
+- Failure: The operation failed with the given error.
+*/
+enum Failable<T> {
+	case Success(Box<T>)
+	case Failure(NSError)
+	
+	init(_ value: T) {
+		self = .Success(Box(value))
+	}
+	
+	init(_ error: NSError) {
+		self = .Failure(error)
+	}
+	
+	var error: NSError? {
+		switch self {
+		case .Failure(let error):
+			return error
+		default:
+			return nil
+		}
+	}
+}
+
+class Box<T> {
+	var value: T
+	init(_ value: T) { self.value = value }
 }

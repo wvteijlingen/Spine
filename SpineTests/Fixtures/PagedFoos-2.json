@@ -1,0 +1,13 @@
+{
+	"links": {
+		"previous": "http://example.com/foos?page[limit]=2",
+		"self": "http://example.com/foos?page[limit]=2&page[number]=2"
+	},
+	"data": [{
+		"id": "3",
+		"type": "foos"
+	}, {
+		"id": "4",
+		"type": "foos"
+	}]
+}

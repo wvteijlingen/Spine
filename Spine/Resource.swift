@@ -55,7 +55,7 @@ The ResourceProtocol declares methods and properties that a resource must implem
 	/// The self URL of the resource.
 	var URL: NSURL? { get set }
 	
-	/// Whether the attributes of the resource are loaded.
+	/// Whether the fields of the resource are loaded.
 	var isLoaded: Bool { get set }
 	
 	/**

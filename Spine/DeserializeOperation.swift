@@ -23,12 +23,13 @@ class DeserializeOperation: NSOperation {
 	var resourceFactory: ResourceFactory
 	
 	// Output
-	var result: DeserializationResult?
+	var result: Failable<JSONAPIDocument>?
 	
 	// Extracted objects
 	private var extractedPrimaryResources: [ResourceProtocol] = []
 	private var extractedErrors: [NSError]?
 	private var extractedMeta: [String: AnyObject]?
+	private var extractedLinks: [String: NSURL]?
 	
 	private var resourcePool: [ResourceProtocol] = []
 	
@@ -59,7 +60,7 @@ class DeserializeOperation: NSOperation {
 		// Check if the given data is in the expected format
 		if (data.dictionary == nil) {
 			Spine.logError(.Serializing, "Cannot deserialize: The given JSON representation was not as expected.")
-			result = .Failure(NSError(domain: SpineClientErrorDomain, code: SpineErrorCodes.InvalidDocumentStructure, userInfo: [NSLocalizedDescriptionKey: "The given JSON representation was not as expected."]))
+			result = Failable(NSError(domain: SpineClientErrorDomain, code: SpineErrorCodes.InvalidDocumentStructure, userInfo: [NSLocalizedDescriptionKey: "The given JSON representation was not as expected."]))
 			return
 		}
 		
@@ -93,15 +94,24 @@ class DeserializeOperation: NSOperation {
 		// Extract meta
 		extractedMeta = self.data["meta"].dictionaryObject
 		
+		// Extract links
+		if let links = self.data["links"].dictionary {
+			extractedLinks = [:]
+			
+			for (key, value) in links {
+				extractedLinks![key] = NSURL(string: value.stringValue)!
+			}
+		}
+		
 		// Resolve relations in the store
 		resolveRelations()
 		
 		// Create a result
-		var responseDocument = JSONAPIDocument(data: nil, errors: extractedErrors, meta: extractedMeta)
+		var responseDocument = JSONAPIDocument(data: nil, errors: extractedErrors, meta: extractedMeta, links: extractedLinks)
 		if !isEmpty(extractedPrimaryResources) {
 			responseDocument.data = extractedPrimaryResources
 		}
-		result = .Success(responseDocument)
+		result = Failable(responseDocument)
 	}
 	
 	
@@ -266,8 +276,8 @@ class DeserializeOperation: NSOperation {
 		var resourceCollection: LinkedResourceCollection? = nil
 		
 		// Resource level link as a resource URL only.
-		if let linkedResourcesURL = serializedData["links"][key].URL {
-			resourceCollection = LinkedResourceCollection(resourcesURL: linkedResourcesURL, URL: nil, linkage: nil)
+		if let resourcesURL = serializedData["links"][key].URL {
+			resourceCollection = LinkedResourceCollection(resourcesURL: resourcesURL, linkURL: nil, linkage: nil)
 		
 		// Resource level link as a link object. This might contain linkage in the form of type/id.
 		} else if serializedData["links"][key].dictionary != nil {
@@ -277,9 +287,9 @@ class DeserializeOperation: NSOperation {
 			
 			if let linkage = linkData["linkage"].array {
 				let mappedLinkage = linkage.map { ResourceIdentifier(type: $0["type"].stringValue, id: $0["id"].stringValue) }
-				resourceCollection = LinkedResourceCollection(resourcesURL: resourcesURL, URL: linkURL, linkage: mappedLinkage)
+				resourceCollection = LinkedResourceCollection(resourcesURL: resourcesURL, linkURL: linkURL, linkage: mappedLinkage)
 			} else {
-				resourceCollection = LinkedResourceCollection(resourcesURL: resourcesURL, URL: linkURL, linkage: nil)
+				resourceCollection = LinkedResourceCollection(resourcesURL: resourcesURL, linkURL: linkURL, linkage: nil)
 			}
 		}
 		

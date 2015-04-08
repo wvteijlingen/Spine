@@ -14,7 +14,7 @@ class ResourceCollectionTests: XCTestCase {
 	func testInitWithResourcesURLAndResources() {
 		let URL = NSURL(string: "http://example.com/foos")!
 		let resources = [Foo(), Bar()]
-		let collection = ResourceCollection(resourcesURL: URL, resources: resources)
+		let collection = ResourceCollection(resources: resources, resourcesURL: URL)
 		
 		XCTAssertNotNil(collection.resourcesURL, "Expected URL to be not nil.")
 		XCTAssertEqual(collection.resourcesURL!, URL, "Expected URL to be equal.")
@@ -87,15 +87,15 @@ class LinkedResourceCollectionTests: XCTestCase {
 	
 	func testInitWithResourcesURLAndURLAndLinkage() {
 		let resourcesURL = NSURL(string: "http://example.com/foos")!
-		let URL = NSURL(string: "http://example.com/bars/1/link/foos")!
+		let linkURL = NSURL(string: "http://example.com/bars/1/link/foos")!
 		let linkage = [ResourceIdentifier(type: "foos", id: "1"), ResourceIdentifier(type: "bars", id: "2")]
-		let collection = LinkedResourceCollection(resourcesURL: resourcesURL, URL: URL, linkage: linkage)
+		let collection = LinkedResourceCollection(resourcesURL: resourcesURL, linkURL: linkURL, linkage: linkage)
 		
 		XCTAssertNotNil(collection.resourcesURL, "Expected resources URL to be not nil.")
 		XCTAssertEqual(collection.resourcesURL!, resourcesURL, "Expected resources URL to be equal.")
 		
-		XCTAssertNotNil(collection.URL, "Expected URL to be not nil.")
-		XCTAssertEqual(collection.URL!, URL, "Expected URL to be equal.")
+		XCTAssertNotNil(collection.linkURL, "Expected link URL to be not nil.")
+		XCTAssertEqual(collection.linkURL!, linkURL, "Expected link URL to be equal.")
 		
 		XCTAssert(collection.linkage != nil, "Expected linkage to be not nil.")
 		XCTAssertEqual(collection.linkage![0], linkage[0], "Expected first linkage item to be equal.")
@@ -104,14 +104,14 @@ class LinkedResourceCollectionTests: XCTestCase {
 	
 	func testInitWithResourcesURLAndURLAndHomogenousTypeAndLinkage() {
 		let resourcesURL = NSURL(string: "http://example.com/foos")!
-		let URL = NSURL(string: "http://example.com/bars/1/link/foos")!
-		let collection = LinkedResourceCollection(resourcesURL: resourcesURL, URL: URL, homogenousType: "foos", linkage: ["1", "2"])
+		let linkURL = NSURL(string: "http://example.com/bars/1/link/foos")!
+		let collection = LinkedResourceCollection(resourcesURL: resourcesURL, linkURL: linkURL, homogenousType: "foos", IDs: ["1", "2"])
 		
 		XCTAssertNotNil(collection.resourcesURL, "Expected resources URL to be not nil.")
 		XCTAssertEqual(collection.resourcesURL!, resourcesURL, "Expected resources URL to be equal.")
 		
-		XCTAssertNotNil(collection.URL, "Expected URL to be not nil.")
-		XCTAssertEqual(collection.URL!, URL, "Expected URL to be equal.")
+		XCTAssertNotNil(collection.linkURL, "Expected link URL to be not nil.")
+		XCTAssertEqual(collection.linkURL!, linkURL, "Expected link URL to be equal.")
 		
 		XCTAssert(collection.linkage != nil, "Expected linkage to be not nil.")
 		XCTAssertEqual(collection.linkage![0], ResourceIdentifier(type: "foos", id: "1"), "Expected first linkage item to be equal.")
@@ -119,7 +119,7 @@ class LinkedResourceCollectionTests: XCTestCase {
 	}
 	
 	func testAddAsExisting() {
-		let collection = LinkedResourceCollection(resourcesURL: nil, URL: nil, linkage: nil)
+		let collection = LinkedResourceCollection(resourcesURL: nil, linkURL: nil, linkage: nil)
 		let foo = Foo()
 		
 		collection.addResourceAsExisting(foo)
@@ -129,7 +129,7 @@ class LinkedResourceCollectionTests: XCTestCase {
 	}
 	
 	func testAdd() {
-		let collection = LinkedResourceCollection(resourcesURL: nil, URL: nil, linkage: nil)
+		let collection = LinkedResourceCollection(resourcesURL: nil, linkURL: nil, linkage: nil)
 		let foo = Foo()
 		
 		collection.addResource(foo)
@@ -139,7 +139,7 @@ class LinkedResourceCollectionTests: XCTestCase {
 	}
 	
 	func testRemove() {
-		let collection = LinkedResourceCollection(resourcesURL: nil, URL: nil, linkage: nil)
+		let collection = LinkedResourceCollection(resourcesURL: nil, linkURL: nil, linkage: nil)
 		let foo = Foo()
 		
 		collection.addResource(foo)

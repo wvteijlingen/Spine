@@ -19,6 +19,12 @@ public struct SpineErrorCodes {
 	/// The given JSON document could not be parsed, because it is in an unsupported structure.
 	public static let InvalidDocumentStructure = 1
 	
+	/// The next page of a collection is not available.
+	public static let NextPageNotAvailable = 10
+	
+	/// The previous page of a collection is not available.
+	public static let PreviousPageNotAvailable = 11
+	
 	/// The given resource coulde not be found.
 	public static let ResourceNotFound = 404
 }

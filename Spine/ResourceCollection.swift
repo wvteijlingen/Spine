@@ -18,19 +18,27 @@ public class ResourceCollection: NSObject, NSCoding {
 	/// Whether the resources for this collection are loaded
 	public var isLoaded: Bool
 	
-	/// The URL where the resources in this collection can be fetched
+	/// The URL of the current page in this collection.
 	public var resourcesURL: NSURL?
+	
+	/// The URL of the next page in this collection.
+	public var nextURL: NSURL?
+	
+	/// The URL of the previous page in this collection.
+	public var previousURL: NSURL?
 	
 	/// The loaded resources
 	public internal(set) var resources: [ResourceProtocol] = []
 	
+	
 	// MARK: Initializers
 	
-	public init(resourcesURL: NSURL? = nil, resources: [ResourceProtocol]) {
-		self.resourcesURL = resourcesURL
+	public init(resources: [ResourceProtocol], resourcesURL: NSURL? = nil) {
 		self.resources = resources
+		self.resourcesURL = resourcesURL
 		self.isLoaded = !isEmpty(resources)
 	}
+	
 	
 	// MARK: NSCoding
 	
@@ -45,6 +53,7 @@ public class ResourceCollection: NSObject, NSCoding {
 		coder.encodeObject(resourcesURL, forKey: "resourcesURL")
 		coder.encodeObject(resources, forKey: "resources")
 	}
+	
 	
 	// MARK: Subscript and count
 	
@@ -112,11 +121,11 @@ A LinkedResourceCollection keeps track of resources that are added to and remove
 This allows Spine to make partial updates to the collection when it is persisted.
 */
 public class LinkedResourceCollection: ResourceCollection {
-	/// The self URL of this link.
-	public var URL: NSURL?
-	
 	/// The type/id pairs of resources present in this link.
 	public var linkage: [ResourceIdentifier]?
+	
+	/// The URL of the link object of this collection.
+	public var linkURL: NSURL?
 	
 	/// Resources added to this linked collection, but not yet persisted.
 	public internal(set) var addedResources: [ResourceProtocol] = []
@@ -125,22 +134,22 @@ public class LinkedResourceCollection: ResourceCollection {
 	public internal(set) var removedResources: [ResourceProtocol] = []
 	
 	public required init() {
-		super.init(resourcesURL: nil, resources: [])
+		super.init(resources: [], resourcesURL: nil)
 	}
 	
-	public init(resourcesURL: NSURL?, URL: NSURL?, linkage: [ResourceIdentifier]?) {
-		super.init(resourcesURL: resourcesURL, resources: [])
-		self.URL = URL
+	public init(resourcesURL: NSURL?, linkURL: NSURL?, linkage: [ResourceIdentifier]?) {
+		super.init(resources: [], resourcesURL: resourcesURL)
+		self.linkURL = linkURL
 		self.linkage = linkage
 	}
 	
-	public convenience init(resourcesURL: NSURL?, URL: NSURL?, homogenousType: ResourceType, linkage: [String]?) {
-		self.init(resourcesURL: resourcesURL, URL: URL, linkage: linkage?.map { ResourceIdentifier(type: homogenousType, id: $0) })
+	public convenience init(resourcesURL: NSURL?, linkURL: NSURL?, homogenousType: ResourceType, IDs: [String]) {
+		self.init(resourcesURL: resourcesURL, linkURL: linkURL, linkage: IDs.map { ResourceIdentifier(type: homogenousType, id: $0) })
 	}
 	
 	public required init(coder: NSCoder) {
 		super.init(coder: coder)
-		URL = coder.decodeObjectForKey("URL") as? NSURL
+		linkURL = coder.decodeObjectForKey("linkURL") as? NSURL
 		addedResources = coder.decodeObjectForKey("addedResources") as [ResourceProtocol]
 		removedResources = coder.decodeObjectForKey("removedResources") as [ResourceProtocol]
 		
@@ -151,7 +160,7 @@ public class LinkedResourceCollection: ResourceCollection {
 	
 	public override func encodeWithCoder(coder: NSCoder) {
 		super.encodeWithCoder(coder)
-		coder.encodeObject(URL, forKey: "URL")
+		coder.encodeObject(linkURL, forKey: "linkURL")
 		coder.encodeObject(addedResources, forKey: "addedResources")
 		coder.encodeObject(removedResources, forKey: "removedResources")
 		

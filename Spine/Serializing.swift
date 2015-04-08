@@ -9,17 +9,6 @@
 import Foundation
 import SwiftyJSON
 
-/**
-A result returned from the deserializer.
-
-- Success: Deserialising succeeded with the given response document.
-- Failure: Deserialising failed with the given error.
-*/
-enum DeserializationResult {
-	case Success(JSONAPIDocument)
-	case Failure(NSError)
-}
-
 struct JSONAPIDocument {
 	/// Primary resources extracted from the response.
 	var data: [ResourceProtocol]?
@@ -29,6 +18,9 @@ struct JSONAPIDocument {
 	
 	/// Metadata extracted from the reponse
 	var meta: [String: AnyObject]?
+	
+	/// Links extracted from the response
+	var links: [String: NSURL]?
 }
 
 /**
@@ -81,7 +73,7 @@ protocol SerializerProtocol {
 	
 	:returns: A DeserializationResult that contains either a Store or an error.
 	*/
-	func deserializeData(data: NSData, mappingTargets: [ResourceProtocol]?) -> DeserializationResult
+	func deserializeData(data: NSData, mappingTargets: [ResourceProtocol]?) -> Failable<JSONAPIDocument>
 	
 	/**
 	Serializes the given Resources into a multidimensional dictionary/array structure
@@ -104,7 +96,7 @@ class JSONSerializer: SerializerProtocol {
 	var transformers = TransformerDirectory.defaultTransformerDirectory()
 	
 	
-	func deserializeData(data: NSData, mappingTargets: [ResourceProtocol]?) -> DeserializationResult {		
+	func deserializeData(data: NSData, mappingTargets: [ResourceProtocol]?) -> Failable<JSONAPIDocument> {		
 		let deserializeOperation = DeserializeOperation(data: data, resourceFactory: resourceFactory)
 		deserializeOperation.transformers = transformers
 		

@@ -98,6 +98,9 @@ public struct Query<T: ResourceProtocol> {
 		self.URL = NSURL(string: path)
 	}
 	
+	internal init(URL: NSURL) {
+		self.URL = URL
+	}
 	
 	// MARK: Sideloading
 	

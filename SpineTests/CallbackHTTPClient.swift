@@ -69,10 +69,9 @@ public class CallbackHTTPClient: _HTTPClientProtocol {
 		}
 	}
 	
-	func respondWith(status: Int, data: NSData? = nil, error: NSError? = nil) {
-		let responseData = data ?? NSData()
+	func respondWith(status: Int, data: NSData = NSData(), error: NSError? = nil) {
 		handler = { request, payload in
-			return (responseData: responseData, statusCode: status, error: error)
+			return (responseData: data, statusCode: status, error: error)
 		}
 	}
 	

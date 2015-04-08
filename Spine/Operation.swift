@@ -94,12 +94,18 @@ class Operation: NSOperation {
 	}
 }
 
+/**
+A FetchOperation< object fetches resources from a Spine, using a given Query.
+*/
 class FetchOperation<T: ResourceProtocol>: Operation {
+	/// The query describing which resources to fetch.
 	let query: Query<T>
+	
+	/// Existing resources onto which to map the fetched resources.
 	var mappingTargets = [ResourceProtocol]()
 	
-	var result: ResourceCollection?
-	var error: NSError?
+	/// The result of the operation. You can safely force unwrap this in the completionBlock.
+	var result: Failable<ResourceCollection>?
 	
 	init(query: Query<T>) {
 		self.query = query
@@ -114,34 +120,48 @@ class FetchOperation<T: ResourceProtocol>: Operation {
 		HTTPClient.request("GET", URL: URL) { statusCode, responseData, networkError in
 			
 			if let networkError = networkError {
-				self.error = networkError
-				
+				self.result = .Failure(networkError)
 			} else {
-			
 				let deserializationResult = self.serializer.deserializeData(responseData!, mappingTargets: self.mappingTargets)
 				
 				switch deserializationResult {
-					case .Success(let responseDocument):
-						self.error = responseDocument.errors?.first
+				case .Success(let documentWrapper) where documentWrapper.value.errors?.count > 0:
+					self.result = Failable(documentWrapper.value.errors!.first!)
 					
-						if let resources = responseDocument.data {
-							self.result = ResourceCollection(resources: resources)
-						}
+				case .Success(let documentWrapper) where documentWrapper.value.errors == nil:
+					self.result = Failable(self.collectionFromDocument(documentWrapper.value))
 					
-					case .Failure(let error):
-						self.error = error
-					}
+				case .Failure(let error):
+					self.result = .Failure(error)
+					
+				default: ()
+				}
 			}
 			
 			self.state = .Finished
 		}
 	}
+	
+	private func collectionFromDocument(document: JSONAPIDocument) -> ResourceCollection {
+		let resources = document.data ?? []
+		let collection = ResourceCollection(resources: resources)
+		collection.resourcesURL = document.links?["self"]
+		collection.nextURL = document.links?["next"]
+		collection.previousURL = document.links?["previous"]
+		
+		return collection
+	}
 }
 
+/**
+A FetchOperation deletes a resources from a Spine.
+*/
 class DeleteOperation: Operation {
+	/// The resource to delete.
 	let resource: ResourceProtocol
-
-	var error: NSError?
+	
+	/// The result of the operation. You can safely force unwrap this in the completionBlock.
+	var result: Failable<Void>?
 	
 	init(resource: ResourceProtocol) {
 		self.resource = resource
@@ -154,19 +174,31 @@ class DeleteOperation: Operation {
 		Spine.logInfo(.Spine, "Deleting resource \(resource) using URL: \(URL)")
 		
 		HTTPClient.request("DELETE", URL: URL) { statusCode, responseData, networkError in
-			self.error = networkError
+			if let error = networkError {
+				self.result = Failable(error)
+			} else {
+				self.result = Failable()
+			}
 			self.state = .Finished
 		}
 	}
 }
 
+/**
+A SaveOperation saves a resources in a Spine. It can be used to either update an existing resource,
+or to insert new resources.
+*/
 class SaveOperation: Operation {
+	/// The resource to save.
 	let resource: ResourceProtocol
-	var isNewResource: Bool {
+	
+	/// The result of the operation. You can safely force unwrap this in the completionBlock.
+	var result: Failable<Void>?
+	
+	/// Whether the resource is a new resource, or an existing resource.
+	private var isNewResource: Bool {
 		return resource.id == nil
 	}
-	
-	var error: NSError?
 	
 	init(resource: ResourceProtocol) {
 		self.resource = resource
@@ -180,7 +212,7 @@ class SaveOperation: Operation {
 		
 		HTTPClient.request(request.method, URL: request.URL, payload: request.payload) { statusCode, responseData, networkError in
 			if let networkError = networkError {
-				self.error = networkError
+				self.result = Failable(networkError)
 				self.state = .Finished
 				return
 			}
@@ -192,15 +224,15 @@ class SaveOperation: Operation {
 			
 			// Separately update relationships if this is an existing resource
 			if self.isNewResource {
+				self.result = Failable()
 				self.state = .Finished
 				return
 			} else {
 				let relationshipOperation = RelationshipOperation(resource: self.resource)
 				
 				relationshipOperation.completionBlock = {
-					if let error = relationshipOperation.error {
-						Spine.logError(.Spine, "Error updating resource relationships: \(error)")
-						self.error = error
+					if let error = relationshipOperation.result?.error {
+						self.result = Failable(error)
 					}
 					
 					self.state = .Finished
@@ -226,10 +258,16 @@ class SaveOperation: Operation {
 	}
 }
 
+/**
+A SaveOperation updates the relationships of a given resource.
+It will add and remove resources to and from many-to-many relationships, and update to-one relationships.
+*/
 class RelationshipOperation: Operation {
+	/// The resource for which to save the relationships.
 	let resource: ResourceProtocol
 	
-	var error: NSError?
+	/// The result of the operation. You can safely force unwrap this in the completionBlock.
+	var result: Failable<Void>?
 	
 	init(resource: ResourceProtocol) {
 		self.resource = resource
@@ -270,21 +308,21 @@ class RelationshipOperation: Operation {
 			case "add":
 				self.addRelatedResources(operation.resources, relationship: operation.relationship) { error in
 					if let error = error {
-						self.error = error
+						self.result = Failable(error)
 						stop = true
 					}
 				}
 			case "remove":
 				self.removeRelatedResources(operation.resources, relationship: operation.relationship) { error in
 					if let error = error {
-						self.error = error
+						self.result = Failable(error)
 						stop = true
 					}
 				}
 			case "replace":
 				self.setRelatedResource(operation.resources.first!, relationship: operation.relationship) { error in
 					if let error = error {
-						self.error = error
+						self.result = Failable(error)
 						stop = true
 					}
 				}
