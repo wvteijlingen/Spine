@@ -65,7 +65,7 @@ class SerializingTests: SerializerTests {
 	func testSerializeSingleResourceToManyRelationships() {
 		let json = serializedJSONWithOptions(SerializationOptions(includeToMany: true, includeToOne: true))
 		
-		XCTAssertEqual(json["data"]["links"]["toManyAttribute"]["ids"].arrayObject as [String], ["11", "12"], "Serialized to-many ids are not equal")
+		XCTAssertEqual(json["data"]["links"]["toManyAttribute"]["ids"].arrayObject as! [String], ["11", "12"], "Serialized to-many ids are not equal")
 		XCTAssertEqual(json["data"]["links"]["toManyAttribute"]["type"].stringValue, Bar.resourceType, "Serialized to-many type is not equal")
 	}
 	
@@ -107,7 +107,7 @@ class DeserializingTests: SerializerTests {
 				XCTAssertEqual(resources.count, 1, "Expected resources count to be 1.")
 				
 				XCTAssert(resources.first is Foo, "Expected resource to be of class 'Foo'.")
-				let foo = resources.first as Foo
+				let foo = resources.first as! Foo
 				
 				// Attributes
 				assertFooResource(foo, isEqualToJSON: json["data"])
@@ -163,7 +163,7 @@ class DeserializingTests: SerializerTests {
 					let resourceJSON = fixture.json["data"][index]
 					
 					XCTAssert(resource is Foo, "Expected resource to be of class 'Foo'.")
-					let foo = resource as Foo
+					let foo = resource as! Foo
 					
 					// Attributes
 					assertFooResource(foo, isEqualToJSON: resourceJSON)
@@ -201,7 +201,7 @@ class DeserializingTests: SerializerTests {
 			if let resources = document.data {
 				XCTAssertEqual(resources.count, 1, "Deserialized resources count not equal.")
 				XCTAssert(resources.first is Foo, "Deserialized resource should be of class 'Foo'.")
-				let foo = resources.first as Foo
+				let foo = resources.first as! Foo
 				
 				// Attributes
 				assertFooResource(foo, isEqualToJSON: json["data"])

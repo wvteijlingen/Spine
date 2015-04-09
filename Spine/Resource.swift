@@ -23,8 +23,8 @@ public struct ResourceIdentifier: Equatable {
 	}
 	
 	init(dictionary: NSDictionary) {
-		type = dictionary["type"] as ResourceType
-		id = dictionary["id"] as String
+		type = dictionary["type"] as! ResourceType
+		id = dictionary["id"] as! String
 	}
 	
 	func toDictionary() -> NSDictionary {
@@ -41,13 +41,13 @@ The ResourceProtocol declares methods and properties that a resource must implem
 */
 @objc public protocol ResourceProtocol: class {
 	/// The resource type in plural form.
-	class var resourceType: ResourceType { get }
+	static var resourceType: ResourceType { get }
 	
 	/// The resource type in plural form.
 	var type: ResourceType { get }
 	
 	/// All fields that must be persisted in the API.
-	class var fields: [Field] { get }
+	static var fields: [Field] { get }
 	
 	/// The ID of the resource.
 	var id: String? { get set }

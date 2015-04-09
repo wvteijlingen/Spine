@@ -103,7 +103,7 @@ public class Spine {
 			case .Success(let resourceCollectionBox) where resourceCollectionBox.value.count == 0:
 				promise.failure(NSError(domain: SpineClientErrorDomain, code: SpineErrorCodes.ResourceNotFound, userInfo: nil))
 			case .Success(let resourceCollectionBox):
-				let firstResource = resourceCollectionBox.value.resources.first as T
+				let firstResource = resourceCollectionBox.value.resources.first as! T
 				promise.success(firstResource)
 			case .Failure(let error):
 				promise.failure(error)

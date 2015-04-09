@@ -285,12 +285,12 @@ class RelationshipOperation: Operation {
 		enumerateFields(resource) { field in
 			switch field {
 			case let toOne as ToOneRelationship:
-				let linkedResource = self.resource.valueForField(toOne.name) as ResourceProtocol
+				let linkedResource = self.resource.valueForField(toOne.name) as! ResourceProtocol
 				if linkedResource.id != nil {
 					operations.append((relationship: toOne, type: "replace", resources: [linkedResource]))
 				}
 			case let toMany as ToManyRelationship:
-				let linkedResources = self.resource.valueForField(toMany.name) as LinkedResourceCollection
+				let linkedResources = self.resource.valueForField(toMany.name) as! LinkedResourceCollection
 				operations.append((relationship: toMany, type: "add", resources: linkedResources.addedResources))
 				operations.append((relationship: toMany, type: "remove", resources: linkedResources.removedResources))
 			default: ()

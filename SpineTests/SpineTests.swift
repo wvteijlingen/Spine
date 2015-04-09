@@ -36,7 +36,7 @@ class FindTests: SpineTests {
 		
 		HTTPClient.handler = { (request: NSURLRequest, payload: NSData?) -> (responseData: NSData, statusCode: Int, error: NSError?) in
 			XCTAssertEqual(request.HTTPMethod!, "GET", "HTTP method not as expected.")
-			XCTAssertEqual(request.URL, NSURL(string:"http://example.com/foos/")!, "Request URL not as expected.")
+			XCTAssertEqual(request.URL!, NSURL(string:"http://example.com/foos/")!, "Request URL not as expected.")
 			return (responseData: fixture.data, statusCode: 200, error: nil)
 		}
 		
@@ -47,7 +47,7 @@ class FindTests: SpineTests {
 			for (index, resource) in enumerate(fooCollection) {
 				XCTAssertEqual(fooCollection.count, 2, "Deserialized resources count not equal.")
 				XCTAssert(resource is Foo, "Deserialized resource should be of class 'Foo'.")
-				let foo = resource as Foo
+				let foo = resource as! Foo
 				assertFooResource(foo, isEqualToJSON: fixture.json["data"][index])
 			}
 			}.onFailure { error in
@@ -92,7 +92,7 @@ class FindTests: SpineTests {
 		
 		HTTPClient.handler = { request, payload in
 			XCTAssertEqual(request.HTTPMethod!, "GET", "HTTP method not as expected.")
-			XCTAssertEqual(request.URL, NSURL(string:"http://example.com/foos/?filter[id]=1,2")!, "Request URL not as expected.")
+			XCTAssertEqual(request.URL!, NSURL(string:"http://example.com/foos/?filter[id]=1,2")!, "Request URL not as expected.")
 			return (responseData: fixture.data, statusCode: 200, error: nil)
 		}
 		
@@ -103,7 +103,7 @@ class FindTests: SpineTests {
 			for (index, resource) in enumerate(fooCollection) {
 				XCTAssertEqual(fooCollection.count, 2, "Expected resource count to be 2.")
 				XCTAssert(resource is Foo, "Expected resource to be of class 'Foo'.")
-				let foo = resource as Foo
+				let foo = resource as! Foo
 				assertFooResource(foo, isEqualToJSON: fixture.json["data"][index])
 			}
 		}.onFailure { error in
@@ -149,7 +149,7 @@ class FindTests: SpineTests {
 		
 		HTTPClient.handler = { (request: NSURLRequest, payload: NSData?) -> (responseData: NSData, statusCode: Int, error: NSError?) in
 			XCTAssertEqual(request.HTTPMethod!, "GET", "HTTP method not as expected.")
-			XCTAssertEqual(request.URL, NSURL(string:"http://example.com/foos/1")!, "Request URL not as expected.")
+			XCTAssertEqual(request.URL!, NSURL(string:"http://example.com/foos/1")!, "Request URL not as expected.")
 			return (responseData: fixture.data, statusCode: 200, error: nil)
 		}
 		
@@ -200,7 +200,7 @@ class FindTests: SpineTests {
 		
 		HTTPClient.handler = { (request: NSURLRequest, payload: NSData?) -> (responseData: NSData, statusCode: Int, error: NSError?) in
 			XCTAssertEqual(request.HTTPMethod!, "GET", "HTTP method not as expected.")
-			XCTAssertEqual(request.URL, NSURL(string:"http://example.com/foos/?filter[id]=1,2")!, "Request URL not as expected.")
+			XCTAssertEqual(request.URL!, NSURL(string:"http://example.com/foos/?filter[id]=1,2")!, "Request URL not as expected.")
 			return (responseData: fixture.data, statusCode: 200, error: nil)
 		}
 		
@@ -212,7 +212,7 @@ class FindTests: SpineTests {
 			for (index, resource) in enumerate(fooCollection) {
 				XCTAssertEqual(fooCollection.count, 2, "Deserialized resources count not equal.")
 				XCTAssert(resource is Foo, "Deserialized resource should be of class 'Foo'.")
-				let foo = resource as Foo
+				let foo = resource as! Foo
 				assertFooResource(foo, isEqualToJSON: fixture.json["data"][index])
 			}
 		}.onFailure { error in
@@ -261,7 +261,7 @@ class FindTests: SpineTests {
 		
 		HTTPClient.handler = { (request: NSURLRequest, payload: NSData?) -> (responseData: NSData, statusCode: Int, error: NSError?) in
 			XCTAssertEqual(request.HTTPMethod!, "GET", "HTTP method not as expected.")
-			XCTAssertEqual(request.URL, NSURL(string:"http://example.com/foos/1")!, "Request URL not as expected.")
+			XCTAssertEqual(request.URL!, NSURL(string:"http://example.com/foos/1")!, "Request URL not as expected.")
 			return (responseData: fixture.data, statusCode: 200, error: nil)
 		}
 		
@@ -318,7 +318,7 @@ class PersistingTests: SpineTests {
 	
 	func testDeleteResource() {
 		HTTPClient.handler = { (request: NSURLRequest, payload: NSData?) -> (responseData: NSData, statusCode: Int, error: NSError?) in
-			XCTAssertEqual(request.URL, NSURL(string:"http://example.com/bars/1")!, "Request URL not as expected.")
+			XCTAssertEqual(request.URL!, NSURL(string:"http://example.com/bars/1")!, "Request URL not as expected.")
 			XCTAssertEqual(request.HTTPMethod!, "DELETE", "Expected HTTP method to be 'DELETE'.")
 			return (responseData: NSData(), statusCode: 204, error: nil)
 		}
@@ -378,7 +378,7 @@ class PaginatingTests: SpineTests {
 		let nextURL = NSURL(string: "http://example.com/foos?page[limit]=2&page[number]=2")!
 		
 		HTTPClient.handler = { (request: NSURLRequest, payload: NSData?) -> (responseData: NSData, statusCode: Int, error: NSError?) in
-			XCTAssertEqual(request.URL, nextURL, "Request URL not as expected.")
+			XCTAssertEqual(request.URL!, nextURL, "Request URL not as expected.")
 			return (responseData: fixture.data, statusCode: 200, error: nil)
 		}
 		
@@ -408,7 +408,7 @@ class PaginatingTests: SpineTests {
 		let fixture = JSONFixtureWithName("PagedFoos-1")
 		
 		HTTPClient.handler = { (request: NSURLRequest, payload: NSData?) -> (responseData: NSData, statusCode: Int, error: NSError?) in
-			XCTAssertEqual(request.URL, NSURL(string: "http://example.com/foos?page[limit]=2")!, "Request URL not as expected.")
+			XCTAssertEqual(request.URL!, NSURL(string: "http://example.com/foos?page[limit]=2")!, "Request URL not as expected.")
 			return (responseData: fixture.data, statusCode: 200, error: nil)
 		}
 		

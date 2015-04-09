@@ -153,7 +153,7 @@ class SerializeOperation: NSOperation {
 		if serializedData["links"] == nil {
 			serializedData["links"] = [key: serializedRelationship]
 		} else {
-			var links = serializedData["links"] as [String: AnyObject]
+			var links = serializedData["links"] as! [String: AnyObject]
 			links[key] = serializedRelationship
 			serializedData["links"] = links
 		}
@@ -182,7 +182,7 @@ class SerializeOperation: NSOperation {
 		if serializedData["links"] == nil {
 			serializedData["links"] = [key: serializedRelationship]
 		} else {
-			var links = serializedData["links"] as [String: AnyObject]
+			var links = serializedData["links"] as! [String: AnyObject]
 			links[key] = serializedRelationship
 			serializedData["links"] = links
 		}

@@ -45,7 +45,7 @@ public class ResourceCollection: NSObject, NSCoding {
 	public required init(coder: NSCoder) {
 		isLoaded = coder.decodeBoolForKey("isLoaded")
 		resourcesURL = coder.decodeObjectForKey("resourcesURL") as? NSURL
-		resources = coder.decodeObjectForKey("resources") as [ResourceProtocol]
+		resources = coder.decodeObjectForKey("resources") as! [ResourceProtocol]
 	}
 	
 	public func encodeWithCoder(coder: NSCoder) {
@@ -150,8 +150,8 @@ public class LinkedResourceCollection: ResourceCollection {
 	public required init(coder: NSCoder) {
 		super.init(coder: coder)
 		linkURL = coder.decodeObjectForKey("linkURL") as? NSURL
-		addedResources = coder.decodeObjectForKey("addedResources") as [ResourceProtocol]
-		removedResources = coder.decodeObjectForKey("removedResources") as [ResourceProtocol]
+		addedResources = coder.decodeObjectForKey("addedResources") as! [ResourceProtocol]
+		removedResources = coder.decodeObjectForKey("removedResources") as! [ResourceProtocol]
 		
 		if let encodedLinkage = coder.decodeObjectForKey("linkage") as? [NSDictionary] {
 			linkage = encodedLinkage.map { ResourceIdentifier(dictionary: $0) }
