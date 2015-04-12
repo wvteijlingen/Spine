@@ -21,7 +21,7 @@ let spine = Spine(baseURL: baseURL)
 
 ### 2. Register your resource classes
 Every resource is mapped to a class that implements the `ResourceProtocol` protocol. Spine comes with a `Resource` class that implements this protocol.
-A `Resource` subclass should override the variables `resourceType` and `attributes`. The `resourceType` should contain the type of resource in plural form. The `attributes` array should contain an array of attributes that must be persisted. Attributes that are not in this array are ignored.
+A `Resource` subclass should override the variables `resourceType` and `fields`. The `resourceType` should contain the type of resource in plural form. The `fields` array should contain an array of fields that must be persisted. Fields that are not in this array are ignored.
 
 Each class must be registered using a factory method. This is done using the `registerResource` method.
 
