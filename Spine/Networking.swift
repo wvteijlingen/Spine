@@ -66,18 +66,24 @@ public class URLSessionClient: _HTTPClientProtocol {
 			request.setValue(value, forHTTPHeaderField: key)
 		}
 		
+		Spine.logInfo(.Networking, "\(method): \(URL)")
+		
 		if let payload = payload {
 			request.HTTPBody = payload
+			
+			if Spine.shouldLog(.Debug, domain: .Networking) {
+				if let stringRepresentation = NSString(data: payload, encoding: NSUTF8StringEncoding) {
+					Spine.logDebug(.Networking, stringRepresentation)
+				}
+			}
 		}
-		
-		Spine.logInfo(.Networking, "\(method): \(URL)")
 		
 		performRequest(request, callback: callback)
 	}
 	
-	// TODO: Move error handling out of networking component
 	private func performRequest(request: NSURLRequest, callback: HTTPClientCallback) {
 		let task = urlSession.dataTaskWithRequest(request) { data, response, error in
+			// TODO: Avoid force unwrapping
 			let response = (response as! NSHTTPURLResponse)
 		
 			 // Network error
