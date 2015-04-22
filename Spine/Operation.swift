@@ -154,7 +154,7 @@ class FetchOperation<T: ResourceProtocol>: Operation {
 }
 
 /**
-A FetchOperation deletes a resources from a Spine.
+A DeleteOperation deletes a resources from a Spine.
 */
 class DeleteOperation: Operation {
 	/// The resource to delete.
@@ -196,12 +196,11 @@ class SaveOperation: Operation {
 	var result: Failable<Void>?
 	
 	/// Whether the resource is a new resource, or an existing resource.
-	private var isNewResource: Bool {
-		return resource.id == nil
-	}
+	private let isNewResource: Bool
 	
 	init(resource: ResourceProtocol) {
 		self.resource = resource
+		self.isNewResource = (resource.id == nil)
 		super.init()
 	}
 	
