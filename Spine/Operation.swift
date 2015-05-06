@@ -61,6 +61,7 @@ class Operation: NSOperation {
 	
 	func execute() {}
 	
+	
 	// MARK: Concurrency
 
 	enum State: String {
@@ -95,7 +96,7 @@ class Operation: NSOperation {
 }
 
 /**
-A FetchOperation< object fetches resources from a Spine, using a given Query.
+A FetchOperation object fetches resources from a Spine, using a given Query.
 */
 class FetchOperation<T: ResourceProtocol>: Operation {
 	/// The query describing which resources to fetch.
