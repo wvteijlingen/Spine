@@ -76,11 +76,15 @@ The ResourceProtocol declares methods and properties that a resource must implem
 	func setValue(value: AnyObject?, forField: String)
 }
 
+public protocol MetaHoldable: class {
+	var meta: [String: AnyObject]? { get set }
+}
+
 /**
 A base recource class that provides some defaults for resources.
 You can create custom resource classes by subclassing from Resource.
 */
-public class Resource: NSObject, NSCoding, ResourceProtocol {
+public class Resource: NSObject, NSCoding, ResourceProtocol, MetaHoldable {
 	public class var resourceType: ResourceType {
 		fatalError("Override resourceType in a subclass.")
 	}
@@ -93,6 +97,7 @@ public class Resource: NSObject, NSCoding, ResourceProtocol {
 	public var id: String?
 	public var URL: NSURL?
 	public var isLoaded: Bool = false
+	public var meta: [String: AnyObject]?
 	
 	public override init() {}
 	

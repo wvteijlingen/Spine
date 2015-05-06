@@ -131,7 +131,7 @@ class DeserializeOperation: NSOperation {
 		let type: ResourceType! = representation["type"].string
 		let id: String! = representation["id"].string
 		
-		assert(type != nil, "The given JSON representation does have a string 'type'.")
+		assert(type != nil, "The given JSON representation does not have a string 'type'.")
 		assert(id != nil, "The given JSON representation does not have a string 'id'.")
 		
 		// Dispense a resource
@@ -143,6 +143,11 @@ class DeserializeOperation: NSOperation {
 		// Extract self link
 		if let URL = representation["links"]["self"].URL {
 			resource.URL = URL
+		}
+		
+		// Extract meta
+		if resource is MetaHoldable {
+			(resource as! MetaHoldable).meta = representation["meta"].dictionaryObject
 		}
 
 		// Extract fields
