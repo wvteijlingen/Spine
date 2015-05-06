@@ -102,11 +102,14 @@ public struct Query<T: ResourceProtocol> {
 		self.URL = URL
 	}
 	
+	
 	// MARK: Sideloading
 	
 	/**
 	Includes the given relation in the query. This will fetch resources that are in that relationship.
-	The relation should be specified as a dot separated path, relative to the root resource (e.g. `post.author`).
+	
+	Non-nested relationships should be specified as the name of the relationship in the Swift model.
+	Nested relationships (eg. post.author), should instead be specified using the serialized names.
 	
 	:param: relation The name of the relation to include.
 	
@@ -114,7 +117,9 @@ public struct Query<T: ResourceProtocol> {
 	*/
 	public mutating func include(relationshipNames: String...) {
 		for relationshipName in relationshipNames {
-			if let relationship = T.fields.filter({ $0.name == relationshipName }).first {
+			if contains(relationshipName, ".") {
+				includes.append(relationshipName)
+			} else if let relationship = T.fields.filter({ $0.name == relationshipName }).first {
 				includes.append(relationship.serializedName)
 			} else {
 				assertionFailure("Resource of type \(T.resourceType) does not contain a relationship named \(relationshipName)")
@@ -125,13 +130,22 @@ public struct Query<T: ResourceProtocol> {
 	/**
 	Removes a previously included relation.
 	
+	Non-nested relationships should be specified as the name of the relationship in the Swift model.
+	Nested relationships (eg. post.author), should instead be specified using the serialized names.
+	
 	:param: relation The name of the included relationship to remove.
 	
 	:returns: The query
 	*/
 	public mutating func removeInclude(relationshipNames: String...) {
 		for relationshipName in relationshipNames {
-			if let relationship = T.fields.filter({ $0.name == relationshipName }).first {
+			if contains(relationshipName, ".") {
+				if let index = find(includes, relationshipName) {
+					includes.removeAtIndex(index)
+				} else {
+					assertionFailure("Attempt to remove include that was not included: \(relationshipName)")
+				}
+			} else if let relationship = T.fields.filter({ $0.name == relationshipName }).first {
 				if let index = find(includes, relationship.serializedName) {
 					includes.removeAtIndex(index)
 				} else {
