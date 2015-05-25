@@ -2,23 +2,31 @@
 	"data": {
 		"id": "1",
 		"type": "foos",
-		"stringAttribute": "stringAttributeValue",
-		"integerAttribute": 10,
-		"floatAttribute": 5.5,
-		"booleanAttribute": true,
-		"nilAttribute": null,
-		"dateAttribute": "1970-01-01T01:00:00+01:00",
+		"attributes": {
+			"stringAttribute": "stringAttributeValue",
+			"integerAttribute": 10,
+			"floatAttribute": 5.5,
+			"booleanAttribute": true,
+			"nilAttribute": null,
+			"dateAttribute": "1970-01-01T01:00:00+01:00"
+		},
 		"links": {
-			"self": "http://example.com/foos/1",
+			"self": "http://example.com/foos/1"
+		},
+		"relationships": {
 			"toOneAttribute": {
-				"self": "http://example.com/foos/1/links/toOneAttribute",
-				"related": "http://example.com/bars/10",
-				"linkage": { "type": "bars", "id": "10" }
+				"links": {
+					"self": "http://example.com/foos/1/links/toOneAttribute",
+					"related": "http://example.com/bars/10"
+				},
+				"data": { "type": "bars", "id": "10" }
 			},
 			"toManyAttribute": {
-				"self": "http://example.com/foos/1/links/toManyAttribute",
-				"related": "http://example.com/bars/11,12",
-				"linkage": [
+				"links": {
+					"self": "http://example.com/foos/1/links/toManyAttribute",
+					"related": "http://example.com/bars/11,12"
+				},
+				"data": [
 					{"type": "bars", "id": "11" },
 					{"type": "bars", "id": "12" }
 				]

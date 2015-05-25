@@ -191,7 +191,7 @@ class DeserializeOperation: NSOperation {
 	:returns: The extracted value or nil if no attribute with the given key was found in the data.
 	*/
 	private func extractAttribute(serializedData: JSON, key: String) -> AnyObject? {
-		let value = serializedData[key]
+		let value = serializedData["attributes"][key]
 		
 		if let nullValue = value.null {
 			return nil
@@ -243,22 +243,22 @@ class DeserializeOperation: NSOperation {
 		var resource: ResourceProtocol? = nil
 		
 		// Resource level link as a resource URL only.
-		if let linkedResourceURL = serializedData["links"][key].URL {
+		if let linkedResourceURL = serializedData["relationships"][key].URL {
 			resource = resourceFactory.instantiate(linkedType)
 			resource?.URL = linkedResourceURL
 			
 		// Resource level link as a link object. This might contain linkage in the form of type/id.
-		} else if serializedData["links"][key].dictionary != nil{
-			let linkData = serializedData["links"][key]
-			let type = linkData["linkage"]["type"].string ?? linkedType
+		} else if serializedData["relationships"][key].dictionary != nil{
+			let linkData = serializedData["relationships"][key]
+			let type = linkData["data"]["type"].string ?? linkedType
 			
-			if let id = linkData["linkage"]["id"].string {
+			if let id = linkData["data"]["id"].string {
 				resource = resourceFactory.dispense(type, id: id, pool: &resourcePool)
 			} else {
 				resource = resourceFactory.instantiate(type)
 			}
 			
-			if let resourceURL = linkData["related"].URL {
+			if let resourceURL = linkData["links"]["related"].URL {
 				resource!.URL = resourceURL
 			}
 			
@@ -281,16 +281,16 @@ class DeserializeOperation: NSOperation {
 		var resourceCollection: LinkedResourceCollection? = nil
 		
 		// Resource level link as a resource URL only.
-		if let resourcesURL = serializedData["links"][key].URL {
+		if let resourcesURL = serializedData["relationships"][key].URL {
 			resourceCollection = LinkedResourceCollection(resourcesURL: resourcesURL, linkURL: nil, linkage: nil)
 		
 		// Resource level link as a link object. This might contain linkage in the form of type/id.
-		} else if serializedData["links"][key].dictionary != nil {
-			let linkData = serializedData["links"][key]
-			let resourcesURL: NSURL? = linkData["related"].URL
-			let linkURL: NSURL? = linkData["self"].URL
+		} else if serializedData["relationships"][key].dictionary != nil {
+			let linkData = serializedData["relationships"][key]
+			let resourcesURL: NSURL? = linkData["links"]["related"].URL
+			let linkURL: NSURL? = linkData["links"]["self"].URL
 			
-			if let linkage = linkData["linkage"].array {
+			if let linkage = linkData["data"].array {
 				let mappedLinkage = linkage.map { ResourceIdentifier(type: $0["type"].stringValue, id: $0["id"].stringValue) }
 				resourceCollection = LinkedResourceCollection(resourcesURL: resourcesURL, linkURL: linkURL, linkage: mappedLinkage)
 			} else {

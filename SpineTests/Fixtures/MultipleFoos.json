@@ -2,41 +2,57 @@
 	"data": [{
 		"id": "1",
 		"type": "foos",
-		"stringAttribute": "stringAttributeValue",
-		"integerAttribute": 10,
-		"floatAttribute": 5.5,
-		"booleanAttribute": true,
-		"nilAttribute": null,
-		"dateAttribute": "1970-01-01T01:00:00+01:00",
+		"attributes": {
+			"stringAttribute": "stringAttributeValue",
+			"integerAttribute": 10,
+			"floatAttribute": 5.5,
+			"booleanAttribute": true,
+			"nilAttribute": null,
+			"dateAttribute": "1970-01-01T01:00:00+01:00"
+		},
 		"links": {
-			"self": "http://example.com/foos/1",
+			"self": "http://example.com/foos/1"
+		},
+		"relationships": {
 			"toOneAttribute": {
-				"self": "http://example.com/foos/1/links/toOneAttribute",
-				"related": "http://example.com/bars/1"
+				"links": {
+					"self": "http://example.com/foos/1/links/toOneAttribute",
+					"related": "http://example.com/bars/10"
+				}
 			},
 			"toManyAttribute": {
-				"self": "http://example.com/foos/1/links/toManyAttribute",
-				"related": "http://example.com/foos/1/bars"
+				"links": {
+					"self": "http://example.com/foos/1/links/toManyAttribute",
+					"related": "http://example.com/bars/11,12"
+				}
 			}
 		}
 	}, {
 		"id": "2",
 		"type": "foos",
-		"stringAttribute": "stringAttributeValue",
-		"integerAttribute": 10,
-		"floatAttribute": 5.5,
-		"booleanAttribute": true,
-		"nilAttribute": null,
-		"dateAttribute": "1970-01-01T01:00:00+01:00",
+		"attributes": {
+			"stringAttribute": "stringAttributeValue",
+			"integerAttribute": 10,
+			"floatAttribute": 5.5,
+			"booleanAttribute": true,
+			"nilAttribute": null,
+			"dateAttribute": "1970-01-01T01:00:00+01:00"
+		},
 		"links": {
-			"self": "http://example.com/foos/1",
+			"self": "http://example.com/foos/1"
+		},
+		"relationships": {
 			"toOneAttribute": {
-				"self": "http://example.com/foos/1/links/toOneAttribute",
-				"related": "http://example.com/bars/1"
+				"links": {
+					"self": "http://example.com/foos/1/links/toOneAttribute",
+					"related": "http://example.com/bars/10"
+				}
 			},
 			"toManyAttribute": {
-				"self": "http://example.com/foos/1/links/toManyAttribute",
-				"related": "http://example.com/foos/1/bars"
+				"links": {
+					"self": "http://example.com/foos/1/links/toManyAttribute",
+					"related": "http://example.com/bars/11,12"
+				}
 			}
 		}
 	}]

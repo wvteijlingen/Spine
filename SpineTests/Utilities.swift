@@ -40,10 +40,10 @@ func assertFutureFailure<T>(future: Future<T>, withErrorDomain domain: String, e
 }
 
 func assertFooResource(foo: Foo, isEqualToJSON json: JSON) {
-	XCTAssertEqual(foo.stringAttribute!, json["stringAttribute"].stringValue, "Deserialized string attribute is not equal.")
-	XCTAssertEqual(foo.integerAttribute!, json["integerAttribute"].intValue, "Deserialized integer attribute is not equal.")
-	XCTAssertEqual(foo.floatAttribute!, json["floatAttribute"].floatValue, "Deserialized float attribute is not equal.")
-	XCTAssertEqual(foo.booleanAttribute!, json["integerAttribute"].boolValue, "Deserialized boolean attribute is not equal.")
+	XCTAssertEqual(foo.stringAttribute!, json["attributes"]["stringAttribute"].stringValue, "Deserialized string attribute is not equal.")
+	XCTAssertEqual(foo.integerAttribute!, json["attributes"]["integerAttribute"].intValue, "Deserialized integer attribute is not equal.")
+	XCTAssertEqual(foo.floatAttribute!, json["attributes"]["floatAttribute"].floatValue, "Deserialized float attribute is not equal.")
+	XCTAssertEqual(foo.booleanAttribute!, json["attributes"]["integerAttribute"].boolValue, "Deserialized boolean attribute is not equal.")
 	XCTAssertNil(foo.nilAttribute, "Deserialized nil attribute is not equal.")
 	XCTAssertEqual(foo.dateAttribute!, NSDate(timeIntervalSince1970: 0), "Deserialized date attribute is not equal.")
 }
