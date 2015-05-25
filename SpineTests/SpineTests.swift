@@ -36,7 +36,7 @@ class FindTests: SpineTests {
 		
 		HTTPClient.handler = { (request: NSURLRequest, payload: NSData?) -> (responseData: NSData, statusCode: Int, error: NSError?) in
 			XCTAssertEqual(request.HTTPMethod!, "GET", "HTTP method not as expected.")
-			XCTAssertEqual(request.URL!, NSURL(string:"http://example.com/foos/")!, "Request URL not as expected.")
+			XCTAssertEqual(request.URL!, NSURL(string:"http://example.com/foos")!, "Request URL not as expected.")
 			return (responseData: fixture.data, statusCode: 200, error: nil)
 		}
 		
@@ -92,7 +92,7 @@ class FindTests: SpineTests {
 		
 		HTTPClient.handler = { request, payload in
 			XCTAssertEqual(request.HTTPMethod!, "GET", "HTTP method not as expected.")
-			XCTAssertEqual(request.URL!, NSURL(string:"http://example.com/foos/?filter[id]=1,2")!, "Request URL not as expected.")
+			XCTAssertEqual(request.URL!, NSURL(string:"http://example.com/foos?filter[id]=1,2")!, "Request URL not as expected.")
 			return (responseData: fixture.data, statusCode: 200, error: nil)
 		}
 		
@@ -200,7 +200,7 @@ class FindTests: SpineTests {
 		
 		HTTPClient.handler = { (request: NSURLRequest, payload: NSData?) -> (responseData: NSData, statusCode: Int, error: NSError?) in
 			XCTAssertEqual(request.HTTPMethod!, "GET", "HTTP method not as expected.")
-			XCTAssertEqual(request.URL!, NSURL(string:"http://example.com/foos/?filter[id]=1,2")!, "Request URL not as expected.")
+			XCTAssertEqual(request.URL!, NSURL(string:"http://example.com/foos?filter[id]=1,2")!, "Request URL not as expected.")
 			return (responseData: fixture.data, statusCode: 200, error: nil)
 		}
 		
