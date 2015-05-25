@@ -56,11 +56,22 @@ class DeserializeOperation: NSOperation {
 	
 	// MARK: NSOperation
 	
-	override func main() {
-		// Check if the given data is in the expected format
+	override func main() {		
+		// Validate document
 		if (data.dictionary == nil) {
-			Spine.logError(.Serializing, "Cannot deserialize: The given JSON representation was not as expected.")
-			result = Failable(NSError(domain: SpineClientErrorDomain, code: SpineErrorCodes.InvalidDocumentStructure, userInfo: [NSLocalizedDescriptionKey: "The given JSON representation was not as expected."]))
+			let errorMessage = "Cannot deserialize: The given JSON is not a dictionary (hash).";
+			Spine.logError(.Serializing, errorMessage)
+			result = Failable(NSError(domain: SpineClientErrorDomain, code: SpineErrorCodes.InvalidDocumentStructure, userInfo: [NSLocalizedDescriptionKey: errorMessage]))
+			return
+		} else if (data["errors"] == nil && data["data"] == nil && data["meta"] == nil) {
+			let errorMessage = "Cannot deserialize: None of the allowed top level keys were found. Either 'data', 'errors', or 'meta' must be present.";
+			Spine.logError(.Serializing, errorMessage)
+			result = Failable(NSError(domain: SpineClientErrorDomain, code: SpineErrorCodes.InvalidDocumentStructure, userInfo: [NSLocalizedDescriptionKey: errorMessage]))
+			return
+		} else if(data["errors"] != nil && data["data"] != nil) {
+			let errorMessage = "Cannot deserialize: Top level keys 'data' and 'errors' must not coexist in the same document.";
+			Spine.logError(.Serializing, errorMessage)
+			result = Failable(NSError(domain: SpineClientErrorDomain, code: SpineErrorCodes.InvalidDocumentStructure, userInfo: [NSLocalizedDescriptionKey: errorMessage]))
 			return
 		}
 		
