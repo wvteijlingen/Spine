@@ -1,2 +1,2 @@
-github "Thomvis/BrightFutures" "ded1a81e02d0a19191d844ffa6c1a8a25cd2b9cf"
-github "SwiftyJSON/SwiftyJSON" "008a09d7ea8b13c03fb59b35c01aad339584a5e1"
+github "Thomvis/BrightFutures" "v1.0.1"
+github "SwiftyJSON/SwiftyJSON" "2.2.0"

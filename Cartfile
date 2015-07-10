@@ -1,2 +1,2 @@
-github "Thomvis/BrightFutures" "1.0.0-beta.5"
-github "SwiftyJSON/SwiftyJSON" "xcode6.3"
+github "Thomvis/BrightFutures" ~> 1.0.1
+github "SwiftyJSON/SwiftyJSON" ~> 2.2.0
