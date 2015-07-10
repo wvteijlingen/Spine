@@ -83,20 +83,19 @@ public class URLSessionClient: _HTTPClientProtocol {
 	
 	private func performRequest(request: NSURLRequest, callback: HTTPClientCallback) {
 		let task = urlSession.dataTaskWithRequest(request) { data, response, error in
-			// TODO: Avoid force unwrapping
-			let response = (response as! NSHTTPURLResponse)
-		
-			 // Network error
+			let response = (response as? NSHTTPURLResponse)
+			
+			// Network error
 			if let error = error {
 				Spine.logError(.Networking, "\(request.URL) - \(error.localizedDescription)")
 				
 			// Success
-			} else if 200 ... 299 ~= response.statusCode {
-				Spine.logInfo(.Networking, "\(response.statusCode): \(request.URL)")
+			} else if let statusCode = response?.statusCode where 200 ... 299 ~= statusCode {
+				Spine.logInfo(.Networking, "\(statusCode): \(request.URL)")
 				
 			// API Error
 			} else {
-				Spine.logWarning(.Networking, "\(response.statusCode): \(request.URL)")
+				Spine.logWarning(.Networking, "\(response?.statusCode): \(request.URL)")
 			}
 			
 			if Spine.shouldLog(.Debug, domain: .Networking) {
@@ -105,7 +104,7 @@ public class URLSessionClient: _HTTPClientProtocol {
 				}
 			}
 			
-			callback(statusCode: response.statusCode, responseData: data, networkError: error)
+			callback(statusCode: response?.statusCode, responseData: data, networkError: error)
 		}
 		
 		task.resume()
