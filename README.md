@@ -1,6 +1,8 @@
 Spine
 =====
-Spine is a Swift library for working with APIs that adhere to the [jsonapi.org](http://jsonapi.org) standard. It supports mapping to custom model classes, fetching, advanced querying, linking and persisting
+Spine is a Swift library for working with APIs that adhere to the [jsonapi.org](http://jsonapi.org) standard. It supports mapping to custom model classes, fetching, advanced querying, linking and persisting.
+
+The `master` branch currently supports the spec of JSONAPI v1.
 
 Installation
 ============
