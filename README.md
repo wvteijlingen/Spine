@@ -80,7 +80,7 @@ All fetch methods return a Future with `onSuccess` and `onFailure` callbacks.
 
 ### 4. Saving resources
 ```swift
-spine.save(post).onSuccess {
+spine.save(post).onSuccess { _ in
     println("Saving success")
 .onFailure { error in
     println("Saving failed: \(error)")
