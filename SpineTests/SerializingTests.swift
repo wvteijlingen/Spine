@@ -48,25 +48,28 @@ class SerializingTests: SerializerTests {
 		
 		XCTAssertEqual(json["data"]["id"].stringValue, foo.id!, "Serialized id is not equal.")
 		XCTAssertEqual(json["data"]["type"].stringValue, foo.type, "Serialized type is not equal.")
-		XCTAssertEqual(json["data"]["integerAttribute"].intValue, foo.integerAttribute!, "Serialized integer is not equal.")
-		XCTAssertEqual(json["data"]["floatAttribute"].floatValue, foo.floatAttribute!, "Serialized float is not equal.")
-		XCTAssertTrue(json["data"]["booleanAttribute"].boolValue, "Serialized boolean is not equal.")
-		XCTAssertNotNil(json["data"]["nilAttribute"].null, "Serialized nil is not equal.")
-		XCTAssertEqual(json["data"]["dateAttribute"].stringValue, "1970-01-01T01:00:00+01:00", "Serialized date is not equal.")
+		XCTAssertEqual(json["data"]["attributes"]["integerAttribute"].intValue, foo.integerAttribute!, "Serialized integer is not equal.")
+		XCTAssertEqual(json["data"]["attributes"]["floatAttribute"].floatValue, foo.floatAttribute!, "Serialized float is not equal.")
+		XCTAssertTrue(json["data"]["attributes"]["booleanAttribute"].boolValue, "Serialized boolean is not equal.")
+		XCTAssertNotNil(json["data"]["attributes"]["nilAttribute"].null, "Serialized nil is not equal.")
+		XCTAssertEqual(json["data"]["attributes"]["dateAttribute"].stringValue, "1970-01-01T01:00:00+01:00", "Serialized date is not equal.")
 	}
 	
 	func testSerializeSingleResourceToOneRelationships() {
 		let json = serializedJSONWithOptions(SerializationOptions(includeToOne: true))
 		
-		XCTAssertEqual(json["data"]["links"]["toOneAttribute"]["id"].stringValue, foo.toOneAttribute!.id!, "Serialized to-one id is not equal")
-		XCTAssertEqual(json["data"]["links"]["toOneAttribute"]["type"].stringValue, Bar.resourceType, "Serialized to-one type is not equal")
+		XCTAssertEqual(json["data"]["relationships"]["toOneAttribute"]["data"]["id"].stringValue, foo.toOneAttribute!.id!, "Serialized to-one id is not equal")
+		XCTAssertEqual(json["data"]["relationships"]["toOneAttribute"]["data"]["type"].stringValue, Bar.resourceType, "Serialized to-one type is not equal")
 	}
 	
 	func testSerializeSingleResourceToManyRelationships() {
 		let json = serializedJSONWithOptions(SerializationOptions(includeToMany: true, includeToOne: true))
 		
-		XCTAssertEqual(json["data"]["links"]["toManyAttribute"]["ids"].arrayObject as! [String], ["11", "12"], "Serialized to-many ids are not equal")
-		XCTAssertEqual(json["data"]["links"]["toManyAttribute"]["type"].stringValue, Bar.resourceType, "Serialized to-many type is not equal")
+		XCTAssertEqual(json["data"]["relationships"]["toManyAttribute"]["data"][0]["id"].stringValue, "11", "Serialized to-many id is not equal")
+		XCTAssertEqual(json["data"]["relationships"]["toManyAttribute"]["data"][0]["type"].stringValue, Bar.resourceType, "Serialized to-many type is not equal")
+		
+		XCTAssertEqual(json["data"]["relationships"]["toManyAttribute"]["data"][1]["id"].stringValue, "12", "Serialized to-many id is not equal")
+		XCTAssertEqual(json["data"]["relationships"]["toManyAttribute"]["data"][1]["type"].stringValue, Bar.resourceType, "Serialized to-many type is not equal")
 	}
 	
 	func testSerializeSingleResourceWithoutID() {
@@ -78,7 +81,7 @@ class SerializingTests: SerializerTests {
 	func testSerializeSingleResourceWithoutToOneRelationships() {
 		let json = serializedJSONWithOptions(SerializationOptions(includeToMany: true, includeToOne: false))
 
-		XCTAssertNotNil(json["data"]["links"]["toOneAttribute"].error, "Expected serialized to-one to be absent")
+		XCTAssertNotNil(json["data"]["relationships"]["toOneAttribute"].error, "Expected serialized to-one to be absent")
 	}
 	
 	func testSerializeSingleResourceWithoutToManyRelationships() {
@@ -86,7 +89,7 @@ class SerializingTests: SerializerTests {
 		let serializedData = serializer.serializeResources([foo], options: options)
 		let json = JSON(data: serializedData)
 		
-		XCTAssertNotNil(json["data"]["links"]["toManyAttribute"].error, "Expected serialized to-many to be absent.")
+		XCTAssertNotNil(json["data"]["relationships"]["toManyAttribute"].error, "Expected serialized to-many to be absent.")
 	}
 }
 

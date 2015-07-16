@@ -50,6 +50,8 @@ class SerializeOperation: NSOperation {
 	// MARK: Serializing
 	
 	private func serializeResource(resource: ResourceProtocol) -> [String: AnyObject] {
+		Spine.logDebug(.Serializing, "Serializing resource \(resource) of type '\(resource.type)' with id '\(resource.id)'")
+		
 		var serializedData: [String: AnyObject] = [:]
 		
 		// Serialize ID
@@ -83,15 +85,22 @@ class SerializeOperation: NSOperation {
 	:param: resource       The resource whose attributes to add.
 	*/
 	private func addAttributes(inout serializedData: [String: AnyObject], resource: ResourceProtocol) {
+		var attributes = [String: AnyObject]();
+		
 		enumerateFields(resource, Attribute.self) { attribute in
-			//TODO: Dirty checking
 			let key = attribute.serializedName
+			
+			Spine.logDebug(.Serializing, "Serializing attribute \(attribute) with name '\(attribute.name) as '\(key)'")
+			
+			//TODO: Dirty checking
 			if let unformattedValue: AnyObject = resource.valueForField(attribute.name) {
-				self.addAttribute(&serializedData, key: key, value: self.transformers.serialize(unformattedValue, forAttribute: attribute))
+				self.addAttribute(&attributes, key: key, value: self.transformers.serialize(unformattedValue, forAttribute: attribute))
 			} else {
-				self.addAttribute(&serializedData, key: key, value: NSNull())
+				self.addAttribute(&attributes, key: key, value: NSNull())
 			}
 		}
+		
+		serializedData["attributes"] = attributes
 	}
 	
 	/**
@@ -123,6 +132,8 @@ class SerializeOperation: NSOperation {
 		enumerateFields(resource, Relationship.self) { field in
 			let key = field.serializedName
 			
+			Spine.logDebug(.Serializing, "Serializing relationship \(field) with name '\(field.name) as '\(key)'")
+			
 			switch field {
 			case let toOne as ToOneRelationship:
 				if self.options.includeToOne {
@@ -146,16 +157,18 @@ class SerializeOperation: NSOperation {
 	*/
 	private func addToOneRelationship(inout serializedData: [String: AnyObject], key: String, type: ResourceType, linkedResource: ResourceProtocol?) {
 		let serializedRelationship = [
-			"type": type,
-			"id": linkedResource?.id ?? NSNull()
+			"data": [
+				"type": type,
+				"id": linkedResource?.id ?? NSNull()
+			]
 		]
 		
-		if serializedData["links"] == nil {
-			serializedData["links"] = [key: serializedRelationship]
+		if serializedData["relationships"] == nil {
+			serializedData["relationships"] = [key: serializedRelationship]
 		} else {
-			var links = serializedData["links"] as! [String: AnyObject]
-			links[key] = serializedRelationship
-			serializedData["links"] = links
+			var relationships = serializedData["relationships"] as! [String: AnyObject]
+			relationships[key] = serializedRelationship
+			serializedData["relationships"] = relationships
 		}
 	}
 	
@@ -167,24 +180,24 @@ class SerializeOperation: NSOperation {
 	:param: relatedResources The related resources to add to the serialized data.
 	*/
 	private func addToManyRelationship(inout serializedData: [String: AnyObject], key: String, type: ResourceType, linkedResources: ResourceCollection?) {
-		var serializedIDs: AnyObject = []
+		var resourceIdentifiers: [ResourceIdentifier] = []
 		
 		if let resources = linkedResources?.resources {
-			let IDs: [String] = resources.filter { $0.id != nil }.map { $0.id! }
-			serializedIDs = IDs
+			resourceIdentifiers = resources.filter { $0.id != nil }.map { resource in
+				return ResourceIdentifier(type: resource.type, id: resource.id!)
+			}
 		}
 		
 		let serializedRelationship = [
-			"type": type,
-			"ids": serializedIDs
+			"data": resourceIdentifiers.map { $0.toDictionary() }
 		]
 		
-		if serializedData["links"] == nil {
-			serializedData["links"] = [key: serializedRelationship]
+		if serializedData["relationships"] == nil {
+			serializedData["relationships"] = [key: serializedRelationship]
 		} else {
-			var links = serializedData["links"] as! [String: AnyObject]
-			links[key] = serializedRelationship
-			serializedData["links"] = links
+			var relationships = serializedData["relationships"] as! [String: AnyObject]
+			relationships[key] = serializedRelationship
+			serializedData["relationships"] = relationships
 		}
 	}
 }
