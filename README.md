@@ -4,6 +4,10 @@ Spine is a Swift library for working with APIs that adhere to the [jsonapi.org](
 
 The `master` branch currently supports the spec of JSONAPI v1.
 
+Stability
+============
+This library was born out of a hobby project. Some things are still lacking, one of which is test coverage. Beware of this when using Spine in a production app!
+
 Installation
 ============
 
