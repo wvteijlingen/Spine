@@ -44,7 +44,7 @@ class Post: Resource {
 		return "posts"
 	}
 
-	override var fields: [Field] {
+	override class var fields: [Field] {
 		return fieldsFromDictionary([
 			"title": Attribute(),
 			"body": Attribute().serializeAs("content"),
