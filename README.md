@@ -10,6 +10,30 @@ Stability
 ============
 This library was born out of a hobby project. Some things are still lacking, one of which is test coverage. Beware of this when using Spine in a production app!
 
+Supported features
+==================
+| Feature                        | Enabled   | Note                                                        |
+| ------------------------------ | --------- | ----------------------------------------------------------- |
+| Fetching resources             | Yes       |                                                             |
+| Creating resources             | Yes       |                                                             |
+| Updating resources             | Yes       |                                                             |
+| Deleting resources             | Yes       |                                                             |
+| Top level metadata             | No        |                                                             |
+| Top level errors               | Yes       |                                                             |
+| Top level links                | Partially | Currently only pagination links are supported               |
+| Top level JSON API Object      | No        |                                                             |
+| Client generated ID's          | No        |                                                             |
+| Resource metadata              | Yes       |                                                             |
+| Custom resource links          | No        |                                                             |
+| Relationships                  | Yes       |                                                             |
+| Inclusion of related resources | Yes       |                                                             |
+| Sparse fieldsets               | Partially | Fetching only, all fields will be saved                     |
+| Sorting                        | Yes       |                                                             |
+| Filtering                      | Yes       | Supports custom filter strategies                           |
+| Pagination                     | Yes       | Offset based, cursor based and custom pagination strategies |
+| Bulk extension                 | No        |                                                             |
+| JSON Patch extension           | No        |                                                             |
+
 Installation
 ============
 
