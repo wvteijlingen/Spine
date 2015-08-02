@@ -237,6 +237,8 @@ class SaveOperation: Operation {
 					
 					self.state = .Finished
 				}
+
+				relationshipOperation.execute()
 			}
 		}
 	}
