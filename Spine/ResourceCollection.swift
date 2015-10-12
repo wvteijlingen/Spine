@@ -36,13 +36,13 @@ public class ResourceCollection: NSObject, NSCoding {
 	public init(resources: [ResourceProtocol], resourcesURL: NSURL? = nil) {
 		self.resources = resources
 		self.resourcesURL = resourcesURL
-		self.isLoaded = !isEmpty(resources)
+		self.isLoaded = !resources.isEmpty
 	}
 	
 	
 	// MARK: NSCoding
 	
-	public required init(coder: NSCoder) {
+	public required init?(coder: NSCoder) {
 		isLoaded = coder.decodeBoolForKey("isLoaded")
 		resourcesURL = coder.decodeObjectForKey("resourcesURL") as? NSURL
 		resources = coder.decodeObjectForKey("resources") as! [ResourceProtocol]
@@ -76,9 +76,9 @@ public class ResourceCollection: NSObject, NSCoding {
 	/**
 	Calls the passed callback if the resources are loaded.
 	
-	:param: callback A function taking an array of Resource objects.
+	- parameter callback: A function taking an array of Resource objects.
 	
-	:returns: This collection.
+	- returns: This collection.
 	*/
 	public func ifLoaded(callback: ([ResourceProtocol]) -> Void) -> Self {
 		if isLoaded {
@@ -91,9 +91,9 @@ public class ResourceCollection: NSObject, NSCoding {
 	/**
 	Calls the passed callback if the resources are not loaded.
 	
-	:param: callback A function
+	- parameter callback: A function
 	
-	:returns: This collection
+	- returns: This collection
 	*/
 	public func ifNotLoaded(callback: () -> Void) -> Self {
 		if !isLoaded {
@@ -147,7 +147,7 @@ public class LinkedResourceCollection: ResourceCollection {
 		self.init(resourcesURL: resourcesURL, linkURL: linkURL, linkage: IDs.map { ResourceIdentifier(type: homogenousType, id: $0) })
 	}
 	
-	public required init(coder: NSCoder) {
+	public required init?(coder: NSCoder) {
 		super.init(coder: coder)
 		linkURL = coder.decodeObjectForKey("linkURL") as? NSURL
 		addedResources = coder.decodeObjectForKey("addedResources") as! [ResourceProtocol]
@@ -175,7 +175,7 @@ public class LinkedResourceCollection: ResourceCollection {
 	/**
 	Adds the given resource to this collection. This marks the resource as added.
 	
-	:param: resource The resource to add.
+	- parameter resource: The resource to add.
 	*/
 	public func addResource(resource: ResourceProtocol) {
 		resources.append(resource)
@@ -186,7 +186,7 @@ public class LinkedResourceCollection: ResourceCollection {
 	/**
 	Adds the given resources to this collection. This marks the resources as added.
 	
-	:param: resources The resources to add.
+	- parameter resources: The resources to add.
 	*/
 	public func addResources(resources: [ResourceProtocol]) {
 		for resource in resources {
@@ -197,7 +197,7 @@ public class LinkedResourceCollection: ResourceCollection {
 	/**
 	Removes the given resource from this collection. This marks the resource as removed.
 	
-	:param: resource The resource to remove.
+	- parameter resource: The resource to remove.
 	*/
 	public func removeResource(resource: ResourceProtocol) {
 		resources = resources.filter { $0 !== resource }
@@ -208,7 +208,7 @@ public class LinkedResourceCollection: ResourceCollection {
 	/**
 	Adds the given resource to this collection, but does not mark it as added.
 	
-	:param: resource The resource to add.
+	- parameter resource: The resource to add.
 	*/
 	internal func addResourceAsExisting(resource: ResourceProtocol) {
 		resources.append(resource)
@@ -217,7 +217,7 @@ public class LinkedResourceCollection: ResourceCollection {
 	}
 }
 
-extension LinkedResourceCollection: ExtensibleCollectionType {
+extension LinkedResourceCollection: RangeReplaceableCollectionType {
 	public var startIndex: Int { return resources.startIndex }
 	public var endIndex: Int { return resources.endIndex }
 

@@ -334,7 +334,7 @@ class RelationshipOperation: Operation {
 	}
 	
 	private func addRelatedResources(relatedResources: [ResourceProtocol], relationship: Relationship, callback: (NSError?) -> ()) {
-		if isEmpty(relatedResources) {
+		if relatedResources.isEmpty {
 			callback(nil)
 			return
 		}
@@ -353,7 +353,7 @@ class RelationshipOperation: Operation {
 	}
 	
 	private func removeRelatedResources(relatedResources: [ResourceProtocol], relationship: Relationship, callback: (NSError?) -> ()) {
-		if isEmpty(relatedResources) {
+		if relatedResources.isEmpty {
 			callback(nil)
 			return
 		}
@@ -394,6 +394,6 @@ class RelationshipOperation: Operation {
 	}
 	
 	private func serializeLinkageToJSON(linkage: [[String: String]]) -> NSData? {
-		return NSJSONSerialization.dataWithJSONObject(["data": linkage], options: NSJSONWritingOptions(0), error: nil)
+		return try? NSJSONSerialization.dataWithJSONObject(["data": linkage], options: NSJSONWritingOptions(rawValue: 0))
 	}
 }

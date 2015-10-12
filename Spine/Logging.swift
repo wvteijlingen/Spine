@@ -58,7 +58,7 @@ extension Spine {
 	
 	class func log<T>(object: T, level: LogLevel, domain: LogDomain) {
 		if shouldLog(level, domain: domain) {
-			println("\(level.description) - \(object)")
+			print("\(level.description) - \(object)", terminator: "")
 		}
 	}
 	

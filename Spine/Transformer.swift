@@ -20,20 +20,20 @@ public protocol Transformer {
 	/**
 	Returns the deserialized form of the given value for the given attribute.
 	
-	:param: value     The value to deserialize.
-	:param: attribute The attribute to which the value belongs.
+	- parameter value:     The value to deserialize.
+	- parameter attribute: The attribute to which the value belongs.
 	
-	:returns: The deserialized form of `value`.
+	- returns: The deserialized form of `value`.
 	*/
 	func deserialize(value: SerializedType, attribute: AttributeType) -> AnyObject
 	
 	/**
 	Returns the serialized form of the given value for the given attribute.
 	
-	:param: value     The value to serialize.
-	:param: attribute The attribute to which the value belongs.
+	- parameter value:     The value to serialize.
+	- parameter attribute: The attribute to which the value belongs.
 	
-	:returns: The serialized form of `value`.
+	- returns: The serialized form of `value`.
 	*/
 	func serialize(value: DeserializedType, attribute: AttributeType) -> AnyObject
 }
@@ -52,7 +52,7 @@ struct TransformerDirectory {
 	/**
 	Returns a new transformer directory configured with the build in default transformers.
 	
-	:returns: TransformerDirectory
+	- returns: TransformerDirectory
 	*/
 	static func defaultTransformerDirectory() -> TransformerDirectory {
 		var directory = TransformerDirectory()
@@ -64,7 +64,7 @@ struct TransformerDirectory {
 	/**
 	Registers the given transformer.
 	
-	:param: transformer The transformer to register.
+	- parameter transformer: The transformer to register.
 	*/
 	mutating func registerTransformer<T: Transformer>(transformer: T) {
 		serializers.append { (value: AnyObject, attribute: Attribute) -> AnyObject? in
@@ -94,10 +94,10 @@ struct TransformerDirectory {
 	The actual transformer used is the first registered transformer that supports the given
 	value type for the given attribute type.
 	
-	:param: value     The value to deserialize.
-	:param: attribute The attribute to which the value belongs.
+	- parameter value:     The value to deserialize.
+	- parameter attribute: The attribute to which the value belongs.
 	
-	:returns: The deserialized form of `value`.
+	- returns: The deserialized form of `value`.
 	*/
 	func deserialize(value: AnyObject, forAttribute attribute: Attribute) -> AnyObject {
 		for deserializer in deserializers {
@@ -115,10 +115,10 @@ struct TransformerDirectory {
 	The actual transformer used is the first registered transformer that supports the given
 	value type for the given attribute type.
 	
-	:param: value     The value to serialize.
-	:param: attribute The attribute to which the value belongs.
+	- parameter value:     The value to serialize.
+	- parameter attribute: The attribute to which the value belongs.
 	
-	:returns: The serialized form of `value`.
+	- returns: The serialized form of `value`.
 	*/
 	func serialize(value: AnyObject, forAttribute attribute: Attribute) -> AnyObject {
 		for serializer in serializers {
@@ -145,7 +145,7 @@ private struct URLTransformer: Transformer {
 	}
 	
 	func serialize(value: NSURL, attribute: URLAttribute) -> AnyObject {
-		return value.absoluteString!
+		return value.absoluteString
 	}
 }
 

@@ -35,14 +35,14 @@ class SerializeOperation: NSOperation {
 	override func main() {
 		if resources.count == 1 {
 			let serializedData = serializeResource(resources.first!)
-			result = NSJSONSerialization.dataWithJSONObject(["data": serializedData], options: NSJSONWritingOptions(0), error: nil)
+			result = try? NSJSONSerialization.dataWithJSONObject(["data": serializedData], options: NSJSONWritingOptions(rawValue: 0))
 			
 		} else  {
 			var data = resources.map { resource in
 				self.serializeResource(resource)
 			}
 			
-			result = NSJSONSerialization.dataWithJSONObject(["data": data], options: NSJSONWritingOptions(0), error: nil)
+			result = try? NSJSONSerialization.dataWithJSONObject(["data": data], options: NSJSONWritingOptions(rawValue: 0))
 		}
 	}
 	
@@ -81,13 +81,13 @@ class SerializeOperation: NSOperation {
 	to the key for the serialized form and formats the value of the attribute. It then passes
 	the key and value to the addAttribute method.
 	
-	:param: serializedData The data to add the attributes to.
-	:param: resource       The resource whose attributes to add.
+	- parameter serializedData: The data to add the attributes to.
+	- parameter resource:       The resource whose attributes to add.
 	*/
 	private func addAttributes(inout serializedData: [String: AnyObject], resource: ResourceProtocol) {
 		var attributes = [String: AnyObject]();
 		
-		enumerateFields(resource, Attribute.self) { attribute in
+		enumerateFields(resource, type: Attribute.self) { attribute in
 			let key = attribute.serializedName
 			
 			Spine.logDebug(.Serializing, "Serializing attribute \(attribute) with name '\(attribute.name) as '\(key)'")
@@ -106,9 +106,9 @@ class SerializeOperation: NSOperation {
 	/**
 	Adds the given key/value pair to the passed serialized data.
 	
-	:param: serializedData The data to add the key/value pair to.
-	:param: key            The key to add to the serialized data.
-	:param: value          The value to add to the serialized data.
+	- parameter serializedData: The data to add the key/value pair to.
+	- parameter key:            The key to add to the serialized data.
+	- parameter value:          The value to add to the serialized data.
 	*/
 	private func addAttribute(inout serializedData: [String: AnyObject], key: String, value: AnyObject) {
 		serializedData[key] = value
@@ -125,11 +125,11 @@ class SerializeOperation: NSOperation {
 	related resources to either the addToOneRelationship or addToManyRelationship method.
 	
 	
-	:param: serializedData The data to add the relationships to.
-	:param: resource       The resource whose relationships to add.
+	- parameter serializedData: The data to add the relationships to.
+	- parameter resource:       The resource whose relationships to add.
 	*/
 	private func addRelationships(inout serializedData: [String: AnyObject], resource: ResourceProtocol) {
-		enumerateFields(resource, Relationship.self) { field in
+		enumerateFields(resource, type: Relationship.self) { field in
 			let key = field.serializedName
 			
 			Spine.logDebug(.Serializing, "Serializing relationship \(field) with name '\(field.name) as '\(key)'")
@@ -151,9 +151,9 @@ class SerializeOperation: NSOperation {
 	/**
 	Adds the given resource as a to to-one relationship to the serialized data.
 	
-	:param: serializedData  The data to add the related resource to.
-	:param: key             The key to add to the serialized data.
-	:param: relatedResource The related resource to add to the serialized data.
+	- parameter serializedData:  The data to add the related resource to.
+	- parameter key:             The key to add to the serialized data.
+	- parameter relatedResource: The related resource to add to the serialized data.
 	*/
 	private func addToOneRelationship(inout serializedData: [String: AnyObject], key: String, type: ResourceType, linkedResource: ResourceProtocol?) {
 		let serializedRelationship = [
@@ -175,9 +175,9 @@ class SerializeOperation: NSOperation {
 	/**
 	Adds the given resources as a to to-many relationship to the serialized data.
 	
-	:param: serializedData   The data to add the related resources to.
-	:param: key              The key to add to the serialized data.
-	:param: relatedResources The related resources to add to the serialized data.
+	- parameter serializedData:   The data to add the related resources to.
+	- parameter key:              The key to add to the serialized data.
+	- parameter relatedResources: The related resources to add to the serialized data.
 	*/
 	private func addToManyRelationship(inout serializedData: [String: AnyObject], key: String, type: ResourceType, linkedResources: ResourceCollection?) {
 		var resourceIdentifiers: [ResourceIdentifier] = []

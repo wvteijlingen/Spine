@@ -19,9 +19,9 @@ public protocol RouterProtocol {
 	/**
 	Returns an NSURL that points to the collection of resources with a given type.
 	
-	:param: type The type of resources.
+	- parameter type: The type of resources.
 	
-	:returns: The NSURL.
+	- returns: The NSURL.
 	*/
 	func URLForResourceType(type: ResourceType) -> NSURL
 	
@@ -31,9 +31,9 @@ public protocol RouterProtocol {
 	/**
 	Returns an NSURL that represents the given query.
 	
-	:param: query The query to turn into an NSURL.
+	- parameter query: The query to turn into an NSURL.
 	
-	:returns: The NSURL.
+	- returns: The NSURL.
 	*/
 	func URLForQuery<T: ResourceProtocol>(query: Query<T>) -> NSURL
 }
@@ -88,7 +88,7 @@ public class Router: RouterProtocol {
 				if IDs.count == 1 {
 					URLComponents.path = URLComponents.path?.stringByAppendingPathComponent(IDs.first!)
 				} else {
-					var item = NSURLQueryItem(name: "filter[id]", value: join(",", IDs))
+					var item = NSURLQueryItem(name: "filter[id]", value: IDs.joinWithSeparator(","))
 					setQueryItem(item, forQueryItems: &queryItems)
 				}
 			}
@@ -96,7 +96,7 @@ public class Router: RouterProtocol {
 		
 		// Includes
 		if !query.includes.isEmpty {
-			var item = NSURLQueryItem(name: "include", value: ",".join(query.includes))
+			var item = NSURLQueryItem(name: "include", value: query.includes.joinWithSeparator(","))
 			setQueryItem(item, forQueryItems: &queryItems)
 		}
 		
@@ -108,7 +108,7 @@ public class Router: RouterProtocol {
 		
 		// Fields
 		for (resourceType, fields) in query.fields {
-			var item = NSURLQueryItem(name: "fields[\(resourceType)]", value: ",".join(fields))
+			var item = NSURLQueryItem(name: "fields[\(resourceType)]", value: fields.joinWithSeparator(","))
 			setQueryItem(item, forQueryItems: &queryItems)
 		}
 		
@@ -122,7 +122,7 @@ public class Router: RouterProtocol {
 				}
 			}
 			
-			var item = NSURLQueryItem(name: "sort", value: ",".join(descriptorStrings))
+			var item = NSURLQueryItem(name: "sort", value: descriptorStrings.joinWithSeparator(","))
 			setQueryItem(item, forQueryItems: &queryItems)
 		}
 		
@@ -146,9 +146,9 @@ public class Router: RouterProtocol {
 	By default this method only supports 'equal to' predicates. You can override
 	this method to add support for other filtering strategies.
 	
-	:param: filter The NSComparisonPredicate.
+	- parameter filter: The NSComparisonPredicate.
 	
-	:returns: The NSURLQueryItem.
+	- returns: The NSURLQueryItem.
 	*/
 	public func queryItemForFilter(filter: NSComparisonPredicate) -> NSURLQueryItem {
 		assert(filter.predicateOperatorType == .EqualToPredicateOperatorType, "The built in router only supports Query filter expressions of type 'equalTo'")
@@ -160,9 +160,9 @@ public class Router: RouterProtocol {
 	By default this method only supports the PageBasedPagination and OffsetBasedPagination configurations.
 	You can override this method to add support for other pagination strategies.
 	
-	:param: pagination The QueryPagination configuration.
+	- parameter pagination: The QueryPagination configuration.
 	
-	:returns: Array of NSURLQueryItems.
+	- returns: Array of NSURLQueryItems.
 	*/
 	public func queryItemsForPagination(pagination: Pagination) -> [NSURLQueryItem] {
 		var queryItems = [NSURLQueryItem]()

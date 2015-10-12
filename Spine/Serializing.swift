@@ -68,10 +68,10 @@ protocol SerializerProtocol {
 	Use this method if you want to deserialize onto existing Resource instances. Otherwise, use
 	the regular `deserializeData` method.
 	
-	:param: data  The data to deserialize.
-	:param: store A Store that contains Resource instances onto which data will be deserialize.
+	- parameter data:  The data to deserialize.
+	- parameter store: A Store that contains Resource instances onto which data will be deserialize.
 	
-	:returns: A DeserializationResult that contains either a Store or an error.
+	- returns: A DeserializationResult that contains either a Store or an error.
 	*/
 	func deserializeData(data: NSData, mappingTargets: [ResourceProtocol]?) -> Failable<JSONAPIDocument>
 	
@@ -79,10 +79,10 @@ protocol SerializerProtocol {
 	Serializes the given Resources into a multidimensional dictionary/array structure
 	that can be passed to NSJSONSerialization.
 	
-	:param: resources The resources to serialize.
-	:param: mode      The serialization mode to use.
+	- parameter resources: The resources to serialize.
+	- parameter mode:      The serialization mode to use.
 	
-	:returns: A multidimensional dictionary/array structure.
+	- returns: A multidimensional dictionary/array structure.
 	*/
 
 	func serializeResources(resources: [ResourceProtocol], options: SerializationOptions) -> NSData
@@ -129,8 +129,8 @@ struct ResourceFactory {
 	Registers a given factory function that creates resource with a given type.
 	Registering a function for an already registered resource type will override that factory function.
 	
-	:param: type    The resource type for which to register a factory function.
-	:param: factory The factory function that returns a resource.
+	- parameter type:    The resource type for which to register a factory function.
+	- parameter factory: The factory function that returns a resource.
 	*/
 	mutating func registerResource(type: ResourceType, factory: () -> ResourceProtocol) {
 		factoryFunctions[type] = factory
@@ -139,9 +139,9 @@ struct ResourceFactory {
 	/**
 	Instantiates a resource with the given type, by using a registered factory function.
 	
-	:param: type The resource type to instantiate.
+	- parameter type: The resource type to instantiate.
 	
-	:returns: An instantiated resource.
+	- returns: An instantiated resource.
 	*/
 	func instantiate(type: ResourceType) -> ResourceProtocol {
 		assert(factoryFunctions[type] != nil, "Cannot instantiate resource of type \(type). You must register this type with Spine first.")
@@ -155,17 +155,17 @@ struct ResourceFactory {
 	it tries to find the nth resource, indicated by `index`, of the given type from the pool. If still no resource is found,
 	it instantiates a new resource with the given id.
 	
-	:param: type  The resource type to dispense.
-	:param: id    The id of the resource to dispense.
-	:param: pool  An array of resources in which to find exisiting matching resources.
-	:param: index Optional index of the resource in the pool.
+	- parameter type:  The resource type to dispense.
+	- parameter id:    The id of the resource to dispense.
+	- parameter pool:  An array of resources in which to find exisiting matching resources.
+	- parameter index: Optional index of the resource in the pool.
 	
-	:returns: A resource with the given type and id.
+	- returns: A resource with the given type and id.
 	*/
 	func dispense(type: ResourceType, id: String, inout pool: [ResourceProtocol], index: Int? = nil) -> ResourceProtocol {
 		var resource: ResourceProtocol! = findResource(pool, type, id)
 		
-		if resource == nil && index != nil && !isEmpty(pool) {
+		if resource == nil && index != nil && !pool.isEmpty {
 			let applicableResources = findResourcesWithType(pool, type)
 			if index! < applicableResources.count {
 				resource = applicableResources[index!]

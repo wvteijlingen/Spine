@@ -50,10 +50,10 @@ public struct Query<T: ResourceProtocol> {
 	/**
 	Inits a new query for the given resource type and optional resource IDs.
 	
-	:param: resourceType The type of resource to query.
-	:param: resourceIDs  The IDs of the resources to query. Pass nil to fetch all resources of the given type.
+	- parameter resourceType: The type of resource to query.
+	- parameter resourceIDs:  The IDs of the resources to query. Pass nil to fetch all resources of the given type.
 	
-	:returns: Query
+	- returns: Query
 	*/
 	public init(resourceType: T.Type, resourceIDs: [String]? = nil) {
 		self.resourceType = resourceType.resourceType
@@ -63,9 +63,9 @@ public struct Query<T: ResourceProtocol> {
 	/**
 	Inits a new query that fetches the given resource.
 	
-	:param: resource The resource to fetch.
+	- parameter resource: The resource to fetch.
 	
-	:returns: Query
+	- returns: Query
 	*/
 	public init(resource: T) {
 		assert(resource.id != nil, "Cannot instantiate query for resource, id is nil.")
@@ -77,9 +77,9 @@ public struct Query<T: ResourceProtocol> {
 	/**
 	Inits a new query that fetches resources from the given resource collection.
 	
-	:param: resourceCollection The resource collection whose resources to fetch.
+	- parameter resourceCollection: The resource collection whose resources to fetch.
 	
-	:returns: Query
+	- returns: Query
 	*/
 	public init(resourceCollection: ResourceCollection) {
 		self.URL = resourceCollection.resourcesURL
@@ -88,10 +88,10 @@ public struct Query<T: ResourceProtocol> {
 	/**
 	Inits a new query that fetches resource of type `resourceType`, by using the given URL.
 	
-	:param: resourceType The type of resource to query.
-	:param: URL          The URL used to fetch the resources.
+	- parameter resourceType: The type of resource to query.
+	- parameter URL:          The URL used to fetch the resources.
 	
-	:returns: Query
+	- returns: Query
 	*/
 	public init(resourceType: T.Type, path: String) {
 		self.resourceType = resourceType.resourceType
@@ -111,13 +111,13 @@ public struct Query<T: ResourceProtocol> {
 	Non-nested relationships should be specified as the name of the relationship in the Swift model.
 	Nested relationships (eg. post.author), should instead be specified using the serialized names.
 	
-	:param: relation The name of the relation to include.
+	- parameter relation: The name of the relation to include.
 	
-	:returns: The query.
+	- returns: The query.
 	*/
 	public mutating func include(relationshipNames: String...) {
 		for relationshipName in relationshipNames {
-			if contains(relationshipName, ".") {
+			if relationshipName.characters.contains(".") {
 				includes.append(relationshipName)
 			} else if let relationship = T.fields.filter({ $0.name == relationshipName }).first {
 				includes.append(relationship.serializedName)
@@ -133,20 +133,20 @@ public struct Query<T: ResourceProtocol> {
 	Non-nested relationships should be specified as the name of the relationship in the Swift model.
 	Nested relationships (eg. post.author), should instead be specified using the serialized names.
 	
-	:param: relation The name of the included relationship to remove.
+	- parameter relation: The name of the included relationship to remove.
 	
-	:returns: The query
+	- returns: The query
 	*/
 	public mutating func removeInclude(relationshipNames: String...) {
 		for relationshipName in relationshipNames {
-			if contains(relationshipName, ".") {
-				if let index = find(includes, relationshipName) {
+			if relationshipName.characters.contains(".") {
+				if let index = includes.indexOf(relationshipName) {
 					includes.removeAtIndex(index)
 				} else {
 					assertionFailure("Attempt to remove include that was not included: \(relationshipName)")
 				}
 			} else if let relationship = T.fields.filter({ $0.name == relationshipName }).first {
-				if let index = find(includes, relationship.serializedName) {
+				if let index = includes.indexOf(relationship.serializedName) {
 					includes.removeAtIndex(index)
 				} else {
 					assertionFailure("Attempt to remove include that was not included: \(relationshipName)")
@@ -167,7 +167,7 @@ public struct Query<T: ResourceProtocol> {
 				rightExpression: NSExpression(forConstantValue: value),
 				modifier: .DirectPredicateModifier,
 				type: type,
-				options: .allZeros)
+				options: [])
 			
 			addPredicate(predicate)
 		} else {
@@ -178,7 +178,7 @@ public struct Query<T: ResourceProtocol> {
 	/**
 	Adds the given predicate as a filter.
 	
-	:param: predicate The predicate to add.
+	- parameter predicate: The predicate to add.
 	*/
 	public mutating func addPredicate(predicate: NSComparisonPredicate) {
 		filters.append(predicate)
@@ -187,10 +187,10 @@ public struct Query<T: ResourceProtocol> {
 	/**
 	Adds a filter where the given attribute should be equal to the given value.
 	
-	:param: attributeName The name of the attribute to filter on.
-	:param: equals        The value to check for.
+	- parameter attributeName: The name of the attribute to filter on.
+	- parameter equals:        The value to check for.
 	
-	:returns: The query
+	- returns: The query
 	*/
 	public mutating func whereAttribute(attributeName: String, equalTo: AnyObject) {
 		addPredicateWithField(attributeName, value: equalTo, type: .EqualToPredicateOperatorType)
@@ -199,10 +199,10 @@ public struct Query<T: ResourceProtocol> {
 	/**
 	Adds a filter where the given attribute should not be equal to the given value.
 	
-	:param: attributeName The name of the attribute to filter on.
-	:param: equals        The value to check for.
+	- parameter attributeName: The name of the attribute to filter on.
+	- parameter equals:        The value to check for.
 	
-	:returns: The query
+	- returns: The query
 	*/
 	public mutating func whereAttribute(attributeName: String, notEqualTo: AnyObject) {
 		addPredicateWithField(attributeName, value: notEqualTo, type: .NotEqualToPredicateOperatorType)
@@ -211,10 +211,10 @@ public struct Query<T: ResourceProtocol> {
 	/**
 	Adds a filter where the given attribute should be smaller than the given value.
 	
-	:param: attributeName The name of the attribute to filter on.
-	:param: smallerThen   The value to check for.
+	- parameter attributeName: The name of the attribute to filter on.
+	- parameter smallerThen:   The value to check for.
 	
-	:returns: The query
+	- returns: The query
 	*/
 	public mutating func whereAttribute(attributeName: String, lessThan: AnyObject) {
 		addPredicateWithField(attributeName, value: lessThan, type: .LessThanPredicateOperatorType)
@@ -223,10 +223,10 @@ public struct Query<T: ResourceProtocol> {
 	/**
 	Adds a filter where the given attribute should be less then or equal to the given value.
 	
-	:param: attributeName The name of the attribute to filter on.
-	:param: smallerThen   The value to check for.
+	- parameter attributeName: The name of the attribute to filter on.
+	- parameter smallerThen:   The value to check for.
 	
-	:returns: The query
+	- returns: The query
 	*/
 	public mutating func whereAttribute(attributeName: String, lessThanOrEqualTo: AnyObject) {
 		addPredicateWithField(attributeName, value: lessThanOrEqualTo, type: .LessThanOrEqualToPredicateOperatorType)
@@ -235,10 +235,10 @@ public struct Query<T: ResourceProtocol> {
 	/**
 	Adds a filter where the given attribute should be greater then the given value.
 	
-	:param: attributeName The name of the attribute to filter on.
-	:param: greaterThen   The value to check for.
+	- parameter attributeName: The name of the attribute to filter on.
+	- parameter greaterThen:   The value to check for.
 	
-	:returns: The query
+	- returns: The query
 	*/
 	public mutating func whereAttribute(attributeName: String, greaterThan: AnyObject) {
 		addPredicateWithField(attributeName, value: greaterThan, type: .GreaterThanPredicateOperatorType)
@@ -247,10 +247,10 @@ public struct Query<T: ResourceProtocol> {
 	/**
 	Adds a filter where the given attribute should be greater than or equal to the given value.
 	
-	:param: attributeName The name of the attribute to filter on.
-	:param: greaterThen   The value to check for.
+	- parameter attributeName: The name of the attribute to filter on.
+	- parameter greaterThen:   The value to check for.
 	
-	:returns: The query
+	- returns: The query
 	*/
 	public mutating func whereAttribute(attributeName: String, greaterThanOrEqualTo: AnyObject) {
 		addPredicateWithField(attributeName, value: greaterThanOrEqualTo, type: .GreaterThanOrEqualToPredicateOperatorType)
@@ -260,10 +260,10 @@ public struct Query<T: ResourceProtocol> {
 	Adds a filter where the given relationship should point to the given resource, or the given
 	resource should be present in the related resources.
 	
-	:param: relationshipName The name of the relationship to filter on.
-	:param: resource         The resource that should be related.
+	- parameter relationshipName: The name of the relationship to filter on.
+	- parameter resource:         The resource that should be related.
 	
-	:returns: The query
+	- returns: The query
 	*/
 	public mutating func whereRelationship(relationshipName: String, isOrContains resource: ResourceProtocol) {
 		assert(resource.id != nil, "Attempt to add a where filter on a relationship, but the target resource does not have an id.")
@@ -277,9 +277,9 @@ public struct Query<T: ResourceProtocol> {
 	Restricts the fields that should be requested. When not set, all fields will be requested.
 	Note: the server may still choose to return only of a select set of fields.
 	
-	:param: fieldNames Names of fields to fetch.
+	- parameter fieldNames: Names of fields to fetch.
 	
-	:returns: The query
+	- returns: The query
 	*/
 	public mutating func restrictFieldsTo(fieldNames: String...) {
 		assert(resourceType != nil, "Cannot restrict fields for query without resource type, use `restrictFieldsOfResourceType` or set a resource type.")
@@ -297,10 +297,10 @@ public struct Query<T: ResourceProtocol> {
 	
 	Note: the server may still choose to return only of a select set of fields.
 	
-	:param: type       The resource type for which to restrict the properties.
-	:param: fieldNames Names of fields to fetch.
+	- parameter type:       The resource type for which to restrict the properties.
+	- parameter fieldNames: Names of fields to fetch.
 	
-	:returns: The query
+	- returns: The query
 	*/
 	public mutating func restrictFieldsOfResourceType(type: String, to fieldNames: String...) {
 		if var fields = fields[type] {
@@ -316,9 +316,9 @@ public struct Query<T: ResourceProtocol> {
 	/**
 	Sort in ascending order by the the given property. Previously added properties precedence over this property.
 	
-	:param: property The property which to order by.
+	- parameter property: The property which to order by.
 	
-	:returns: The query
+	- returns: The query
 	*/
 	public mutating func addAscendingOrder(property: String) {
 		sortDescriptors.append(NSSortDescriptor(key: property, ascending: true))
@@ -327,9 +327,9 @@ public struct Query<T: ResourceProtocol> {
 	/**
 	Sort in descending order by the the given property. Previously added properties precedence over this property.
 	
-	:param: property The property which to order by.
+	- parameter property: The property which to order by.
 	
-	:returns: The query
+	- returns: The query
 	*/
 	public mutating func addDescendingOrder(property: String) {
 		sortDescriptors.append(NSSortDescriptor(key: property, ascending: false))
@@ -341,9 +341,9 @@ public struct Query<T: ResourceProtocol> {
 	/**
 	Paginate the result using the given pagination configuration. Pass nil to remove pagination.
 	
-	:param: pagination The pagination configuration to use.
+	- parameter pagination: The pagination configuration to use.
 	
-	:returns: The query
+	- returns: The query
 	*/
 	public mutating func paginate(pagination: Pagination?) {
 		self.pagination = pagination
