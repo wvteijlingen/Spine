@@ -23,7 +23,7 @@ class ResourceCollectionTests: XCTestCase {
 	}
 	
 	func testIndexSubscript() {
-		let resources: [ResourceProtocol] = [Foo(), Bar()]
+		let resources = [Foo(), Bar()]
 		let collection = ResourceCollection(resources: resources)
 		
 		XCTAssert(collection[0] === resources[0], "Expected resource to be equal.")
@@ -31,7 +31,7 @@ class ResourceCollectionTests: XCTestCase {
 	}
 	
 	func testTypeAndIDSubscript() {
-		let resources: [ResourceProtocol] = [Foo(id: "5"), Bar(id: "6")]
+		let resources = [Foo(id: "5"), Bar(id: "6")]
 		let collection = ResourceCollection(resources: resources)
 		
 		XCTAssert(collection["foos", "5"] === resources[0], "Expected resource to be equal.")
@@ -39,7 +39,7 @@ class ResourceCollectionTests: XCTestCase {
 	}
 	
 	func testCount() {
-		let resources: [ResourceProtocol] = [Foo(), Bar()]
+		let resources = [Foo(), Bar()]
 		let collection = ResourceCollection(resources: resources)
 		
 		XCTAssertEqual(collection.count, 2, "Expected count to be 2.")
