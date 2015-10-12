@@ -123,7 +123,7 @@ public class Resource: NSObject, NSCoding, ResourceProtocol, MetaHoldable {
 	}
 }
 
-extension Resource: Printable, DebugPrintable {
+extension Resource {
 	override public var description: String {
 		return "\(self.type)(\(self.id), \(self.URL))"
 	}
