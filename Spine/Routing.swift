@@ -72,10 +72,8 @@ public class Router: RouterProtocol {
 		if let URLString = query.URL?.absoluteString {
 			URL = NSURL(string: URLString, relativeToURL: baseURL)
 			preBuiltURL = true
-		} else if let type = query.resourceType {
-			URL = URLForResourceType(type)
 		} else {
-			assertionFailure("Cannot build URL for query. Query does not have a URL, nor a resource type.")
+			URL = URLForResourceType(query.resourceType)
 		}
 		
 		let URLComponents = NSURLComponents(URL: URL, resolvingAgainstBaseURL: true)!
