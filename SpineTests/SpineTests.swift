@@ -17,9 +17,8 @@ class SpineTests: XCTestCase {
 	
 	override func setUp() {
 		super.setUp()
-		spine = Spine(baseURL: NSURL(string:"http://example.com")!)
 		HTTPClient = CallbackHTTPClient()
-		spine._HTTPClient = HTTPClient
+		spine = Spine(baseURL: NSURL(string:"http://example.com")!, networkClient: HTTPClient)
 		spine.registerResource(Foo.resourceType) { Foo() }
 		spine.registerResource(Bar.resourceType) { Bar() }
 	}

@@ -37,8 +37,8 @@ class Operation: NSOperation {
 	var router: RouterProtocol {
 		return spine.router
 	}
-	var HTTPClient: _HTTPClientProtocol {
-		return spine._HTTPClient
+	var networkClient: NetworkClient {
+		return spine.networkClient
 	}
 	var serializer: JSONSerializer {
 		return spine.serializer
@@ -118,7 +118,7 @@ class FetchOperation<T: Resource>: Operation {
 		
 		Spine.logInfo(.Spine, "Fetching document using URL: \(URL)")
 		
-		HTTPClient.request("GET", URL: URL) { statusCode, responseData, networkError in
+		networkClient.request("GET", URL: URL) { success, responseData, networkError in
 			
 			if let networkError = networkError {
 				self.result = .Failure(networkError)
@@ -159,7 +159,7 @@ class DeleteOperation: Operation {
 		
 		Spine.logInfo(.Spine, "Deleting resource \(resource) using URL: \(URL)")
 		
-		HTTPClient.request("DELETE", URL: URL) { statusCode, responseData, networkError in
+		networkClient.request("DELETE", URL: URL) { success, responseData, networkError in
 			if let error = networkError {
 				self.result = Failable(error)
 			} else {
@@ -195,7 +195,7 @@ class SaveOperation: Operation {
 		
 		Spine.logInfo(.Spine, "Saving resource \(resource) using URL: \(request.URL)")
 		
-		HTTPClient.request(request.method, URL: request.URL, payload: request.payload) { statusCode, responseData, networkError in
+		networkClient.request(request.method, URL: request.URL, payload: request.payload) { success, responseData, networkError in
 			if let networkError = networkError {
 				self.result = Failable(networkError)
 				self.state = .Finished
@@ -328,7 +328,7 @@ class RelationshipOperation: Operation {
 		let URL = self.router.URLForRelationship(relationship, ofResource: self.resource)
 		// TODO: Move serialization
 		
-		self.HTTPClient.request("POST", URL: URL, payload: jsonPayload) { statusCode, responseData, networkError in
+		self.networkClient.request("POST", URL: URL, payload: jsonPayload) { success, responseData, networkError in
 			if let networkError = networkError {
 				callback(networkError)
 			} else {
@@ -347,7 +347,7 @@ class RelationshipOperation: Operation {
 		let URL = router.URLForRelationship(relationship, ofResource: self.resource)
 		// TODO: Move serialization
 		
-		self.HTTPClient.request("DELETE", URL: URL) { statusCode, responseData, networkError in
+		self.networkClient.request("DELETE", URL: URL) { success, responseData, networkError in
 			if let networkError = networkError {
 				callback(networkError)
 			} else {
@@ -360,7 +360,7 @@ class RelationshipOperation: Operation {
 		let URL = router.URLForRelationship(relationship, ofResource: self.resource)
 		let jsonPayload = serializeLinkageToJSON(convertResourcesToLinkage([relatedResource]))
 		
-		HTTPClient.request("PATCH", URL: URL, payload: jsonPayload) { statusCode, responseData, networkError in
+		networkClient.request("PATCH", URL: URL, payload: jsonPayload) { success, responseData, networkError in
 			if let networkError = networkError {
 				callback(networkError)
 			} else {

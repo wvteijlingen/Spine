@@ -16,12 +16,7 @@ public class Spine {
 	let router: RouterProtocol
 	
 	/// The HTTPClient that performs the HTTP requests.
-	var _HTTPClient: _HTTPClientProtocol = URLSessionClient()
-	
-	/// The HTTPClient used for all network requests.
-	public var HTTPClient: HTTPClientProtocol {
-		return _HTTPClient
-	}
+	let networkClient: NetworkClient
 	
 	/// The serializer to use for serializing and deserializing of JSON representations.
 	let serializer: JSONSerializer = JSONSerializer()
@@ -32,14 +27,23 @@ public class Spine {
 	
 	// MARK: Initializers
 	
-	public init(baseURL: NSURL, router: RouterProtocol) {
+	public init(baseURL: NSURL, router: RouterProtocol, networkClient: NetworkClient) {
 		self.router = router
 		self.router.baseURL = baseURL
+		self.networkClient = networkClient
 		self.operationQueue.name = "com.wardvanteijlingen.spine"
 	}
 	
 	public convenience init(baseURL: NSURL) {
-		self.init(baseURL: baseURL, router: Router())
+		self.init(baseURL: baseURL, router: Router(), networkClient: HTTPClient())
+	}
+	
+	public convenience init(baseURL: NSURL, router: RouterProtocol) {
+		self.init(baseURL: baseURL, router: router, networkClient: HTTPClient())
+	}
+	
+	public convenience init(baseURL: NSURL, networkClient: NetworkClient) {
+		self.init(baseURL: baseURL, router: Router(), networkClient: networkClient)
 	}
 	
 	

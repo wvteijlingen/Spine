@@ -8,35 +8,44 @@
 
 import Foundation
 
-/// Callback used by the _HTTPClientProtocol
-typealias HTTPClientCallback = (statusCode: Int?, responseData: NSData?, networkError: NSError?) -> Void
+public typealias NetworkClientCallback = (success: Bool, data: NSData?, error: NSError?) -> Void
 
 /**
-The HTTPClientProtocol declares methods and properties that a HTTP client must implement.
+A NetworkClient is the interface between Spine and the server. It does not impose any transport,
+and can be used for HTTP, websockets, and any other data transport.
 */
-public protocol HTTPClientProtocol {
-	/// Sets a HTTP header for all upcoming network requests.
-	func setHeader(header: String, to: String)
+///
+public protocol NetworkClient {
+	/**
+	Performs a network request to the given URL with the given method.
 	
-	/// Removes a HTTP header for all upcoming  network requests.
-	func removeHeader(header: String)
+	- parameter method:   The method to use, expressed as a HTTP verb.
+	- parameter URL:      The URL to which to make the request.
+	- parameter callback: The callback to execute when the request finishes.
+	*/
+	func request(method: String, URL: NSURL, callback: NetworkClientCallback)
+	
+	/**
+	Performs a network request to the given URL with the given method.
+	
+	- parameter method:   The method to use, expressed as a HTTP verb.
+	- parameter URL:      The URL to which to make the request.
+	- parameter payload:  The payload the send as part of the request.
+	- parameter callback: The callback to execute when the request finishes.
+	*/
+	func request(method: String, URL: NSURL, payload: NSData?, callback: NetworkClientCallback)
+}
+
+extension NetworkClient {
+	public func request(method: String, URL: NSURL, callback: NetworkClientCallback) {
+		return request(method, URL: URL, payload: nil, callback: callback)
+	}
 }
 
 /**
-The _HTTPClientProtocol declares methods and properties that a HTTP client must implement.
+The HTTPClient implements the NetworkClient protocol to work over an HTTP connection.
 */
-protocol _HTTPClientProtocol: HTTPClientProtocol {
-	/// Performs a network request to the given URL with the given HTTP method.
-	func request(method: String, URL: NSURL, callback: HTTPClientCallback)
-	
-	/// Performs a network request to the given URL with the given HTTP method and request body data.
-	func request(method: String, URL: NSURL, payload: NSData?, callback: HTTPClientCallback)
-}
-
-/**
-The built in HTTP client that uses an NSURLSession for networking.
-*/
-public class URLSessionClient: _HTTPClientProtocol {
+public class HTTPClient: NetworkClient {
 	let urlSession: NSURLSession
 	var headers: [String: String] = [:]
 	
@@ -46,19 +55,26 @@ public class URLSessionClient: _HTTPClientProtocol {
 		urlSession = NSURLSession(configuration: configuration)
 	}
 	
+	/**
+	Sets a HTTP header for all upcoming network requests.
+	
+	- parameter header: The name of header to set the value for.
+	- parameter value:  The value to set the header tp.
+	*/
 	public func setHeader(header: String, to value: String) {
 		headers[header] = value
 	}
 	
+	/**
+	Removes a HTTP header for all upcoming  network requests.
+	
+	- parameter header: The name of header to remove.
+	*/
 	public func removeHeader(header: String) {
 		headers.removeValueForKey(header)
 	}
-	
-	func request(method: String, URL: NSURL, callback: HTTPClientCallback) {
-		return request(method, URL: URL, payload: nil, callback: callback)
-	}
-	
-	func request(method: String, URL: NSURL, payload: NSData?, callback: HTTPClientCallback) {
+
+	public func request(method: String, URL: NSURL, payload: NSData?, callback: NetworkClientCallback) {
 		let request = NSMutableURLRequest(URL: URL)
 		request.HTTPMethod = method
 		
@@ -78,23 +94,24 @@ public class URLSessionClient: _HTTPClientProtocol {
 			}
 		}
 		
-		performRequest(request, callback: callback)
-	}
-	
-	private func performRequest(request: NSURLRequest, callback: HTTPClientCallback) {
-		let task = urlSession.dataTaskWithRequest(request) { data, response, error in
+		let task = urlSession.dataTaskWithRequest(request) { data, response, networkError in
 			let response = (response as? NSHTTPURLResponse)
+			let success: Bool
 			
-			// Network error
-			if let error = error {
+			
+			if let error = networkError {
+				// Network error
+				success = false
 				Spine.logError(.Networking, "\(request.URL) - \(error.localizedDescription)")
 				
-			// Success
 			} else if let statusCode = response?.statusCode where 200 ... 299 ~= statusCode {
+				// Success
+				success = true
 				Spine.logInfo(.Networking, "\(statusCode): \(request.URL)")
 				
-			// API Error
 			} else {
+				// API Error
+				success = false
 				Spine.logWarning(.Networking, "\(response?.statusCode): \(request.URL)")
 			}
 			
@@ -104,7 +121,7 @@ public class URLSessionClient: _HTTPClientProtocol {
 				}
 			}
 			
-			callback(statusCode: response?.statusCode, responseData: data, networkError: error)
+			callback(success: success, data: data, error: networkError)
 		}
 		
 		task.resume()

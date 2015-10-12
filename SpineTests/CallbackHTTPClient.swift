@@ -8,7 +8,7 @@
 
 import Foundation
 
-public class CallbackHTTPClient: _HTTPClientProtocol {
+public class CallbackHTTPClient: NetworkClient {
 	typealias HandlerFunction = (request: NSURLRequest, payload: NSData?) -> (responseData: NSData, statusCode: Int, error: NSError?)
 	
 	var handler: HandlerFunction!
@@ -18,19 +18,7 @@ public class CallbackHTTPClient: _HTTPClientProtocol {
 	
 	init() {}
 	
-	public func setHeader(header: String, to value: String) {
-		//
-	}
-	
-	public func removeHeader(header: String) {
-		//
-	}
-	
-	func request(method: String, URL: NSURL, callback: HTTPClientCallback) {
-		return request(method, URL: URL, payload: nil, callback: callback)
-	}
-	
-	func request(method: String, URL: NSURL, payload: NSData?, callback: HTTPClientCallback) {
+	public func request(method: String, URL: NSURL, payload: NSData?, callback: NetworkClientCallback) {
 		let request = NSMutableURLRequest(URL: URL)
 		request.HTTPMethod = method
 		
@@ -48,23 +36,27 @@ public class CallbackHTTPClient: _HTTPClientProtocol {
 			
 			dispatch_after(startTime, dispatch_get_main_queue()) {
 				var resolvedError: NSError?
+				let success: Bool
 				
 				// Framework error
 				if let error = error {
+					success = false
 					Spine.logError(.Networking, "\(request.URL!) - \(error.localizedDescription)")
 					resolvedError = NSError(domain: SpineClientErrorDomain, code: error.code, userInfo: error.userInfo)
 					
 					// Success
 				} else if 200 ... 299 ~= statusCode {
+					success = true
 					Spine.logInfo(.Networking, "\(statusCode): \(request.URL!)")
 					
 					// API Error
 				} else {
+					success = false
 					Spine.logWarning(.Networking, "\(statusCode): \(request.URL!)")
 					resolvedError = NSError(domain: SpineServerErrorDomain, code: statusCode, userInfo: nil)
 				}
 				
-				callback(statusCode: statusCode, responseData: data, networkError: resolvedError)
+				callback(success: success, data: data, error: resolvedError)
 			}
 		}
 	}
