@@ -263,6 +263,7 @@
 				D373F78419B2249900275AFC /* Frameworks */,
 				D373F78519B2249900275AFC /* Headers */,
 				D373F78619B2249900275AFC /* Resources */,
+				D34A06051BCBF9FE009920D4 /* ShellScript */,
 			);
 			buildRules = (
 			);
@@ -352,6 +353,22 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
+		D34A06051BCBF9FE009920D4 /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/Carthage/Build/iOS/Result.framework",
+				"$(SRCROOT)/Carthage/Build/iOS/BrightFutures.framework",
+				"$(SRCROOT)/Carthage/Build/iOS/SwiftyJSON.framework",
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "/usr/local/bin/carthage copy-frameworks";
+		};
 		D35047881A94F784002FDF57 /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
@@ -360,6 +377,7 @@
 			inputPaths = (
 				"$(SRCROOT)/Carthage/Build/iOS/BrightFutures.framework",
 				"$(SRCROOT)/Carthage/Build/iOS/SwiftyJSON.framework",
+				"$(SRCROOT)/Carthage/Build/iOS/Result.framework",
 			);
 			outputPaths = (
 			);
