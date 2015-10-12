@@ -96,7 +96,7 @@ class Operation: NSOperation {
 }
 
 /**
-A FetchOperation object fetches resources from a Spine, using a given Query.
+A FetchOperation object fetches a JSONAPI document from a Spine, using a given Query.
 */
 class FetchOperation<T: Resource>: Operation {
 	/// The query describing which resources to fetch.
@@ -106,7 +106,7 @@ class FetchOperation<T: Resource>: Operation {
 	var mappingTargets = [Resource]()
 	
 	/// The result of the operation. You can safely force unwrap this in the completionBlock.
-	var result: Failable<ResourceCollection>?
+	var result: Failable<JSONAPIDocument>?
 	
 	init(query: Query<T>) {
 		self.query = query
@@ -116,7 +116,7 @@ class FetchOperation<T: Resource>: Operation {
 	override func execute() {
 		let URL = spine.router.URLForQuery(query)
 		
-		Spine.logInfo(.Spine, "Fetching resources using URL: \(URL)")
+		Spine.logInfo(.Spine, "Fetching document using URL: \(URL)")
 		
 		HTTPClient.request("GET", URL: URL) { statusCode, responseData, networkError in
 			
@@ -126,31 +126,16 @@ class FetchOperation<T: Resource>: Operation {
 				let deserializationResult = self.serializer.deserializeData(responseData!, mappingTargets: self.mappingTargets)
 				
 				switch deserializationResult {
-				case .Success(let document) where document.errors?.count > 0:
-					self.result = Failable(document.errors!.first!)
-					
-				case .Success(let document) where document.errors == nil:
-					self.result = Failable(self.collectionFromDocument(document))
+				case .Success(let document):
+					self.result = Failable(document)
 					
 				case .Failure(let error):
 					self.result = .Failure(error)
-					
-				default: ()
 				}
 			}
 			
 			self.state = .Finished
 		}
-	}
-	
-	private func collectionFromDocument(document: JSONAPIDocument) -> ResourceCollection {
-		let resources = document.data ?? []
-		let collection = ResourceCollection(resources: resources)
-		collection.resourcesURL = document.links?["self"]
-		collection.nextURL = document.links?["next"]
-		collection.previousURL = document.links?["previous"]
-		
-		return collection
 	}
 }
 

@@ -39,6 +39,14 @@ public class ResourceCollection: NSObject, NSCoding {
 		self.isLoaded = !resources.isEmpty
 	}
 	
+	init(document: JSONAPIDocument) {
+		self.resources = document.data ?? []
+		self.resourcesURL = document.links?["self"]
+		self.nextURL = document.links?["next"]
+		self.previousURL = document.links?["previous"]
+		self.isLoaded = true
+	}
+	
 	
 	// MARK: NSCoding
 	

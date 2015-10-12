@@ -66,16 +66,17 @@ public class Spine {
 	
 	:returns: A future that resolves to a ResourceCollection that contains the fetched resources.
 	*/
-	public func find<T: Resource>(query: Query<T>) -> Future<ResourceCollection, NSError> {
-		let promise = Promise<ResourceCollection, NSError>()
+	public func find<T: Resource>(query: Query<T>) -> Future<(resources: ResourceCollection, meta: [String: AnyObject]?, jsonapi: [String: AnyObject]?), NSError> {
+		let promise = Promise<(resources: ResourceCollection, meta: [String: AnyObject]?, jsonapi: [String: AnyObject]?), NSError>()
 		
 		let operation = FetchOperation(query: query)
 		
 		operation.completionBlock = {
 
 			switch operation.result! {
-			case .Success(let resourceCollection):
-				promise.success(resourceCollection)
+			case .Success(let document):
+				let response = (ResourceCollection(document: document), document.meta, document.jsonapi)
+				promise.success(response)
 			case .Failure(let error):
 				promise.failure(error)
 			}
@@ -93,18 +94,19 @@ public class Spine {
 	
 	:returns: A future that resolves to the fetched resource.
 	*/
-	public func findOne<T: Resource>(query: Query<T>) -> Future<T, NSError> {
-		let promise = Promise<T, NSError>()
+	public func findOne<T: Resource>(query: Query<T>) -> Future<(resource: T, meta: [String: AnyObject]?, jsonapi: [String: AnyObject]?), NSError> {
+		let promise = Promise<(resource: T, meta: [String: AnyObject]?, jsonapi: [String: AnyObject]?), NSError>()
 		
 		let operation = FetchOperation(query: query)
 		
 		operation.completionBlock = {
 			switch operation.result! {
-			case .Success(let resourceCollection) where resourceCollection.count == 0:
+			case .Success(let document) where document.data?.count == 0:
 				promise.failure(NSError(domain: SpineClientErrorDomain, code: SpineErrorCodes.ResourceNotFound, userInfo: nil))
-			case .Success(let resourceCollection):
-				let firstResource = resourceCollection.resources.first as! T
-				promise.success(firstResource)
+			case .Success(let document):
+				let firstResource = document.data!.first as! T
+				let response = (resource: firstResource, meta: document.meta, jsonapi: document.jsonapi)
+				promise.success(response)
 			case .Failure(let error):
 				promise.failure(error)
 			}
@@ -123,7 +125,7 @@ public class Spine {
 	
 	:returns: A future that resolves to a ResourceCollection that contains the fetched resources.
 	*/
-	public func find<T: Resource>(IDs: [String], ofType type: T.Type) -> Future<ResourceCollection, NSError> {
+	public func find<T: Resource>(IDs: [String], ofType type: T.Type) -> Future<(resources: ResourceCollection, meta: [String: AnyObject]?, jsonapi: [String: AnyObject]?), NSError> {
 		let query = Query(resourceType: type, resourceIDs: IDs)
 		return find(query)
 	}
@@ -136,7 +138,7 @@ public class Spine {
 	
 	:returns: A future that resolves to a ResourceCollection that contains the fetched resources.
 	*/
-	public func find<T: Resource>(type: T.Type) -> Future<ResourceCollection, NSError> {
+	public func find<T: Resource>(type: T.Type) -> Future<(resources: ResourceCollection, meta: [String: AnyObject]?, jsonapi: [String: AnyObject]?), NSError> {
 		let query = Query(resourceType: type)
 		return find(query)
 	}
@@ -149,7 +151,7 @@ public class Spine {
 	
 	:returns: A future that resolves to the fetched resource.
 	*/
-	public func findOne<T: Resource>(ID: String, ofType type: T.Type) -> Future<T, NSError> {
+	public func findOne<T: Resource>(ID: String, ofType type: T.Type) -> Future<(resource: T, meta: [String: AnyObject]?, jsonapi: [String: AnyObject]?), NSError> {
 		let query = Query(resourceType: type, resourceIDs: [ID])
 		return findOne(query)
 	}
@@ -174,8 +176,8 @@ public class Spine {
 			
 			operation.completionBlock = {
 				switch operation.result! {
-				case .Success(let resourceCollection):
-					let nextCollection = resourceCollection
+				case .Success(let document):
+					let nextCollection = ResourceCollection(document: document)
 					collection.resources += nextCollection.resources
 					collection.resourcesURL = nextCollection.resourcesURL
 					collection.nextURL = nextCollection.nextURL
@@ -213,8 +215,8 @@ public class Spine {
 			
 			operation.completionBlock = {
 				switch operation.result! {
-				case .Success(let resourceCollection):
-					let previousCollection = resourceCollection
+				case .Success(let document):
+					let previousCollection = ResourceCollection(document: document)
 					collection.resources = previousCollection.resources + collection.resources
 					collection.resourcesURL = previousCollection.resourcesURL
 					collection.nextURL = previousCollection.nextURL

@@ -42,7 +42,7 @@ class FindTests: SpineTests {
 		
 		let expectation = expectationWithDescription("testFindByType")
 		
-		spine.find(Foo.self).onSuccess { fooCollection in
+		spine.find(Foo.self).onSuccess { fooCollection, _, _ in
 			expectation.fulfill()
 			for (index, resource) in fooCollection.enumerate() {
 				XCTAssertEqual(fooCollection.count, 2, "Deserialized resources count not equal.")
@@ -98,7 +98,7 @@ class FindTests: SpineTests {
 		
 		let expectation = expectationWithDescription("testFindByIDAndType")
 		
-		spine.find(["1","2"], ofType: Foo.self).onSuccess { fooCollection in
+		spine.find(["1","2"], ofType: Foo.self).onSuccess { fooCollection, _, _ in
 			expectation.fulfill()
 			for (index, resource) in fooCollection.enumerate() {
 				XCTAssertEqual(fooCollection.count, 2, "Expected resource count to be 2.")
@@ -155,7 +155,7 @@ class FindTests: SpineTests {
 		
 		let expectation = expectationWithDescription("testFindOneByIDAndType")
 		
-		spine.findOne("1", ofType: Foo.self).onSuccess { foo in
+		spine.findOne("1", ofType: Foo.self).onSuccess { foo, _, _ in
 			expectation.fulfill()
 			assertFooResource(foo, isEqualToJSON: fixture.json["data"])
 			}.onFailure { error in
@@ -207,7 +207,7 @@ class FindTests: SpineTests {
 		let query = Query(resourceType: Foo.self, resourceIDs: ["1", "2"])
 		let expectation = expectationWithDescription("testFindByQuery")
 		
-		spine.find(query).onSuccess { fooCollection in
+		spine.find(query).onSuccess { fooCollection, _, _ in
 			expectation.fulfill()
 			for (index, resource) in fooCollection.enumerate() {
 				XCTAssertEqual(fooCollection.count, 2, "Deserialized resources count not equal.")
@@ -268,7 +268,7 @@ class FindTests: SpineTests {
 		let query = Query(resourceType: Foo.self, resourceIDs: ["1"])
 		let expectation = expectationWithDescription("testFindOneByQuery")
 		
-		spine.findOne(query).onSuccess { foo in
+		spine.findOne(query).onSuccess { foo, _, _ in
 			expectation.fulfill()
 			assertFooResource(foo, isEqualToJSON: fixture.json["data"])
 		}.onFailure { error in

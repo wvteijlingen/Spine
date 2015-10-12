@@ -13,6 +13,9 @@ struct JSONAPIDocument {
 	/// Primary resources extracted from the response.
 	var data: [Resource]?
 	
+	/// Included resources extracted from the response.
+	var included: [Resource]?
+	
 	/// Errors extracted from the response.
 	var errors: [NSError]?
 	
@@ -21,6 +24,9 @@ struct JSONAPIDocument {
 	
 	/// Links extracted from the response
 	var links: [String: NSURL]?
+	
+	/// JSONAPI information extracted from the response
+	var jsonapi: [String: AnyObject]?
 }
 
 /**
@@ -153,7 +159,7 @@ struct ResourceFactory {
 	
 	This methods tries to find a resource with the given type and id in the pool. If no matching resource is found,
 	it tries to find the nth resource, indicated by `index`, of the given type from the pool. If still no resource is found,
-	it instantiates a new resource with the given id.
+	it instantiates a new resource with the given id and adds this to the pool.
 	
 	- parameter type:  The resource type to dispense.
 	- parameter id:    The id of the resource to dispense.

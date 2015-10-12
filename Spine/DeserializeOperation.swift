@@ -27,9 +27,11 @@ class DeserializeOperation: NSOperation {
 	
 	// Extracted objects
 	private var extractedPrimaryResources: [Resource] = []
+	private var extractedIncludedResources: [Resource] = []
 	private var extractedErrors: [NSError]?
 	private var extractedMeta: [String: AnyObject]?
 	private var extractedLinks: [String: NSURL]?
+	private var extractedJSONAPI: [String: AnyObject]?
 	
 	private var resourcePool: [Resource] = []
 	
@@ -75,7 +77,7 @@ class DeserializeOperation: NSOperation {
 			return
 		}
 		
-		// Extract main resources. The are added to the `extractedPrimaryResources` so we can return them separate from the entire resource pool.
+		// Extract main resources. They are added to the `extractedPrimaryResources` so we can return them separate from the entire resource pool.
 		if let data = self.data["data"].array {
 			for (index, representation) in data.enumerate() {
 				extractedPrimaryResources.append(deserializeSingleRepresentation(representation, mappingTargetIndex: index))
@@ -87,7 +89,7 @@ class DeserializeOperation: NSOperation {
 		// Extract included resources
 		if let data = self.data["included"].array {
 			for representation in data {
-				deserializeSingleRepresentation(representation)
+				extractedIncludedResources.append(deserializeSingleRepresentation(representation))
 			}
 		}
 		
@@ -114,13 +116,19 @@ class DeserializeOperation: NSOperation {
 			}
 		}
 		
+		// Extract jsonapi
+		extractedJSONAPI = self.data["jsonapi"].dictionaryObject
+		
 		// Resolve relations in the store
 		resolveRelations()
 		
 		// Create a result
-		var responseDocument = JSONAPIDocument(data: nil, errors: extractedErrors, meta: extractedMeta, links: extractedLinks)
+		var responseDocument = JSONAPIDocument(data: nil, included: nil, errors: extractedErrors, meta: extractedMeta, links: extractedLinks, jsonapi: extractedJSONAPI)
 		if !extractedPrimaryResources.isEmpty {
 			responseDocument.data = extractedPrimaryResources
+		}
+		if !extractedIncludedResources.isEmpty {
+			responseDocument.included = extractedIncludedResources
 		}
 		result = Failable(responseDocument)
 	}
