@@ -258,7 +258,7 @@ class DeserializingTests: SerializerTests {
 		let deserialisationResult = serializer.deserializeData(data, mappingTargets: nil)
 		
 		switch deserialisationResult {
-		case .Success(let document):
+		case .Success:
 			XCTFail("Expected deserialization to fail.")
 		case .Failure(let error):
 			XCTAssertEqual(error.domain, SpineClientErrorDomain, "Expected error domain to be SpineClientErrorDomain.")
