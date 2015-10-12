@@ -26,12 +26,12 @@ class DeserializeOperation: NSOperation {
 	var result: Failable<JSONAPIDocument>?
 	
 	// Extracted objects
-	private var extractedPrimaryResources: [ResourceProtocol] = []
+	private var extractedPrimaryResources: [Resource] = []
 	private var extractedErrors: [NSError]?
 	private var extractedMeta: [String: AnyObject]?
 	private var extractedLinks: [String: NSURL]?
 	
-	private var resourcePool: [ResourceProtocol] = []
+	private var resourcePool: [Resource] = []
 	
 	
 	// MARK: Initializers
@@ -44,7 +44,7 @@ class DeserializeOperation: NSOperation {
 	
 	// MARK: Mapping targets
 	
-	func addMappingTargets(targets: [ResourceProtocol]) {
+	func addMappingTargets(targets: [Resource]) {
 		// We can only map onto resources that are not loaded yet
 		for resource in targets {
 			assert(resource.isLoaded == false, "Cannot map onto loaded resource \(resource)")
@@ -134,9 +134,9 @@ class DeserializeOperation: NSOperation {
 	:param: representation     The JSON representation of a single resource.
 	:param: mappingTargetIndex The index of the matching mapping target.
 	
-	:returns: A ResourceProtocol object with values mapped from the representation.
+	:returns: A Resource object with values mapped from the representation.
 	*/
-	private func deserializeSingleRepresentation(representation: JSON, mappingTargetIndex: Int? = nil) -> ResourceProtocol {
+	private func deserializeSingleRepresentation(representation: JSON, mappingTargetIndex: Int? = nil) -> Resource {
 		assert(representation.dictionary != nil, "The given JSON representation is not an object (dictionary/hash).")
 		
 		let type: ResourceType! = representation["type"].string
@@ -184,7 +184,7 @@ class DeserializeOperation: NSOperation {
 	:param: serializedData The data from which to extract the attributes.
 	:param: resource       The resource into which to extract the attributes.
 	*/
-	private func extractAttributes(serializedData: JSON, intoResource resource: ResourceProtocol) {
+	private func extractAttributes(serializedData: JSON, intoResource resource: Resource) {
 		enumerateFields(resource, type: Attribute.self) { attribute in
 			if let extractedValue: AnyObject = self.extractAttribute(serializedData, key: attribute.serializedName) {
 				let formattedValue: AnyObject = self.transformers.deserialize(extractedValue, forAttribute: attribute)
@@ -224,7 +224,7 @@ class DeserializeOperation: NSOperation {
 	:param: serializedData The data from which to extract the relationships.
 	:param: resource       The resource into which to extract the relationships.
 	*/
-	private func extractRelationships(serializedData: JSON, intoResource resource: ResourceProtocol) {
+	private func extractRelationships(serializedData: JSON, intoResource resource: Resource) {
 		enumerateFields(resource) { field in
 			switch field {
 			case let toOne as ToOneRelationship:
@@ -250,8 +250,8 @@ class DeserializeOperation: NSOperation {
 	
 	:returns: The extracted relationship or nil if no relationship with the given key was found in the data.
 	*/
-	private func extractToOneRelationship(serializedData: JSON, key: String, linkedType: ResourceType, resource: ResourceProtocol) -> ResourceProtocol? {
-		var resource: ResourceProtocol? = nil
+	private func extractToOneRelationship(serializedData: JSON, key: String, linkedType: ResourceType, resource: Resource) -> Resource? {
+		var resource: Resource? = nil
 		
 		// Resource level link as a resource URL only.
 		if let linkedResourceURL = serializedData["relationships"][key].URL {
@@ -288,7 +288,7 @@ class DeserializeOperation: NSOperation {
 	
 	:returns: The extracted relationship or nil if no relationship with the given key was found in the data.
 	*/
-	private func extractToManyRelationship(serializedData: JSON, key: String, resource: ResourceProtocol) -> LinkedResourceCollection? {
+	private func extractToManyRelationship(serializedData: JSON, key: String, resource: Resource) -> LinkedResourceCollection? {
 		var resourceCollection: LinkedResourceCollection? = nil
 		
 		// Resource level link as a resource URL only.
@@ -323,7 +323,7 @@ class DeserializeOperation: NSOperation {
 					// We can only resolve if the linkage is known
 					if let linkage = linkedResource.linkage {
 						
-						let targetResources: [ResourceProtocol] = linkage.map { link in
+						let targetResources: [Resource] = linkage.map { link in
 							findResource(self.resourcePool, link.type, link.id)
 						}.filter { $0 != nil }.map { $0! }
 						

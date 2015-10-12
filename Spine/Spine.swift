@@ -66,7 +66,7 @@ public class Spine {
 	
 	:returns: A future that resolves to a ResourceCollection that contains the fetched resources.
 	*/
-	public func find<T: ResourceProtocol>(query: Query<T>) -> Future<ResourceCollection, NSError> {
+	public func find<T: Resource>(query: Query<T>) -> Future<ResourceCollection, NSError> {
 		let promise = Promise<ResourceCollection, NSError>()
 		
 		let operation = FetchOperation(query: query)
@@ -93,7 +93,7 @@ public class Spine {
 	
 	:returns: A future that resolves to the fetched resource.
 	*/
-	public func findOne<T: ResourceProtocol>(query: Query<T>) -> Future<T, NSError> {
+	public func findOne<T: Resource>(query: Query<T>) -> Future<T, NSError> {
 		let promise = Promise<T, NSError>()
 		
 		let operation = FetchOperation(query: query)
@@ -123,7 +123,7 @@ public class Spine {
 	
 	:returns: A future that resolves to a ResourceCollection that contains the fetched resources.
 	*/
-	public func find<T: ResourceProtocol>(IDs: [String], ofType type: T.Type) -> Future<ResourceCollection, NSError> {
+	public func find<T: Resource>(IDs: [String], ofType type: T.Type) -> Future<ResourceCollection, NSError> {
 		let query = Query(resourceType: type, resourceIDs: IDs)
 		return find(query)
 	}
@@ -136,7 +136,7 @@ public class Spine {
 	
 	:returns: A future that resolves to a ResourceCollection that contains the fetched resources.
 	*/
-	public func find<T: ResourceProtocol>(type: T.Type) -> Future<ResourceCollection, NSError> {
+	public func find<T: Resource>(type: T.Type) -> Future<ResourceCollection, NSError> {
 		let query = Query(resourceType: type)
 		return find(query)
 	}
@@ -149,7 +149,7 @@ public class Spine {
 	
 	:returns: A future that resolves to the fetched resource.
 	*/
-	public func findOne<T: ResourceProtocol>(ID: String, ofType type: T.Type) -> Future<T, NSError> {
+	public func findOne<T: Resource>(ID: String, ofType type: T.Type) -> Future<T, NSError> {
 		let query = Query(resourceType: type, resourceIDs: [ID])
 		return findOne(query)
 	}
@@ -169,7 +169,7 @@ public class Spine {
 		let promise = Promise<ResourceCollection, NSError>()
 		
 		if let nextURL = collection.nextURL {
-			let query = Query<ResourceProtocol>(URL: nextURL)
+			let query = Query<Resource>(URL: nextURL)
 			let operation = FetchOperation(query: query)
 			
 			operation.completionBlock = {
@@ -208,7 +208,7 @@ public class Spine {
 		let promise = Promise<ResourceCollection, NSError>()
 		
 		if let previousURL = collection.previousURL {
-			let query = Query<ResourceProtocol>(URL: previousURL)
+			let query = Query<Resource>(URL: previousURL)
 			let operation = FetchOperation(query: query)
 			
 			operation.completionBlock = {
@@ -245,8 +245,8 @@ public class Spine {
 	
 	:returns: A future that resolves to the saved resource.
 	*/
-	public func save(resource: ResourceProtocol) -> Future<ResourceProtocol, NSError> {
-		let promise = Promise<ResourceProtocol, NSError>()
+	public func save(resource: Resource) -> Future<Resource, NSError> {
+		let promise = Promise<Resource, NSError>()
 		
 		let operation = SaveOperation(resource: resource)
 		
@@ -270,7 +270,7 @@ public class Spine {
 	
 	:returns: A future
 	*/
-	public func delete(resource: ResourceProtocol) -> Future<Void, NSError> {
+	public func delete(resource: Resource) -> Future<Void, NSError> {
 		let promise = Promise<Void, NSError>()
 		
 		let operation = DeleteOperation(resource: resource)
@@ -299,7 +299,7 @@ public class Spine {
 	
 	:returns: <#return value description#>
 	*/
-	public func ensure<T: ResourceProtocol>(resource: T) -> Future<T, NSError> {
+	public func ensure<T: Resource>(resource: T) -> Future<T, NSError> {
 		let query = Query(resource: resource)
 		return loadResourceByExecutingQuery(resource, query: query)
 	}
@@ -315,12 +315,12 @@ public class Spine {
 	
 	:returns: <#return value description#>
 	*/
-	public func ensure<T: ResourceProtocol>(resource: T, queryCallback: (Query<T>) -> Query<T>) -> Future<T, NSError> {
+	public func ensure<T: Resource>(resource: T, queryCallback: (Query<T>) -> Query<T>) -> Future<T, NSError> {
 		let query = queryCallback(Query(resource: resource))
 		return loadResourceByExecutingQuery(resource, query: query)
 	}
 
-	func loadResourceByExecutingQuery<T: ResourceProtocol>(resource: T, query: Query<T>) -> Future<T, NSError> {
+	func loadResourceByExecutingQuery<T: Resource>(resource: T, query: Query<T>) -> Future<T, NSError> {
 		let promise = Promise<(T), NSError>()
 		
 		if resource.isLoaded {
@@ -355,7 +355,7 @@ public extension Spine {
 	:param: type    The resource type to register the factory function for.
 	:param: factory The factory method that returns an instance of a resource.
 	*/
-	func registerResource(type: String, factory: () -> ResourceProtocol) {
+	func registerResource(type: String, factory: () -> Resource) {
 		serializer.resourceFactory.registerResource(type, factory: factory)
 	}
 }
@@ -380,18 +380,18 @@ public extension Spine {
 
 /// Return an `Array` containing resources of `domain`,
 /// in order, that are of the resource type `type`.
-func findResourcesWithType<C: CollectionType where C.Generator.Element: ResourceProtocol>(domain: C, type: ResourceType) -> [C.Generator.Element] {
+func findResourcesWithType<C: CollectionType where C.Generator.Element: Resource>(domain: C, type: ResourceType) -> [C.Generator.Element] {
 	return domain.filter { $0.type == type }
 }
 
 /// Return the first resource of `domain`,
 /// that is of the resource type `type` and has id `id`.
-func findResource<C: CollectionType where C.Generator.Element: ResourceProtocol>(domain: C, type: ResourceType, id: String) -> C.Generator.Element? {
+func findResource<C: CollectionType where C.Generator.Element: Resource>(domain: C, type: ResourceType, id: String) -> C.Generator.Element? {
 	return domain.filter { $0.type == type && $0.id == id }.first
 }
 
 /// Calls `callback` for each field, filtered by type `type`, of resource `resource`.
-func enumerateFields<T: Field>(resource: ResourceProtocol, type: T.Type, callback: (T) -> ()) {
+func enumerateFields<T: Field>(resource: Resource, type: T.Type, callback: (T) -> ()) {
 	enumerateFields(resource) { field in
 		if let attribute = field as? T {
 			callback(attribute)
@@ -399,7 +399,7 @@ func enumerateFields<T: Field>(resource: ResourceProtocol, type: T.Type, callbac
 	}
 }
 
-func enumerateFields<T: ResourceProtocol>(resource: T, callback: (Field) -> ()) {
+func enumerateFields<T: Resource>(resource: T, callback: (Field) -> ()) {
 	for field in resource.dynamicType.fields {
 		callback(field)
 	}
@@ -407,12 +407,12 @@ func enumerateFields<T: ResourceProtocol>(resource: T, callback: (Field) -> ()) 
 
 
 /// Compare resources based on `type` and `id`.
-public func == <T: ResourceProtocol> (left: T, right: T) -> Bool {
+public func == <T: Resource> (left: T, right: T) -> Bool {
 	return (left.id == right.id) && (left.type == right.type)
 }
 
 /// Compare array of resources based on `type` and `id`.
-public func == <T: ResourceProtocol> (left: [T], right: [T]) -> Bool {
+public func == <T: Resource> (left: [T], right: [T]) -> Bool {
 	if left.count != right.count {
 		return false
 	}
@@ -427,7 +427,7 @@ public func == <T: ResourceProtocol> (left: [T], right: [T]) -> Bool {
 }
 
 /// Sets all fields of resource `resource` to nil and sets `isLoaded` to false.
-public func unloadResource(resource: ResourceProtocol) {
+public func unloadResource(resource: Resource) {
 	enumerateFields(resource) { field in
 		resource.setValue(nil, forField: field.name)
 	}

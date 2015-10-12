@@ -25,7 +25,7 @@ public protocol RouterProtocol {
 	*/
 	func URLForResourceType(type: ResourceType) -> NSURL
 	
-	func URLForRelationship<T: ResourceProtocol>(relationship: Relationship, ofResource resource: T) -> NSURL
+	func URLForRelationship<T: Resource>(relationship: Relationship, ofResource resource: T) -> NSURL
 	
 	/**
 	Returns an NSURL that represents the given query.
@@ -34,7 +34,7 @@ public protocol RouterProtocol {
 	
 	- returns: The NSURL.
 	*/
-	func URLForQuery<T: ResourceProtocol>(query: Query<T>) -> NSURL
+	func URLForQuery<T: Resource>(query: Query<T>) -> NSURL
 }
 
 /**
@@ -59,12 +59,12 @@ public class Router: RouterProtocol {
 		return baseURL.URLByAppendingPathComponent(type)
 	}
 	
-	public func URLForRelationship<T: ResourceProtocol>(relationship: Relationship, ofResource resource: T) -> NSURL {
+	public func URLForRelationship<T: Resource>(relationship: Relationship, ofResource resource: T) -> NSURL {
 		let resourceURL = resource.URL ?? URLForResourceType(resource.dynamicType.resourceType).URLByAppendingPathComponent("/\(resource.id!)")
 		return resourceURL.URLByAppendingPathComponent("/links/\(relationship.serializedName)")
 	}
 
-	public func URLForQuery<T: ResourceProtocol>(query: Query<T>) -> NSURL {
+	public func URLForQuery<T: Resource>(query: Query<T>) -> NSURL {
 		var URL: NSURL!
 		var preBuiltURL = false
 		

@@ -98,12 +98,12 @@ class Operation: NSOperation {
 /**
 A FetchOperation object fetches resources from a Spine, using a given Query.
 */
-class FetchOperation<T: ResourceProtocol>: Operation {
+class FetchOperation<T: Resource>: Operation {
 	/// The query describing which resources to fetch.
 	let query: Query<T>
 	
 	/// Existing resources onto which to map the fetched resources.
-	var mappingTargets = [ResourceProtocol]()
+	var mappingTargets = [Resource]()
 	
 	/// The result of the operation. You can safely force unwrap this in the completionBlock.
 	var result: Failable<ResourceCollection>?
@@ -159,12 +159,12 @@ A DeleteOperation deletes a resources from a Spine.
 */
 class DeleteOperation: Operation {
 	/// The resource to delete.
-	let resource: ResourceProtocol
+	let resource: Resource
 	
 	/// The result of the operation. You can safely force unwrap this in the completionBlock.
 	var result: Failable<Void>?
 	
-	init(resource: ResourceProtocol) {
+	init(resource: Resource) {
 		self.resource = resource
 		super.init()
 	}
@@ -191,7 +191,7 @@ or to insert new resources.
 */
 class SaveOperation: Operation {
 	/// The resource to save.
-	let resource: ResourceProtocol
+	let resource: Resource
 	
 	/// The result of the operation. You can safely force unwrap this in the completionBlock.
 	var result: Failable<Void>?
@@ -199,7 +199,7 @@ class SaveOperation: Operation {
 	/// Whether the resource is a new resource, or an existing resource.
 	private let isNewResource: Bool
 	
-	init(resource: ResourceProtocol) {
+	init(resource: Resource) {
 		self.resource = resource
 		self.isNewResource = (resource.id == nil)
 		super.init()
@@ -264,12 +264,12 @@ It will add and remove resources to and from many-to-many relationships, and upd
 */
 class RelationshipOperation: Operation {
 	/// The resource for which to save the relationships.
-	let resource: ResourceProtocol
+	let resource: Resource
 	
 	/// The result of the operation. You can safely force unwrap this in the completionBlock.
 	var result: Failable<Void>?
 	
-	init(resource: ResourceProtocol) {
+	init(resource: Resource) {
 		self.resource = resource
 		super.init()
 	}
@@ -277,7 +277,7 @@ class RelationshipOperation: Operation {
 	override func execute() {
 		// TODO: Where do we call success here?
 		
-		typealias Operation = (relationship: Relationship, type: String, resources: [ResourceProtocol])
+		typealias Operation = (relationship: Relationship, type: String, resources: [Resource])
 		
 		var operations: [Operation] = []
 		
@@ -285,7 +285,7 @@ class RelationshipOperation: Operation {
 		enumerateFields(resource) { field in
 			switch field {
 			case let toOne as ToOneRelationship:
-				let linkedResource = self.resource.valueForField(toOne.name) as! ResourceProtocol
+				let linkedResource = self.resource.valueForField(toOne.name) as! Resource
 				if linkedResource.id != nil {
 					operations.append((relationship: toOne, type: "replace", resources: [linkedResource]))
 				}
@@ -333,7 +333,7 @@ class RelationshipOperation: Operation {
 		self.state = .Finished
 	}
 	
-	private func addRelatedResources(relatedResources: [ResourceProtocol], relationship: Relationship, callback: (NSError?) -> ()) {
+	private func addRelatedResources(relatedResources: [Resource], relationship: Relationship, callback: (NSError?) -> ()) {
 		if relatedResources.isEmpty {
 			callback(nil)
 			return
@@ -352,7 +352,7 @@ class RelationshipOperation: Operation {
 		}
 	}
 	
-	private func removeRelatedResources(relatedResources: [ResourceProtocol], relationship: Relationship, callback: (NSError?) -> ()) {
+	private func removeRelatedResources(relatedResources: [Resource], relationship: Relationship, callback: (NSError?) -> ()) {
 		if relatedResources.isEmpty {
 			callback(nil)
 			return
@@ -371,7 +371,7 @@ class RelationshipOperation: Operation {
 		}
 	}
 	
-	private func setRelatedResource(relatedResource: ResourceProtocol, relationship: Relationship, callback: (NSError?) -> ()) {
+	private func setRelatedResource(relatedResource: Resource, relationship: Relationship, callback: (NSError?) -> ()) {
 		let URL = router.URLForRelationship(relationship, ofResource: self.resource)
 		let jsonPayload = serializeLinkageToJSON(convertResourcesToLinkage([relatedResource]))
 		
@@ -384,7 +384,7 @@ class RelationshipOperation: Operation {
 		}
 	}
 	
-	private func convertResourcesToLinkage(resources: [ResourceProtocol]) -> [[String: String]] {
+	private func convertResourcesToLinkage(resources: [Resource]) -> [[String: String]] {
 		let linkage: [[String: String]] = resources.map { resource in
 			assert(resource.id != nil, "Attempt to (un)relate resource without id. Only existing resources can be (un)related.")
 			return [resource.type: resource.id!]

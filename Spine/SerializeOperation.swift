@@ -16,7 +16,7 @@ The resouces are converted to their serialized form using a layered process.
 This process is the inverse of that of the DeserializeOperation.
 */
 class SerializeOperation: NSOperation {
-	private let resources: [ResourceProtocol]
+	private let resources: [Resource]
 	var transformers = TransformerDirectory()
 	var options = SerializationOptions()
 	
@@ -25,7 +25,7 @@ class SerializeOperation: NSOperation {
 	
 	// MARK: Initializers
 	
-	init(resources: [ResourceProtocol]) {
+	init(resources: [Resource]) {
 		self.resources = resources
 	}
 	
@@ -49,7 +49,7 @@ class SerializeOperation: NSOperation {
 	
 	// MARK: Serializing
 	
-	private func serializeResource(resource: ResourceProtocol) -> [String: AnyObject] {
+	private func serializeResource(resource: Resource) -> [String: AnyObject] {
 		Spine.logDebug(.Serializing, "Serializing resource \(resource) of type '\(resource.type)' with id '\(resource.id)'")
 		
 		var serializedData: [String: AnyObject] = [:]
@@ -84,7 +84,7 @@ class SerializeOperation: NSOperation {
 	- parameter serializedData: The data to add the attributes to.
 	- parameter resource:       The resource whose attributes to add.
 	*/
-	private func addAttributes(inout serializedData: [String: AnyObject], resource: ResourceProtocol) {
+	private func addAttributes(inout serializedData: [String: AnyObject], resource: Resource) {
 		var attributes = [String: AnyObject]();
 		
 		enumerateFields(resource, type: Attribute.self) { attribute in
@@ -128,7 +128,7 @@ class SerializeOperation: NSOperation {
 	- parameter serializedData: The data to add the relationships to.
 	- parameter resource:       The resource whose relationships to add.
 	*/
-	private func addRelationships(inout serializedData: [String: AnyObject], resource: ResourceProtocol) {
+	private func addRelationships(inout serializedData: [String: AnyObject], resource: Resource) {
 		enumerateFields(resource, type: Relationship.self) { field in
 			let key = field.serializedName
 			
@@ -137,7 +137,7 @@ class SerializeOperation: NSOperation {
 			switch field {
 			case let toOne as ToOneRelationship:
 				if self.options.includeToOne {
-					self.addToOneRelationship(&serializedData, key: key, type: toOne.linkedType, linkedResource: resource.valueForField(field.name) as? ResourceProtocol)
+					self.addToOneRelationship(&serializedData, key: key, type: toOne.linkedType, linkedResource: resource.valueForField(field.name) as? Resource)
 				}
 			case let toMany as ToManyRelationship:
 				if self.options.includeToMany {
@@ -155,7 +155,7 @@ class SerializeOperation: NSOperation {
 	- parameter key:             The key to add to the serialized data.
 	- parameter relatedResource: The related resource to add to the serialized data.
 	*/
-	private func addToOneRelationship(inout serializedData: [String: AnyObject], key: String, type: ResourceType, linkedResource: ResourceProtocol?) {
+	private func addToOneRelationship(inout serializedData: [String: AnyObject], key: String, type: ResourceType, linkedResource: Resource?) {
 		let serializedRelationship = [
 			"data": [
 				"type": type,
