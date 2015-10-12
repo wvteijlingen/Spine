@@ -38,7 +38,7 @@ class SerializeOperation: NSOperation {
 			result = try? NSJSONSerialization.dataWithJSONObject(["data": serializedData], options: NSJSONWritingOptions(rawValue: 0))
 			
 		} else  {
-			var data = resources.map { resource in
+			let data = resources.map { resource in
 				self.serializeResource(resource)
 			}
 			

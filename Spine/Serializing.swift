@@ -163,10 +163,10 @@ struct ResourceFactory {
 	- returns: A resource with the given type and id.
 	*/
 	func dispense(type: ResourceType, id: String, inout pool: [Resource], index: Int? = nil) -> Resource {
-		var resource: Resource! = findResource(pool, type, id)
+		var resource: Resource! = findResource(pool, type: type, id: id)
 		
 		if resource == nil && index != nil && !pool.isEmpty {
-			let applicableResources = findResourcesWithType(pool, type)
+			let applicableResources = findResourcesWithType(pool, type: type)
 			if index! < applicableResources.count {
 				resource = applicableResources[index!]
 			}

@@ -80,7 +80,7 @@ class DeserializeOperation: NSOperation {
 			for (index, representation) in data.enumerate() {
 				extractedPrimaryResources.append(deserializeSingleRepresentation(representation, mappingTargetIndex: index))
 			}
-		} else if let data = self.data["data"].dictionary {
+		} else if let _ = self.data["data"].dictionary {
 			extractedPrimaryResources.append(deserializeSingleRepresentation(self.data["data"], mappingTargetIndex: resourcePool.startIndex))
 		}
 			
@@ -157,9 +157,7 @@ class DeserializeOperation: NSOperation {
 		}
 		
 		// Extract meta
-		if resource is MetaHoldable {
-			(resource as! MetaHoldable).meta = representation["meta"].dictionaryObject
-		}
+		resource.meta = representation["meta"].dictionaryObject
 
 		// Extract fields
 		extractAttributes(representation, intoResource: resource)
@@ -204,7 +202,7 @@ class DeserializeOperation: NSOperation {
 	private func extractAttribute(serializedData: JSON, key: String) -> AnyObject? {
 		let value = serializedData["attributes"][key]
 		
-		if let nullValue = value.null {
+		if let _ = value.null {
 			return nil
 		} else {
 			return value.rawValue
@@ -317,17 +315,17 @@ class DeserializeOperation: NSOperation {
 	*/
 	private func resolveRelations() {
 		for resource in resourcePool {
-			enumerateFields(resource, ToManyRelationship.self) { field in
+			enumerateFields(resource, type: ToManyRelationship.self) { field in
 				if let linkedResource = resource.valueForField(field.name) as? LinkedResourceCollection {
 					
 					// We can only resolve if the linkage is known
 					if let linkage = linkedResource.linkage {
 						
 						let targetResources: [Resource] = linkage.map { link in
-							findResource(self.resourcePool, link.type, link.id)
+							findResource(self.resourcePool, type: link.type, id: link.id)
 						}.filter { $0 != nil }.map { $0! }
 						
-						if !isEmpty(targetResources) {
+						if !targetResources.isEmpty {
 							linkedResource.resources = targetResources
 							linkedResource.isLoaded = true
 						}
