@@ -39,7 +39,7 @@ public func ==(lhs: ResourceIdentifier, rhs: ResourceIdentifier) -> Bool {
 /**
 The Resource declares methods and properties that a resource must implement.
 */
-public protocol ResourceProtocol: class {
+protocol ResourceProtocol: class {
 	/// The resource type in plural form.
 	static var resourceType: ResourceType { get }
 	
