@@ -9,7 +9,7 @@
 import Foundation
 
 public func fieldsFromDictionary(dictionary: [String: Field]) -> [Field] {
-	return map(dictionary) { (name, field) in
+	return dictionary.map { (name, field) in
 		field.name = name
 		return field
 	}
