@@ -99,7 +99,7 @@ public class URLSessionClient: _HTTPClientProtocol {
 			}
 			
 			if Spine.shouldLog(.Debug, domain: .Networking) {
-				if let stringRepresentation = NSString(data: data, encoding: NSUTF8StringEncoding) {
+				if let data = data, stringRepresentation = NSString(data: data, encoding: NSUTF8StringEncoding) {
 					Spine.logDebug(.Networking, stringRepresentation)
 				}
 			}
