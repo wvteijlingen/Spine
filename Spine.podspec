@@ -14,6 +14,6 @@ Pod::Spec.new do |s|
 
   s.requires_arc = true
 
-  s.dependency 'SwiftyJSON', '~> 2.2.0'
-  s.dependency 'BrightFutures', '~> 1.0.1'
+  s.dependency 'SwiftyJSON', '~> 2.3.0'
+  s.dependency 'BrightFutures', :git => 'https://github.com/Thomvis/BrightFutures.git', :branch => 'swift-2.0'
 end
