@@ -25,8 +25,7 @@ public protocol RouterProtocol {
 	*/
 	func URLForResourceType(type: ResourceType) -> NSURL
 	
-	
-	func URLForRelationship(relationship: Relationship, ofResource resource: ResourceProtocol) -> NSURL
+	func URLForRelationship<T: ResourceProtocol>(relationship: Relationship, ofResource resource: T) -> NSURL
 	
 	/**
 	Returns an NSURL that represents the given query.
@@ -79,16 +78,16 @@ public class Router: RouterProtocol {
 			assertionFailure("Cannot build URL for query. Query does not have a URL, nor a resource type.")
 		}
 		
-		var URLComponents = NSURLComponents(URL: URL, resolvingAgainstBaseURL: true)!
-		var queryItems: [NSURLQueryItem] = (URLComponents.queryItems as? [NSURLQueryItem]) ?? []
+		let URLComponents = NSURLComponents(URL: URL, resolvingAgainstBaseURL: true)!
+		var queryItems: [NSURLQueryItem] = URLComponents.queryItems ?? []
 		
 		// Resource IDs
 		if !preBuiltURL {
 			if let IDs = query.resourceIDs {
 				if IDs.count == 1 {
-					URLComponents.path = URLComponents.path?.stringByAppendingPathComponent(IDs.first!)
+					URLComponents.path = (URLComponents.path! as NSString).stringByAppendingPathComponent(IDs.first!)
 				} else {
-					var item = NSURLQueryItem(name: "filter[id]", value: IDs.joinWithSeparator(","))
+					let item = NSURLQueryItem(name: "filter[id]", value: IDs.joinWithSeparator(","))
 					setQueryItem(item, forQueryItems: &queryItems)
 				}
 			}
@@ -96,7 +95,7 @@ public class Router: RouterProtocol {
 		
 		// Includes
 		if !query.includes.isEmpty {
-			var item = NSURLQueryItem(name: "include", value: query.includes.joinWithSeparator(","))
+			let item = NSURLQueryItem(name: "include", value: query.includes.joinWithSeparator(","))
 			setQueryItem(item, forQueryItems: &queryItems)
 		}
 		
@@ -108,7 +107,7 @@ public class Router: RouterProtocol {
 		
 		// Fields
 		for (resourceType, fields) in query.fields {
-			var item = NSURLQueryItem(name: "fields[\(resourceType)]", value: fields.joinWithSeparator(","))
+			let item = NSURLQueryItem(name: "fields[\(resourceType)]", value: fields.joinWithSeparator(","))
 			setQueryItem(item, forQueryItems: &queryItems)
 		}
 		
@@ -122,7 +121,7 @@ public class Router: RouterProtocol {
 				}
 			}
 			
-			var item = NSURLQueryItem(name: "sort", value: descriptorStrings.joinWithSeparator(","))
+			let item = NSURLQueryItem(name: "sort", value: descriptorStrings.joinWithSeparator(","))
 			setQueryItem(item, forQueryItems: &queryItems)
 		}
 		
@@ -185,7 +184,7 @@ public class Router: RouterProtocol {
 	}
 	
 	private func setQueryItem(queryItem: NSURLQueryItem, inout forQueryItems queryItems: [NSURLQueryItem]) {
-		queryItems.filter { return $0.name != queryItem.name }
+		queryItems = queryItems.filter { return $0.name != queryItem.name }
 		queryItems.append(queryItem)
 	}
 }
