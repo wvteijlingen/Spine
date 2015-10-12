@@ -381,13 +381,13 @@ public extension Spine {
 /// Return an `Array` containing resources of `domain`,
 /// in order, that are of the resource type `type`.
 func findResourcesWithType<C: CollectionType where C.Generator.Element: ResourceProtocol>(domain: C, type: ResourceType) -> [C.Generator.Element] {
-	return filter(domain) { $0.type == type }
+	return domain.filter { $0.type == type }
 }
 
 /// Return the first resource of `domain`,
 /// that is of the resource type `type` and has id `id`.
 func findResource<C: CollectionType where C.Generator.Element: ResourceProtocol>(domain: C, type: ResourceType, id: String) -> C.Generator.Element? {
-	return filter(domain) { $0.type == type && $0.id == id }.first
+	return domain.filter { $0.type == type && $0.id == id }.first
 }
 
 /// Calls `callback` for each field, filtered by type `type`, of resource `resource`.
@@ -417,7 +417,7 @@ public func == <T: ResourceProtocol> (left: [T], right: [T]) -> Bool {
 		return false
 	}
 	
-	for (index, resource) in enumerate(left) {
+	for (index, resource) in left.enumerate() {
 		if (resource.type != right[index].type) || (resource.id != right[index].id) {
 			return false
 		}

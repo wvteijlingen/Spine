@@ -77,7 +77,7 @@ class DeserializeOperation: NSOperation {
 		
 		// Extract main resources. The are added to the `extractedPrimaryResources` so we can return them separate from the entire resource pool.
 		if let data = self.data["data"].array {
-			for (index, representation) in enumerate(data) {
+			for (index, representation) in data.enumerate() {
 				extractedPrimaryResources.append(deserializeSingleRepresentation(representation, mappingTargetIndex: index))
 			}
 		} else if let data = self.data["data"].dictionary {
@@ -119,7 +119,7 @@ class DeserializeOperation: NSOperation {
 		
 		// Create a result
 		var responseDocument = JSONAPIDocument(data: nil, errors: extractedErrors, meta: extractedMeta, links: extractedLinks)
-		if !isEmpty(extractedPrimaryResources) {
+		if !extractedPrimaryResources.isEmpty {
 			responseDocument.data = extractedPrimaryResources
 		}
 		result = Failable(responseDocument)
@@ -185,7 +185,7 @@ class DeserializeOperation: NSOperation {
 	:param: resource       The resource into which to extract the attributes.
 	*/
 	private func extractAttributes(serializedData: JSON, intoResource resource: ResourceProtocol) {
-		enumerateFields(resource, Attribute.self) { attribute in
+		enumerateFields(resource, type: Attribute.self) { attribute in
 			if let extractedValue: AnyObject = self.extractAttribute(serializedData, key: attribute.serializedName) {
 				let formattedValue: AnyObject = self.transformers.deserialize(extractedValue, forAttribute: attribute)
 				resource.setValue(formattedValue, forField: attribute.name)
