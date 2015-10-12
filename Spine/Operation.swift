@@ -126,11 +126,11 @@ class FetchOperation<T: Resource>: Operation {
 				let deserializationResult = self.serializer.deserializeData(responseData!, mappingTargets: self.mappingTargets)
 				
 				switch deserializationResult {
-				case .Success(let documentWrapper) where documentWrapper.value.errors?.count > 0:
-					self.result = Failable(documentWrapper.value.errors!.first!)
+				case .Success(let document) where document.errors?.count > 0:
+					self.result = Failable(document.errors!.first!)
 					
-				case .Success(let documentWrapper) where documentWrapper.value.errors == nil:
-					self.result = Failable(self.collectionFromDocument(documentWrapper.value))
+				case .Success(let document) where document.errors == nil:
+					self.result = Failable(self.collectionFromDocument(document))
 					
 				case .Failure(let error):
 					self.result = .Failure(error)

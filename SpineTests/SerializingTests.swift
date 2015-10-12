@@ -101,9 +101,7 @@ class DeserializingTests: SerializerTests {
 		let deserialisationResult = serializer.deserializeData(fixture.data, mappingTargets: nil)
 		
 		switch deserialisationResult {
-		case .Success(let documentBox):
-			let document = documentBox.value
-			
+		case .Success(let document):
 			XCTAssertNotNil(document.data, "Expected data to be not nil.")
 			
 			if let resources = document.data {
@@ -155,9 +153,7 @@ class DeserializingTests: SerializerTests {
 		let deserialisationResult = serializer.deserializeData(fixture.data, mappingTargets: nil)
 
 		switch deserialisationResult {
-		case .Success(let documentBox):
-			let document = documentBox.value
-			
+		case .Success(let document):
 			XCTAssertNotNil(document.data, "Expected data to be not nil.")
 			if let resources = document.data {
 				XCTAssertEqual(resources.count, 2, "Expected resources count to be 2.")
@@ -197,9 +193,7 @@ class DeserializingTests: SerializerTests {
 		let deserialisationResult = serializer.deserializeData(fixture.data, mappingTargets: nil)
 		
 		switch deserialisationResult {
-		case .Success(let documentBox):
-			let document = documentBox.value
-			
+		case .Success(let document):
 			XCTAssertNotNil(document.data, "Expected data to be not nil.")
 			if let resources = document.data {
 				XCTAssertEqual(resources.count, 1, "Deserialized resources count not equal.")
@@ -271,9 +265,7 @@ class DeserializingTests: SerializerTests {
 		let deserialisationResult = serializer.deserializeData(fixture.data, mappingTargets: nil)
 		
 		switch deserialisationResult {
-		case .Success(let documentBox):
-			let document = documentBox.value
-			
+		case .Success(let document):
 			XCTAssertNotNil(document.errors, "Expected data to be not nil.")
 			
 			if let errors = document.errors {

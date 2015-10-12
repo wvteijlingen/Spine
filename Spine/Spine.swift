@@ -74,8 +74,8 @@ public class Spine {
 		operation.completionBlock = {
 
 			switch operation.result! {
-			case .Success(let resourceCollectionWrapper):
-				promise.success(resourceCollectionWrapper.value)
+			case .Success(let resourceCollection):
+				promise.success(resourceCollection)
 			case .Failure(let error):
 				promise.failure(error)
 			}
@@ -100,10 +100,10 @@ public class Spine {
 		
 		operation.completionBlock = {
 			switch operation.result! {
-			case .Success(let resourceCollectionBox) where resourceCollectionBox.value.count == 0:
+			case .Success(let resourceCollection) where resourceCollection.count == 0:
 				promise.failure(NSError(domain: SpineClientErrorDomain, code: SpineErrorCodes.ResourceNotFound, userInfo: nil))
-			case .Success(let resourceCollectionBox):
-				let firstResource = resourceCollectionBox.value.resources.first as! T
+			case .Success(let resourceCollection):
+				let firstResource = resourceCollection.resources.first as! T
 				promise.success(firstResource)
 			case .Failure(let error):
 				promise.failure(error)
@@ -169,13 +169,13 @@ public class Spine {
 		let promise = Promise<ResourceCollection, NSError>()
 		
 		if let nextURL = collection.nextURL {
-			let query = Query(resourceType: Resource.self, URL: nextURL)
+			let query = Query(URL: nextURL)
 			let operation = FetchOperation(query: query)
 			
 			operation.completionBlock = {
 				switch operation.result! {
-				case .Success(let resourceCollectionBox):
-					let nextCollection = resourceCollectionBox.value
+				case .Success(let resourceCollection):
+					let nextCollection = resourceCollection
 					collection.resources += nextCollection.resources
 					collection.resourcesURL = nextCollection.resourcesURL
 					collection.nextURL = nextCollection.nextURL
@@ -208,13 +208,13 @@ public class Spine {
 		let promise = Promise<ResourceCollection, NSError>()
 		
 		if let previousURL = collection.previousURL {
-			let query = Query(resourceType: Resource.self, URL: previousURL)
+			let query = Query(URL: previousURL)
 			let operation = FetchOperation(query: query)
 			
 			operation.completionBlock = {
 				switch operation.result! {
-				case .Success(let resourceCollectionBox):
-					let previousCollection = resourceCollectionBox.value
+				case .Success(let resourceCollection):
+					let previousCollection = resourceCollection
 					collection.resources = previousCollection.resources + collection.resources
 					collection.resourcesURL = previousCollection.resourcesURL
 					collection.nextURL = previousCollection.nextURL
@@ -447,11 +447,11 @@ compiler error, we have to box the success value.
 - Failure: The operation failed with the given error.
 */
 enum Failable<T> {
-	case Success(Box<T>)
+	case Success(T)
 	case Failure(NSError)
 	
 	init(_ value: T) {
-		self = .Success(Box(value))
+		self = .Success(value)
 	}
 	
 	init(_ error: NSError) {
@@ -466,9 +466,4 @@ enum Failable<T> {
 			return nil
 		}
 	}
-}
-
-class Box<T> {
-	var value: T
-	init(_ value: T) { self.value = value }
 }
