@@ -21,6 +21,7 @@
 		D3452C331AD19B2800CD413B /* FutureExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3452C321AD19B2800CD413B /* FutureExtensions.swift */; };
 		D3452C341AD19BD500CD413B /* Operation.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3452C2E1AD18E6900CD413B /* Operation.swift */; };
 		D3452C351AD19BD500CD413B /* Logging.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3452C301AD19B0900CD413B /* Logging.swift */; };
+		D34A06021BCBE302009920D4 /* Result.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D32EA6DC1BCBD5930076CFA5 /* Result.framework */; };
 		D3502C2D1A93A7F700F91266 /* SingleFoo.json in Resources */ = {isa = PBXBuildFile; fileRef = D3502C2C1A93A7F700F91266 /* SingleFoo.json */; };
 		D3502C2F1A93A84000F91266 /* BrightFutures.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3411E771A4B5C2C00D27F54 /* BrightFutures.framework */; };
 		D3502C301A93A84000F91266 /* SwiftyJSON.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3411E7A1A4B5D2200D27F54 /* SwiftyJSON.framework */; };
@@ -115,6 +116,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D34A06021BCBE302009920D4 /* Result.framework in Frameworks */,
 				D3502C2F1A93A84000F91266 /* BrightFutures.framework in Frameworks */,
 				D3502C301A93A84000F91266 /* SwiftyJSON.framework in Frameworks */,
 			);
