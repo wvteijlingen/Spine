@@ -23,7 +23,7 @@ extension XCTestCase {
 
 // MARK: - Custom assertions
 
-func assertFutureFailure<T>(future: Future<T>, withError expectedError: NSError, expectation: XCTestExpectation) {
+func assertFutureFailure<T>(future: Future<T, NSError>, withError expectedError: NSError, expectation: XCTestExpectation) {
 	future.onSuccess { resources in
 		expectation.fulfill()
 		XCTFail("Expected success callback to not be called.")
@@ -34,7 +34,7 @@ func assertFutureFailure<T>(future: Future<T>, withError expectedError: NSError,
 	}
 }
 
-func assertFutureFailure<T>(future: Future<T>, withErrorDomain domain: String, errorCode code: Int, expectation: XCTestExpectation) {
+func assertFutureFailure<T>(future: Future<T, NSError>, withErrorDomain domain: String, errorCode code: Int, expectation: XCTestExpectation) {
 	let expectedError = NSError(domain: domain, code: code, userInfo: nil)
 	assertFutureFailure(future, withError: expectedError, expectation)
 }
