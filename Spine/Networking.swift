@@ -73,8 +73,8 @@ public class HTTPClient: NetworkClient {
 	public func removeHeader(header: String) {
 		headers.removeValueForKey(header)
 	}
-
-	public func request(method: String, URL: NSURL, payload: NSData?, callback: NetworkClientCallback) {
+	
+	public func buildRequest(method: String, URL: NSURL, payload: NSData?) -> NSMutableURLRequest {
 		let request = NSMutableURLRequest(URL: URL)
 		request.HTTPMethod = method
 		
@@ -82,22 +82,27 @@ public class HTTPClient: NetworkClient {
 			request.setValue(value, forHTTPHeaderField: key)
 		}
 		
-		Spine.logInfo(.Networking, "\(method): \(URL)")
-		
 		if let payload = payload {
 			request.HTTPBody = payload
-			
-			if Spine.shouldLog(.Debug, domain: .Networking) {
-				if let stringRepresentation = NSString(data: payload, encoding: NSUTF8StringEncoding) {
-					Spine.logDebug(.Networking, stringRepresentation)
-				}
+		}
+		
+		return request
+	}
+
+	public func request(method: String, URL: NSURL, payload: NSData?, callback: NetworkClientCallback) {
+		let request = buildRequest(method, URL: URL, payload: payload)
+		
+		Spine.logInfo(.Networking, "\(method): \(URL)")
+		
+		if Spine.shouldLog(.Debug, domain: .Networking) {
+			if let httpBody = request.HTTPBody, stringRepresentation = NSString(data: httpBody, encoding: NSUTF8StringEncoding) {
+				Spine.logDebug(.Networking, stringRepresentation)
 			}
 		}
 		
 		let task = urlSession.dataTaskWithRequest(request) { data, response, networkError in
 			let response = (response as? NSHTTPURLResponse)
 			let success: Bool
-			
 			
 			if let error = networkError {
 				// Network error
