@@ -259,23 +259,16 @@ class DeserializeOperation: NSOperation {
 	private func extractToOneRelationship(serializedData: JSON, key: String, linkedType: ResourceType, resource: Resource) -> Resource? {
 		var resource: Resource? = nil
 		
-		// Resource level link as a resource URL only.
-		if let linkedResourceURL = serializedData["relationships"][key].URL {
-			resource = resourceFactory.instantiate(linkedType)
-			resource?.URL = linkedResourceURL
+		if let linkData = serializedData["relationships"][key].dictionary {
+			let type = linkData["data"]?["type"].string ?? linkedType
 			
-		// Resource level link as a link object. This might contain linkage in the form of type/id.
-		} else if serializedData["relationships"][key].dictionary != nil{
-			let linkData = serializedData["relationships"][key]
-			let type = linkData["data"]["type"].string ?? linkedType
-			
-			if let id = linkData["data"]["id"].string {
+			if let id = linkData["data"]?["id"].string {
 				resource = resourceFactory.dispense(type, id: id, pool: &resourcePool)
 			} else {
 				resource = resourceFactory.instantiate(type)
 			}
 			
-			if let resourceURL = linkData["links"]["related"].URL {
+			if let resourceURL = linkData["links"]?["related"].URL {
 				resource!.URL = resourceURL
 			}
 			
@@ -296,18 +289,12 @@ class DeserializeOperation: NSOperation {
 	*/
 	private func extractToManyRelationship(serializedData: JSON, key: String, resource: Resource) -> LinkedResourceCollection? {
 		var resourceCollection: LinkedResourceCollection? = nil
-		
-		// Resource level link as a resource URL only.
-		if let resourcesURL = serializedData["relationships"][key].URL {
-			resourceCollection = LinkedResourceCollection(resourcesURL: resourcesURL, linkURL: nil, linkage: nil)
-		
-		// Resource level link as a link object. This might contain linkage in the form of type/id.
-		} else if serializedData["relationships"][key].dictionary != nil {
-			let linkData = serializedData["relationships"][key]
-			let resourcesURL: NSURL? = linkData["links"]["related"].URL
-			let linkURL: NSURL? = linkData["links"]["self"].URL
+
+		if let linkData = serializedData["relationships"][key].dictionary {
+			let resourcesURL: NSURL? = linkData["links"]?["related"].URL
+			let linkURL: NSURL? = linkData["links"]?["self"].URL
 			
-			if let linkage = linkData["data"].array {
+			if let linkage = linkData["data"]?.array {
 				let mappedLinkage = linkage.map { ResourceIdentifier(type: $0["type"].stringValue, id: $0["id"].stringValue) }
 				resourceCollection = LinkedResourceCollection(resourcesURL: resourcesURL, linkURL: linkURL, linkage: mappedLinkage)
 			} else {
