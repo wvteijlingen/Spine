@@ -169,7 +169,7 @@ public class Spine {
 		let promise = Promise<ResourceCollection, NSError>()
 		
 		if let nextURL = collection.nextURL {
-			let query = Query<Resource>(URL: nextURL)
+			let query = Query(resourceType: Resource.self, URL: nextURL)
 			let operation = FetchOperation(query: query)
 			
 			operation.completionBlock = {
@@ -208,7 +208,7 @@ public class Spine {
 		let promise = Promise<ResourceCollection, NSError>()
 		
 		if let previousURL = collection.previousURL {
-			let query = Query<Resource>(URL: previousURL)
+			let query = Query(resourceType: Resource.self, URL: previousURL)
 			let operation = FetchOperation(query: query)
 			
 			operation.completionBlock = {
