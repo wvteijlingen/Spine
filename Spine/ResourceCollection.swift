@@ -216,22 +216,3 @@ public class LinkedResourceCollection: ResourceCollection {
 		addedResources = addedResources.filter { $0 !== resource }
 	}
 }
-
-extension LinkedResourceCollection: RangeReplaceableCollectionType {
-	public var startIndex: Int { return resources.startIndex }
-	public var endIndex: Int { return resources.endIndex }
-
-	public func reserveCapacity(n: Int) {
-		resources.reserveCapacity(n)
-	}
-	
-	public func append(newElement: Resource) {
-		addResource(newElement)
-	}
-	
-	public func extend<S : SequenceType where S.Generator.Element == Resource>(seq: S) {
-		for element in seq {
-			addResource(element)
-		}
-	}
-}
