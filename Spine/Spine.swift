@@ -66,8 +66,8 @@ public class Spine {
 	
 	:returns: A future that resolves to a ResourceCollection that contains the fetched resources.
 	*/
-	public func find<T: ResourceProtocol>(query: Query<T>) -> Future<ResourceCollection> {
-		let promise = Promise<ResourceCollection>()
+	public func find<T: ResourceProtocol>(query: Query<T>) -> Future<ResourceCollection, NSError> {
+		let promise = Promise<ResourceCollection, NSError>()
 		
 		let operation = FetchOperation(query: query)
 		
@@ -93,8 +93,8 @@ public class Spine {
 	
 	:returns: A future that resolves to the fetched resource.
 	*/
-	public func findOne<T: ResourceProtocol>(query: Query<T>) -> Future<T> {
-		let promise = Promise<T>()
+	public func findOne<T: ResourceProtocol>(query: Query<T>) -> Future<T, NSError> {
+		let promise = Promise<T, NSError>()
 		
 		let operation = FetchOperation(query: query)
 		
@@ -123,7 +123,7 @@ public class Spine {
 	
 	:returns: A future that resolves to a ResourceCollection that contains the fetched resources.
 	*/
-	public func find<T: ResourceProtocol>(IDs: [String], ofType type: T.Type) -> Future<ResourceCollection> {
+	public func find<T: ResourceProtocol>(IDs: [String], ofType type: T.Type) -> Future<ResourceCollection, NSError> {
 		let query = Query(resourceType: type, resourceIDs: IDs)
 		return find(query)
 	}
@@ -136,7 +136,7 @@ public class Spine {
 	
 	:returns: A future that resolves to a ResourceCollection that contains the fetched resources.
 	*/
-	public func find<T: ResourceProtocol>(type: T.Type) -> Future<ResourceCollection> {
+	public func find<T: ResourceProtocol>(type: T.Type) -> Future<ResourceCollection, NSError> {
 		let query = Query(resourceType: type)
 		return find(query)
 	}
@@ -149,7 +149,7 @@ public class Spine {
 	
 	:returns: A future that resolves to the fetched resource.
 	*/
-	public func findOne<T: ResourceProtocol>(ID: String, ofType type: T.Type) -> Future<T> {
+	public func findOne<T: ResourceProtocol>(ID: String, ofType type: T.Type) -> Future<T, NSError> {
 		let query = Query(resourceType: type, resourceIDs: [ID])
 		return findOne(query)
 	}
@@ -165,8 +165,8 @@ public class Spine {
 	
 	:returns: A future that resolves to the ResourceCollection including the newly loaded resources.
 	*/
-	public func loadNextPageOfCollection(collection: ResourceCollection) -> Future<ResourceCollection> {
-		let promise = Promise<ResourceCollection>()
+	public func loadNextPageOfCollection(collection: ResourceCollection) -> Future<ResourceCollection, NSError> {
+		let promise = Promise<ResourceCollection, NSError>()
 		
 		if let nextURL = collection.nextURL {
 			let query = Query<ResourceProtocol>(URL: nextURL)
@@ -204,8 +204,8 @@ public class Spine {
 	
 	:returns: A future that resolves to the ResourceCollection including the newly loaded resources.
 	*/
-	public func loadPreviousPageOfCollection(collection: ResourceCollection) -> Future<ResourceCollection> {
-		let promise = Promise<ResourceCollection>()
+	public func loadPreviousPageOfCollection(collection: ResourceCollection) -> Future<ResourceCollection, NSError> {
+		let promise = Promise<ResourceCollection, NSError>()
 		
 		if let previousURL = collection.previousURL {
 			let query = Query<ResourceProtocol>(URL: previousURL)
@@ -245,8 +245,8 @@ public class Spine {
 	
 	:returns: A future that resolves to the saved resource.
 	*/
-	public func save(resource: ResourceProtocol) -> Future<ResourceProtocol> {
-		let promise = Promise<ResourceProtocol>()
+	public func save(resource: ResourceProtocol) -> Future<ResourceProtocol, NSError> {
+		let promise = Promise<ResourceProtocol, NSError>()
 		
 		let operation = SaveOperation(resource: resource)
 		
@@ -270,8 +270,8 @@ public class Spine {
 	
 	:returns: A future
 	*/
-	public func delete(resource: ResourceProtocol) -> Future<Void> {
-		let promise = Promise<Void>()
+	public func delete(resource: ResourceProtocol) -> Future<Void, NSError> {
+		let promise = Promise<Void, NSError>()
 		
 		let operation = DeleteOperation(resource: resource)
 		
@@ -299,7 +299,7 @@ public class Spine {
 	
 	:returns: <#return value description#>
 	*/
-	public func ensure<T: ResourceProtocol>(resource: T) -> Future<T> {
+	public func ensure<T: ResourceProtocol>(resource: T) -> Future<T, NSError> {
 		let query = Query(resource: resource)
 		return loadResourceByExecutingQuery(resource, query: query)
 	}
@@ -315,13 +315,13 @@ public class Spine {
 	
 	:returns: <#return value description#>
 	*/
-	public func ensure<T: ResourceProtocol>(resource: T, queryCallback: (Query<T>) -> Query<T>) -> Future<T> {
+	public func ensure<T: ResourceProtocol>(resource: T, queryCallback: (Query<T>) -> Query<T>) -> Future<T, NSError> {
 		let query = queryCallback(Query(resource: resource))
 		return loadResourceByExecutingQuery(resource, query: query)
 	}
 
-	func loadResourceByExecutingQuery<T: ResourceProtocol>(resource: T, query: Query<T>) -> Future<T> {
-		let promise = Promise<(T)>()
+	func loadResourceByExecutingQuery<T: ResourceProtocol>(resource: T, query: Query<T>) -> Future<T, NSError> {
+		let promise = Promise<(T), NSError>()
 		
 		if resource.isLoaded {
 			promise.success(resource)

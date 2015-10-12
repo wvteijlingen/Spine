@@ -9,34 +9,34 @@
 import Foundation
 import BrightFutures
 
-extension Future {
-	func onServerFailure(callback: FailureCallback) -> BrightFutures.Future<T> {
-		self.onFailure { error in
-			if error.domain == SpineServerErrorDomain {
-				callback(error)
-			}
-		}
-		
-		return self
-	}
-	
-	func onNetworkFailure(callback: FailureCallback) -> BrightFutures.Future<T> {
-		self.onFailure { error in
-			if error.domain == NSURLErrorDomain {
-				callback(error)
-			}
-		}
-		
-		return self
-	}
-	
-	func onClientFailure(callback: FailureCallback) -> BrightFutures.Future<T> {
-		self.onFailure { error in
-			if error.domain == SpineClientErrorDomain {
-				callback(error)
-			}
-		}
-		
-		return self
-	}
-}
+//extension Future {
+//	func onServerFailure(callback: FailureCallback) -> BrightFutures.Future<T, NSError> {
+//		self.onFailure { error in
+//			if error.domain == SpineServerErrorDomain {
+//				callback(error)
+//			}
+//		}
+//		
+//		return self
+//	}
+//	
+//	func onNetworkFailure(callback: FailureCallback) -> BrightFutures.Future<T, NSError> {
+//		self.onFailure { error in
+//			if error.domain == NSURLErrorDomain {
+//				callback(error)
+//			}
+//		}
+//		
+//		return self
+//	}
+//	
+//	func onClientFailure(callback: FailureCallback) -> BrightFutures.Future<T, NSError> {
+//		self.onFailure { error in
+//			if error.domain == SpineClientErrorDomain {
+//				callback(error)
+//			}
+//		}
+//		
+//		return self
+//	}
+//}
