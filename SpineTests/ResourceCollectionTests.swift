@@ -125,7 +125,7 @@ class LinkedResourceCollectionTests: XCTestCase {
 		collection.addResourceAsExisting(foo)
 		
 		XCTAssert(collection.resources == [foo], "")
-		XCTAssert(isEmpty(collection.addedResources) , "")
+		XCTAssert(collection.addedResources.isEmpty , "")
 	}
 	
 	func testAdd() {
@@ -145,7 +145,7 @@ class LinkedResourceCollectionTests: XCTestCase {
 		collection.addResource(foo)
 		collection.removeResource(foo)
 		
-		XCTAssert(isEmpty(collection.resources), "")
+		XCTAssert(collection.resources.isEmpty, "")
 		XCTAssert(collection.removedResources == [foo] , "")
 	}
 }

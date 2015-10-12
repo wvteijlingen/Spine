@@ -44,7 +44,7 @@ class FindTests: SpineTests {
 		
 		spine.find(Foo.self).onSuccess { fooCollection in
 			expectation.fulfill()
-			for (index, resource) in enumerate(fooCollection) {
+			for (index, resource) in fooCollection.enumerate() {
 				XCTAssertEqual(fooCollection.count, 2, "Deserialized resources count not equal.")
 				XCTAssert(resource is Foo, "Deserialized resource should be of class 'Foo'.")
 				let foo = resource as! Foo
@@ -65,7 +65,7 @@ class FindTests: SpineTests {
 		
 		let expectation = expectationWithDescription("testFindByTypeWithAPIError")
 		let future = spine.find(Foo.self)
-		assertFutureFailure(future, withErrorDomain: SpineServerErrorDomain, errorCode: 404, expectation)
+		assertFutureFailure(future, withErrorDomain: SpineServerErrorDomain, errorCode: 404, expectation: expectation)
 		
 		waitForExpectationsWithTimeout(10) { error in
 			XCTAssertNil(error, "\(error)")
@@ -77,7 +77,7 @@ class FindTests: SpineTests {
 		
 		let expectation = expectationWithDescription("testFindByTypeWithNetworkError")
 		let future = spine.find(Foo.self)
-		assertFutureFailure(future, withErrorDomain: SpineClientErrorDomain, errorCode: 999, expectation)
+		assertFutureFailure(future, withErrorDomain: SpineClientErrorDomain, errorCode: 999, expectation: expectation)
 		
 		waitForExpectationsWithTimeout(10) { error in
 			XCTAssertNil(error, "\(error)")
@@ -100,7 +100,7 @@ class FindTests: SpineTests {
 		
 		spine.find(["1","2"], ofType: Foo.self).onSuccess { fooCollection in
 			expectation.fulfill()
-			for (index, resource) in enumerate(fooCollection) {
+			for (index, resource) in fooCollection.enumerate() {
 				XCTAssertEqual(fooCollection.count, 2, "Expected resource count to be 2.")
 				XCTAssert(resource is Foo, "Expected resource to be of class 'Foo'.")
 				let foo = resource as! Foo
@@ -121,7 +121,7 @@ class FindTests: SpineTests {
 		
 		let expectation = expectationWithDescription("testFindByIDAndTypeWithAPIError")
 		let future = spine.find(["1","2"], ofType: Foo.self)
-		assertFutureFailure(future, withErrorDomain: SpineServerErrorDomain, errorCode: 404, expectation)
+		assertFutureFailure(future, withErrorDomain: SpineServerErrorDomain, errorCode: 404, expectation: expectation)
 		
 		waitForExpectationsWithTimeout(10) { error in
 			XCTAssertNil(error, "\(error)")
@@ -134,7 +134,7 @@ class FindTests: SpineTests {
 		
 		let expectation = expectationWithDescription("testFindByIDAndTypeWithNetworkError")
 		let future = spine.find(["1","2"], ofType: Foo.self)
-		assertFutureFailure(future, withErrorDomain: SpineClientErrorDomain, errorCode: 999, expectation)
+		assertFutureFailure(future, withErrorDomain: SpineClientErrorDomain, errorCode: 999, expectation: expectation)
 		
 		waitForExpectationsWithTimeout(10) { error in
 			XCTAssertNil(error, "\(error)")
@@ -173,7 +173,7 @@ class FindTests: SpineTests {
 		
 		let expectation = expectationWithDescription("testFindOneByTypeWithAPIError")
 		let future = spine.findOne("1", ofType: Foo.self)
-		assertFutureFailure(future, withErrorDomain: SpineServerErrorDomain, errorCode: 404, expectation)
+		assertFutureFailure(future, withErrorDomain: SpineServerErrorDomain, errorCode: 404, expectation: expectation)
 		
 		waitForExpectationsWithTimeout(10) { error in
 			XCTAssertNil(error, "\(error)")
@@ -185,7 +185,7 @@ class FindTests: SpineTests {
 		
 		let expectation = expectationWithDescription("testFindOneByTypeWithNetworkError")
 		let future = spine.findOne("1", ofType: Foo.self)
-		assertFutureFailure(future, withErrorDomain: SpineClientErrorDomain, errorCode: 999, expectation)
+		assertFutureFailure(future, withErrorDomain: SpineClientErrorDomain, errorCode: 999, expectation: expectation)
 		
 		waitForExpectationsWithTimeout(10) { error in
 			XCTAssertNil(error, "\(error)")
@@ -209,7 +209,7 @@ class FindTests: SpineTests {
 		
 		spine.find(query).onSuccess { fooCollection in
 			expectation.fulfill()
-			for (index, resource) in enumerate(fooCollection) {
+			for (index, resource) in fooCollection.enumerate() {
 				XCTAssertEqual(fooCollection.count, 2, "Deserialized resources count not equal.")
 				XCTAssert(resource is Foo, "Deserialized resource should be of class 'Foo'.")
 				let foo = resource as! Foo
@@ -232,7 +232,7 @@ class FindTests: SpineTests {
 		
 		let query = Query(resourceType: Foo.self, resourceIDs: ["1"])
 		let future = spine.find(query)
-		assertFutureFailure(future, withErrorDomain: SpineServerErrorDomain, errorCode: 404, expectation)
+		assertFutureFailure(future, withErrorDomain: SpineServerErrorDomain, errorCode: 404, expectation: expectation)
 		
 		waitForExpectationsWithTimeout(10) { error in
 			XCTAssertNil(error, "\(error)")
@@ -246,7 +246,7 @@ class FindTests: SpineTests {
 		
 		let query = Query(resourceType: Foo.self, resourceIDs: ["1"])
 		let future = spine.find(query)
-		assertFutureFailure(future, withErrorDomain: SpineClientErrorDomain, errorCode: 999, expectation)
+		assertFutureFailure(future, withErrorDomain: SpineClientErrorDomain, errorCode: 999, expectation: expectation)
 		
 		waitForExpectationsWithTimeout(10) { error in
 			XCTAssertNil(error, "\(error)")
@@ -288,7 +288,7 @@ class FindTests: SpineTests {
 		
 		let query = Query(resourceType: Foo.self, resourceIDs: ["1"])
 		let future = spine.findOne(query)
-		assertFutureFailure(future, withErrorDomain: SpineServerErrorDomain, errorCode: 404, expectation)
+		assertFutureFailure(future, withErrorDomain: SpineServerErrorDomain, errorCode: 404, expectation: expectation)
 		
 		waitForExpectationsWithTimeout(10) { error in
 			XCTAssertNil(error, "\(error)")
@@ -302,7 +302,7 @@ class FindTests: SpineTests {
 		
 		let query = Query(resourceType: Foo.self, resourceIDs: ["1"])
 		let future = spine.findOne(query)
-		assertFutureFailure(future, withErrorDomain: SpineClientErrorDomain, errorCode: 999, expectation)
+		assertFutureFailure(future, withErrorDomain: SpineClientErrorDomain, errorCode: 999, expectation: expectation)
 		
 		waitForExpectationsWithTimeout(10) { error in
 			XCTAssertNil(error, "\(error)")
@@ -344,7 +344,7 @@ class PersistingTests: SpineTests {
 		let bar = Bar(id: "1")
 		let expectation = expectationWithDescription("testDeleteResource")
 		let future = spine.delete(bar)
-		assertFutureFailure(future, withErrorDomain: SpineServerErrorDomain, errorCode: 404, expectation)
+		assertFutureFailure(future, withErrorDomain: SpineServerErrorDomain, errorCode: 404, expectation: expectation)
 		
 		waitForExpectationsWithTimeout(10) { error in
 			XCTAssertNil(error, "\(error)")
@@ -357,7 +357,7 @@ class PersistingTests: SpineTests {
 		let bar = Bar(id: "1")
 		let expectation = expectationWithDescription("testDeleteResource")
 		let future = spine.delete(bar)
-		assertFutureFailure(future, withErrorDomain: SpineClientErrorDomain, errorCode: 999, expectation)
+		assertFutureFailure(future, withErrorDomain: SpineClientErrorDomain, errorCode: 999, expectation: expectation)
 		
 		waitForExpectationsWithTimeout(10) { error in
 			XCTAssertNil(error, "\(error)")

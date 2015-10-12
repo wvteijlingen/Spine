@@ -36,7 +36,7 @@ func assertFutureFailure<T>(future: Future<T, NSError>, withError expectedError:
 
 func assertFutureFailure<T>(future: Future<T, NSError>, withErrorDomain domain: String, errorCode code: Int, expectation: XCTestExpectation) {
 	let expectedError = NSError(domain: domain, code: code, userInfo: nil)
-	assertFutureFailure(future, withError: expectedError, expectation)
+	assertFutureFailure(future, withError: expectedError, expectation: expectation)
 }
 
 func assertFooResource(foo: Foo, isEqualToJSON json: JSON) {

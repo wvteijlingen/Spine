@@ -12,7 +12,7 @@ import XCTest
 class QueryInitializationTests: XCTestCase {
 	func testInitWithResourceTypeAndIDs() {
 		var query = Query(resourceType: Foo.self, resourceIDs: ["1", "2", "3"])
-		XCTAssertEqual(query.resourceType!, Foo.resourceType, "Resource type not as expected")
+		XCTAssertEqual(query.resourceType, Foo.resourceType, "Resource type not as expected")
 		XCTAssertEqual(query.resourceIDs!, ["1", "2", "3"], "Resource IDs type not as expected")
 	}
 	
@@ -20,7 +20,7 @@ class QueryInitializationTests: XCTestCase {
 		let foo = Foo(id: "5")
 		let query = Query(resource: foo)
 		
-		XCTAssertEqual(query.resourceType!, foo.type, "Resource type not as expected")
+		XCTAssertEqual(query.resourceType, foo.type, "Resource type not as expected")
 		XCTAssertEqual(query.resourceIDs!, [foo.id!], "Resource IDs type not as expected")
 	}
 	
@@ -37,7 +37,7 @@ class QueryInitializationTests: XCTestCase {
 		let query = Query(resourceType: Foo.self, path: URLString)
 		
 		XCTAssertEqual(query.URL!, NSURL(string: URLString)!, "URL not as expected")
-		XCTAssertEqual(query.resourceType!, Foo.resourceType, "Resource type not as expected")
+		XCTAssertEqual(query.resourceType, Foo.resourceType, "Resource type not as expected")
 	}
 }
 
@@ -69,7 +69,7 @@ class QueryFilterTests: XCTestCase {
 			rightExpression: NSExpression(forConstantValue: "value"),
 			modifier: .DirectPredicateModifier,
 			type: .EqualToPredicateOperatorType,
-			options: NSComparisonPredicateOptions.allZeros)
+			options: NSComparisonPredicateOptions())
 		
 		query.addPredicate(predicate)
 		
@@ -85,7 +85,7 @@ class QueryFilterTests: XCTestCase {
 			rightExpression: NSExpression(forConstantValue: "value"),
 			modifier: .DirectPredicateModifier,
 			type: .EqualToPredicateOperatorType,
-			options: NSComparisonPredicateOptions.allZeros)
+			options: NSComparisonPredicateOptions())
 		
 		XCTAssertEqual(query.filters, [predicate], "Filters not as expected")
 	}
@@ -99,7 +99,7 @@ class QueryFilterTests: XCTestCase {
 			rightExpression: NSExpression(forConstantValue: "value"),
 			modifier: .DirectPredicateModifier,
 			type: .NotEqualToPredicateOperatorType,
-			options: NSComparisonPredicateOptions.allZeros)
+			options: NSComparisonPredicateOptions())
 		
 		XCTAssertEqual(query.filters, [predicate], "Filters not as expected")
 	}
@@ -113,7 +113,7 @@ class QueryFilterTests: XCTestCase {
 			rightExpression: NSExpression(forConstantValue: "10"),
 			modifier: .DirectPredicateModifier,
 			type: .LessThanPredicateOperatorType,
-			options: NSComparisonPredicateOptions.allZeros)
+			options: NSComparisonPredicateOptions())
 		
 		XCTAssertEqual(query.filters, [predicate], "Filters not as expected")
 	}
@@ -127,7 +127,7 @@ class QueryFilterTests: XCTestCase {
 			rightExpression: NSExpression(forConstantValue: "10"),
 			modifier: .DirectPredicateModifier,
 			type: .LessThanOrEqualToPredicateOperatorType,
-			options: NSComparisonPredicateOptions.allZeros)
+			options: NSComparisonPredicateOptions())
 		
 		XCTAssertEqual(query.filters, [predicate], "Filters not as expected")
 	}
@@ -141,7 +141,7 @@ class QueryFilterTests: XCTestCase {
 			rightExpression: NSExpression(forConstantValue: "10"),
 			modifier: .DirectPredicateModifier,
 			type: .GreaterThanPredicateOperatorType,
-			options: NSComparisonPredicateOptions.allZeros)
+			options: NSComparisonPredicateOptions())
 		
 		XCTAssertEqual(query.filters, [predicate], "Filters not as expected")
 	}
@@ -155,7 +155,7 @@ class QueryFilterTests: XCTestCase {
 			rightExpression: NSExpression(forConstantValue: "10"),
 			modifier: .DirectPredicateModifier,
 			type: .GreaterThanOrEqualToPredicateOperatorType,
-			options: NSComparisonPredicateOptions.allZeros)
+			options: NSComparisonPredicateOptions())
 		
 		XCTAssertEqual(query.filters, [predicate], "Filters not as expected")
 	}
@@ -172,7 +172,7 @@ class QueryFilterTests: XCTestCase {
 			rightExpression: NSExpression(forConstantValue: bar.id!),
 			modifier: .DirectPredicateModifier,
 			type: .EqualToPredicateOperatorType,
-			options: NSComparisonPredicateOptions.allZeros)
+			options: NSComparisonPredicateOptions())
 		
 		XCTAssertEqual(query.filters, [predicate], "Filters not as expected")
 	}

@@ -162,7 +162,7 @@ class DeserializingTests: SerializerTests {
 			if let resources = document.data {
 				XCTAssertEqual(resources.count, 2, "Expected resources count to be 2.")
 				
-				for (index, resource) in enumerate(resources) {
+				for (index, resource) in resources.enumerate() {
 					let resourceJSON = fixture.json["data"][index]
 					
 					XCTAssert(resource is Foo, "Expected resource to be of class 'Foo'.")
@@ -174,14 +174,14 @@ class DeserializingTests: SerializerTests {
 					// To one link
 					XCTAssertNotNil(foo.toOneAttribute, "Expected linked resource to be not nil.")
 					let bar = foo.toOneAttribute!
-					XCTAssertEqual(bar.URL!.absoluteString!, resourceJSON["relationships"]["toOneAttribute"]["links"]["related"].stringValue, "Deserialized link URL is not equal.")
+					XCTAssertEqual(bar.URL!.absoluteString, resourceJSON["relationships"]["toOneAttribute"]["links"]["related"].stringValue, "Deserialized link URL is not equal.")
 					XCTAssertFalse(bar.isLoaded, "Expected isLoaded to be false.")
 					
 					// To many link
 					XCTAssertNotNil(foo.toManyAttribute, "Deserialized linked resources should not be nil.")
 					let barCollection = foo.toManyAttribute!
-					XCTAssertEqual(barCollection.linkURL!.absoluteString!, resourceJSON["relationships"]["toManyAttribute"]["links"]["self"].stringValue, "Deserialized link URL is not equal.")
-					XCTAssertEqual(barCollection.resourcesURL!.absoluteString!, resourceJSON["relationships"]["toManyAttribute"]["links"]["related"].stringValue, "Deserialized resource URL is not equal.")
+					XCTAssertEqual(barCollection.linkURL!.absoluteString, resourceJSON["relationships"]["toManyAttribute"]["links"]["self"].stringValue, "Deserialized link URL is not equal.")
+					XCTAssertEqual(barCollection.resourcesURL!.absoluteString, resourceJSON["relationships"]["toManyAttribute"]["links"]["related"].stringValue, "Deserialized resource URL is not equal.")
 					XCTAssertFalse(barCollection.isLoaded, "Expected isLoaded to be false.")
 				}
 			}
@@ -279,7 +279,7 @@ class DeserializingTests: SerializerTests {
 			if let errors = document.errors {
 				XCTAssertEqual(errors.count, 2, "Deserialized errors count not equal.")
 				
-				for (index, error) in enumerate(errors) {
+				for (index, error) in errors.enumerate() {
 					let errorJSON = fixture.json["errors"][index]
 					XCTAssertEqual(error.domain, SpineServerErrorDomain, "Expected error domain to be SpineServerErrorDomain.")
 					XCTAssertEqual(error.code, errorJSON["code"].intValue, "Expected error code to be equal.")
