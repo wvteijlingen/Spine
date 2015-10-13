@@ -8,8 +8,6 @@
 
 import Foundation
 
-let unknownError = NSError(domain: SpineClientErrorDomain, code: SpineErrorCodes.UnknownError, userInfo: nil)
-
 private func statusCodeIsSuccess(statusCode: Int?) -> Bool {
 	return statusCode != nil && 200 ... 299 ~= statusCode!
 }
@@ -147,7 +145,7 @@ class FetchOperation<T: Resource>: Operation {
 			if let data = responseData where data.length > 0 {
 				do {
 					let document = try self.serializer.deserializeData(data, mappingTargets: self.mappingTargets)
-					if(statusCodeIsSuccess(statusCode)) {
+					if statusCodeIsSuccess(statusCode) {
 						self.result = Failable(document)
 					} else {
 						self.result = Failable.Failure(errorFromStatusCode(statusCode!, additionalErrors: document.errors))
@@ -191,7 +189,7 @@ class DeleteOperation: Operation {
 				return
 			}
 			
-			if(statusCodeIsSuccess(statusCode)) {
+			if statusCodeIsSuccess(statusCode) {
 				self.result = Failable.Success()
 			} else if let data = responseData where data.length > 0 {
 				do {
