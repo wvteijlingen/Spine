@@ -254,7 +254,7 @@ class DeserializingTests: SerializerTests {
 			XCTFail("Expected deserialization to fail.")
 			
 		} catch let error as NSError {
-			XCTAssertEqual(error.domain, SpineClientErrorDomain, "Expected error domain to be SpineClientErrorDomain.")
+			XCTAssertEqual(error.domain, SpineSerializingErrorDomain, "Expected error domain to be SpineSerializingErrorDomain.")
 			XCTAssertEqual(error.code, SpineErrorCodes.InvalidDocumentStructure, "Expected error code to be 'InvalidDocumentStructure'.")
 		}
 	}

@@ -58,39 +58,45 @@ class DeserializeOperation: NSOperation {
 	
 	// MARK: NSOperation
 	
-	override func main() {		
+	override func main() {
 		// Validate document
-		if (data.dictionary == nil) {
-			let errorMessage = "Cannot deserialize: The given JSON is not a dictionary (hash).";
+		guard data.dictionary != nil else {
+			let errorMessage = "The given JSON is not a dictionary (hash).";
 			Spine.logError(.Serializing, errorMessage)
-			result = Failable(NSError(domain: SpineClientErrorDomain, code: SpineErrorCodes.InvalidDocumentStructure, userInfo: [NSLocalizedDescriptionKey: errorMessage]))
+			result = Failable(NSError(domain: SpineSerializingErrorDomain, code: SpineErrorCodes.InvalidDocumentStructure, userInfo: [NSLocalizedDescriptionKey: errorMessage]))
 			return
-		} else if (data["errors"] == nil && data["data"] == nil && data["meta"] == nil) {
-			let errorMessage = "Cannot deserialize: None of the allowed top level keys were found. Either 'data', 'errors', or 'meta' must be present.";
+		}
+		guard data["errors"] != nil || data["data"] != nil || data["meta"] != nil else {
+			let errorMessage = "Either 'data', 'errors', or 'meta' must be present in the top level.";
 			Spine.logError(.Serializing, errorMessage)
-			result = Failable(NSError(domain: SpineClientErrorDomain, code: SpineErrorCodes.InvalidDocumentStructure, userInfo: [NSLocalizedDescriptionKey: errorMessage]))
+			result = Failable(NSError(domain: SpineSerializingErrorDomain, code: SpineErrorCodes.InvalidDocumentStructure, userInfo: [NSLocalizedDescriptionKey: errorMessage]))
 			return
-		} else if(data["errors"] != nil && data["data"] != nil) {
-			let errorMessage = "Cannot deserialize: Top level keys 'data' and 'errors' must not coexist in the same document.";
+		}
+		guard (data["errors"] == nil && data["data"] != nil) || (data["errors"] != nil && data["data"] == nil) else {
+			let errorMessage = "Top level 'data' and 'errors' must not coexist in the same document.";
 			Spine.logError(.Serializing, errorMessage)
-			result = Failable(NSError(domain: SpineClientErrorDomain, code: SpineErrorCodes.InvalidDocumentStructure, userInfo: [NSLocalizedDescriptionKey: errorMessage]))
+			result = Failable(NSError(domain: SpineSerializingErrorDomain, code: SpineErrorCodes.InvalidDocumentStructure, userInfo: [NSLocalizedDescriptionKey: errorMessage]))
 			return
 		}
 		
-		// Extract main resources. They are added to the `extractedPrimaryResources` so we can return them separate from the entire resource pool.
-		if let data = self.data["data"].array {
-			for (index, representation) in data.enumerate() {
-				extractedPrimaryResources.append(deserializeSingleRepresentation(representation, mappingTargetIndex: index))
+		// Extract resources
+		do {
+			if let data = self.data["data"].array {
+				for (index, representation) in data.enumerate() {
+					try extractedPrimaryResources.append(deserializeSingleRepresentation(representation, mappingTargetIndex: index))
+				}
+			} else if let _ = self.data["data"].dictionary {
+				try extractedPrimaryResources.append(deserializeSingleRepresentation(self.data["data"], mappingTargetIndex: resourcePool.startIndex))
 			}
-		} else if let _ = self.data["data"].dictionary {
-			extractedPrimaryResources.append(deserializeSingleRepresentation(self.data["data"], mappingTargetIndex: resourcePool.startIndex))
-		}
-			
-		// Extract included resources
-		if let data = self.data["included"].array {
-			for representation in data {
-				extractedIncludedResources.append(deserializeSingleRepresentation(representation))
+
+			if let data = self.data["included"].array {
+				for representation in data {
+					try extractedIncludedResources.append(deserializeSingleRepresentation(representation))
+				}
 			}
+		} catch let error as NSError {
+			result = Failable(error)
+			return
 		}
 		
 		// Extract errors
@@ -144,34 +150,29 @@ class DeserializeOperation: NSOperation {
 	
 	:returns: A Resource object with values mapped from the representation.
 	*/
-	private func deserializeSingleRepresentation(representation: JSON, mappingTargetIndex: Int? = nil) -> Resource {
-		assert(representation.dictionary != nil, "The given JSON representation is not an object (dictionary/hash).")
+	private func deserializeSingleRepresentation(representation: JSON, mappingTargetIndex: Int? = nil) throws -> Resource {
+		guard representation.dictionary != nil else {
+			throw NSError(domain: SpineSerializingErrorDomain, code: SpineErrorCodes.InvalidResourceStructure, userInfo: nil)
+		}
 		
-		let type: ResourceType! = representation["type"].string
-		let id: String! = representation["id"].string
+		guard let type: ResourceType = representation["type"].string else {
+			throw NSError(domain: SpineSerializingErrorDomain, code: SpineErrorCodes.ResourceTypeMissing, userInfo: nil)
+		}
 		
-		assert(type != nil, "The given JSON representation does not have a string 'type'.")
-		assert(id != nil, "The given JSON representation does not have a string 'id'.")
+		guard let id = representation["id"].string else {
+			throw NSError(domain: SpineSerializingErrorDomain, code: SpineErrorCodes.ResourceIDMissing, userInfo: nil)
+		}
 		
 		// Dispense a resource
 		let resource = resourceFactory.dispense(type, id: id, pool: &resourcePool, index: mappingTargetIndex)
 		
-		// Extract ID
-		resource.id = representation["id"].string
-		
-		// Extract self link
-		if let URL = representation["links"]["self"].URL {
-			resource.URL = URL
-		}
-		
-		// Extract meta
+		// Extract data
+		resource.id = id
+		resource.URL = representation["links"]["self"].URL
 		resource.meta = representation["meta"].dictionaryObject
-
-		// Extract fields
 		extractAttributes(representation, intoResource: resource)
 		extractRelationships(representation, intoResource: resource)
 		
-		// Set loaded flag
 		resource.isLoaded = true
 		
 		return resource
