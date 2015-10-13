@@ -8,7 +8,7 @@
 
 import Foundation
 
-public typealias NetworkClientCallback = (success: Bool, data: NSData?, error: NSError?) -> Void
+public typealias NetworkClientCallback = (statusCode: Int?, data: NSData?, error: NSError?) -> Void
 
 /**
 A NetworkClient is the interface between Spine and the server. It does not impose any transport,
@@ -102,21 +102,17 @@ public class HTTPClient: NetworkClient {
 		
 		let task = urlSession.dataTaskWithRequest(request) { data, response, networkError in
 			let response = (response as? NSHTTPURLResponse)
-			let success: Bool
 			
 			if let error = networkError {
 				// Network error
-				success = false
 				Spine.logError(.Networking, "\(request.URL) - \(error.localizedDescription)")
 				
 			} else if let statusCode = response?.statusCode where 200 ... 299 ~= statusCode {
 				// Success
-				success = true
 				Spine.logInfo(.Networking, "\(statusCode): \(request.URL)")
 				
 			} else {
 				// API Error
-				success = false
 				Spine.logWarning(.Networking, "\(response?.statusCode): \(request.URL)")
 			}
 			
@@ -126,7 +122,7 @@ public class HTTPClient: NetworkClient {
 				}
 			}
 			
-			callback(success: success, data: data, error: networkError)
+			callback(statusCode: response?.statusCode, data: data, error: networkError)
 		}
 		
 		task.resume()

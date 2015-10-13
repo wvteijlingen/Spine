@@ -9,7 +9,7 @@
 import Foundation
 
 public class CallbackHTTPClient: NetworkClient {
-	typealias HandlerFunction = (request: NSURLRequest, payload: NSData?) -> (responseData: NSData, statusCode: Int, error: NSError?)
+	typealias HandlerFunction = (request: NSURLRequest, payload: NSData?) -> (responseData: NSData?, statusCode: Int?, error: NSError?)
 	
 	var handler: HandlerFunction!
 	var delay: NSTimeInterval = 0
@@ -35,41 +35,33 @@ public class CallbackHTTPClient: NetworkClient {
 			let startTime = dispatch_time(DISPATCH_TIME_NOW, Int64(self.delay * Double(NSEC_PER_SEC)))
 			
 			dispatch_after(startTime, dispatch_get_main_queue()) {
-				var resolvedError: NSError?
-				let success: Bool
-				
 				// Framework error
 				if let error = error {
-					success = false
 					Spine.logError(.Networking, "\(request.URL!) - \(error.localizedDescription)")
-					resolvedError = NSError(domain: SpineClientErrorDomain, code: error.code, userInfo: error.userInfo)
 					
 					// Success
-				} else if 200 ... 299 ~= statusCode {
-					success = true
+				} else if let statusCode = statusCode where 200 ... 299 ~= statusCode {
 					Spine.logInfo(.Networking, "\(statusCode): \(request.URL!)")
 					
 					// API Error
 				} else {
-					success = false
 					Spine.logWarning(.Networking, "\(statusCode): \(request.URL!)")
-					resolvedError = NSError(domain: SpineServerErrorDomain, code: statusCode, userInfo: nil)
 				}
 				
-				callback(success: success, data: data, error: resolvedError)
+				callback(statusCode: statusCode, data: data, error: error)
 			}
 		}
 	}
 	
-	func respondWith(status: Int, data: NSData = NSData(), error: NSError? = nil) {
+	func respondWith(status: Int, data: NSData? = NSData()) {
 		handler = { request, payload in
-			return (responseData: data, statusCode: status, error: error)
+			return (responseData: data, statusCode: status, error: nil)
 		}
 	}
 	
 	func simulateNetworkErrorWithCode(code: Int) {
 		handler = { request, payload in
-			return (responseData: NSData(), statusCode: 404, error: NSError(domain: "mock", code: code, userInfo: nil))
+			return (responseData: nil, statusCode: nil, error: NSError(domain: "SimulatedNetworkError", code: code, userInfo: nil))
 		}
 	}
 }

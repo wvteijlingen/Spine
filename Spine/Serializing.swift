@@ -79,7 +79,7 @@ protocol SerializerProtocol {
 	
 	- returns: A DeserializationResult that contains either a Store or an error.
 	*/
-	func deserializeData(data: NSData, mappingTargets: [Resource]?) -> Failable<JSONAPIDocument>
+	func deserializeData(data: NSData, mappingTargets: [Resource]?) throws -> JSONAPIDocument
 	
 	/**
 	Serializes the given Resources into a multidimensional dictionary/array structure
@@ -102,7 +102,7 @@ class JSONSerializer: SerializerProtocol {
 	var transformers = TransformerDirectory.defaultTransformerDirectory()
 	
 	
-	func deserializeData(data: NSData, mappingTargets: [Resource]?) -> Failable<JSONAPIDocument> {		
+	func deserializeData(data: NSData, mappingTargets: [Resource]? = nil) throws -> JSONAPIDocument {
 		let deserializeOperation = DeserializeOperation(data: data, resourceFactory: resourceFactory)
 		deserializeOperation.transformers = transformers
 		
@@ -111,7 +111,13 @@ class JSONSerializer: SerializerProtocol {
 		}
 		
 		deserializeOperation.start()
-		return deserializeOperation.result!
+		
+		switch deserializeOperation.result! {
+		case .Failure(let error):
+			throw error
+		case .Success(let document):
+			return document
+		}
 	}
 	
 	func serializeResources(resources: [Resource], options: SerializationOptions = SerializationOptions()) -> NSData {

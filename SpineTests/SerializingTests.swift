@@ -98,10 +98,9 @@ class DeserializingTests: SerializerTests {
 	func testDeserializeSingleResource() {
 		let fixture = JSONFixtureWithName("SingleFoo")
 		let json = fixture.json
-		let deserialisationResult = serializer.deserializeData(fixture.data, mappingTargets: nil)
 		
-		switch deserialisationResult {
-		case .Success(let document):
+		do {
+			let document = try serializer.deserializeData(fixture.data)
 			XCTAssertNotNil(document.data, "Expected data to be not nil.")
 			
 			if let resources = document.data {
@@ -142,18 +141,17 @@ class DeserializingTests: SerializerTests {
 					XCTAssertFalse(barCollection.isLoaded, "Expected isLoaded to be false.")
 				}
 			}
-			
-		case .Failure(let error):
+		} catch let error as NSError {
 			XCTFail("Deserialisation failed with error: \(error).")
 		}
 	}
 	
 	func testDeserializeMultipleResources() {
 		let fixture = JSONFixtureWithName("MultipleFoos")
-		let deserialisationResult = serializer.deserializeData(fixture.data, mappingTargets: nil)
-
-		switch deserialisationResult {
-		case .Success(let document):
+		
+		do {
+			let document = try serializer.deserializeData(fixture.data, mappingTargets: nil)
+			
 			XCTAssertNotNil(document.data, "Expected data to be not nil.")
 			if let resources = document.data {
 				XCTAssertEqual(resources.count, 2, "Expected resources count to be 2.")
@@ -181,8 +179,8 @@ class DeserializingTests: SerializerTests {
 					XCTAssertFalse(barCollection.isLoaded, "Expected isLoaded to be false.")
 				}
 			}
-			
-		case .Failure(let error):
+
+		} catch let error as NSError {
 			XCTFail("Deserialisation failed with error: \(error).")
 		}
 	}
@@ -190,10 +188,10 @@ class DeserializingTests: SerializerTests {
 	func testDeserializeCompoundDocument() {
 		let fixture = JSONFixtureWithName("SingleFooIncludingBars")
 		let json = fixture.json
-		let deserialisationResult = serializer.deserializeData(fixture.data, mappingTargets: nil)
 		
-		switch deserialisationResult {
-		case .Success(let document):
+		do {
+			let document = try serializer.deserializeData(fixture.data)
+			
 			XCTAssertNotNil(document.data, "Expected data to be not nil.")
 			if let resources = document.data {
 				XCTAssertEqual(resources.count, 1, "Deserialized resources count not equal.")
@@ -242,19 +240,20 @@ class DeserializingTests: SerializerTests {
 				}
 			}
 			
-		case .Failure(let error):
+			
+		} catch let error as NSError {
 			XCTFail("Deserialisation failed with error: \(error).")
 		}
 	}
 	
 	func testDeserializeInvalidDocument() {
 		let data = NSData()
-		let deserialisationResult = serializer.deserializeData(data, mappingTargets: nil)
 		
-		switch deserialisationResult {
-		case .Success:
+		do {
+			try serializer.deserializeData(data)
 			XCTFail("Expected deserialization to fail.")
-		case .Failure(let error):
+			
+		} catch let error as NSError {
 			XCTAssertEqual(error.domain, SpineClientErrorDomain, "Expected error domain to be SpineClientErrorDomain.")
 			XCTAssertEqual(error.code, SpineErrorCodes.InvalidDocumentStructure, "Expected error code to be 'InvalidDocumentStructure'.")
 		}
@@ -262,10 +261,10 @@ class DeserializingTests: SerializerTests {
 	
 	func testDeserializeErrorsDocument() {
 		let fixture = JSONFixtureWithName("Errors")
-		let deserialisationResult = serializer.deserializeData(fixture.data, mappingTargets: nil)
 		
-		switch deserialisationResult {
-		case .Success(let document):
+		do {
+			let document = try serializer.deserializeData(fixture.data)
+			
 			XCTAssertNotNil(document.errors, "Expected data to be not nil.")
 			
 			if let errors = document.errors {
@@ -279,7 +278,7 @@ class DeserializingTests: SerializerTests {
 				}
 			}
 			
-		case .Failure(let error):
+		} catch let error as NSError {
 			XCTFail("Deserialisation failed with error: \(error).")
 		}
 	}

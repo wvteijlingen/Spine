@@ -16,6 +16,9 @@ public let SpineServerErrorDomain = "com.wardvanteijlingen.spine.server"
 
 /// Error codes
 public struct SpineErrorCodes {
+	/// An unknown error occured.
+	public static let UnknownError = 0
+	
 	/// The given JSON document could not be parsed, because it is in an unsupported structure.
 	public static let InvalidDocumentStructure = 1
 	
