@@ -11,10 +11,9 @@ import Foundation
 public typealias NetworkClientCallback = (statusCode: Int?, data: NSData?, error: NSError?) -> Void
 
 /**
-A NetworkClient is the interface between Spine and the server. It does not impose any transport,
+A NetworkClient is the interface between Spine and the server. It does not impose any transport
 and can be used for HTTP, websockets, and any other data transport.
 */
-///
 public protocol NetworkClient {
 	/**
 	Performs a network request to the given URL with the given method.
