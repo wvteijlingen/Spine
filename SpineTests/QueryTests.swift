@@ -20,7 +20,7 @@ class QueryInitializationTests: XCTestCase {
 		let foo = Foo(id: "5")
 		let query = Query(resource: foo)
 		
-		XCTAssertEqual(query.resourceType, foo.type, "Resource type not as expected")
+		XCTAssertEqual(query.resourceType, foo.resourceType, "Resource type not as expected")
 		XCTAssertEqual(query.resourceIDs!, [foo.id!], "Resource IDs type not as expected")
 	}
 	

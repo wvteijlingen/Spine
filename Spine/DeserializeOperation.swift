@@ -192,10 +192,10 @@ class DeserializeOperation: NSOperation {
 	:param: resource       The resource into which to extract the attributes.
 	*/
 	private func extractAttributes(serializedData: JSON, intoResource resource: Resource) {
-		enumerateFields(resource, type: Attribute.self) { attribute in
-			if let extractedValue: AnyObject = self.extractAttribute(serializedData, key: attribute.serializedName) {
-				let formattedValue: AnyObject = self.transformers.deserialize(extractedValue, forAttribute: attribute)
-				resource.setValue(formattedValue, forField: attribute.name)
+		for case let field as Attribute in resource.fields {
+			if let extractedValue: AnyObject = self.extractAttribute(serializedData, key: field.serializedName) {
+				let formattedValue: AnyObject = self.transformers.deserialize(extractedValue, forAttribute: field)
+				resource.setValue(formattedValue, forField: field.name)
 			}
 		}
 	}
@@ -232,14 +232,14 @@ class DeserializeOperation: NSOperation {
 	:param: resource       The resource into which to extract the relationships.
 	*/
 	private func extractRelationships(serializedData: JSON, intoResource resource: Resource) {
-		enumerateFields(resource) { field in
+		for field in resource.fields {
 			switch field {
 			case let toOne as ToOneRelationship:
-				if let linkedResource = self.extractToOneRelationship(serializedData, key: toOne.serializedName, linkedType: toOne.linkedType, resource: resource) {
+				if let linkedResource = extractToOneRelationship(serializedData, key: toOne.serializedName, linkedType: toOne.linkedType, resource: resource) {
 					resource.setValue(linkedResource, forField: toOne.name)
 				}
 			case let toMany as ToManyRelationship:
-				if let linkedResourceCollection = self.extractToManyRelationship(serializedData, key: toMany.serializedName, resource: resource) {
+				if let linkedResourceCollection = extractToManyRelationship(serializedData, key: toMany.serializedName, resource: resource) {
 					resource.setValue(linkedResourceCollection, forField: toMany.name)
 				}
 			default: ()
@@ -311,25 +311,25 @@ class DeserializeOperation: NSOperation {
 	*/
 	private func resolveRelations() {
 		for resource in resourcePool {
-			enumerateFields(resource, type: ToManyRelationship.self) { field in
+			for case let field as ToManyRelationship in resource.fields {
 				if let linkedResource = resource.valueForField(field.name) as? LinkedResourceCollection {
 					
 					// We can only resolve if the linkage is known
 					if let linkage = linkedResource.linkage {
 						
-						let targetResources: [Resource] = linkage.map { link in
-							findResource(self.resourcePool, type: link.type, id: link.id)
-						}.filter { $0 != nil }.map { $0! }
+						let targetResources = linkage.flatMap { link in
+							return self.resourcePool.filter { $0.resourceType == link.type && $0.id == link.id }
+						}
 						
 						if !targetResources.isEmpty {
 							linkedResource.resources = targetResources
 							linkedResource.isLoaded = true
 						}
 					} else {
-						Spine.logInfo(.Serializing, "Cannot resolve to-many link \(resource.type):\(resource.id!) - \(field.name) because the foreign IDs are not known.")
+						Spine.logInfo(.Serializing, "Cannot resolve to-many link \(resource.resourceType):\(resource.id!) - \(field.name) because the foreign IDs are not known.")
 					}
 				} else {
-					Spine.logInfo(.Serializing, "Cannot resolve to-many link \(resource.type):\(resource.id!) - \(field.name) because the link data is not fetched.")
+					Spine.logInfo(.Serializing, "Cannot resolve to-many link \(resource.resourceType):\(resource.id!) - \(field.name) because the link data is not fetched.")
 				}
 			}
 		}

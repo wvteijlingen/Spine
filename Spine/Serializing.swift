@@ -178,7 +178,7 @@ struct ResourceFactory {
 		var resource: Resource! = findResource(pool, type: type, id: id)
 		
 		if resource == nil && index != nil && !pool.isEmpty {
-			let applicableResources = findResourcesWithType(pool, type: type)
+			let applicableResources = pool.filter { $0.resourceType == type }
 			if index! < applicableResources.count {
 				resource = applicableResources[index!]
 			}

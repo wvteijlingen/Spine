@@ -50,19 +50,17 @@ class SerializeOperation: NSOperation {
 	// MARK: Serializing
 	
 	private func serializeResource(resource: Resource) -> [String: AnyObject] {
-		Spine.logDebug(.Serializing, "Serializing resource \(resource) of type '\(resource.type)' with id '\(resource.id)'")
+		Spine.logDebug(.Serializing, "Serializing resource \(resource) of type '\(resource.resourceType)' with id '\(resource.id)'")
 		
 		var serializedData: [String: AnyObject] = [:]
 		
 		// Serialize ID
-		if options.includeID {
-			if let ID = resource.id {
-				serializedData["id"] = ID
-			}
+		if let ID = resource.id where options.includeID {
+			serializedData["id"] = ID
 		}
 		
 		// Serialize type
-		serializedData["type"] = resource.type
+		serializedData["type"] = resource.resourceType
 		
 		// Serialize fields
 		addAttributes(&serializedData, resource: resource)
@@ -87,16 +85,16 @@ class SerializeOperation: NSOperation {
 	private func addAttributes(inout serializedData: [String: AnyObject], resource: Resource) {
 		var attributes = [String: AnyObject]();
 		
-		enumerateFields(resource, type: Attribute.self) { attribute in
-			let key = attribute.serializedName
+		for case let field as Attribute in resource.fields {
+			let key = field.serializedName
 			
-			Spine.logDebug(.Serializing, "Serializing attribute \(attribute) with name '\(attribute.name) as '\(key)'")
+			Spine.logDebug(.Serializing, "Serializing attribute \(field) with name '\(field.name) as '\(key)'")
 			
 			//TODO: Dirty checking
-			if let unformattedValue: AnyObject = resource.valueForField(attribute.name) {
-				self.addAttribute(&attributes, key: key, value: self.transformers.serialize(unformattedValue, forAttribute: attribute))
+			if let unformattedValue: AnyObject = resource.valueForField(field.name) {
+				addAttribute(&attributes, key: key, value: self.transformers.serialize(unformattedValue, forAttribute: field))
 			} else {
-				self.addAttribute(&attributes, key: key, value: NSNull())
+				addAttribute(&attributes, key: key, value: NSNull())
 			}
 		}
 		
@@ -129,19 +127,19 @@ class SerializeOperation: NSOperation {
 	- parameter resource:       The resource whose relationships to add.
 	*/
 	private func addRelationships(inout serializedData: [String: AnyObject], resource: Resource) {
-		enumerateFields(resource, type: Relationship.self) { field in
+		for case let field as Relationship in resource.fields {
 			let key = field.serializedName
 			
 			Spine.logDebug(.Serializing, "Serializing relationship \(field) with name '\(field.name) as '\(key)'")
 			
 			switch field {
 			case let toOne as ToOneRelationship:
-				if self.options.includeToOne {
-					self.addToOneRelationship(&serializedData, key: key, type: toOne.linkedType, linkedResource: resource.valueForField(field.name) as? Resource)
+				if options.includeToOne {
+					addToOneRelationship(&serializedData, key: key, type: toOne.linkedType, linkedResource: resource.valueForField(field.name) as? Resource)
 				}
 			case let toMany as ToManyRelationship:
-				if self.options.includeToMany {
-					self.addToManyRelationship(&serializedData, key: key, type: toMany.linkedType, linkedResources: resource.valueForField(field.name) as? ResourceCollection)
+				if options.includeToMany {
+					addToManyRelationship(&serializedData, key: key, type: toMany.linkedType, linkedResources: resource.valueForField(field.name) as? ResourceCollection)
 				}
 			default: ()
 			}
@@ -184,7 +182,7 @@ class SerializeOperation: NSOperation {
 		
 		if let resources = linkedResources?.resources {
 			resourceIdentifiers = resources.filter { $0.id != nil }.map { resource in
-				return ResourceIdentifier(type: resource.type, id: resource.id!)
+				return ResourceIdentifier(type: resource.resourceType, id: resource.id!)
 			}
 		}
 		

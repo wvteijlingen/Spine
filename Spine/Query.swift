@@ -69,7 +69,7 @@ public struct Query<T: Resource> {
 	*/
 	public init(resource: T) {
 		assert(resource.id != nil, "Cannot instantiate query for resource, id is nil.")
-		self.resourceType = resource.type
+		self.resourceType = resource.resourceType
 		self.URL = resource.URL
 		self.resourceIDs = [resource.id!]
 	}

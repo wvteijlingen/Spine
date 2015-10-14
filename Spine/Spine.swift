@@ -73,7 +73,7 @@ public class Spine {
 	public func find<T: Resource>(query: Query<T>) -> Future<(resources: ResourceCollection, meta: [String: AnyObject]?, jsonapi: [String: AnyObject]?), NSError> {
 		let promise = Promise<(resources: ResourceCollection, meta: [String: AnyObject]?, jsonapi: [String: AnyObject]?), NSError>()
 		
-		let operation = FetchOperation(query: query)
+		let operation = FetchOperation(query: query, spine: self)
 		
 		operation.completionBlock = {
 
@@ -101,7 +101,7 @@ public class Spine {
 	public func findOne<T: Resource>(query: Query<T>) -> Future<(resource: T, meta: [String: AnyObject]?, jsonapi: [String: AnyObject]?), NSError> {
 		let promise = Promise<(resource: T, meta: [String: AnyObject]?, jsonapi: [String: AnyObject]?), NSError>()
 		
-		let operation = FetchOperation(query: query)
+		let operation = FetchOperation(query: query, spine: self)
 		
 		operation.completionBlock = {
 			switch operation.result! {
@@ -176,7 +176,7 @@ public class Spine {
 		
 		if let nextURL = collection.nextURL {
 			let query = Query(URL: nextURL)
-			let operation = FetchOperation(query: query)
+			let operation = FetchOperation(query: query, spine: self)
 			
 			operation.completionBlock = {
 				switch operation.result! {
@@ -215,7 +215,7 @@ public class Spine {
 		
 		if let previousURL = collection.previousURL {
 			let query = Query(URL: previousURL)
-			let operation = FetchOperation(query: query)
+			let operation = FetchOperation(query: query, spine: self)
 			
 			operation.completionBlock = {
 				switch operation.result! {
@@ -254,7 +254,7 @@ public class Spine {
 	public func save(resource: Resource) -> Future<Resource, NSError> {
 		let promise = Promise<Resource, NSError>()
 		
-		let operation = SaveOperation(resource: resource)
+		let operation = SaveOperation(resource: resource, spine: self)
 		
 		operation.completionBlock = {
 			if let error = operation.result?.error {
@@ -279,7 +279,7 @@ public class Spine {
 	public func delete(resource: Resource) -> Future<Void, NSError> {
 		let promise = Promise<Void, NSError>()
 		
-		let operation = DeleteOperation(resource: resource)
+		let operation = DeleteOperation(resource: resource, spine: self)
 		
 		operation.completionBlock = {
 			if let error = operation.result?.error {
@@ -334,7 +334,7 @@ public class Spine {
 			return promise.future
 		}
 		
-		let operation = FetchOperation(query: query)
+		let operation = FetchOperation(query: query, spine: self)
 		operation.mappingTargets = [resource]
 		operation.completionBlock = {
 			if let error = operation.result?.error {
@@ -384,61 +384,9 @@ public extension Spine {
 
 // MARK: - Utilities
 
-/// Return an `Array` containing resources of `domain`,
-/// in order, that are of the resource type `type`.
-func findResourcesWithType<C: CollectionType where C.Generator.Element: Resource>(domain: C, type: ResourceType) -> [C.Generator.Element] {
-	return domain.filter { $0.type == type }
-}
-
-/// Return the first resource of `domain`,
-/// that is of the resource type `type` and has id `id`.
+/// Return the first resource of `domain`, that is of the resource type `type` and has id `id`.
 func findResource<C: CollectionType where C.Generator.Element: Resource>(domain: C, type: ResourceType, id: String) -> C.Generator.Element? {
-	return domain.filter { $0.type == type && $0.id == id }.first
-}
-
-/// Calls `callback` for each field, filtered by type `type`, of resource `resource`.
-func enumerateFields<T: Field>(resource: Resource, type: T.Type, callback: (T) -> ()) {
-	enumerateFields(resource) { field in
-		if let attribute = field as? T {
-			callback(attribute)
-		}
-	}
-}
-
-func enumerateFields<T: Resource>(resource: T, callback: (Field) -> ()) {
-	for field in resource.dynamicType.fields {
-		callback(field)
-	}
-}
-
-
-/// Compare resources based on `type` and `id`.
-public func == <T: Resource> (left: T, right: T) -> Bool {
-	return (left.id == right.id) && (left.type == right.type)
-}
-
-/// Compare array of resources based on `type` and `id`.
-public func == <T: Resource> (left: [T], right: [T]) -> Bool {
-	if left.count != right.count {
-		return false
-	}
-	
-	for (index, resource) in left.enumerate() {
-		if (resource.type != right[index].type) || (resource.id != right[index].id) {
-			return false
-		}
-	}
-	
-	return true
-}
-
-/// Sets all fields of resource `resource` to nil and sets `isLoaded` to false.
-public func unloadResource(resource: Resource) {
-	enumerateFields(resource) { field in
-		resource.setValue(nil, forField: field.name)
-	}
-	
-	resource.isLoaded = false
+	return domain.filter { $0.resourceType == type && $0.id == id }.first
 }
 
 
@@ -446,8 +394,6 @@ public func unloadResource(resource: Resource) {
 
 /**
 Represents the result of a failable operation.
-To work around the unimplemented "non-fixed multi-payload enum layout"
-compiler error, we have to box the success value.
 
 - Success: The operation succeeded with the given result.
 - Failure: The operation failed with the given error.

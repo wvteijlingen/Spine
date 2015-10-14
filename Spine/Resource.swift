@@ -37,66 +37,23 @@ public func ==(lhs: ResourceIdentifier, rhs: ResourceIdentifier) -> Bool {
 }
 
 /**
-The Resource declares methods and properties that a resource must implement.
-*/
-protocol ResourceProtocol: class {
-	/// The resource type in plural form.
-	static var resourceType: ResourceType { get }
-	
-	/// The resource type in plural form.
-	var type: ResourceType { get }
-	
-	/// All fields that must be persisted in the API.
-	static var fields: [Field] { get }
-	
-	/// The ID of the resource.
-	var id: String? { get set }
-	
-	/// The self URL of the resource.
-	var URL: NSURL? { get set }
-	
-	/// Whether the fields of the resource are loaded.
-	var isLoaded: Bool { get set }
-	
-	/**
-	Returns the attribute value for the given key
-	
-	:param: field The name of the field to get the value for.
-	
-	:returns: The value of the field.
-	*/
-	func valueForField(field: String) -> AnyObject?
-	
-	/**
-	Sets the given attribute value for the given key.
-	
-	:param: value    The value to set.
-	:param: forField The name of the field to set the value for.
-	*/
-	func setValue(value: AnyObject?, forField: String)
-}
-
-public protocol MetaHoldable: class {
-	var meta: [String: AnyObject]? { get set }
-}
-
-/**
 A base recource class that provides some defaults for resources.
 You can create custom resource classes by subclassing from Resource.
 */
-public class Resource: NSObject, NSCoding, ResourceProtocol, MetaHoldable {
+public class Resource: NSObject, NSCoding {
 	public class var resourceType: ResourceType {
 		fatalError("Override resourceType in a subclass.")
 	}
-	
-	public var type: ResourceType {
-		return self.dynamicType.resourceType
-	}
+	final public var resourceType: ResourceType { return self.dynamicType.resourceType }
 	
 	public class var fields: [Field] { return [] }
+	final public var fields: [Field] { return self.dynamicType.fields }
+	
 	public var id: String?
 	public var URL: NSURL?
+	
 	public var isLoaded: Bool = false
+	
 	public var meta: [String: AnyObject]?
 	
 	public override init() {}
@@ -121,14 +78,27 @@ public class Resource: NSObject, NSCoding, ResourceProtocol, MetaHoldable {
 	public func setValue(value: AnyObject?, forField field: String) {
 		setValue(value, forKey: field)
 	}
+	
+	/// Sets all fields of resource `resource` to nil and sets `isLoaded` to false.
+	public func unload() {
+		for field in self.fields {
+			self.setValue(nil, forField: field.name)
+		}
+		
+		isLoaded = false
+	}
 }
 
 extension Resource {
 	override public var description: String {
-		return "\(self.type)(\(self.id), \(self.URL))"
+		return "\(self.resourceType)(\(self.id), \(self.URL))"
 	}
 	
 	override public var debugDescription: String {
 		return description
 	}
+}
+
+public func == <T: Resource> (left: T, right: T) -> Bool {
+	return (left.id == right.id) && (left.resourceType == right.resourceType)
 }

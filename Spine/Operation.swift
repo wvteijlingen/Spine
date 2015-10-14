@@ -124,9 +124,10 @@ class FetchOperation<T: Resource>: Operation {
 	/// The result of the operation. You can safely force unwrap this in the completionBlock.
 	var result: Failable<JSONAPIDocument>?
 	
-	init(query: Query<T>) {
+	init(query: Query<T>, spine: Spine) {
 		self.query = query
 		super.init()
+		self.spine = spine
 	}
 	
 	override func execute() {
@@ -171,9 +172,10 @@ class DeleteOperation: Operation {
 	/// The result of the operation. You can safely force unwrap this in the completionBlock.
 	var result: Failable<Void>?
 	
-	init(resource: Resource) {
+	init(resource: Resource, spine: Spine) {
 		self.resource = resource
 		super.init()
+		self.spine = spine
 	}
 	
 	override func execute() {
@@ -219,17 +221,18 @@ class SaveOperation: Operation {
 	/// Whether the resource is a new resource, or an existing resource.
 	private let isNewResource: Bool
 	
-	init(resource: Resource) {
+	init(resource: Resource, spine: Spine) {
 		self.resource = resource
 		self.isNewResource = (resource.id == nil)
 		super.init()
+		self.spine = spine
 	}
 	
 	override func execute() {
 		let URL: NSURL, method: String, payload: NSData
 
 		if isNewResource {
-			URL = router.URLForResourceType(resource.type)
+			URL = router.URLForResourceType(resource.resourceType)
 			method = "POST"
 			payload = serializer.serializeResources([resource], options: SerializationOptions(includeID: false, dirtyFieldsOnly: false, includeToOne: true, includeToMany: true))
 		} else {
@@ -281,7 +284,7 @@ class SaveOperation: Operation {
 			if self.isNewResource {
 				self.result = Failable.Success()
 			} else {
-				let relationshipOperation = RelationshipOperation(resource: self.resource)
+				let relationshipOperation = RelationshipOperation(resource: self.resource, spine: self.spine)
 				
 				relationshipOperation.completionBlock = {
 					if let error = relationshipOperation.result?.error {
@@ -306,9 +309,10 @@ class RelationshipOperation: Operation {
 	/// The result of the operation. You can safely force unwrap this in the completionBlock.
 	var result: Failable<Void>?
 	
-	init(resource: Resource) {
+	init(resource: Resource, spine: Spine) {
 		self.resource = resource
 		super.init()
+		self.spine = spine
 	}
 	
 	override func execute() {
@@ -317,15 +321,15 @@ class RelationshipOperation: Operation {
 		var operations: [Operation] = []
 		
 		// Create operations
-		enumerateFields(resource) { field in
+		for field in resource.fields {
 			switch field {
 			case let toOne as ToOneRelationship:
-				let linkedResource = self.resource.valueForField(toOne.name) as! Resource
+				let linkedResource = resource.valueForField(toOne.name) as! Resource
 				if linkedResource.id != nil {
 					operations.append((relationship: toOne, type: "replace", resources: [linkedResource]))
 				}
 			case let toMany as ToManyRelationship:
-				let linkedResources = self.resource.valueForField(toMany.name) as! LinkedResourceCollection
+				let linkedResources = resource.valueForField(toMany.name) as! LinkedResourceCollection
 				operations.append((relationship: toMany, type: "add", resources: linkedResources.addedResources))
 				operations.append((relationship: toMany, type: "remove", resources: linkedResources.removedResources))
 			default: ()
@@ -425,7 +429,7 @@ class RelationshipOperation: Operation {
 	private func convertResourcesToLinkage(resources: [Resource]) -> [[String: String]] {
 		let linkage: [[String: String]] = resources.map { resource in
 			assert(resource.id != nil, "Attempt to (un)relate resource without id. Only existing resources can be (un)related.")
-			return [resource.type: resource.id!]
+			return [resource.resourceType: resource.id!]
 		}
 		
 		return linkage

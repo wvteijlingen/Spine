@@ -73,7 +73,7 @@ public class ResourceCollection: NSObject, NSCoding {
 	/// Returns a loaded resource identified by the given type and id,
 	/// or nil if no loaded resource was found.
 	public subscript (type: String, id: String) -> Resource? {
-		return resources.filter { $0.id == id && $0.type == type }.first
+		return resources.filter { $0.id == id && $0.resourceType == type }.first
 	}
 	
 	/// Returns how many resources are loaded.

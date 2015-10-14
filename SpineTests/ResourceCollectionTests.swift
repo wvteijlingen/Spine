@@ -124,8 +124,9 @@ class LinkedResourceCollectionTests: XCTestCase {
 		
 		collection.addResourceAsExisting(foo)
 		
-		XCTAssert(collection.resources == [foo], "")
-		XCTAssert(collection.addedResources.isEmpty , "")
+		XCTAssert(collection.resources == [foo], "Expected collection to contain resource.")
+		XCTAssert(collection.addedResources.isEmpty , "Expected addedResources to be empty.")
+		XCTAssert(collection.removedResources.isEmpty , "Expected addedResources to be empty.")
 	}
 	
 	func testAdd() {
@@ -134,8 +135,8 @@ class LinkedResourceCollectionTests: XCTestCase {
 		
 		collection.addResource(foo)
 		
-		XCTAssert(collection.resources == [foo], "")
-		XCTAssert(collection.addedResources == [foo], "")
+		XCTAssert(collection.resources == [foo], "Expected collection to contain resource.")
+		XCTAssert(collection.addedResources == [foo], "Expected addedResources to contain resource.")
 	}
 	
 	func testRemove() {
@@ -145,7 +146,7 @@ class LinkedResourceCollectionTests: XCTestCase {
 		collection.addResource(foo)
 		collection.removeResource(foo)
 		
-		XCTAssert(collection.resources.isEmpty, "")
-		XCTAssert(collection.removedResources == [foo] , "")
+		XCTAssert(collection.resources.isEmpty, "Expected collection to be empty.")
+		XCTAssert(collection.removedResources == [foo] , "Expected removedResource to contain resource.")
 	}
 }

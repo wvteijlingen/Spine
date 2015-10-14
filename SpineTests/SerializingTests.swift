@@ -47,7 +47,7 @@ class SerializingTests: SerializerTests {
 		let json = serializedJSONWithOptions(SerializationOptions())
 		
 		XCTAssertEqual(json["data"]["id"].stringValue, foo.id!, "Serialized id is not equal.")
-		XCTAssertEqual(json["data"]["type"].stringValue, foo.type, "Serialized type is not equal.")
+		XCTAssertEqual(json["data"]["type"].stringValue, foo.resourceType, "Serialized type is not equal.")
 		XCTAssertEqual(json["data"]["attributes"]["integerAttribute"].intValue, foo.integerAttribute!, "Serialized integer is not equal.")
 		XCTAssertEqual(json["data"]["attributes"]["floatAttribute"].floatValue, foo.floatAttribute!, "Serialized float is not equal.")
 		XCTAssertTrue(json["data"]["attributes"]["booleanAttribute"].boolValue, "Serialized boolean is not equal.")
