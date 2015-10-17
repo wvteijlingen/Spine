@@ -38,10 +38,10 @@ Installation
 ============
 
 ### Carthage
-Add `github "wvteijlingen/Spine"` to your Cartfile. See the [Carthage documentation](https://github.com/Carthage/Carthage#adding-frameworks-to-an-application) for instructions on how to integrate with your project using Xcode.
+Add `github "wvteijlingen/Spine" "swift-2.0"` to your Cartfile. See the [Carthage documentation](https://github.com/Carthage/Carthage#adding-frameworks-to-an-application) for instructions on how to integrate with your project using Xcode.
 
 ### Cocoapods
-Add `pod 'Spine', :git => 'https://github.com/wvteijlingen/Spine.git'` to your Podfile. The spec is not yet registered with the Cocoapods repository, because the library is still in flux.
+Add `pod 'Spine', :git => 'https://github.com/wvteijlingen/Spine.git', :branch => 'swift-2.0'` to your Podfile. The spec is not yet registered with the Cocoapods repository, because the library is still in flux.
 
 Quickstart
 ==========
