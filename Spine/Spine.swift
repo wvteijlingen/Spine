@@ -92,6 +92,19 @@ public class Spine {
 	}
 	
 	/**
+	Fetch multiple resources with the given IDs and type.
+	
+	:param: IDs  IDs of resources to fetch.
+	:param: type The type of resource to fetch.
+	
+	:returns: A future that resolves to a ResourceCollection that contains the fetched resources.
+	*/
+	public func find<T: Resource>(IDs: [String], ofType type: T.Type) -> Future<(resources: ResourceCollection, meta: [String: AnyObject]?, jsonapi: [String: AnyObject]?), NSError> {
+		let query = Query(resourceType: type, resourceIDs: IDs)
+		return find(query)
+	}
+	
+	/**
 	Fetch one resource using the given query.
 	
 	:param: query The query describing which resource to fetch.
@@ -122,32 +135,6 @@ public class Spine {
 	}
 	
 	/**
-	Fetch multiple resources with the given IDs and type.
-	
-	:param: IDs  IDs of resources to fetch.
-	:param: type The type of resource to fetch.
-	
-	:returns: A future that resolves to a ResourceCollection that contains the fetched resources.
-	*/
-	public func find<T: Resource>(IDs: [String], ofType type: T.Type) -> Future<(resources: ResourceCollection, meta: [String: AnyObject]?, jsonapi: [String: AnyObject]?), NSError> {
-		let query = Query(resourceType: type, resourceIDs: IDs)
-		return find(query)
-	}
-	
-	/**
-	Fetch all resources with the given type.
-	This does not explicitly impose any limit, but the server may choose to limit the response.
-	
-	:param: type The type of resource to fetch.
-	
-	:returns: A future that resolves to a ResourceCollection that contains the fetched resources.
-	*/
-	public func find<T: Resource>(type: T.Type) -> Future<(resources: ResourceCollection, meta: [String: AnyObject]?, jsonapi: [String: AnyObject]?), NSError> {
-		let query = Query(resourceType: type)
-		return find(query)
-	}
-	
-	/**
 	Fetch one resource with the given ID and type.
 	
 	:param: ID   ID of resource to fetch.
@@ -158,6 +145,19 @@ public class Spine {
 	public func findOne<T: Resource>(ID: String, ofType type: T.Type) -> Future<(resource: T, meta: [String: AnyObject]?, jsonapi: [String: AnyObject]?), NSError> {
 		let query = Query(resourceType: type, resourceIDs: [ID])
 		return findOne(query)
+	}
+	
+	/**
+	Fetch all resources with the given type.
+	This does not explicitly impose any limit, but the server may choose to limit the response.
+	
+	:param: type The type of resource to fetch.
+	
+	:returns: A future that resolves to a ResourceCollection that contains the fetched resources.
+	*/
+	public func findAll<T: Resource>(type: T.Type) -> Future<(resources: ResourceCollection, meta: [String: AnyObject]?, jsonapi: [String: AnyObject]?), NSError> {
+		let query = Query(resourceType: type)
+		return find(query)
 	}
 	
 	

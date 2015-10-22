@@ -23,14 +23,23 @@ extension XCTestCase {
 
 // MARK: - Custom assertions
 
+func assertFutureSuccess<T, E>(future: Future<T, E>, expectation: XCTestExpectation) {
+	future.onSuccess { resources in
+		expectation.fulfill()
+	}.onFailure { error in
+		expectation.fulfill()
+		XCTFail("Expected future to complete with success.")
+	}
+}
+
 func assertFutureFailure<T>(future: Future<T, NSError>, withError expectedError: NSError, expectation: XCTestExpectation) {
 	future.onSuccess { resources in
 		expectation.fulfill()
 		XCTFail("Expected success callback to not be called.")
-		}.onFailure { error in
-			expectation.fulfill()
-			XCTAssertEqual(error.domain, expectedError.domain, "Expected error domain to be \(expectedError.domain).")
-			XCTAssertEqual(error.code, expectedError.code, "Expected error code to be \(expectedError.code).")
+	}.onFailure { error in
+		expectation.fulfill()
+		XCTAssertEqual(error.domain, expectedError.domain, "Expected error domain to be \(expectedError.domain).")
+		XCTAssertEqual(error.code, expectedError.code, "Expected error code to be \(expectedError.code).")
 	}
 }
 

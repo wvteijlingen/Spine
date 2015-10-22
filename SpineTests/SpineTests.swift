@@ -26,11 +26,8 @@ class SpineTests: XCTestCase {
 
 // MARK: -
 
-class FindTests: SpineTests {
-
-	// MARK: Find by type
-	
-	func testFindByType() {
+class FindAllTests: SpineTests {
+	func testItShouldSucceed() {
 		let fixture = JSONFixtureWithName("MultipleFoos")
 		
 		HTTPClient.handler = { request, payload in
@@ -41,7 +38,7 @@ class FindTests: SpineTests {
 		
 		let expectation = expectationWithDescription("testFindByType")
 		
-		spine.find(Foo.self).onSuccess { fooCollection, _, _ in
+		spine.findAll(Foo.self).onSuccess { fooCollection, _, _ in
 			expectation.fulfill()
 			for (index, resource) in fooCollection.enumerate() {
 				XCTAssertEqual(fooCollection.count, 2, "Deserialized resources count not equal.")
@@ -59,11 +56,12 @@ class FindTests: SpineTests {
 		}
 	}
 	
-	func testFindByTypeWithAPIError() {
-		HTTPClient.respondWith(404)
+	func testItShouldFailOnAPIError() {
+		let fixture = JSONFixtureWithName("Errors")
+		HTTPClient.respondWith(404, data: fixture.data)
 		
 		let expectation = expectationWithDescription("testFindByTypeWithAPIError")
-		let future = spine.find(Foo.self)
+		let future = spine.findAll(Foo.self)
 		assertFutureFailure(future, withErrorDomain: SpineServerErrorDomain, errorCode: 404, expectation: expectation)
 		
 		waitForExpectationsWithTimeout(10) { error in
@@ -71,22 +69,22 @@ class FindTests: SpineTests {
 		}
 	}
 	
-	func testFindByTypeWithNetworkError() {
+	func testItShouldFailOnNetworkError() {
 		HTTPClient.simulateNetworkErrorWithCode(999)
 		
 		let expectation = expectationWithDescription("testFindByTypeWithNetworkError")
-		let future = spine.find(Foo.self)
+		let future = spine.findAll(Foo.self)
 		assertFutureFailure(future, withErrorDomain: "SimulatedNetworkError", errorCode: 999, expectation: expectation)
 		
 		waitForExpectationsWithTimeout(10) { error in
 			XCTAssertNil(error, "\(error)")
 		}
 	}
+}
+
+class FindByIDTests: SpineTests {
 	
-	
-	// MARK: Find by ID and type
-	
-	func testFindByIDAndType() {
+	func testItShouldSucceed() {
 		let fixture = JSONFixtureWithName("MultipleFoos")
 		
 		HTTPClient.handler = { request, payload in
@@ -105,9 +103,9 @@ class FindTests: SpineTests {
 				let foo = resource as! Foo
 				assertFooResource(foo, isEqualToJSON: fixture.json["data"][index])
 			}
-		}.onFailure { error in
-			expectation.fulfill()
-			XCTFail("Find failed with error: \(error).")
+			}.onFailure { error in
+				expectation.fulfill()
+				XCTFail("Find failed with error: \(error).")
 		}
 		
 		waitForExpectationsWithTimeout(10) { error in
@@ -115,7 +113,7 @@ class FindTests: SpineTests {
 		}
 	}
 	
-	func testFindByIDAndTypeWithAPIError() {
+	func testItShouldFailOnAPIError() {
 		HTTPClient.respondWith(404)
 		
 		let expectation = expectationWithDescription("testFindByIDAndTypeWithAPIError")
@@ -127,7 +125,7 @@ class FindTests: SpineTests {
 		}
 	}
 	
-	func testFindByIDAndTypeWithNetworkError() {
+	func testItShouldFailOnNetworkError() {
 		HTTPClient.simulateNetworkErrorWithCode(999)
 		
 		let expectation = expectationWithDescription("testFindByIDAndTypeWithNetworkError")
@@ -138,11 +136,10 @@ class FindTests: SpineTests {
 			XCTAssertNil(error, "\(error)")
 		}
 	}
-	
-	
-	// MARK: Find one by ID and type
-	
-	func testFindOneByIDAndType() {
+}
+
+class FindOneByIDTests: SpineTests {
+	func testItShouldSucceed() {
 		let fixture = JSONFixtureWithName("SingleFoo")
 		
 		HTTPClient.handler = { request, payload in
@@ -166,7 +163,7 @@ class FindTests: SpineTests {
 		}
 	}
 	
-	func testFindOneByTypeWithAPIError() {
+	func testItShouldFailOnAPIError() {
 		HTTPClient.respondWith(404)
 		
 		let expectation = expectationWithDescription("testFindOneByTypeWithAPIError")
@@ -178,7 +175,7 @@ class FindTests: SpineTests {
 		}
 	}
 	
-	func testFindOneByTypeWithNetworkError() {
+	func testItShouldFailOnNetworkError() {
 		HTTPClient.simulateNetworkErrorWithCode(999)
 		
 		let expectation = expectationWithDescription("testFindOneByTypeWithNetworkError")
@@ -189,11 +186,10 @@ class FindTests: SpineTests {
 			XCTAssertNil(error, "\(error)")
 		}
 	}
-	
-	
-	// MARK: Find by query
-	
-	func testFindByQuery() {
+}
+
+class FindByQueryTests: SpineTests {
+	func testItShouldSucceed() {
 		let fixture = JSONFixtureWithName("MultipleFoos")
 		
 		HTTPClient.handler = { request, payload in
@@ -213,9 +209,9 @@ class FindTests: SpineTests {
 				let foo = resource as! Foo
 				assertFooResource(foo, isEqualToJSON: fixture.json["data"][index])
 			}
-		}.onFailure { error in
-			expectation.fulfill()
-			XCTFail("Find failed with error: \(error).")
+			}.onFailure { error in
+				expectation.fulfill()
+				XCTFail("Find failed with error: \(error).")
 		}
 		
 		waitForExpectationsWithTimeout(10) { error in
@@ -223,7 +219,7 @@ class FindTests: SpineTests {
 		}
 	}
 	
-	func testFindByQueryWithAPIError() {
+	func testItShouldFailOnAPIError() {
 		HTTPClient.respondWith(404)
 		
 		let expectation = expectationWithDescription("testFindByQueryWithAPIError")
@@ -237,7 +233,7 @@ class FindTests: SpineTests {
 		}
 	}
 	
-	func testFindByQueryWithNetworkError() {
+	func testItShouldFailOnNetworkError() {
 		HTTPClient.simulateNetworkErrorWithCode(999)
 		
 		let expectation = expectationWithDescription("testFindByQueryWithNetworkError")
@@ -250,11 +246,10 @@ class FindTests: SpineTests {
 			XCTAssertNil(error, "\(error)")
 		}
 	}
-	
-	
-	// MARK: Find one by query
-	
-	func testFindOneByQuery() {
+}
+
+class FindOneByQueryTests: SpineTests {
+	func testItShouldSucceed() {
 		let fixture = JSONFixtureWithName("SingleFoo")
 		
 		HTTPClient.handler = { request, payload in
@@ -269,9 +264,9 @@ class FindTests: SpineTests {
 		spine.findOne(query).onSuccess { foo, _, _ in
 			expectation.fulfill()
 			assertFooResource(foo, isEqualToJSON: fixture.json["data"])
-		}.onFailure { error in
-			expectation.fulfill()
-			XCTFail("Find failed with error: \(error).")
+			}.onFailure { error in
+				expectation.fulfill()
+				XCTFail("Find failed with error: \(error).")
 		}
 		
 		waitForExpectationsWithTimeout(10) { error in
@@ -279,7 +274,7 @@ class FindTests: SpineTests {
 		}
 	}
 	
-	func testFindOneByQueryWithAPIError() {
+	func testItShouldFailOnAPIError() {
 		HTTPClient.respondWith(404)
 		
 		let expectation = expectationWithDescription("testFindOneByQueryWithAPIError")
@@ -293,7 +288,7 @@ class FindTests: SpineTests {
 		}
 	}
 	
-	func testFindOneByQueryWithNetworkError() {
+	func testItShouldFailOnNetworkError() {
 		HTTPClient.simulateNetworkErrorWithCode(999)
 		
 		let expectation = expectationWithDescription("testFindOneByQueryWithNetworkError")
@@ -306,15 +301,13 @@ class FindTests: SpineTests {
 			XCTAssertNil(error, "\(error)")
 		}
 	}
+
 }
 
-// MARK: -
 
-class PersistingTests: SpineTests {
-
-	// MARK: Delete
+class DeleteTests: SpineTests {
 	
-	func testDeleteResource() {
+	func testItShouldSucceed() {
 		HTTPClient.handler = { request, payload in
 			XCTAssertEqual(request.URL!, NSURL(string:"http://example.com/bars/1")!, "Request URL not as expected.")
 			XCTAssertEqual(request.HTTPMethod!, "DELETE", "Expected HTTP method to be 'DELETE'.")
@@ -336,7 +329,7 @@ class PersistingTests: SpineTests {
 		}
 	}
 	
-	func testDeleteResourceWithAPIError() {
+	func testItShouldFailOnAPIError() {
 		HTTPClient.respondWith(404)
 		
 		let bar = Bar(id: "1")
@@ -349,7 +342,7 @@ class PersistingTests: SpineTests {
 		}
 	}
 	
-	func testDeleteResourceWithNetworkError() {
+	func testItShouldFailOnNetworkError() {
 		HTTPClient.simulateNetworkErrorWithCode(999)
 		
 		let bar = Bar(id: "1")
@@ -362,11 +355,54 @@ class PersistingTests: SpineTests {
 		}
 	}
 	
-	// MARK: Save
+}
+
+
+class SaveTests: SpineTests {
 	
-	//TODO
+	var fixture: (data: NSData, json: JSON)!
+	var foo: Foo!
 	
-	func testCreateResourceWithAPIError() {
+	override func setUp() {
+		super.setUp()
+		fixture = JSONFixtureWithName("SingleFoo")
+		foo = Foo()
+	}
+	
+	func testItShouldPOSTWhenCreatingANewResource() {
+		HTTPClient.handler = { request, payload in
+			XCTAssertEqual(request.HTTPMethod!, "POST", "HTTP method not as expected.")
+			XCTAssertEqual(request.URL!, NSURL(string:"http://example.com/foos")!, "Request URL not as expected.")
+			return (responseData: self.fixture.data, statusCode: 201, error: nil)
+		}
+
+		let future = spine.save(foo)
+		let expectation = expectationWithDescription("")
+		assertFutureSuccess(future, expectation: expectation)
+		
+		waitForExpectationsWithTimeout(10) { error in
+			XCTAssertNil(error, "\(error)")
+		}
+	}
+
+	func testItShouldPATCHWhenUpdatingAResource() {
+		HTTPClient.handler = { request, payload in
+			XCTAssertEqual(request.HTTPMethod!, "PATCH", "HTTP method not as expected.")
+			XCTAssertEqual(request.URL!, NSURL(string:"http://example.com/foos/1")!, "Request URL not as expected.")
+			return (responseData: self.fixture.data, statusCode: 201, error: nil)
+		}
+		
+		foo.id = "1"
+		let future = spine.save(foo)
+		let expectation = expectationWithDescription("")
+		assertFutureSuccess(future, expectation: expectation)
+		
+		waitForExpectationsWithTimeout(10) { error in
+			XCTAssertNil(error, "\(error)")
+		}
+	}
+	
+	func testItShouldFailOnAPIError() {
 		HTTPClient.respondWith(400)
 		
 		let foo = Foo()
@@ -379,7 +415,7 @@ class PersistingTests: SpineTests {
 		}
 	}
 	
-	func testCreateResourceWithNetworkError() {
+	func testItShouldFailOnNetworkError() {
 		HTTPClient.simulateNetworkErrorWithCode(999)
 		
 		let foo = Foo()
@@ -393,8 +429,6 @@ class PersistingTests: SpineTests {
 	}
 }
 
-
-// MARK: -
 
 class PaginatingTests: SpineTests {
 	func testLoadNextPageInCollection() {
