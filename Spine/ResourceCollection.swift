@@ -80,36 +80,6 @@ public class ResourceCollection: NSObject, NSCoding {
 	public var count: Int {
 		return resources.count
 	}
-	
-	/**
-	Calls the passed callback if the resources are loaded.
-	
-	- parameter callback: A function taking an array of Resource objects.
-	
-	- returns: This collection.
-	*/
-	public func ifLoaded(callback: ([Resource]) -> Void) -> Self {
-		if isLoaded {
-			callback(resources)
-		}
-		
-		return self
-	}
-	
-	/**
-	Calls the passed callback if the resources are not loaded.
-	
-	- parameter callback: A function
-	
-	- returns: This collection
-	*/
-	public func ifNotLoaded(callback: () -> Void) -> Self {
-		if !isLoaded {
-			callback()
-		}
-		
-		return self
-	}
 }
 
 extension ResourceCollection: SequenceType {

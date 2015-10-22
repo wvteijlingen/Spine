@@ -44,42 +44,6 @@ class ResourceCollectionTests: XCTestCase {
 		
 		XCTAssertEqual(collection.count, 2, "Expected count to be 2.")
 	}
-
-	func testIfLoadedIfNotLoadedWithLoadedCollection() {
-		let resources = [Foo(), Bar()]
-		let collection = ResourceCollection(resources: resources)
-		
-		var ifLoadedCalled = false
-		
-		collection.ifLoaded { loadedResources in
-			XCTAssert(loadedResources == resources, "Expected loaded resources to be equal.")
-			ifLoadedCalled = true
-		}
-		
-		collection.ifNotLoaded {
-			XCTFail("Expected ifLoaded callback to not be called.")
-		}
-		
-		XCTAssertTrue(ifLoadedCalled, "Expected ifLoaded callback to be called.")
-	}
-	
-	func testIfLoadedIfNotLoadedWithNotLoadedCollection() {
-		let resources = [Foo(), Bar()]
-		let collection = ResourceCollection(resources: resources)
-		collection.isLoaded = false
-		
-		var ifNotLoadedCalled = false
-		
-		collection.ifLoaded { loadedResources in
-			XCTFail("Expected ifLoaded callback to not be called.")
-		}
-		
-		collection.ifNotLoaded {
-			ifNotLoadedCalled = true
-		}
-		
-		XCTAssertTrue(ifNotLoadedCalled, "Expected ifNotLoaded callback to be called.")
-	}
 }
 
 
