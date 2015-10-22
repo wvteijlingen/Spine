@@ -16,7 +16,7 @@ public class Spine {
 	let router: RouterProtocol
 	
 	/// The HTTPClient that performs the HTTP requests.
-	let networkClient: NetworkClient
+	public let networkClient: NetworkClient
 	
 	/// The serializer to use for serializing and deserializing of JSON representations.
 	let serializer: JSONSerializer = JSONSerializer()
