@@ -55,7 +55,7 @@ public class Spine {
 	
 	:param: operation The operation to enqueue.
 	*/
-	func addOperation(operation: Operation) {
+	func addOperation(operation: ConcurrentOperation) {
 		operation.spine = self
 		operationQueue.addOperation(operation)
 	}
