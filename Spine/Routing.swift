@@ -12,7 +12,7 @@ import Foundation
 The RouterProtocol declares methods and properties that a router should implement.
 The router is used to build URLs for API requests.
 */
-public protocol RouterProtocol {
+public protocol Router {
 	/// The base URL of the API.
 	var baseURL: NSURL! { get set }
 	
@@ -38,7 +38,7 @@ public protocol RouterProtocol {
 }
 
 /**
-The built in Router that builds URLs according to the JSON:API specification.
+The built in JSONAPIRouter builds URLs according to the JSON:API specification.
 
 Filters
 =======
@@ -50,7 +50,7 @@ Pagination
 Only PageBasedPagination and OffsetBasedPagination are supported. You can subclass Router
 and override `queryItemsForPagination` to add support for other pagination strategies.
 */
-public class Router: RouterProtocol {
+public class JSONAPIRouter: Router {
 	public var baseURL: NSURL!
 
 	public init() { }

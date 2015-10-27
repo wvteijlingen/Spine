@@ -13,7 +13,7 @@ import BrightFutures
 public class Spine {
 	
 	/// The router that builds the URLs for requests.
-	let router: RouterProtocol
+	let router: Router
 	
 	/// The HTTPClient that performs the HTTP requests.
 	public let networkClient: NetworkClient
@@ -30,7 +30,7 @@ public class Spine {
 	/**
 	Creates a new Spine instance using the given router and network client.
 	*/
-	public init(router: RouterProtocol, networkClient: NetworkClient) {
+	public init(router: Router, networkClient: NetworkClient) {
 		self.router = router
 		self.networkClient = networkClient
 		self.operationQueue.name = "com.wardvanteijlingen.spine"
@@ -40,7 +40,7 @@ public class Spine {
 	Creates a new Spine instance using the default Router and HTTPClient classes.
 	*/
 	public convenience init(baseURL: NSURL) {
-		let router = Router()
+		let router = JSONAPIRouter()
 		router.baseURL = baseURL
 		self.init(router: router, networkClient: HTTPClient())
 	}
@@ -49,7 +49,7 @@ public class Spine {
 	Creates a new Spine instance using a specific router and the default HTTPClient class.
 	Use this initializer to specify a custom router.
 	*/
-	public convenience init(router: RouterProtocol) {
+	public convenience init(router: Router) {
 		self.init(router: router, networkClient: HTTPClient())
 	}
 	
@@ -58,7 +58,7 @@ public class Spine {
 	Use this initializer to specify a custom network client.
 	*/
 	public convenience init(baseURL: NSURL, networkClient: NetworkClient) {
-		let router = Router()
+		let router = JSONAPIRouter()
 		router.baseURL = baseURL
 		self.init(router: router, networkClient: networkClient)
 	}

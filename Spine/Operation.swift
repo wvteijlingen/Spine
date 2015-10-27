@@ -91,7 +91,7 @@ class ConcurrentOperation: NSOperation {
 	var spine: Spine!
 	
 	/// Convenience variables that proxy to their spine counterpart
-	var router: RouterProtocol {
+	var router: Router {
 		return spine.router
 	}
 	var networkClient: NetworkClient {
