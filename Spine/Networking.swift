@@ -48,7 +48,7 @@ public class HTTPClient: NetworkClient {
 	let urlSession: NSURLSession
 	var headers: [String: String] = [:]
 	
-	init() {
+	public init() {
 		let configuration = NSURLSessionConfiguration.defaultSessionConfiguration()
 		configuration.HTTPAdditionalHeaders = ["Content-Type": "application/vnd.api+json"]
 		urlSession = NSURLSession(configuration: configuration)
