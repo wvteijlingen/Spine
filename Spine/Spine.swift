@@ -9,6 +9,10 @@
 import Foundation
 import BrightFutures
 
+public typealias Metadata = [String: AnyObject]
+public typealias JSONAPIData = [String: AnyObject]
+
+
 /// The main class
 public class Spine {
 	
@@ -87,8 +91,8 @@ public class Spine {
 	
 	:returns: A future that resolves to a ResourceCollection that contains the fetched resources.
 	*/
-	public func find<T: Resource>(query: Query<T>) -> Future<(resources: ResourceCollection, meta: [String: AnyObject]?, jsonapi: [String: AnyObject]?), NSError> {
-		let promise = Promise<(resources: ResourceCollection, meta: [String: AnyObject]?, jsonapi: [String: AnyObject]?), NSError>()
+	public func find<T: Resource>(query: Query<T>) -> Future<(resources: ResourceCollection, meta: Metadata?, jsonapi: JSONAPIData?), NSError> {
+		let promise = Promise<(resources: ResourceCollection, meta: Metadata?, jsonapi: JSONAPIData?), NSError>()
 		
 		let operation = FetchOperation(query: query, spine: self)
 		
@@ -116,7 +120,7 @@ public class Spine {
 	
 	:returns: A future that resolves to a ResourceCollection that contains the fetched resources.
 	*/
-	public func find<T: Resource>(IDs: [String], ofType type: T.Type) -> Future<(resources: ResourceCollection, meta: [String: AnyObject]?, jsonapi: [String: AnyObject]?), NSError> {
+	public func find<T: Resource>(IDs: [String], ofType type: T.Type) -> Future<(resources: ResourceCollection, meta: Metadata?, jsonapi: JSONAPIData?), NSError> {
 		let query = Query(resourceType: type, resourceIDs: IDs)
 		return find(query)
 	}
@@ -128,8 +132,8 @@ public class Spine {
 	
 	:returns: A future that resolves to the fetched resource.
 	*/
-	public func findOne<T: Resource>(query: Query<T>) -> Future<(resource: T, meta: [String: AnyObject]?, jsonapi: [String: AnyObject]?), NSError> {
-		let promise = Promise<(resource: T, meta: [String: AnyObject]?, jsonapi: [String: AnyObject]?), NSError>()
+	public func findOne<T: Resource>(query: Query<T>) -> Future<(resource: T, meta: Metadata?, jsonapi: JSONAPIData?), NSError> {
+		let promise = Promise<(resource: T, meta: Metadata?, jsonapi: JSONAPIData?), NSError>()
 		
 		let operation = FetchOperation(query: query, spine: self)
 		
@@ -159,7 +163,7 @@ public class Spine {
 	
 	:returns: A future that resolves to the fetched resource.
 	*/
-	public func findOne<T: Resource>(ID: String, ofType type: T.Type) -> Future<(resource: T, meta: [String: AnyObject]?, jsonapi: [String: AnyObject]?), NSError> {
+	public func findOne<T: Resource>(ID: String, ofType type: T.Type) -> Future<(resource: T, meta: Metadata?, jsonapi: JSONAPIData?), NSError> {
 		let query = Query(resourceType: type, resourceIDs: [ID])
 		return findOne(query)
 	}
@@ -172,7 +176,7 @@ public class Spine {
 	
 	:returns: A future that resolves to a ResourceCollection that contains the fetched resources.
 	*/
-	public func findAll<T: Resource>(type: T.Type) -> Future<(resources: ResourceCollection, meta: [String: AnyObject]?, jsonapi: [String: AnyObject]?), NSError> {
+	public func findAll<T: Resource>(type: T.Type) -> Future<(resources: ResourceCollection, meta: Metadata?, jsonapi: JSONAPIData?), NSError> {
 		let query = Query(resourceType: type)
 		return find(query)
 	}
