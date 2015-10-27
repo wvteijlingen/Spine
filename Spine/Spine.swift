@@ -27,23 +27,40 @@ public class Spine {
 	
 	// MARK: Initializers
 	
-	public init(baseURL: NSURL, router: RouterProtocol, networkClient: NetworkClient) {
+	/**
+	Creates a new Spine instance using the given router and network client.
+	*/
+	public init(router: RouterProtocol, networkClient: NetworkClient) {
 		self.router = router
-		self.router.baseURL = baseURL
 		self.networkClient = networkClient
 		self.operationQueue.name = "com.wardvanteijlingen.spine"
 	}
 	
+	/**
+	Creates a new Spine instance using the default Router and HTTPClient classes.
+	*/
 	public convenience init(baseURL: NSURL) {
-		self.init(baseURL: baseURL, router: Router(), networkClient: HTTPClient())
+		let router = Router()
+		router.baseURL = baseURL
+		self.init(router: router, networkClient: HTTPClient())
 	}
 	
-	public convenience init(baseURL: NSURL, router: RouterProtocol) {
-		self.init(baseURL: baseURL, router: router, networkClient: HTTPClient())
+	/**
+	Creates a new Spine instance using a specific router and the default HTTPClient class.
+	Use this initializer to specify a custom router.
+	*/
+	public convenience init(router: RouterProtocol) {
+		self.init(router: router, networkClient: HTTPClient())
 	}
 	
+	/**
+	Creates a new Spine instance using a specific network client and the default Router class.
+	Use this initializer to specify a custom network client.
+	*/
 	public convenience init(baseURL: NSURL, networkClient: NetworkClient) {
-		self.init(baseURL: baseURL, router: Router(), networkClient: networkClient)
+		let router = Router()
+		router.baseURL = baseURL
+		self.init(router: router, networkClient: networkClient)
 	}
 	
 	
