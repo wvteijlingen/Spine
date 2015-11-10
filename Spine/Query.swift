@@ -359,9 +359,19 @@ public protocol Pagination { }
 public struct PageBasedPagination: Pagination {
 	var pageNumber: Int
 	var pageSize: Int
+	
+	public init(pageNumber: Int, pageSize: Int) {
+		self.pageNumber = pageNumber
+		self.pageSize = pageSize
+	}
 }
 
 public struct OffsetBasedPagination: Pagination {
 	var offset: Int
 	var limit: Int
+	
+	public init(offset: Int, limit: Int) {
+		self.offset = offset
+		self.limit = limit
+	}
 }
