@@ -18,6 +18,15 @@ class SerializerTests: XCTestCase {
 		serializer.resourceFactory.registerResource(Foo.resourceType) { Foo() }
 		serializer.resourceFactory.registerResource(Bar.resourceType) { Bar() }
 	}
+
+    private func iso8601Date(date: NSDate) -> String {
+        let dateFormatter = NSDateFormatter()
+        let enUSPosixLocale = NSLocale(localeIdentifier: "en_US_POSIX")
+        dateFormatter.locale = enUSPosixLocale
+        dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ssZZZZZ"
+
+        return dateFormatter.stringFromDate(date)
+    }
 }
 
 class SerializingTests: SerializerTests {
@@ -52,7 +61,7 @@ class SerializingTests: SerializerTests {
 		XCTAssertEqual(json["data"]["attributes"]["floatAttribute"].floatValue, foo.floatAttribute!, "Serialized float is not equal.")
 		XCTAssertTrue(json["data"]["attributes"]["booleanAttribute"].boolValue, "Serialized boolean is not equal.")
 		XCTAssertNotNil(json["data"]["attributes"]["nilAttribute"].null, "Serialized nil is not equal.")
-		XCTAssertEqual(json["data"]["attributes"]["dateAttribute"].stringValue, "1970-01-01T01:00:00+01:00", "Serialized date is not equal.")
+		XCTAssertEqual(json["data"]["attributes"]["dateAttribute"].stringValue, iso8601Date(foo.dateAttribute!), "Serialized date is not equal.")
 	}
 	
 	func testSerializeSingleResourceToOneRelationships() {
