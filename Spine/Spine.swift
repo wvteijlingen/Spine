@@ -96,7 +96,7 @@ public class Spine {
 		
 		let operation = FetchOperation(query: query, spine: self)
 		
-		operation.completionBlock = {
+		operation.completionBlock = { [unowned operation] in
 
 			switch operation.result! {
 			case .Success(let document):
@@ -137,7 +137,7 @@ public class Spine {
 		
 		let operation = FetchOperation(query: query, spine: self)
 		
-		operation.completionBlock = {
+		operation.completionBlock = { [unowned operation] in
 			switch operation.result! {
 			case .Success(let document) where document.data?.count == 0:
 				promise.failure(NSError(domain: SpineClientErrorDomain, code: SpineErrorCodes.ResourceNotFound, userInfo: nil))
@@ -199,7 +199,7 @@ public class Spine {
 			let query = Query(URL: nextURL)
 			let operation = FetchOperation(query: query, spine: self)
 			
-			operation.completionBlock = {
+			operation.completionBlock = { [unowned operation] in
 				switch operation.result! {
 				case .Success(let document):
 					let nextCollection = ResourceCollection(document: document)
@@ -238,7 +238,7 @@ public class Spine {
 			let query = Query(URL: previousURL)
 			let operation = FetchOperation(query: query, spine: self)
 			
-			operation.completionBlock = {
+			operation.completionBlock = { [unowned operation] in
 				switch operation.result! {
 				case .Success(let document):
 					let previousCollection = ResourceCollection(document: document)
@@ -277,7 +277,7 @@ public class Spine {
 		
 		let operation = SaveOperation(resource: resource, spine: self)
 		
-		operation.completionBlock = {
+		operation.completionBlock = { [unowned operation] in
 			if let error = operation.result?.error {
 				promise.failure(error)
 			} else {
@@ -302,7 +302,7 @@ public class Spine {
 		
 		let operation = DeleteOperation(resource: resource, spine: self)
 		
-		operation.completionBlock = {
+		operation.completionBlock = { [unowned operation] in
 			if let error = operation.result?.error {
 				promise.failure(error)
 			} else {
@@ -357,7 +357,7 @@ public class Spine {
 		
 		let operation = FetchOperation(query: query, spine: self)
 		operation.mappingTargets = [resource]
-		operation.completionBlock = {
+		operation.completionBlock = { [unowned operation] in
 			if let error = operation.result?.error {
 				promise.failure(error)
 			} else {

@@ -317,16 +317,16 @@ class SaveOperation: ConcurrentOperation {
 			switch field {
 			case let toOne as ToOneRelationship:
 				let operation = RelationshipReplaceOperation(resource: resource, relationship: toOne, spine: spine)
-				operation.completionBlock = { completionHandler(result: operation.result!) }
+				operation.completionBlock = { [unowned operation] in completionHandler(result: operation.result!) }
 				relationshipOperationQueue.addOperation(operation)
 				
 			case let toMany as ToManyRelationship:
 				let addOperation = RelationshipAddOperation(resource: resource, relationship: toMany, spine: spine)
-				addOperation.completionBlock = { completionHandler(result: addOperation.result!) }
+				addOperation.completionBlock = { [unowned addOperation] in completionHandler(result: addOperation.result!) }
 				relationshipOperationQueue.addOperation(addOperation)
 				
 				let removeOperation = RelationshipRemoveOperation(resource: resource, relationship: toMany, spine: spine)
-				removeOperation.completionBlock = { completionHandler(result: removeOperation.result!) }
+				removeOperation.completionBlock = { [unowned removeOperation] in completionHandler(result: removeOperation.result!) }
 				relationshipOperationQueue.addOperation(removeOperation)
 			default: ()
 			}
