@@ -8,57 +8,72 @@
 
 import Foundation
 
-/// Callback used by the _HTTPClientProtocol
-typealias HTTPClientCallback = (statusCode: Int?, responseData: NSData?, networkError: NSError?) -> Void
+public typealias NetworkClientCallback = (statusCode: Int?, data: NSData?, error: NSError?) -> Void
 
 /**
-The HTTPClientProtocol declares methods and properties that a HTTP client must implement.
+A NetworkClient is the interface between Spine and the server. It does not impose any transport
+and can be used for HTTP, websockets, and any other data transport.
 */
-public protocol HTTPClientProtocol {
-	/// Sets a HTTP header for all upcoming network requests.
-	func setHeader(header: String, to: String)
+public protocol NetworkClient {
+	/**
+	Performs a network request to the given URL with the given method.
 	
-	/// Removes a HTTP header for all upcoming  network requests.
-	func removeHeader(header: String)
+	- parameter method:   The method to use, expressed as a HTTP verb.
+	- parameter URL:      The URL to which to make the request.
+	- parameter callback: The callback to execute when the request finishes.
+	*/
+	func request(method: String, URL: NSURL, callback: NetworkClientCallback)
+	
+	/**
+	Performs a network request to the given URL with the given method.
+	
+	- parameter method:   The method to use, expressed as a HTTP verb.
+	- parameter URL:      The URL to which to make the request.
+	- parameter payload:  The payload the send as part of the request.
+	- parameter callback: The callback to execute when the request finishes.
+	*/
+	func request(method: String, URL: NSURL, payload: NSData?, callback: NetworkClientCallback)
+}
+
+extension NetworkClient {
+	public func request(method: String, URL: NSURL, callback: NetworkClientCallback) {
+		return request(method, URL: URL, payload: nil, callback: callback)
+	}
 }
 
 /**
-The _HTTPClientProtocol declares methods and properties that a HTTP client must implement.
+The HTTPClient implements the NetworkClient protocol to work over an HTTP connection.
 */
-protocol _HTTPClientProtocol: HTTPClientProtocol {
-	/// Performs a network request to the given URL with the given HTTP method.
-	func request(method: String, URL: NSURL, callback: HTTPClientCallback)
-	
-	/// Performs a network request to the given URL with the given HTTP method and request body data.
-	func request(method: String, URL: NSURL, payload: NSData?, callback: HTTPClientCallback)
-}
-
-/**
-The built in HTTP client that uses an NSURLSession for networking.
-*/
-public class URLSessionClient: _HTTPClientProtocol {
+public class HTTPClient: NetworkClient {
 	let urlSession: NSURLSession
 	var headers: [String: String] = [:]
 	
-	init() {
+	public init() {
 		let configuration = NSURLSessionConfiguration.defaultSessionConfiguration()
 		configuration.HTTPAdditionalHeaders = ["Content-Type": "application/vnd.api+json"]
 		urlSession = NSURLSession(configuration: configuration)
 	}
 	
+	/**
+	Sets a HTTP header for all upcoming network requests.
+	
+	- parameter header: The name of header to set the value for.
+	- parameter value:  The value to set the header tp.
+	*/
 	public func setHeader(header: String, to value: String) {
 		headers[header] = value
 	}
 	
+	/**
+	Removes a HTTP header for all upcoming  network requests.
+	
+	- parameter header: The name of header to remove.
+	*/
 	public func removeHeader(header: String) {
 		headers.removeValueForKey(header)
 	}
 	
-	func request(method: String, URL: NSURL, callback: HTTPClientCallback) {
-		return request(method, URL: URL, payload: nil, callback: callback)
-	}
-	
-	func request(method: String, URL: NSURL, payload: NSData?, callback: HTTPClientCallback) {
+	public func buildRequest(method: String, URL: NSURL, payload: NSData?) -> NSMutableURLRequest {
 		let request = NSMutableURLRequest(URL: URL)
 		request.HTTPMethod = method
 		
@@ -66,45 +81,47 @@ public class URLSessionClient: _HTTPClientProtocol {
 			request.setValue(value, forHTTPHeaderField: key)
 		}
 		
-		Spine.logInfo(.Networking, "\(method): \(URL)")
-		
 		if let payload = payload {
 			request.HTTPBody = payload
-			
-			if Spine.shouldLog(.Debug, domain: .Networking) {
-				if let stringRepresentation = NSString(data: payload, encoding: NSUTF8StringEncoding) {
-					Spine.logDebug(.Networking, stringRepresentation)
-				}
+		}
+		
+		return request
+	}
+
+	public func request(method: String, URL: NSURL, payload: NSData?, callback: NetworkClientCallback) {
+		let request = buildRequest(method, URL: URL, payload: payload)
+		
+		Spine.logInfo(.Networking, "\(method): \(URL)")
+		
+		if Spine.shouldLog(.Debug, domain: .Networking) {
+			if let httpBody = request.HTTPBody, stringRepresentation = NSString(data: httpBody, encoding: NSUTF8StringEncoding) {
+				Spine.logDebug(.Networking, stringRepresentation)
 			}
 		}
 		
-		performRequest(request, callback: callback)
-	}
-	
-	private func performRequest(request: NSURLRequest, callback: HTTPClientCallback) {
-		let task = urlSession.dataTaskWithRequest(request) { data, response, error in
+		let task = urlSession.dataTaskWithRequest(request) { data, response, networkError in
 			let response = (response as? NSHTTPURLResponse)
 			
-			// Network error
-			if let error = error {
+			if let error = networkError {
+				// Network error
 				Spine.logError(.Networking, "\(request.URL) - \(error.localizedDescription)")
 				
-			// Success
 			} else if let statusCode = response?.statusCode where 200 ... 299 ~= statusCode {
+				// Success
 				Spine.logInfo(.Networking, "\(statusCode): \(request.URL)")
 				
-			// API Error
 			} else {
+				// API Error
 				Spine.logWarning(.Networking, "\(response?.statusCode): \(request.URL)")
 			}
 			
 			if Spine.shouldLog(.Debug, domain: .Networking) {
-				if let stringRepresentation = NSString(data: data, encoding: NSUTF8StringEncoding) {
+				if let data = data, stringRepresentation = NSString(data: data, encoding: NSUTF8StringEncoding) {
 					Spine.logDebug(.Networking, stringRepresentation)
 				}
 			}
 			
-			callback(statusCode: response?.statusCode, responseData: data, networkError: error)
+			callback(statusCode: response?.statusCode, data: data, error: networkError)
 		}
 		
 		task.resume()

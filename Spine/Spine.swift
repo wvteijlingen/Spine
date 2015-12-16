@@ -9,19 +9,18 @@
 import Foundation
 import BrightFutures
 
+public typealias Metadata = [String: AnyObject]
+public typealias JSONAPIData = [String: AnyObject]
+
+
 /// The main class
 public class Spine {
 	
 	/// The router that builds the URLs for requests.
-	let router: RouterProtocol
+	let router: Router
 	
 	/// The HTTPClient that performs the HTTP requests.
-	var _HTTPClient: _HTTPClientProtocol = URLSessionClient()
-	
-	/// The HTTPClient used for all network requests.
-	public var HTTPClient: HTTPClientProtocol {
-		return _HTTPClient
-	}
+	public let networkClient: NetworkClient
 	
 	/// The serializer to use for serializing and deserializing of JSON representations.
 	let serializer: JSONSerializer = JSONSerializer()
@@ -32,14 +31,40 @@ public class Spine {
 	
 	// MARK: Initializers
 	
-	public init(baseURL: NSURL, router: RouterProtocol) {
+	/**
+	Creates a new Spine instance using the given router and network client.
+	*/
+	public init(router: Router, networkClient: NetworkClient) {
 		self.router = router
-		self.router.baseURL = baseURL
+		self.networkClient = networkClient
 		self.operationQueue.name = "com.wardvanteijlingen.spine"
 	}
 	
+	/**
+	Creates a new Spine instance using the default Router and HTTPClient classes.
+	*/
 	public convenience init(baseURL: NSURL) {
-		self.init(baseURL: baseURL, router: Router())
+		let router = JSONAPIRouter()
+		router.baseURL = baseURL
+		self.init(router: router, networkClient: HTTPClient())
+	}
+	
+	/**
+	Creates a new Spine instance using a specific router and the default HTTPClient class.
+	Use this initializer to specify a custom router.
+	*/
+	public convenience init(router: Router) {
+		self.init(router: router, networkClient: HTTPClient())
+	}
+	
+	/**
+	Creates a new Spine instance using a specific network client and the default Router class.
+	Use this initializer to specify a custom network client.
+	*/
+	public convenience init(baseURL: NSURL, networkClient: NetworkClient) {
+		let router = JSONAPIRouter()
+		router.baseURL = baseURL
+		self.init(router: router, networkClient: networkClient)
 	}
 	
 	
@@ -51,7 +76,7 @@ public class Spine {
 	
 	:param: operation The operation to enqueue.
 	*/
-	func addOperation(operation: Operation) {
+	func addOperation(operation: ConcurrentOperation) {
 		operation.spine = self
 		operationQueue.addOperation(operation)
 	}
@@ -66,45 +91,17 @@ public class Spine {
 	
 	:returns: A future that resolves to a ResourceCollection that contains the fetched resources.
 	*/
-	public func find<T: ResourceProtocol>(query: Query<T>) -> Future<ResourceCollection> {
-		let promise = Promise<ResourceCollection>()
+	public func find<T: Resource>(query: Query<T>) -> Future<(resources: ResourceCollection, meta: Metadata?, jsonapi: JSONAPIData?), NSError> {
+		let promise = Promise<(resources: ResourceCollection, meta: Metadata?, jsonapi: JSONAPIData?), NSError>()
 		
-		let operation = FetchOperation(query: query)
+		let operation = FetchOperation(query: query, spine: self)
 		
-		operation.completionBlock = {
+		operation.completionBlock = { [unowned operation] in
 
 			switch operation.result! {
-			case .Success(let resourceCollectionWrapper):
-				promise.success(resourceCollectionWrapper.value)
-			case .Failure(let error):
-				promise.failure(error)
-			}
-		}
-		
-		addOperation(operation)
-		
-		return promise.future
-	}
-	
-	/**
-	Fetch one resource using the given query.
-	
-	:param: query The query describing which resource to fetch.
-	
-	:returns: A future that resolves to the fetched resource.
-	*/
-	public func findOne<T: ResourceProtocol>(query: Query<T>) -> Future<T> {
-		let promise = Promise<T>()
-		
-		let operation = FetchOperation(query: query)
-		
-		operation.completionBlock = {
-			switch operation.result! {
-			case .Success(let resourceCollectionBox) where resourceCollectionBox.value.count == 0:
-				promise.failure(NSError(domain: SpineClientErrorDomain, code: SpineErrorCodes.ResourceNotFound, userInfo: nil))
-			case .Success(let resourceCollectionBox):
-				let firstResource = resourceCollectionBox.value.resources.first as! T
-				promise.success(firstResource)
+			case .Success(let document):
+				let response = (ResourceCollection(document: document), document.meta, document.jsonapi)
+				promise.success(response)
 			case .Failure(let error):
 				promise.failure(error)
 			}
@@ -123,22 +120,39 @@ public class Spine {
 	
 	:returns: A future that resolves to a ResourceCollection that contains the fetched resources.
 	*/
-	public func find<T: ResourceProtocol>(IDs: [String], ofType type: T.Type) -> Future<ResourceCollection> {
+	public func find<T: Resource>(IDs: [String], ofType type: T.Type) -> Future<(resources: ResourceCollection, meta: Metadata?, jsonapi: JSONAPIData?), NSError> {
 		let query = Query(resourceType: type, resourceIDs: IDs)
 		return find(query)
 	}
 	
 	/**
-	Fetch all resources with the given type.
-	This does not explicitly impose any limit, but the server may choose to limit the response.
+	Fetch one resource using the given query.
 	
-	:param: type The type of resource to fetch.
+	:param: query The query describing which resource to fetch.
 	
-	:returns: A future that resolves to a ResourceCollection that contains the fetched resources.
+	:returns: A future that resolves to the fetched resource.
 	*/
-	public func find<T: ResourceProtocol>(type: T.Type) -> Future<ResourceCollection> {
-		let query = Query(resourceType: type)
-		return find(query)
+	public func findOne<T: Resource>(query: Query<T>) -> Future<(resource: T, meta: Metadata?, jsonapi: JSONAPIData?), NSError> {
+		let promise = Promise<(resource: T, meta: Metadata?, jsonapi: JSONAPIData?), NSError>()
+		
+		let operation = FetchOperation(query: query, spine: self)
+		
+		operation.completionBlock = { [unowned operation] in
+			switch operation.result! {
+			case .Success(let document) where document.data?.count == 0:
+				promise.failure(NSError(domain: SpineClientErrorDomain, code: SpineErrorCodes.ResourceNotFound, userInfo: nil))
+			case .Success(let document):
+				let firstResource = document.data!.first as! T
+				let response = (resource: firstResource, meta: document.meta, jsonapi: document.jsonapi)
+				promise.success(response)
+			case .Failure(let error):
+				promise.failure(error)
+			}
+		}
+		
+		addOperation(operation)
+		
+		return promise.future
 	}
 	
 	/**
@@ -149,9 +163,22 @@ public class Spine {
 	
 	:returns: A future that resolves to the fetched resource.
 	*/
-	public func findOne<T: ResourceProtocol>(ID: String, ofType type: T.Type) -> Future<T> {
+	public func findOne<T: Resource>(ID: String, ofType type: T.Type) -> Future<(resource: T, meta: Metadata?, jsonapi: JSONAPIData?), NSError> {
 		let query = Query(resourceType: type, resourceIDs: [ID])
 		return findOne(query)
+	}
+	
+	/**
+	Fetch all resources with the given type.
+	This does not explicitly impose any limit, but the server may choose to limit the response.
+	
+	:param: type The type of resource to fetch.
+	
+	:returns: A future that resolves to a ResourceCollection that contains the fetched resources.
+	*/
+	public func findAll<T: Resource>(type: T.Type) -> Future<(resources: ResourceCollection, meta: Metadata?, jsonapi: JSONAPIData?), NSError> {
+		let query = Query(resourceType: type)
+		return find(query)
 	}
 	
 	
@@ -165,17 +192,17 @@ public class Spine {
 	
 	:returns: A future that resolves to the ResourceCollection including the newly loaded resources.
 	*/
-	public func loadNextPageOfCollection(collection: ResourceCollection) -> Future<ResourceCollection> {
-		let promise = Promise<ResourceCollection>()
+	public func loadNextPageOfCollection(collection: ResourceCollection) -> Future<ResourceCollection, NSError> {
+		let promise = Promise<ResourceCollection, NSError>()
 		
 		if let nextURL = collection.nextURL {
-			let query = Query<ResourceProtocol>(URL: nextURL)
-			let operation = FetchOperation(query: query)
+			let query = Query(URL: nextURL)
+			let operation = FetchOperation(query: query, spine: self)
 			
-			operation.completionBlock = {
+			operation.completionBlock = { [unowned operation] in
 				switch operation.result! {
-				case .Success(let resourceCollectionBox):
-					let nextCollection = resourceCollectionBox.value
+				case .Success(let document):
+					let nextCollection = ResourceCollection(document: document)
 					collection.resources += nextCollection.resources
 					collection.resourcesURL = nextCollection.resourcesURL
 					collection.nextURL = nextCollection.nextURL
@@ -204,17 +231,17 @@ public class Spine {
 	
 	:returns: A future that resolves to the ResourceCollection including the newly loaded resources.
 	*/
-	public func loadPreviousPageOfCollection(collection: ResourceCollection) -> Future<ResourceCollection> {
-		let promise = Promise<ResourceCollection>()
+	public func loadPreviousPageOfCollection(collection: ResourceCollection) -> Future<ResourceCollection, NSError> {
+		let promise = Promise<ResourceCollection, NSError>()
 		
 		if let previousURL = collection.previousURL {
-			let query = Query<ResourceProtocol>(URL: previousURL)
-			let operation = FetchOperation(query: query)
+			let query = Query(URL: previousURL)
+			let operation = FetchOperation(query: query, spine: self)
 			
-			operation.completionBlock = {
+			operation.completionBlock = { [unowned operation] in
 				switch operation.result! {
-				case .Success(let resourceCollectionBox):
-					let previousCollection = resourceCollectionBox.value
+				case .Success(let document):
+					let previousCollection = ResourceCollection(document: document)
 					collection.resources = previousCollection.resources + collection.resources
 					collection.resourcesURL = previousCollection.resourcesURL
 					collection.nextURL = previousCollection.nextURL
@@ -245,12 +272,12 @@ public class Spine {
 	
 	:returns: A future that resolves to the saved resource.
 	*/
-	public func save(resource: ResourceProtocol) -> Future<ResourceProtocol> {
-		let promise = Promise<ResourceProtocol>()
+	public func save(resource: Resource) -> Future<Resource, NSError> {
+		let promise = Promise<Resource, NSError>()
 		
-		let operation = SaveOperation(resource: resource)
+		let operation = SaveOperation(resource: resource, spine: self)
 		
-		operation.completionBlock = {
+		operation.completionBlock = { [unowned operation] in
 			if let error = operation.result?.error {
 				promise.failure(error)
 			} else {
@@ -270,12 +297,12 @@ public class Spine {
 	
 	:returns: A future
 	*/
-	public func delete(resource: ResourceProtocol) -> Future<Void> {
-		let promise = Promise<Void>()
+	public func delete(resource: Resource) -> Future<Void, NSError> {
+		let promise = Promise<Void, NSError>()
 		
-		let operation = DeleteOperation(resource: resource)
+		let operation = DeleteOperation(resource: resource, spine: self)
 		
-		operation.completionBlock = {
+		operation.completionBlock = { [unowned operation] in
 			if let error = operation.result?.error {
 				promise.failure(error)
 			} else {
@@ -299,7 +326,7 @@ public class Spine {
 	
 	:returns: <#return value description#>
 	*/
-	public func ensure<T: ResourceProtocol>(resource: T) -> Future<T> {
+	public func ensure<T: Resource>(resource: T) -> Future<T, NSError> {
 		let query = Query(resource: resource)
 		return loadResourceByExecutingQuery(resource, query: query)
 	}
@@ -315,22 +342,22 @@ public class Spine {
 	
 	:returns: <#return value description#>
 	*/
-	public func ensure<T: ResourceProtocol>(resource: T, queryCallback: (Query<T>) -> Query<T>) -> Future<T> {
+	public func ensure<T: Resource>(resource: T, queryCallback: (Query<T>) -> Query<T>) -> Future<T, NSError> {
 		let query = queryCallback(Query(resource: resource))
 		return loadResourceByExecutingQuery(resource, query: query)
 	}
 
-	func loadResourceByExecutingQuery<T: ResourceProtocol>(resource: T, query: Query<T>) -> Future<T> {
-		let promise = Promise<(T)>()
+	func loadResourceByExecutingQuery<T: Resource>(resource: T, query: Query<T>) -> Future<T, NSError> {
+		let promise = Promise<(T), NSError>()
 		
 		if resource.isLoaded {
 			promise.success(resource)
 			return promise.future
 		}
 		
-		let operation = FetchOperation(query: query)
+		let operation = FetchOperation(query: query, spine: self)
 		operation.mappingTargets = [resource]
-		operation.completionBlock = {
+		operation.completionBlock = { [unowned operation] in
 			if let error = operation.result?.error {
 				promise.failure(error)
 			} else {
@@ -355,7 +382,7 @@ public extension Spine {
 	:param: type    The resource type to register the factory function for.
 	:param: factory The factory method that returns an instance of a resource.
 	*/
-	func registerResource(type: String, factory: () -> ResourceProtocol) {
+	func registerResource(type: String, factory: () -> Resource) {
 		serializer.resourceFactory.registerResource(type, factory: factory)
 	}
 }
@@ -378,61 +405,9 @@ public extension Spine {
 
 // MARK: - Utilities
 
-/// Return an `Array` containing resources of `domain`,
-/// in order, that are of the resource type `type`.
-func findResourcesWithType<C: CollectionType where C.Generator.Element: ResourceProtocol>(domain: C, type: ResourceType) -> [C.Generator.Element] {
-	return filter(domain) { $0.type == type }
-}
-
-/// Return the first resource of `domain`,
-/// that is of the resource type `type` and has id `id`.
-func findResource<C: CollectionType where C.Generator.Element: ResourceProtocol>(domain: C, type: ResourceType, id: String) -> C.Generator.Element? {
-	return filter(domain) { $0.type == type && $0.id == id }.first
-}
-
-/// Calls `callback` for each field, filtered by type `type`, of resource `resource`.
-func enumerateFields<T: Field>(resource: ResourceProtocol, type: T.Type, callback: (T) -> ()) {
-	enumerateFields(resource) { field in
-		if let attribute = field as? T {
-			callback(attribute)
-		}
-	}
-}
-
-func enumerateFields<T: ResourceProtocol>(resource: T, callback: (Field) -> ()) {
-	for field in resource.dynamicType.fields {
-		callback(field)
-	}
-}
-
-
-/// Compare resources based on `type` and `id`.
-public func == <T: ResourceProtocol> (left: T, right: T) -> Bool {
-	return (left.id == right.id) && (left.type == right.type)
-}
-
-/// Compare array of resources based on `type` and `id`.
-public func == <T: ResourceProtocol> (left: [T], right: [T]) -> Bool {
-	if left.count != right.count {
-		return false
-	}
-	
-	for (index, resource) in enumerate(left) {
-		if (resource.type != right[index].type) || (resource.id != right[index].id) {
-			return false
-		}
-	}
-	
-	return true
-}
-
-/// Sets all fields of resource `resource` to nil and sets `isLoaded` to false.
-public func unloadResource(resource: ResourceProtocol) {
-	enumerateFields(resource) { field in
-		resource.setValue(nil, forField: field.name)
-	}
-	
-	resource.isLoaded = false
+/// Return the first resource of `domain`, that is of the resource type `type` and has id `id`.
+func findResource<C: CollectionType where C.Generator.Element: Resource>(domain: C, type: ResourceType, id: String) -> C.Generator.Element? {
+	return domain.filter { $0.resourceType == type && $0.id == id }.first
 }
 
 
@@ -440,18 +415,16 @@ public func unloadResource(resource: ResourceProtocol) {
 
 /**
 Represents the result of a failable operation.
-To work around the unimplemented "non-fixed multi-payload enum layout"
-compiler error, we have to box the success value.
 
 - Success: The operation succeeded with the given result.
 - Failure: The operation failed with the given error.
 */
 enum Failable<T> {
-	case Success(Box<T>)
+	case Success(T)
 	case Failure(NSError)
 	
 	init(_ value: T) {
-		self = .Success(Box(value))
+		self = .Success(value)
 	}
 	
 	init(_ error: NSError) {
@@ -466,9 +439,4 @@ enum Failable<T> {
 			return nil
 		}
 	}
-}
-
-class Box<T> {
-	var value: T
-	init(_ value: T) { self.value = value }
 }

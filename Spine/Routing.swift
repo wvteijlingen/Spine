@@ -12,34 +12,33 @@ import Foundation
 The RouterProtocol declares methods and properties that a router should implement.
 The router is used to build URLs for API requests.
 */
-public protocol RouterProtocol {
+public protocol Router {
 	/// The base URL of the API.
 	var baseURL: NSURL! { get set }
 	
 	/**
 	Returns an NSURL that points to the collection of resources with a given type.
 	
-	:param: type The type of resources.
+	- parameter type: The type of resources.
 	
-	:returns: The NSURL.
+	- returns: The NSURL.
 	*/
 	func URLForResourceType(type: ResourceType) -> NSURL
 	
-	
-	func URLForRelationship(relationship: Relationship, ofResource resource: ResourceProtocol) -> NSURL
+	func URLForRelationship<T: Resource>(relationship: Relationship, ofResource resource: T) -> NSURL
 	
 	/**
 	Returns an NSURL that represents the given query.
 	
-	:param: query The query to turn into an NSURL.
+	- parameter query: The query to turn into an NSURL.
 	
-	:returns: The NSURL.
+	- returns: The NSURL.
 	*/
-	func URLForQuery<T: ResourceProtocol>(query: Query<T>) -> NSURL
+	func URLForQuery<T: Resource>(query: Query<T>) -> NSURL
 }
 
 /**
-The built in Router that builds URLs according to the JSON:API specification.
+The built in JSONAPIRouter builds URLs according to the JSON:API specification.
 
 Filters
 =======
@@ -51,7 +50,7 @@ Pagination
 Only PageBasedPagination and OffsetBasedPagination are supported. You can subclass Router
 and override `queryItemsForPagination` to add support for other pagination strategies.
 */
-public class Router: RouterProtocol {
+public class JSONAPIRouter: Router {
 	public var baseURL: NSURL!
 
 	public init() { }
@@ -60,12 +59,12 @@ public class Router: RouterProtocol {
 		return baseURL.URLByAppendingPathComponent(type)
 	}
 	
-	public func URLForRelationship<T: ResourceProtocol>(relationship: Relationship, ofResource resource: T) -> NSURL {
-		let resourceURL = resource.URL ?? URLForResourceType(resource.dynamicType.resourceType).URLByAppendingPathComponent("/\(resource.id!)")
+	public func URLForRelationship<T: Resource>(relationship: Relationship, ofResource resource: T) -> NSURL {
+		let resourceURL = resource.URL ?? URLForResourceType(resource.resourceType).URLByAppendingPathComponent("/\(resource.id!)")
 		return resourceURL.URLByAppendingPathComponent("/links/\(relationship.serializedName)")
 	}
 
-	public func URLForQuery<T: ResourceProtocol>(query: Query<T>) -> NSURL {
+	public func URLForQuery<T: Resource>(query: Query<T>) -> NSURL {
 		var URL: NSURL!
 		var preBuiltURL = false
 		
@@ -79,16 +78,16 @@ public class Router: RouterProtocol {
 			assertionFailure("Cannot build URL for query. Query does not have a URL, nor a resource type.")
 		}
 		
-		var URLComponents = NSURLComponents(URL: URL, resolvingAgainstBaseURL: true)!
-		var queryItems: [NSURLQueryItem] = (URLComponents.queryItems as? [NSURLQueryItem]) ?? []
+		let URLComponents = NSURLComponents(URL: URL, resolvingAgainstBaseURL: true)!
+		var queryItems: [NSURLQueryItem] = URLComponents.queryItems ?? []
 		
 		// Resource IDs
 		if !preBuiltURL {
 			if let IDs = query.resourceIDs {
 				if IDs.count == 1 {
-					URLComponents.path = URLComponents.path?.stringByAppendingPathComponent(IDs.first!)
+					URLComponents.path = (URLComponents.path! as NSString).stringByAppendingPathComponent(IDs.first!)
 				} else {
-					var item = NSURLQueryItem(name: "filter[id]", value: join(",", IDs))
+					let item = NSURLQueryItem(name: "filter[id]", value: IDs.joinWithSeparator(","))
 					setQueryItem(item, forQueryItems: &queryItems)
 				}
 			}
@@ -96,7 +95,7 @@ public class Router: RouterProtocol {
 		
 		// Includes
 		if !query.includes.isEmpty {
-			var item = NSURLQueryItem(name: "include", value: ",".join(query.includes))
+			let item = NSURLQueryItem(name: "include", value: query.includes.joinWithSeparator(","))
 			setQueryItem(item, forQueryItems: &queryItems)
 		}
 		
@@ -108,7 +107,7 @@ public class Router: RouterProtocol {
 		
 		// Fields
 		for (resourceType, fields) in query.fields {
-			var item = NSURLQueryItem(name: "fields[\(resourceType)]", value: ",".join(fields))
+			let item = NSURLQueryItem(name: "fields[\(resourceType)]", value: fields.joinWithSeparator(","))
 			setQueryItem(item, forQueryItems: &queryItems)
 		}
 		
@@ -122,7 +121,7 @@ public class Router: RouterProtocol {
 				}
 			}
 			
-			var item = NSURLQueryItem(name: "sort", value: ",".join(descriptorStrings))
+			let item = NSURLQueryItem(name: "sort", value: descriptorStrings.joinWithSeparator(","))
 			setQueryItem(item, forQueryItems: &queryItems)
 		}
 		
@@ -146,9 +145,9 @@ public class Router: RouterProtocol {
 	By default this method only supports 'equal to' predicates. You can override
 	this method to add support for other filtering strategies.
 	
-	:param: filter The NSComparisonPredicate.
+	- parameter filter: The NSComparisonPredicate.
 	
-	:returns: The NSURLQueryItem.
+	- returns: The NSURLQueryItem.
 	*/
 	public func queryItemForFilter(filter: NSComparisonPredicate) -> NSURLQueryItem {
 		assert(filter.predicateOperatorType == .EqualToPredicateOperatorType, "The built in router only supports Query filter expressions of type 'equalTo'")
@@ -160,9 +159,9 @@ public class Router: RouterProtocol {
 	By default this method only supports the PageBasedPagination and OffsetBasedPagination configurations.
 	You can override this method to add support for other pagination strategies.
 	
-	:param: pagination The QueryPagination configuration.
+	- parameter pagination: The QueryPagination configuration.
 	
-	:returns: Array of NSURLQueryItems.
+	- returns: Array of NSURLQueryItems.
 	*/
 	public func queryItemsForPagination(pagination: Pagination) -> [NSURLQueryItem] {
 		var queryItems = [NSURLQueryItem]()
@@ -185,7 +184,7 @@ public class Router: RouterProtocol {
 	}
 	
 	private func setQueryItem(queryItem: NSURLQueryItem, inout forQueryItems queryItems: [NSURLQueryItem]) {
-		queryItems.filter { return $0.name != queryItem.name }
+		queryItems = queryItems.filter { return $0.name != queryItem.name }
 		queryItems.append(queryItem)
 	}
 }

@@ -23,7 +23,7 @@ class ResourceCollectionTests: XCTestCase {
 	}
 	
 	func testIndexSubscript() {
-		let resources: [ResourceProtocol] = [Foo(), Bar()]
+		let resources = [Foo(), Bar()]
 		let collection = ResourceCollection(resources: resources)
 		
 		XCTAssert(collection[0] === resources[0], "Expected resource to be equal.")
@@ -31,7 +31,7 @@ class ResourceCollectionTests: XCTestCase {
 	}
 	
 	func testTypeAndIDSubscript() {
-		let resources: [ResourceProtocol] = [Foo(id: "5"), Bar(id: "6")]
+		let resources = [Foo(id: "5"), Bar(id: "6")]
 		let collection = ResourceCollection(resources: resources)
 		
 		XCTAssert(collection["foos", "5"] === resources[0], "Expected resource to be equal.")
@@ -39,46 +39,10 @@ class ResourceCollectionTests: XCTestCase {
 	}
 	
 	func testCount() {
-		let resources: [ResourceProtocol] = [Foo(), Bar()]
+		let resources = [Foo(), Bar()]
 		let collection = ResourceCollection(resources: resources)
 		
 		XCTAssertEqual(collection.count, 2, "Expected count to be 2.")
-	}
-
-	func testIfLoadedIfNotLoadedWithLoadedCollection() {
-		let resources = [Foo(), Bar()]
-		let collection = ResourceCollection(resources: resources)
-		
-		var ifLoadedCalled = false
-		
-		collection.ifLoaded { loadedResources in
-			XCTAssert(loadedResources == resources, "Expected loaded resources to be equal.")
-			ifLoadedCalled = true
-		}
-		
-		collection.ifNotLoaded {
-			XCTFail("Expected ifLoaded callback to not be called.")
-		}
-		
-		XCTAssertTrue(ifLoadedCalled, "Expected ifLoaded callback to be called.")
-	}
-	
-	func testIfLoadedIfNotLoadedWithNotLoadedCollection() {
-		let resources = [Foo(), Bar()]
-		let collection = ResourceCollection(resources: resources)
-		collection.isLoaded = false
-		
-		var ifNotLoadedCalled = false
-		
-		collection.ifLoaded { loadedResources in
-			XCTFail("Expected ifLoaded callback to not be called.")
-		}
-		
-		collection.ifNotLoaded {
-			ifNotLoadedCalled = true
-		}
-		
-		XCTAssertTrue(ifNotLoadedCalled, "Expected ifNotLoaded callback to be called.")
 	}
 }
 
@@ -124,8 +88,9 @@ class LinkedResourceCollectionTests: XCTestCase {
 		
 		collection.addResourceAsExisting(foo)
 		
-		XCTAssert(collection.resources == [foo], "")
-		XCTAssert(isEmpty(collection.addedResources) , "")
+		XCTAssert(collection.resources == [foo], "Expected collection to contain resource.")
+		XCTAssert(collection.addedResources.isEmpty , "Expected addedResources to be empty.")
+		XCTAssert(collection.removedResources.isEmpty , "Expected addedResources to be empty.")
 	}
 	
 	func testAdd() {
@@ -134,8 +99,8 @@ class LinkedResourceCollectionTests: XCTestCase {
 		
 		collection.addResource(foo)
 		
-		XCTAssert(collection.resources == [foo], "")
-		XCTAssert(collection.addedResources == [foo], "")
+		XCTAssert(collection.resources == [foo], "Expected collection to contain resource.")
+		XCTAssert(collection.addedResources == [foo], "Expected addedResources to contain resource.")
 	}
 	
 	func testRemove() {
@@ -145,7 +110,7 @@ class LinkedResourceCollectionTests: XCTestCase {
 		collection.addResource(foo)
 		collection.removeResource(foo)
 		
-		XCTAssert(isEmpty(collection.resources), "")
-		XCTAssert(collection.removedResources == [foo] , "")
+		XCTAssert(collection.resources.isEmpty, "Expected collection to be empty.")
+		XCTAssert(collection.removedResources == [foo] , "Expected removedResource to contain resource.")
 	}
 }

@@ -1,10 +1,8 @@
-[![Join the chat at https://gitter.im/wvteijlingen/Spine](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/wvteijlingen/Spine?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+[![Build Status](https://travis-ci.org/wvteijlingen/Spine.svg?branch=swift-2.0)](https://travis-ci.org/wvteijlingen/Spine) [![Join the chat at https://gitter.im/wvteijlingen/Spine](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/wvteijlingen/Spine?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 Spine
 =====
 Spine is a Swift library for working with APIs that adhere to the [jsonapi.org](http://jsonapi.org) standard. It supports mapping to custom model classes, fetching, advanced querying, linking and persisting.
-
-The `master` branch currently supports the spec of JSONAPI v1.
 
 Stability
 ============
@@ -18,10 +16,10 @@ Supported features
 | Creating resources             | Yes       |                                                             |
 | Updating resources             | Yes       |                                                             |
 | Deleting resources             | Yes       |                                                             |
-| Top level metadata             | No        |                                                             |
+| Top level metadata             | Yes        |                                                             |
 | Top level errors               | Yes       |                                                             |
 | Top level links                | Partially | Currently only pagination links are supported               |
-| Top level JSON API Object      | No        |                                                             |
+| Top level JSON API Object      | Yes        |                                                             |
 | Client generated ID's          | No        |                                                             |
 | Resource metadata              | Yes       |                                                             |
 | Custom resource links          | No        |                                                             |
@@ -38,10 +36,10 @@ Installation
 ============
 
 ### Carthage
-Add `github "wvteijlingen/Spine"` to your Cartfile. See the [Carthage documentation](https://github.com/Carthage/Carthage#adding-frameworks-to-an-application) for instructions on how to integrate with your project using Xcode.
+Add `github "wvteijlingen/Spine" "swift-2.0"` to your Cartfile. See the [Carthage documentation](https://github.com/Carthage/Carthage#adding-frameworks-to-an-application) for instructions on how to integrate with your project using Xcode.
 
 ### Cocoapods
-Add `pod 'Spine', :git => 'https://github.com/wvteijlingen/Spine.git'` to your Podfile. The spec is not yet registered with the Cocoapods repository, because the library is still in flux.
+Add `pod 'Spine', :git => 'https://github.com/wvteijlingen/Spine.git', :branch => 'swift-2.0'` to your Podfile. The spec is not yet registered with the Cocoapods repository, because the library is still in flux.
 
 Quickstart
 ==========
@@ -52,8 +50,7 @@ let spine = Spine(baseURL: baseURL)
 ```
 
 ### 2. Register your resource classes
-Every resource is mapped to a class that implements the `ResourceProtocol` protocol. Spine comes with a `Resource` class that implements this protocol.
-A `Resource` subclass should override the variables `resourceType` and `fields`. The `resourceType` should contain the type of resource in plural form. The `fields` array should contain an array of fields that must be persisted. Fields that are not in this array are ignored.
+Every resource is mapped to a class that inherits from `Resource`. A subclass should override the variables `resourceType` and `fields`. The `resourceType` should contain the type of resource in plural form. The `fields` array should contain an array of fields that must be persisted. Fields that are not in this array are ignored.
 
 Each class must be registered using a factory method. This is done using the `registerResource` method.
 
@@ -87,19 +84,33 @@ spine.registerResource(Post.resourceType) { Post() }
 ```
 
 ### 3. Fetching resources
+
+#### Using find methods
 ```swift
-// Using simple find methods
-spine.find(["1", "2"], ofType: Post.self) // Fetch posts with ID 1 and 2
+// Fetch posts with ID 1 and 2
+spine.find(["1", "2"], ofType: Post.self).onSuccess { resources, meta, jsonapi in
+    println("Fetched resource collection: \(resources)")
+.onFailure { error in
+    println("Fetching failed: \(error)")
+}
+
 spine.findOne("1", ofType: Post.self)  // Fetch a single posts with ID 1
 spine.find(Post.self) // Fetch all posts
 spine.findOne(Post.self) // Fetch the first posts
+```
 
-// Using a complex query
+#### Using a Query
+```swift
 var query = Query(resourceType: Post.self)
 query.include("author", "comments", "comments.author") // Sideload relationships
 query.whereProperty("upvotes", equalTo: 8) // Only with 8 upvotes
 query.addAscendingOrder("created-at") // Sort on creation date
-spine.find(query)
+
+spine.find(query).onSuccess { resources, meta, jsonapi in
+    println("Fetched resource collection: \(resources)")
+.onFailure { error in
+    println("Fetching failed: \(error)")
+}
 ```
 
 All fetch methods return a Future with `onSuccess` and `onFailure` callbacks.

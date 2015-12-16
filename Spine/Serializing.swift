@@ -11,7 +11,10 @@ import SwiftyJSON
 
 struct JSONAPIDocument {
 	/// Primary resources extracted from the response.
-	var data: [ResourceProtocol]?
+	var data: [Resource]?
+	
+	/// Included resources extracted from the response.
+	var included: [Resource]?
 	
 	/// Errors extracted from the response.
 	var errors: [NSError]?
@@ -21,6 +24,9 @@ struct JSONAPIDocument {
 	
 	/// Links extracted from the response
 	var links: [String: NSURL]?
+	
+	/// JSONAPI information extracted from the response
+	var jsonapi: [String: AnyObject]?
 }
 
 /**
@@ -68,24 +74,24 @@ protocol SerializerProtocol {
 	Use this method if you want to deserialize onto existing Resource instances. Otherwise, use
 	the regular `deserializeData` method.
 	
-	:param: data  The data to deserialize.
-	:param: store A Store that contains Resource instances onto which data will be deserialize.
+	- parameter data:  The data to deserialize.
+	- parameter store: A Store that contains Resource instances onto which data will be deserialize.
 	
-	:returns: A DeserializationResult that contains either a Store or an error.
+	- returns: A DeserializationResult that contains either a Store or an error.
 	*/
-	func deserializeData(data: NSData, mappingTargets: [ResourceProtocol]?) -> Failable<JSONAPIDocument>
+	func deserializeData(data: NSData, mappingTargets: [Resource]?) throws -> JSONAPIDocument
 	
 	/**
 	Serializes the given Resources into a multidimensional dictionary/array structure
 	that can be passed to NSJSONSerialization.
 	
-	:param: resources The resources to serialize.
-	:param: mode      The serialization mode to use.
+	- parameter resources: The resources to serialize.
+	- parameter mode:      The serialization mode to use.
 	
-	:returns: A multidimensional dictionary/array structure.
+	- returns: A multidimensional dictionary/array structure.
 	*/
 
-	func serializeResources(resources: [ResourceProtocol], options: SerializationOptions) -> NSData
+	func serializeResources(resources: [Resource], options: SerializationOptions) -> NSData
 }
 
 /**
@@ -96,7 +102,7 @@ class JSONSerializer: SerializerProtocol {
 	var transformers = TransformerDirectory.defaultTransformerDirectory()
 	
 	
-	func deserializeData(data: NSData, mappingTargets: [ResourceProtocol]?) -> Failable<JSONAPIDocument> {		
+	func deserializeData(data: NSData, mappingTargets: [Resource]? = nil) throws -> JSONAPIDocument {
 		let deserializeOperation = DeserializeOperation(data: data, resourceFactory: resourceFactory)
 		deserializeOperation.transformers = transformers
 		
@@ -105,10 +111,16 @@ class JSONSerializer: SerializerProtocol {
 		}
 		
 		deserializeOperation.start()
-		return deserializeOperation.result!
+		
+		switch deserializeOperation.result! {
+		case .Failure(let error):
+			throw error
+		case .Success(let document):
+			return document
+		}
 	}
 	
-	func serializeResources(resources: [ResourceProtocol], options: SerializationOptions = SerializationOptions()) -> NSData {
+	func serializeResources(resources: [Resource], options: SerializationOptions = SerializationOptions()) -> NSData {
 		let serializeOperation = SerializeOperation(resources: resources)
 		serializeOperation.options = options
 		serializeOperation.transformers = transformers
@@ -123,27 +135,27 @@ A ResourceFactory creates resources from given factory funtions.
 */
 struct ResourceFactory {
 	
-	private var factoryFunctions: [ResourceType: () -> ResourceProtocol] = [:]
+	private var factoryFunctions: [ResourceType: () -> Resource] = [:]
 
 	/**
 	Registers a given factory function that creates resource with a given type.
 	Registering a function for an already registered resource type will override that factory function.
 	
-	:param: type    The resource type for which to register a factory function.
-	:param: factory The factory function that returns a resource.
+	- parameter type:    The resource type for which to register a factory function.
+	- parameter factory: The factory function that returns a resource.
 	*/
-	mutating func registerResource(type: ResourceType, factory: () -> ResourceProtocol) {
+	mutating func registerResource(type: ResourceType, factory: () -> Resource) {
 		factoryFunctions[type] = factory
 	}
 
 	/**
 	Instantiates a resource with the given type, by using a registered factory function.
 	
-	:param: type The resource type to instantiate.
+	- parameter type: The resource type to instantiate.
 	
-	:returns: An instantiated resource.
+	- returns: An instantiated resource.
 	*/
-	func instantiate(type: ResourceType) -> ResourceProtocol {
+	func instantiate(type: ResourceType) -> Resource {
 		assert(factoryFunctions[type] != nil, "Cannot instantiate resource of type \(type). You must register this type with Spine first.")
 		return factoryFunctions[type]!()
 	}
@@ -153,20 +165,20 @@ struct ResourceFactory {
 	
 	This methods tries to find a resource with the given type and id in the pool. If no matching resource is found,
 	it tries to find the nth resource, indicated by `index`, of the given type from the pool. If still no resource is found,
-	it instantiates a new resource with the given id.
+	it instantiates a new resource with the given id and adds this to the pool.
 	
-	:param: type  The resource type to dispense.
-	:param: id    The id of the resource to dispense.
-	:param: pool  An array of resources in which to find exisiting matching resources.
-	:param: index Optional index of the resource in the pool.
+	- parameter type:  The resource type to dispense.
+	- parameter id:    The id of the resource to dispense.
+	- parameter pool:  An array of resources in which to find exisiting matching resources.
+	- parameter index: Optional index of the resource in the pool.
 	
-	:returns: A resource with the given type and id.
+	- returns: A resource with the given type and id.
 	*/
-	func dispense(type: ResourceType, id: String, inout pool: [ResourceProtocol], index: Int? = nil) -> ResourceProtocol {
-		var resource: ResourceProtocol! = findResource(pool, type, id)
+	func dispense(type: ResourceType, id: String, inout pool: [Resource], index: Int? = nil) -> Resource {
+		var resource: Resource! = findResource(pool, type: type, id: id)
 		
-		if resource == nil && index != nil && !isEmpty(pool) {
-			let applicableResources = findResourcesWithType(pool, type)
+		if resource == nil && index != nil && !pool.isEmpty {
+			let applicableResources = pool.filter { $0.resourceType == type }
 			if index! < applicableResources.count {
 				resource = applicableResources[index!]
 			}

@@ -21,22 +21,40 @@ extension XCTestCase {
 	}
 }
 
+func ISO8601FormattedDate(date: NSDate) -> String {
+	let dateFormatter = NSDateFormatter()
+	let enUSPosixLocale = NSLocale(localeIdentifier: "en_US_POSIX")
+	dateFormatter.locale = enUSPosixLocale
+	dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ssZZZZZ"
+	
+	return dateFormatter.stringFromDate(date)
+}
+
 // MARK: - Custom assertions
 
-func assertFutureFailure<T>(future: Future<T>, withError expectedError: NSError, expectation: XCTestExpectation) {
+func assertFutureSuccess<T, E>(future: Future<T, E>, expectation: XCTestExpectation) {
 	future.onSuccess { resources in
 		expectation.fulfill()
-		XCTFail("Expected success callback to not be called.")
-		}.onFailure { error in
-			expectation.fulfill()
-			XCTAssertEqual(error.domain, expectedError.domain, "Expected error domain to be \(expectedError.domain).")
-			XCTAssertEqual(error.code, expectedError.code, "Expected error code to be \(expectedError.code).")
+	}.onFailure { error in
+		expectation.fulfill()
+		XCTFail("Expected future to complete with success.")
 	}
 }
 
-func assertFutureFailure<T>(future: Future<T>, withErrorDomain domain: String, errorCode code: Int, expectation: XCTestExpectation) {
+func assertFutureFailure<T>(future: Future<T, NSError>, withError expectedError: NSError, expectation: XCTestExpectation) {
+	future.onSuccess { resources in
+		expectation.fulfill()
+		XCTFail("Expected success callback to not be called.")
+	}.onFailure { error in
+		expectation.fulfill()
+		XCTAssertEqual(error.domain, expectedError.domain, "Expected error domain to be \(expectedError.domain).")
+		XCTAssertEqual(error.code, expectedError.code, "Expected error code to be \(expectedError.code).")
+	}
+}
+
+func assertFutureFailure<T>(future: Future<T, NSError>, withErrorDomain domain: String, errorCode code: Int, expectation: XCTestExpectation) {
 	let expectedError = NSError(domain: domain, code: code, userInfo: nil)
-	assertFutureFailure(future, withError: expectedError, expectation)
+	assertFutureFailure(future, withError: expectedError, expectation: expectation)
 }
 
 func assertFooResource(foo: Foo, isEqualToJSON json: JSON) {
