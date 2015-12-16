@@ -62,10 +62,12 @@ and uses SerializationOperations and DeserialisationOperations for (de)s
 */
 protocol SerializerProtocol {
 	/// The resource factory used for dispensing resources.
-	var resourceFactory: ResourceFactory { get }
+	var resourceFactory: ResourceFactory { get set }
 	
 	/// The transformers used for transforming to and from the serialized representation.
-	var transformers: TransformerDirectory { get }
+	var transformers: TransformerDirectory { get set }
+	
+	var keyFormatter: KeyFormatter { get set }
 	
 	/**
 	Deserializes the given data into a SerializationResult. This is a thin wrapper around
@@ -98,13 +100,18 @@ protocol SerializerProtocol {
 The built in serializer that (de)serializes according to the JSON:API specification.
 */
 class JSONSerializer: SerializerProtocol {
-	var resourceFactory = ResourceFactory()
-	var transformers = TransformerDirectory.defaultTransformerDirectory()
+	var resourceFactory: ResourceFactory
+	var transformers: TransformerDirectory
+	var keyFormatter: KeyFormatter
 	
+	init(resourceFactory: ResourceFactory = ResourceFactory(), transformers: TransformerDirectory = TransformerDirectory.defaultTransformerDirectory(), keyFormatter: KeyFormatter = AsIsKeyFormatter()) {
+		self.resourceFactory = resourceFactory
+		self.transformers = transformers
+		self.keyFormatter = keyFormatter
+	}
 	
 	func deserializeData(data: NSData, mappingTargets: [Resource]? = nil) throws -> JSONAPIDocument {
-		let deserializeOperation = DeserializeOperation(data: data, resourceFactory: resourceFactory)
-		deserializeOperation.transformers = transformers
+		let deserializeOperation = DeserializeOperation(data: data, resourceFactory: resourceFactory, transformers: transformers, keyFormatter: keyFormatter)
 		
 		if let mappingTargets = mappingTargets {
 			deserializeOperation.addMappingTargets(mappingTargets)
@@ -121,9 +128,8 @@ class JSONSerializer: SerializerProtocol {
 	}
 	
 	func serializeResources(resources: [Resource], options: SerializationOptions = SerializationOptions()) -> NSData {
-		let serializeOperation = SerializeOperation(resources: resources)
+		let serializeOperation = SerializeOperation(resources: resources, transformers: transformers, keyFormatter: keyFormatter)
 		serializeOperation.options = options
-		serializeOperation.transformers = transformers
 		
 		serializeOperation.start()
 		return serializeOperation.result!

@@ -11,7 +11,7 @@ import XCTest
 import SwiftyJSON
 
 class SerializerTests: XCTestCase {
-	let serializer = JSONSerializer()
+	let serializer: JSONSerializer = JSONSerializer(keyFormatter: AsIsKeyFormatter())
 	
 	override func setUp() {
 		super.setUp()

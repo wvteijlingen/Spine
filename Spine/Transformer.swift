@@ -161,7 +161,12 @@ private struct DateTransformer: Transformer {
 	}
 	
 	func deserialize(value: String, attribute: DateAttribute) -> AnyObject {
-		return formatter(attribute).dateFromString(value)!
+		if let date = formatter(attribute).dateFromString(value) {
+			return date
+		} else {
+			Spine.logWarning(.Serializing, "Failure to deserialize date \(value), deserialized to nil.")
+			return NSNull()
+		}
 	}
 	
 	func serialize(value: NSDate, attribute: DateAttribute) -> AnyObject {

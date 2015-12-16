@@ -23,7 +23,16 @@ public class Spine {
 	public let networkClient: NetworkClient
 	
 	/// The serializer to use for serializing and deserializing of JSON representations.
-	let serializer: JSONSerializer = JSONSerializer()
+	let serializer: JSONSerializer = JSONSerializer(resourceFactory: ResourceFactory(), transformers: TransformerDirectory.defaultTransformerDirectory(), keyFormatter: DasherizedKeyFormatter())
+	
+	public var keyFormatter: KeyFormatter {
+		get {
+			return serializer.keyFormatter
+		}
+		set {
+			serializer.keyFormatter = newValue
+		}
+	}
 	
 	/// The operation queue on which all operations are queued.
 	let operationQueue = NSOperationQueue()
