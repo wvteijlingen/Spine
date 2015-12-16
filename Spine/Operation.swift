@@ -258,10 +258,9 @@ class SaveOperation: ConcurrentOperation {
 		Spine.logInfo(.Spine, "Saving resource \(resource) using URL: \(URL)")
 		
 		networkClient.request(method, URL: URL, payload: payload) { statusCode, responseData, networkError in
-			defer { self.state = .Finished }
-			
 			guard networkError == nil else {
 				self.result = Failable.Failure(networkError!)
+				self.state = .Finished
 				return
 			}
 
@@ -270,13 +269,16 @@ class SaveOperation: ConcurrentOperation {
 					do {
 						let document = try self.serializer.deserializeData(data, mappingTargets: nil)
 						self.result = .Failure(errorFromStatusCode(statusCode!, additionalErrors: document.errors))
+						self.state = .Finished
 						return
 					} catch let error as NSError {
 						self.result = .Failure(error)
+						self.state = .Finished
 						return
 					}
 				} else {
 					self.result = .Failure(errorFromStatusCode(statusCode!))
+					self.state = .Finished
 					return
 				}
 				
@@ -286,10 +288,12 @@ class SaveOperation: ConcurrentOperation {
 						try self.serializer.deserializeData(data, mappingTargets: [self.resource])
 					} catch let error as NSError {
 						self.result = .Failure(error)
+						self.state = .Finished
 						return
 					}
 				} else {
 					self.result = .Failure(errorFromStatusCode(statusCode!))
+					self.state = .Finished
 					return
 				}
 			}
@@ -297,6 +301,7 @@ class SaveOperation: ConcurrentOperation {
 			// Separately update relationships if this is an existing resource
 			if self.isNewResource {
 				self.result = Failable.Success()
+				self.state = .Finished
 			} else {
 				self.updateRelationships()
 			}
@@ -341,6 +346,7 @@ class SaveOperation: ConcurrentOperation {
 		
 		if queue.operationCount == 0 {
 			self.result = Failable.Success()
+			self.state = .Finished
 		}
 	}
 }

@@ -386,9 +386,17 @@ class SaveTests: SpineTests {
 	}
 
 	func testItShouldPATCHWhenUpdatingAResource() {
+		var resourcePatched = false
+		var toOnePatched = false
+		
 		HTTPClient.handler = { request, payload in
 			XCTAssertEqual(request.HTTPMethod!, "PATCH", "HTTP method not as expected.")
-			XCTAssertEqual(request.URL!, NSURL(string:"http://example.com/foos/1")!, "Request URL not as expected.")
+			if(request.URL! == NSURL(string:"http://example.com/foos/1")!) {
+				resourcePatched = true
+			}
+			if(request.URL! == NSURL(string:"http://example.com/foos/1/links/toOneAttribute")!) {
+				toOnePatched = true
+			}
 			return (responseData: self.fixture.data, statusCode: 201, error: nil)
 		}
 		
@@ -399,6 +407,8 @@ class SaveTests: SpineTests {
 		
 		waitForExpectationsWithTimeout(10) { error in
 			XCTAssertNil(error, "\(error)")
+			XCTAssertTrue(resourcePatched)
+			XCTAssertTrue(toOnePatched)
 		}
 	}
 	
