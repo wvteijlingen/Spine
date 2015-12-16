@@ -21,6 +21,15 @@ extension XCTestCase {
 	}
 }
 
+func ISO8601FormattedDate(date: NSDate) -> String {
+	let dateFormatter = NSDateFormatter()
+	let enUSPosixLocale = NSLocale(localeIdentifier: "en_US_POSIX")
+	dateFormatter.locale = enUSPosixLocale
+	dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ssZZZZZ"
+	
+	return dateFormatter.stringFromDate(date)
+}
+
 // MARK: - Custom assertions
 
 func assertFutureSuccess<T, E>(future: Future<T, E>, expectation: XCTestExpectation) {

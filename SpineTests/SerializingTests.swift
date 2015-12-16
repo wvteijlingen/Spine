@@ -52,7 +52,7 @@ class SerializingTests: SerializerTests {
 		XCTAssertEqual(json["data"]["attributes"]["floatAttribute"].floatValue, foo.floatAttribute!, "Serialized float is not equal.")
 		XCTAssertTrue(json["data"]["attributes"]["booleanAttribute"].boolValue, "Serialized boolean is not equal.")
 		XCTAssertNotNil(json["data"]["attributes"]["nilAttribute"].null, "Serialized nil is not equal.")
-		XCTAssertEqual(json["data"]["attributes"]["dateAttribute"].stringValue, "1970-01-01T01:00:00+01:00", "Serialized date is not equal.")
+		XCTAssertEqual(json["data"]["attributes"]["dateAttribute"].stringValue, ISO8601FormattedDate(foo.dateAttribute!), "Serialized date is not equal.")
 	}
 	
 	func testSerializeSingleResourceToOneRelationships() {
