@@ -143,9 +143,4 @@ Memory management
 Spine suffers from the same memory management issues as Core Data, namely retain cycles for recursive relationships. These cycles can be broken in two ways:
 
 1. Declare one end of the relationship as `weak` or `unowned`.
-2. Use the `unloadResource` function to unload resources and break cycles when you are done with a resource.
-
-
-Running tests
-============
-The tests can be run by selecting the test called `SpineTests` in the Xcode scheme selector, and then choosing 'Product > Test' or ⌘U.
+2. Use a Resource's `unload` method to break cycles when you are done with the resource.
