@@ -85,7 +85,7 @@ class SerializeOperation: NSOperation {
 	private func addAttributes(inout serializedData: [String: AnyObject], resource: Resource) {
 		var attributes = [String: AnyObject]();
 		
-		for case let field as Attribute in resource.fields {
+		for case let field as Attribute in resource.fields where field.isReadOnly == false {
 			let key = field.serializedName
 			
 			Spine.logDebug(.Serializing, "Serializing attribute \(field) with name '\(field.name) as '\(key)'")

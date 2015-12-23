@@ -36,7 +36,8 @@ public class Field {
 		}
 	}
 	private var _serializedName: String?
-
+	
+	var isReadOnly: Bool = false
 
 	public init() {}
 	
@@ -48,6 +49,11 @@ public class Field {
 	*/
 	public func serializeAs(name: String) -> Self {
 		serializedName = name
+		return self
+	}
+	
+	public func readOnly() -> Self {
+		isReadOnly = true
 		return self
 	}
 }
