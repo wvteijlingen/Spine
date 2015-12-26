@@ -23,38 +23,32 @@ struct JSONAPIDocument {
 	/// Errors extracted from the response.
 	var errors: [NSError]?
 	
-	/// Metadata extracted from the reponse
+	/// Metadata extracted from the reponse.
 	var meta: [String: AnyObject]?
 	
-	/// Links extracted from the response
+	/// Links extracted from the response.
 	var links: [String: NSURL]?
 	
-	/// JSONAPI information extracted from the response
+	/// JSONAPI information extracted from the response.
 	var jsonapi: [String: AnyObject]?
 }
 
-/**
-Serialization options that can be passed to the serializer.
-*/
-struct SerializationOptions {
+
+struct SerializationOptions: OptionSetType {
+	let rawValue: Int
+	init(rawValue: Int) { self.rawValue = rawValue }
+	
 	/// Whether to include the resource ID in the serialized representation.
-	var includeID = true
+	static let IncludeID = SerializationOptions(rawValue: 1 << 1)
 	
 	/// Whether to only serialize fields that are dirty.
-	var dirtyFieldsOnly = true
+	static let DirtyFieldsOnly = SerializationOptions(rawValue: 1 << 2)
 	
 	/// Whether to include to-many linked resources in the serialized representation.
-	var includeToMany = false
+	static let IncludeToMany = SerializationOptions(rawValue: 1 << 3)
 	
 	/// Whether to include to-one linked resources in the serialized representation.
-	var includeToOne = false
-	
-	init(includeID: Bool = true, dirtyFieldsOnly: Bool = false, includeToMany: Bool = false, includeToOne: Bool = false) {
-		self.includeID = includeID
-		self.dirtyFieldsOnly = dirtyFieldsOnly
-		self.includeToMany = includeToMany
-		self.includeToOne = includeToOne
-	}
+	static let IncludeToOne = SerializationOptions(rawValue: 1 << 4)
 }
 
 /**
@@ -124,7 +118,7 @@ class JSONSerializer: SerializerProtocol {
 		}
 	}
 	
-	func serializeResources(resources: [Resource], options: SerializationOptions = SerializationOptions()) -> NSData {
+	func serializeResources(resources: [Resource], options: SerializationOptions = [.IncludeID]) -> NSData {
 		let serializeOperation = SerializeOperation(resources: resources)
 		serializeOperation.options = options
 		serializeOperation.transformers = transformers

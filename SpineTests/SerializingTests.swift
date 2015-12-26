@@ -44,7 +44,7 @@ class SerializingTests: SerializerTests {
 	}
 	
 	func testSerializeSingleResourceAttributes() {
-		let json = serializedJSONWithOptions(SerializationOptions())
+		let json = serializedJSONWithOptions([.IncludeID])
 		
 		XCTAssertEqual(json["data"]["id"].stringValue, foo.id!, "Serialized id is not equal.")
 		XCTAssertEqual(json["data"]["type"].stringValue, foo.resourceType, "Serialized type is not equal.")
@@ -56,14 +56,14 @@ class SerializingTests: SerializerTests {
 	}
 	
 	func testSerializeSingleResourceToOneRelationships() {
-		let json = serializedJSONWithOptions(SerializationOptions(includeToOne: true))
+		let json = serializedJSONWithOptions([.IncludeID, .IncludeToOne])
 		
 		XCTAssertEqual(json["data"]["relationships"]["toOneAttribute"]["data"]["id"].stringValue, foo.toOneAttribute!.id!, "Serialized to-one id is not equal")
 		XCTAssertEqual(json["data"]["relationships"]["toOneAttribute"]["data"]["type"].stringValue, Bar.resourceType, "Serialized to-one type is not equal")
 	}
 	
 	func testSerializeSingleResourceToManyRelationships() {
-		let json = serializedJSONWithOptions(SerializationOptions(includeToMany: true, includeToOne: true))
+		let json = serializedJSONWithOptions([.IncludeID, .IncludeToOne, .IncludeToMany])
 		
 		XCTAssertEqual(json["data"]["relationships"]["toManyAttribute"]["data"][0]["id"].stringValue, "11", "Serialized to-many id is not equal")
 		XCTAssertEqual(json["data"]["relationships"]["toManyAttribute"]["data"][0]["type"].stringValue, Bar.resourceType, "Serialized to-many type is not equal")
@@ -73,19 +73,19 @@ class SerializingTests: SerializerTests {
 	}
 	
 	func testSerializeSingleResourceWithoutID() {
-		let json = serializedJSONWithOptions(SerializationOptions(includeID: false, includeToMany: true, includeToOne: true))
+		let json = serializedJSONWithOptions([.IncludeToOne, .IncludeToMany])
 		
 		XCTAssertNotNil(json["data"]["id"].error, "Expected serialized id to be absent.")
 	}
 	
 	func testSerializeSingleResourceWithoutToOneRelationships() {
-		let json = serializedJSONWithOptions(SerializationOptions(includeToMany: true, includeToOne: false))
+		let json = serializedJSONWithOptions([.IncludeID, .IncludeToMany])
 
 		XCTAssertNotNil(json["data"]["relationships"]["toOneAttribute"].error, "Expected serialized to-one to be absent")
 	}
 	
 	func testSerializeSingleResourceWithoutToManyRelationships() {
-		let options = SerializationOptions(includeToMany: false)
+		let options:SerializationOptions = [.IncludeID, .IncludeToOne]
 		let serializedData = serializer.serializeResources([foo], options: options)
 		let json = JSON(data: serializedData)
 		

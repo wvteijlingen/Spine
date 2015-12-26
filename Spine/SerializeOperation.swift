@@ -18,7 +18,7 @@ This process is the inverse of that of the DeserializeOperation.
 class SerializeOperation: NSOperation {
 	private let resources: [Resource]
 	var transformers = TransformerDirectory()
-	var options = SerializationOptions()
+	var options: SerializationOptions = [.IncludeID]
 	
 	var result: NSData?
 	
@@ -55,7 +55,7 @@ class SerializeOperation: NSOperation {
 		var serializedData: [String: AnyObject] = [:]
 		
 		// Serialize ID
-		if let ID = resource.id where options.includeID {
+		if let ID = resource.id where options.contains(.IncludeID) {
 			serializedData["id"] = ID
 		}
 		
@@ -134,11 +134,11 @@ class SerializeOperation: NSOperation {
 			
 			switch field {
 			case let toOne as ToOneRelationship:
-				if options.includeToOne {
+				if options.contains(.IncludeToOne) {
 					addToOneRelationship(&serializedData, key: key, type: toOne.linkedType, linkedResource: resource.valueForField(field.name) as? Resource)
 				}
 			case let toMany as ToManyRelationship:
-				if options.includeToMany {
+				if options.contains(.IncludeToMany) {
 					addToManyRelationship(&serializedData, key: key, type: toMany.linkedType, linkedResources: resource.valueForField(field.name) as? ResourceCollection)
 				}
 			default: ()

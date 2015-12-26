@@ -248,7 +248,7 @@ class SaveOperation: ConcurrentOperation {
 		if isNewResource {
 			URL = router.URLForResourceType(resource.resourceType)
 			method = "POST"
-			payload = serializer.serializeResources([resource], options: SerializationOptions(includeID: false, dirtyFieldsOnly: false, includeToOne: true, includeToMany: true))
+			payload = serializer.serializeResources([resource], options: [.IncludeToOne, .IncludeToMany])
 		} else {
 			URL = router.URLForQuery(Query(resource: resource))
 			method = "PATCH"
