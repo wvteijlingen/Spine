@@ -46,12 +46,7 @@ class DeserializeOperation: NSOperation {
 	
 	// MARK: Mapping targets
 	
-	func addMappingTargets(targets: [Resource]) {
-		// We can only map onto resources that are not loaded yet
-		for resource in targets {
-			assert(resource.isLoaded == false, "Cannot map onto loaded resource \(resource)")
-		}
-		
+	func addMappingTargets(targets: [Resource]) {		
 		resourcePool += targets
 	}
 	

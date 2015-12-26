@@ -37,7 +37,7 @@ class Foo: Resource {
 			])
 	}
 	
-	override init() {
+	required init() {
 		super.init()
 	}
 	
@@ -60,7 +60,7 @@ class Bar: Resource {
 		return []
 	}
 	
-	override init() {
+	required init() {
 		super.init()
 	}
 	

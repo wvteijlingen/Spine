@@ -185,15 +185,89 @@ public class Spine {
 	}
 	
 	
+	// MARK: Loading
+	
+	/**
+	Load the given resource if needed. If its `isLoaded` property is true, it returns the resource as is.
+	Otherwise it loads the resource using the passed query.
+	
+	The `queryCallback` parameter can be used if the resource should be loaded by using a custom query.
+	For example, in case you want to include a relationship or load a sparse fieldset.
+	
+	Spine creates a basic query to load the resource and passes it to the queryCallback.
+	From this callback you return a modified query, or a whole new query if desired. This returned
+	query is then used when loading the resource.
+	
+	- parameter resource:      The resource to ensure.
+	- parameter queryCallback: A optional function that returns the query used to load the resource.
+	
+	- returns: A future that resolves to the loaded resource.
+	*/
+	public func load<T: Resource>(resource: T, queryCallback: ((Query<T>) -> Query<T>)? = nil) -> Future<T, NSError> {
+		var query = Query(resource: resource)
+		if let callback = queryCallback {
+			query = callback(query)
+		}
+		return loadResourceByExecutingQuery(resource, query: query)
+	}
+	
+	/**
+	Reload the given resource even when it's already loaded. The returned resource will be the same
+	instance as the passed resource.
+	
+	The `queryCallback` parameter can be used if the resource should be loaded by using a custom query.
+	For example, in case you want to include a relationship or load a sparse fieldset.
+	
+	Spine creates a basic query to load the resource and passes it to the queryCallback.
+	From this callback you return a modified query, or a whole new query if desired. This returned
+	query is then used when loading the resource.
+	
+	- parameter resource:      The resource to reload.
+	- parameter queryCallback: A optional function that returns the query used to load the resource.
+	
+	- returns: A future that resolves to the reloaded resource.
+	*/
+	public func reload<T: Resource>(resource: T, queryCallback: ((Query<T>) -> Query<T>)? = nil) -> Future<T, NSError> {
+		var query = Query(resource: resource)
+		if let callback = queryCallback {
+			query = callback(query)
+		}
+		return loadResourceByExecutingQuery(resource, query: query, skipIfLoaded: false)
+	}
+	
+	func loadResourceByExecutingQuery<T: Resource>(resource: T, query: Query<T>, skipIfLoaded: Bool = true) -> Future<T, NSError> {
+		let promise = Promise<T, NSError>()
+		
+		if skipIfLoaded && resource.isLoaded {
+			promise.success(resource)
+			return promise.future
+		}
+		
+		let operation = FetchOperation(query: query, spine: self)
+		operation.mappingTargets = [resource]
+		operation.completionBlock = { [unowned operation] in
+			if let error = operation.result?.error {
+				promise.failure(error)
+			} else {
+				promise.success(resource)
+			}
+		}
+		
+		addOperation(operation)
+		
+		return promise.future
+	}
+	
+	
 	// MARK: Paginating
 	
 	/**
 	Loads the next page of the given resource collection. The newly loaded resources are appended to the passed collection.
 	When the next page is not available, the returned future will fail with a `NextPageNotAvailable` error code.
 	
-	:param: collection The collection for which to load the next page.
+	- parameter collection: The collection for which to load the next page.
 	
-	:returns: A future that resolves to the ResourceCollection including the newly loaded resources.
+	- returns: A future that resolves to the ResourceCollection including the newly loaded resources.
 	*/
 	public func loadNextPageOfCollection(collection: ResourceCollection) -> Future<ResourceCollection, NSError> {
 		let promise = Promise<ResourceCollection, NSError>()
@@ -317,88 +391,40 @@ public class Spine {
 		
 		return promise.future
 	}
-	
-	
-	// MARK: Ensuring
-	
-	/**
-	Ensures that the given resource is loaded. If it's `isLoaded` property is false,
-	it loads the given resource from the API, otherwise it returns the resource as is.
-	
-	:param: resource The resource to ensure.
-	
-	:returns: <#return value description#>
-	*/
-	public func ensure<T: Resource>(resource: T) -> Future<T, NSError> {
-		let query = Query(resource: resource)
-		return loadResourceByExecutingQuery(resource, query: query)
-	}
-	
-	/**
-	Ensures that the given resource is loaded. If it's `isLoaded` property is false,
-	it loads the given resource from the API, otherwise it returns the resource as is.
-	
-	:param: resource The resource to ensure.
-	
-	:param: resource      The resource to ensure.
-	:param: queryCallback <#queryCallback description#>
-	
-	:returns: <#return value description#>
-	*/
-	public func ensure<T: Resource>(resource: T, queryCallback: (Query<T>) -> Query<T>) -> Future<T, NSError> {
-		let query = queryCallback(Query(resource: resource))
-		return loadResourceByExecutingQuery(resource, query: query)
-	}
-
-	func loadResourceByExecutingQuery<T: Resource>(resource: T, query: Query<T>) -> Future<T, NSError> {
-		let promise = Promise<(T), NSError>()
-		
-		if resource.isLoaded {
-			promise.success(resource)
-			return promise.future
-		}
-		
-		let operation = FetchOperation(query: query, spine: self)
-		operation.mappingTargets = [resource]
-		operation.completionBlock = { [unowned operation] in
-			if let error = operation.result?.error {
-				promise.failure(error)
-			} else {
-				promise.success(resource)
-			}
-		}
-
-		addOperation(operation)
-		
-		return promise.future
-	}
 }
 
-
 /**
-Extension regarding (registering of) resource types.
+Extension regarding registration.
 */
 public extension Spine {
 	/**
-	Registers a factory function `factory` for resource type `type`.
+	Registers a resource class.
 	
-	:param: type    The resource type to register the factory function for.
-	:param: factory The factory method that returns an instance of a resource.
+	- parameter resourceClass: The resource class to register.
+	*/
+	func registerResource(resourceClass: Resource.Type) {
+		serializer.resourceFactory.registerResource(resourceClass.resourceType, factory: {
+			resourceClass.init()
+		})
+	}
+	
+	/**
+	Registers a factory function `factory` for instantiating resources of type `type`.
+	
+	You should generally use the `registerResource(resourceClass:)` method,
+	but you can use this method if you need to do some custom instantiation.
+	
+	- parameter type:    The resource type to register the factory function for.
+	- parameter factory: The factory method that returns an instance of a resource.
 	*/
 	func registerResource(type: String, factory: () -> Resource) {
 		serializer.resourceFactory.registerResource(type, factory: factory)
 	}
-}
-
-
-/**
-Extension regarding (registering of) transformers.
-*/
-public extension Spine {
+	
 	/**
 	Registers transformer `transformer`.
 	
-	:param: type The Transformer to register.
+	- parameter transformer: The Transformer to register.
 	*/
 	func registerTransformer<T: Transformer>(transformer: T) {
 		serializer.transformers.registerTransformer(transformer)
