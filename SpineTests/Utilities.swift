@@ -25,7 +25,7 @@ func ISO8601FormattedDate(date: NSDate) -> String {
 	let dateFormatter = NSDateFormatter()
 	let enUSPosixLocale = NSLocale(localeIdentifier: "en_US_POSIX")
 	dateFormatter.locale = enUSPosixLocale
-	dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ssZZZZZ"
+	dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSZZZZZ"
 	
 	return dateFormatter.stringFromDate(date)
 }

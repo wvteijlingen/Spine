@@ -86,7 +86,7 @@ public class URLAttribute: Attribute {
 public class DateAttribute: Attribute {
 	let format: String
 
-	public init(_ format: String = "yyyy-MM-dd'T'HH:mm:ssZZZZZ") {
+	public init(_ format: String = "yyyy-MM-dd'T'HH:mm:ss.SSSZZZZZ") {
 		self.format = format
 	}
 }
