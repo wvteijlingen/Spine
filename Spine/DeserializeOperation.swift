@@ -312,25 +312,26 @@ class DeserializeOperation: NSOperation {
 	private func resolveRelations() {
 		for resource in resourcePool {
 			for case let field as ToManyRelationship in resource.fields {
-				if let linkedResource = resource.valueForField(field.name) as? LinkedResourceCollection {
-					
-					// We can only resolve if the linkage is known
-					if let linkage = linkedResource.linkage {
-						
-						let targetResources = linkage.flatMap { link in
-							return self.resourcePool.filter { $0.resourceType == link.type && $0.id == link.id }
-						}
-						
-						if !targetResources.isEmpty {
-							linkedResource.resources = targetResources
-							linkedResource.isLoaded = true
-						}
-					} else {
-						Spine.logInfo(.Serializing, "Cannot resolve to-many link \(resource.resourceType):\(resource.id!) - \(field.name) because the foreign IDs are not known.")
-					}
-				} else {
-					Spine.logInfo(.Serializing, "Cannot resolve to-many link \(resource.resourceType):\(resource.id!) - \(field.name) because the link data is not fetched.")
+				
+				guard let linkedResourceCollection = resource.valueForField(field.name) as? LinkedResourceCollection else {
+					Spine.logInfo(.Serializing, "Cannot resolve to-many link \(resource.resourceType):\(resource.id!) - \(field.name) because the linked collection is not fetched.")
+					continue
 				}
+				
+				guard let linkage = linkedResourceCollection.linkage else {
+					Spine.logInfo(.Serializing, "Cannot resolve to-many link \(resource.resourceType):\(resource.id!) - \(field.name) because the linkage is not known.")
+					continue
+				}
+					
+				let targetResources = linkage.flatMap { link in
+					return self.resourcePool.filter { $0.resourceType == link.type && $0.id == link.id }
+				}
+				
+				if !targetResources.isEmpty {
+					linkedResourceCollection.resources = targetResources
+					linkedResourceCollection.isLoaded = true
+				}
+				
 			}
 		}
 	}
