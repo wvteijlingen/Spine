@@ -140,7 +140,7 @@ public class Spine {
 		
 		operation.completionBlock = { [unowned operation] in
 			switch operation.result! {
-			case .Success(let document) where document.data?.count == 0:
+			case .Success(let document) where document.data?.count == 0 || document.data == nil:
 				promise.failure(NSError(domain: SpineClientErrorDomain, code: SpineErrorCodes.ResourceNotFound, userInfo: nil))
 			case .Success(let document):
 				let firstResource = document.data!.first as! T
