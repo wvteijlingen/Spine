@@ -145,10 +145,10 @@ class DeserializeOperation: NSOperation {
 	/**
 	Maps a single resource representation into a resource object of the given type.
 	
-	:param: representation     The JSON representation of a single resource.
-	:param: mappingTargetIndex The index of the matching mapping target.
+	- parameter representation:     The JSON representation of a single resource.
+	- parameter mappingTargetIndex: The index of the matching mapping target.
 	
-	:returns: A Resource object with values mapped from the representation.
+	- returns: A Resource object with values mapped from the representation.
 	*/
 	private func deserializeSingleRepresentation(representation: JSON, mappingTargetIndex: Int? = nil) throws -> Resource {
 		guard representation.dictionary != nil else {
@@ -188,8 +188,8 @@ class DeserializeOperation: NSOperation {
 	to the key for the serialized form and invokes `extractAttribute`. It then formats the extracted
 	attribute and sets the formatted value on the resource.
 	
-	:param: serializedData The data from which to extract the attributes.
-	:param: resource       The resource into which to extract the attributes.
+	- parameter serializedData: The data from which to extract the attributes.
+	- parameter resource:       The resource into which to extract the attributes.
 	*/
 	private func extractAttributes(serializedData: JSON, intoResource resource: Resource) {
 		for case let field as Attribute in resource.fields {
@@ -203,10 +203,10 @@ class DeserializeOperation: NSOperation {
 	/**
 	Extracts the value for the given key from the passed serialized data.
 	
-	:param: serializedData The data from which to extract the attribute.
-	:param: key            The key for which to extract the value from the data.
+	- parameter serializedData: The data from which to extract the attribute.
+	- parameter key:            The key for which to extract the value from the data.
 	
-	:returns: The extracted value or nil if no attribute with the given key was found in the data.
+	- returns: The extracted value or nil if no attribute with the given key was found in the data.
 	*/
 	private func extractAttribute(serializedData: JSON, key: String) -> AnyObject? {
 		let value = serializedData["attributes"][key]
@@ -228,8 +228,8 @@ class DeserializeOperation: NSOperation {
 	to the key for the serialized form and invokes `extractToOneRelationship` or `extractToManyRelationship`.
 	It then sets the extracted ResourceRelationship on the resource.
 	
-	:param: serializedData The data from which to extract the relationships.
-	:param: resource       The resource into which to extract the relationships.
+	- parameter serializedData: The data from which to extract the relationships.
+	- parameter resource:       The resource into which to extract the relationships.
 	*/
 	private func extractRelationships(serializedData: JSON, intoResource resource: Resource) {
 		for field in resource.fields {
@@ -252,10 +252,10 @@ class DeserializeOperation: NSOperation {
 	
 	This method supports both the single ID form and the resource object forms.
 	
-	:param: serializedData The data from which to extract the relationship.
-	:param: key            The key for which to extract the relationship from the data.
+	- parameter serializedData: The data from which to extract the relationship.
+	- parameter key:            The key for which to extract the relationship from the data.
 	
-	:returns: The extracted relationship or nil if no relationship with the given key was found in the data.
+	- returns: The extracted relationship or nil if no relationship with the given key was found in the data.
 	*/
 	private func extractToOneRelationship(serializedData: JSON, key: String, linkedType: ResourceType, resource: Resource) -> Resource? {
 		var resource: Resource? = nil
@@ -283,10 +283,10 @@ class DeserializeOperation: NSOperation {
 	
 	This method supports both the array of IDs form and the resource object forms.
 	
-	:param: serializedData The data from which to extract the relationship.
-	:param: key            The key for which to extract the relationship from the data.
+	- parameter serializedData: The data from which to extract the relationship.
+	- parameter key:            The key for which to extract the relationship from the data.
 	
-	:returns: The extracted relationship or nil if no relationship with the given key was found in the data.
+	- returns: The extracted relationship or nil if no relationship with the given key was found in the data.
 	*/
 	private func extractToManyRelationship(serializedData: JSON, key: String, resource: Resource) -> LinkedResourceCollection? {
 		var resourceCollection: LinkedResourceCollection? = nil
@@ -307,7 +307,7 @@ class DeserializeOperation: NSOperation {
 	}
 	
 	/**
-	Resolves the relations of the primary resources.
+	Resolves the relations of the fetched resources.
 	*/
 	private func resolveRelations() {
 		for resource in resourcePool {

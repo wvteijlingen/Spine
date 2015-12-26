@@ -25,6 +25,14 @@ public protocol Router {
 	*/
 	func URLForResourceType(type: ResourceType) -> NSURL
 	
+	/**
+	Returns an NSURL that points to a relationship of a resource.
+	
+	- parameter relationship: The relationship to get the URL for.
+	- parameter resource:     The resource that contains the relationship.
+	
+	- returns: The NSURL.
+	*/
 	func URLForRelationship<T: Resource>(relationship: Relationship, ofResource resource: T) -> NSURL
 	
 	/**

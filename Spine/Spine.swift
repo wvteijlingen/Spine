@@ -12,7 +12,6 @@ import BrightFutures
 public typealias Metadata = [String: AnyObject]
 public typealias JSONAPIData = [String: AnyObject]
 
-
 /// The main class
 public class Spine {
 	
@@ -74,7 +73,7 @@ public class Spine {
 	Adds the given operation to the operation queue.
 	This sets the spine property of the operation to this Spine instance.
 	
-	:param: operation The operation to enqueue.
+	- parameter operation: The operation to enqueue.
 	*/
 	func addOperation(operation: ConcurrentOperation) {
 		operation.spine = self
@@ -85,11 +84,11 @@ public class Spine {
 	// MARK: Fetching
 	
 	/**
-	Fetch multiple resources using the given query..
+	Fetch multiple resources using the given query.
 	
-	:param: query The query describing which resources to fetch.
+	- parameter query: The query describing which resources to fetch.
 	
-	:returns: A future that resolves to a ResourceCollection that contains the fetched resources.
+	- returns: A future that resolves to a tuple containing the fetched ResourceCollection, the document meta, and the document jsonapi object.
 	*/
 	public func find<T: Resource>(query: Query<T>) -> Future<(resources: ResourceCollection, meta: Metadata?, jsonapi: JSONAPIData?), NSError> {
 		let promise = Promise<(resources: ResourceCollection, meta: Metadata?, jsonapi: JSONAPIData?), NSError>()
@@ -115,10 +114,10 @@ public class Spine {
 	/**
 	Fetch multiple resources with the given IDs and type.
 	
-	:param: IDs  IDs of resources to fetch.
-	:param: type The type of resource to fetch.
+	- parameter IDs:  Array containing IDs of resources to fetch.
+	- parameter type: The type of resource to fetch.
 	
-	:returns: A future that resolves to a ResourceCollection that contains the fetched resources.
+	- returns: A future that resolves to a tuple containing the fetched ResourceCollection, the document meta, and the document jsonapi object.
 	*/
 	public func find<T: Resource>(IDs: [String], ofType type: T.Type) -> Future<(resources: ResourceCollection, meta: Metadata?, jsonapi: JSONAPIData?), NSError> {
 		let query = Query(resourceType: type, resourceIDs: IDs)
@@ -127,10 +126,12 @@ public class Spine {
 	
 	/**
 	Fetch one resource using the given query.
+	If the response contains multiple resources, the first resource is returned.
+	If the response indicates success but doesn't contain any resources, the returned future fails.
 	
-	:param: query The query describing which resource to fetch.
+	- parameter query: The query describing which resource to fetch.
 	
-	:returns: A future that resolves to the fetched resource.
+	- returns: A future that resolves to a tuple containing the fetched resource, the document meta, and the document jsonapi object.
 	*/
 	public func findOne<T: Resource>(query: Query<T>) -> Future<(resource: T, meta: Metadata?, jsonapi: JSONAPIData?), NSError> {
 		let promise = Promise<(resource: T, meta: Metadata?, jsonapi: JSONAPIData?), NSError>()
@@ -157,11 +158,13 @@ public class Spine {
 	
 	/**
 	Fetch one resource with the given ID and type.
+	If the response contains multiple resources, the first resource is returned.
+	If the response indicates success but doesn't contain any resources, the returned future fails.
 	
-	:param: ID   ID of resource to fetch.
-	:param: type The type of resource to fetch.
+	- parameter ID:   ID of resource to fetch.
+	- parameter type: The type of resource to fetch.
 	
-	:returns: A future that resolves to the fetched resource.
+	- returns: A future that resolves to a tuple containing the fetched resource, the document meta, and the document jsonapi object.
 	*/
 	public func findOne<T: Resource>(ID: String, ofType type: T.Type) -> Future<(resource: T, meta: Metadata?, jsonapi: JSONAPIData?), NSError> {
 		let query = Query(resourceType: type, resourceIDs: [ID])
@@ -172,9 +175,9 @@ public class Spine {
 	Fetch all resources with the given type.
 	This does not explicitly impose any limit, but the server may choose to limit the response.
 	
-	:param: type The type of resource to fetch.
+	- parameter type: The type of resource to fetch.
 	
-	:returns: A future that resolves to a ResourceCollection that contains the fetched resources.
+	- returns: A future that resolves to a tuple containing the fetched ResourceCollection, the document meta, and the document jsonapi object.
 	*/
 	public func findAll<T: Resource>(type: T.Type) -> Future<(resources: ResourceCollection, meta: Metadata?, jsonapi: JSONAPIData?), NSError> {
 		let query = Query(resourceType: type)
@@ -227,9 +230,9 @@ public class Spine {
 	Loads the previous page of the given resource collection. The newly loaded resources are prepended to the passed collection.
 	When the previous page is not available, the returned future will fail with a `PreviousPageNotAvailable` error code.
 	
-	:param: collection The collection for which to load the previous page.
+	- parameter collection: The collection for which to load the previous page.
 	
-	:returns: A future that resolves to the ResourceCollection including the newly loaded resources.
+	- returns: A future that resolves to the ResourceCollection including the newly loaded resources.
 	*/
 	public func loadPreviousPageOfCollection(collection: ResourceCollection) -> Future<ResourceCollection, NSError> {
 		let promise = Promise<ResourceCollection, NSError>()
@@ -268,9 +271,9 @@ public class Spine {
 	/**
 	Saves the given resource.
 	
-	:param: resource The resource to save.
+	- parameter resource: The resource to save.
 	
-	:returns: A future that resolves to the saved resource.
+	- returns: A future that resolves to the saved resource.
 	*/
 	public func save(resource: Resource) -> Future<Resource, NSError> {
 		let promise = Promise<Resource, NSError>()
@@ -293,9 +296,9 @@ public class Spine {
 	/**
 	Deletes the given resource.
 	
-	:param: resource The resource to delete.
+	- parameter resource: The resource to delete.
 	
-	:returns: A future
+	- returns: A future
 	*/
 	public func delete(resource: Resource) -> Future<Void, NSError> {
 		let promise = Promise<Void, NSError>()

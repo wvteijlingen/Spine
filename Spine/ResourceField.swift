@@ -44,8 +44,8 @@ public class Field {
 	/**
 	Sets the serialized name.
 	
-	:param: name The serialized name to use.
-	:returns: The field.
+	- parameter name: The serialized name to use.
+	- returns: The field.
 	*/
 	public func serializeAs(name: String) -> Self {
 		serializedName = name
@@ -65,13 +65,11 @@ public class Field {
  */
 public class Attribute: Field { }
 
-
 /**
  *  An URL attribute that maps to an NSURL property.
- *  You can optionally specify a base URL with which relative
+ *  You can optionally specify a base URL to which relative
  *  URLs will be made absolute.
  */
-
 public class URLAttribute: Attribute {
 	let baseURL: NSURL?
 	
@@ -82,8 +80,8 @@ public class URLAttribute: Attribute {
 
 /**
  *  A date attribute that maps to an NSDate property.
- *  By default, it uses ISO8601 format. You can specify a custom
- *  format by passing it to the initializer.
+ *  By default, it uses ISO8601 format `yyyy-MM-dd'T'HH:mm:ss.SSSZZZZZ`.
+ *  You can specify a custom format by passing it to the initializer.
  */
 public class DateAttribute: Attribute {
 	let format: String

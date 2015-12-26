@@ -9,6 +9,10 @@
 import Foundation
 import SwiftyJSON
 
+/**
+A JSONAPIDocument represents a JSON API document containing
+resources, errors, metadata, links and jsonapi data.
+*/
 struct JSONAPIDocument {
 	/// Primary resources extracted from the response.
 	var data: [Resource]?
