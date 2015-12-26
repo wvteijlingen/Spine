@@ -108,54 +108,27 @@ public struct Query<T: Resource> {
 	
 	/**
 	Includes the given relation in the query. This will fetch resources that are in that relationship.
+	A relation should be specified using the serialized name.
 	
-	Non-nested relationships should be specified as the name of the relationship in the Swift model.
-	Nested relationships (eg. post.author), should instead be specified using the serialized names.
-	
-	- parameter relation: The name of the relation to include.
+	- parameter relationshipNames: The serialized names of the relation to include.
 	
 	- returns: The query.
 	*/
 	public mutating func include(relationshipNames: String...) {
 		for relationshipName in relationshipNames {
-			if relationshipName.characters.contains(".") {
 				includes.append(relationshipName)
-			} else if let relationship = T.fields.filter({ $0.name == relationshipName }).first {
-				includes.append(relationship.serializedName)
-			} else {
-				assertionFailure("Resource of type \(T.resourceType) does not contain a relationship named \(relationshipName)")
-			}
 		}
 	}
 	
 	/**
-	Removes a previously included relation.
+	Removes a previously included relation. A relation should be specified using the serialized name.
 	
-	Non-nested relationships should be specified as the name of the relationship in the Swift model.
-	Nested relationships (eg. post.author), should instead be specified using the serialized names.
-	
-	- parameter relation: The name of the included relationship to remove.
+	- parameter relationshipNames: The names of the included relationships to remove.
 	
 	- returns: The query
 	*/
 	public mutating func removeInclude(relationshipNames: String...) {
-		for relationshipName in relationshipNames {
-			if relationshipName.characters.contains(".") {
-				if let index = includes.indexOf(relationshipName) {
-					includes.removeAtIndex(index)
-				} else {
-					assertionFailure("Attempt to remove include that was not included: \(relationshipName)")
-				}
-			} else if let relationship = T.fields.filter({ $0.name == relationshipName }).first {
-				if let index = includes.indexOf(relationship.serializedName) {
-					includes.removeAtIndex(index)
-				} else {
-					assertionFailure("Attempt to remove include that was not included: \(relationshipName)")
-				}
-			} else {
-				assertionFailure("Resource of type \(T.resourceType) does not contain a relationship named \(relationshipName)")
-			}
-		}
+		includes = includes.filter { !relationshipNames.contains($0) }
 	}
 	
 	
