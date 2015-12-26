@@ -16,7 +16,7 @@ For collections that can be paginated, pagination data is stored as well.
 */
 public class ResourceCollection: NSObject, NSCoding {
 	/// Whether the resources for this collection are loaded
-	public var isLoaded: Bool
+	public var isLoaded: Bool = false
 	
 	/// The URL of the current page in this collection.
 	public var resourcesURL: NSURL?
@@ -32,6 +32,8 @@ public class ResourceCollection: NSObject, NSCoding {
 	
 	
 	// MARK: Initializers
+	
+	public override init() {}
 	
 	public init(resources: [Resource], resourcesURL: NSURL? = nil) {
 		self.resources = resources
@@ -110,10 +112,6 @@ public class LinkedResourceCollection: ResourceCollection {
 	
 	/// Resources removed from this linked collection, but not yet persisted.
 	public internal(set) var removedResources: [Resource] = []
-	
-	public required init() {
-		super.init(resources: [], resourcesURL: nil)
-	}
 	
 	public init(resourcesURL: NSURL?, linkURL: NSURL?, linkage: [ResourceIdentifier]?) {
 		super.init(resources: [], resourcesURL: resourcesURL)
