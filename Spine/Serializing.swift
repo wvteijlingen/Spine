@@ -179,7 +179,7 @@ struct ResourceFactory {
 	- returns: A resource with the given type and id.
 	*/
 	func dispense(type: ResourceType, id: String, inout pool: [Resource], index: Int? = nil) -> Resource {
-		var resource: Resource! = findResource(pool, type: type, id: id)
+		var resource: Resource! = pool.filter { $0.resourceType == type && $0.id == id }.first
 		
 		if resource == nil && index != nil && !pool.isEmpty {
 			let applicableResources = pool.filter { $0.resourceType == type }

@@ -406,14 +406,6 @@ public extension Spine {
 }
 
 
-// MARK: - Utilities
-
-/// Return the first resource of `domain`, that is of the resource type `type` and has id `id`.
-func findResource<C: CollectionType where C.Generator.Element: Resource>(domain: C, type: ResourceType, id: String) -> C.Generator.Element? {
-	return domain.filter { $0.resourceType == type && $0.id == id }.first
-}
-
-
 // MARK: - Failable
 
 /**
