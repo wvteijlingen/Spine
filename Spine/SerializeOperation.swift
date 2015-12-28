@@ -135,11 +135,11 @@ class SerializeOperation: NSOperation {
 			switch field {
 			case let toOne as ToOneRelationship:
 				if options.contains(.IncludeToOne) {
-					addToOneRelationship(&serializedData, key: key, type: toOne.linkedType, linkedResource: resource.valueForField(field.name) as? Resource)
+					addToOneRelationship(&serializedData, key: key, type: toOne.linkedType.resourceType, linkedResource: resource.valueForField(field.name) as? Resource)
 				}
 			case let toMany as ToManyRelationship:
 				if options.contains(.IncludeToMany) {
-					addToManyRelationship(&serializedData, key: key, type: toMany.linkedType, linkedResources: resource.valueForField(field.name) as? ResourceCollection)
+					addToManyRelationship(&serializedData, key: key, type: toMany.linkedType.resourceType, linkedResources: resource.valueForField(field.name) as? ResourceCollection)
 				}
 			default: ()
 			}

@@ -20,7 +20,7 @@ class RoutingTests: XCTestCase {
 	
 	func testURLForRelationship() {
 		let resource = Foo(id: "1")
-		let relationship = ToOneRelationship(Bar.resourceType).serializeAs("relationship")
+		let relationship = ToOneRelationship(Bar).serializeAs("relationship")
 		let URL = spine.router.URLForRelationship(relationship, ofResource: resource)
 		
 		let expectedURL = NSURL(string: "http://example.com/foos/1/links/relationship")!

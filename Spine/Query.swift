@@ -116,7 +116,7 @@ public struct Query<T: Resource> {
 	*/
 	public mutating func include(relationshipNames: String...) {
 		for relationshipName in relationshipNames {
-				includes.append(relationshipName)
+			includes.append(relationshipName)
 		}
 	}
 	
@@ -137,7 +137,7 @@ public struct Query<T: Resource> {
 	private mutating func addPredicateWithField(fieldName: String, value: AnyObject, type: NSPredicateOperatorType) {
 		if let field = T.fields.filter({ $0.name == fieldName }).first {
 			let predicate = NSComparisonPredicate(
-				leftExpression: NSExpression(forKeyPath: field.serializedName),
+				leftExpression: NSExpression(forKeyPath: field.name),
 				rightExpression: NSExpression(forConstantValue: value),
 				modifier: .DirectPredicateModifier,
 				type: type,

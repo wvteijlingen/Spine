@@ -230,7 +230,7 @@ class DeserializeOperation: NSOperation {
 		for field in resource.fields {
 			switch field {
 			case let toOne as ToOneRelationship:
-				if let linkedResource = extractToOneRelationship(serializedData, key: toOne.serializedName, linkedType: toOne.linkedType, resource: resource) {
+				if let linkedResource = extractToOneRelationship(serializedData, key: toOne.serializedName, linkedType: toOne.linkedType.resourceType, resource: resource) {
 					resource.setValue(linkedResource, forField: toOne.name)
 				}
 			case let toMany as ToManyRelationship:
