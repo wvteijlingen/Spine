@@ -12,9 +12,10 @@ import Foundation
 The RouterProtocol declares methods and properties that a router should implement.
 The router is used to build URLs for API requests.
 */
-public protocol Router {
+public protocol Router: class {
 	/// The base URL of the API.
 	var baseURL: NSURL! { get set }
+	var keyFormatter: KeyFormatter! { get set }
 	
 	/**
 	Returns an NSURL that points to the collection of resources with a given type.
@@ -60,6 +61,7 @@ and override `queryItemsForPagination` to add support for other pagination strat
 */
 public class JSONAPIRouter: Router {
 	public var baseURL: NSURL!
+	public var keyFormatter: KeyFormatter!
 
 	public init() { }
 	

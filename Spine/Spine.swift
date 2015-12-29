@@ -22,7 +22,15 @@ public class Spine {
 	public let networkClient: NetworkClient
 	
 	/// The serializer to use for serializing and deserializing of JSON representations.
-	let serializer: JSONSerializer = JSONSerializer()
+	let serializer: JSONSerializer
+	
+	/// The key formatter to use for formatting field names to keys.
+	public var keyFormatter: KeyFormatter = DasherizedKeyFormatter() {
+		didSet {
+			router.keyFormatter = keyFormatter
+			serializer.keyFormatter = keyFormatter
+		}
+	}
 	
 	/// The operation queue on which all operations are queued.
 	let operationQueue = NSOperationQueue()
@@ -36,6 +44,7 @@ public class Spine {
 	public init(router: Router, networkClient: NetworkClient) {
 		self.router = router
 		self.networkClient = networkClient
+		self.serializer = JSONSerializer(resourceFactory: ResourceFactory(), transformers: TransformerDirectory.defaultTransformerDirectory(), keyFormatter: keyFormatter)
 		self.operationQueue.name = "com.wardvanteijlingen.spine"
 	}
 	

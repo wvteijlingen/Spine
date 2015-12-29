@@ -15,6 +15,34 @@ public func fieldsFromDictionary(dictionary: [String: Field]) -> [Field] {
 	}
 }
 
+public protocol KeyFormatter {
+	func format(field: Field) -> String
+}
+
+struct AsIsKeyFormatter: KeyFormatter {
+	func format(field: Field) -> String {
+		return field.serializedName
+	}
+}
+
+struct DasherizedKeyFormatter: KeyFormatter {
+	func format(field: Field) -> String {
+		let name = field.serializedName
+		let regex = try? NSRegularExpression(pattern: "(?<=[a-z])([A-Z])|([A-Z])(?=[a-z])", options: NSRegularExpressionOptions())
+		let dashed = regex!.stringByReplacingMatchesInString(name, options: NSMatchingOptions(), range: NSMakeRange(0, name.characters.count), withTemplate: "-$1$2")
+		return dashed.lowercaseString.stringByTrimmingCharactersInSet(NSCharacterSet(charactersInString: "-"))
+	}
+}
+
+struct UnderscoredKeyFormatter: KeyFormatter {
+	func format(field: Field) -> String {
+		let name = field.serializedName
+		let regex = try? NSRegularExpression(pattern: "(?<=[a-z])([A-Z])|([A-Z])(?=[a-z])", options: NSRegularExpressionOptions())
+		let underscored = regex!.stringByReplacingMatchesInString(name, options: NSMatchingOptions(), range: NSMakeRange(0, name.characters.count), withTemplate: "_$1$2")
+		return underscored.lowercaseString.stringByTrimmingCharactersInSet(NSCharacterSet(charactersInString: "_"))
+	}
+}
+
 /**
  *  Base field.
  *  Do not use this field type directly, instead use a specific subclass.
