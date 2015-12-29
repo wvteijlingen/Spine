@@ -20,8 +20,8 @@ public protocol KeyFormatter {
 AsIsKeyFormatter does not format anything, i.e. it returns the field name as it. Use this if your field names correspond to
 keys in a JSONAPI document one to one.
 */
-struct AsIsKeyFormatter: KeyFormatter {
-	func format(field: Field) -> String {
+public struct AsIsKeyFormatter: KeyFormatter {
+	public func format(field: Field) -> String {
 		return field.serializedName
 	}
 }
@@ -29,8 +29,8 @@ struct AsIsKeyFormatter: KeyFormatter {
 /**
 DasherizedKeyFormatter formats field names as dasherized keys. Eg. someFieldName -> some-field-name.
 */
-struct DasherizedKeyFormatter: KeyFormatter {
-	func format(field: Field) -> String {
+public struct DasherizedKeyFormatter: KeyFormatter {
+	public func format(field: Field) -> String {
 		let name = field.serializedName
 		let regex = try? NSRegularExpression(pattern: "(?<=[a-z])([A-Z])|([A-Z])(?=[a-z])", options: NSRegularExpressionOptions())
 		let dashed = regex!.stringByReplacingMatchesInString(name, options: NSMatchingOptions(), range: NSMakeRange(0, name.characters.count), withTemplate: "-$1$2")
@@ -41,8 +41,8 @@ struct DasherizedKeyFormatter: KeyFormatter {
 /*
 UnderscoredKeyFormatter formats field names as underscored keys. Eg. someFieldName -> some_field_name.
 */
-struct UnderscoredKeyFormatter: KeyFormatter {
-	func format(field: Field) -> String {
+public struct UnderscoredKeyFormatter: KeyFormatter {
+	public func format(field: Field) -> String {
 		let name = field.serializedName
 		let regex = try? NSRegularExpression(pattern: "(?<=[a-z])([A-Z])|([A-Z])(?=[a-z])", options: NSRegularExpressionOptions())
 		let underscored = regex!.stringByReplacingMatchesInString(name, options: NSMatchingOptions(), range: NSMakeRange(0, name.characters.count), withTemplate: "_$1$2")
