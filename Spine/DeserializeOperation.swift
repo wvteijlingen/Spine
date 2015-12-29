@@ -19,7 +19,7 @@ class DeserializeOperation: NSOperation {
 	
 	// Input
 	let data: JSON
-	let valueFormatters: ValueFormatterDirectory
+	let valueFormatters: ValueFormatterRegistry
 	let resourceFactory: ResourceFactory
 	let keyFormatter: KeyFormatter
 	
@@ -39,7 +39,7 @@ class DeserializeOperation: NSOperation {
 	
 	// MARK: Initializers
 	
-	init(data: NSData, resourceFactory: ResourceFactory, valueFormatters: ValueFormatterDirectory, keyFormatter: KeyFormatter) {
+	init(data: NSData, resourceFactory: ResourceFactory, valueFormatters: ValueFormatterRegistry, keyFormatter: KeyFormatter) {
 		self.data = JSON(data: data)
 		self.resourceFactory = resourceFactory
 		self.valueFormatters = valueFormatters

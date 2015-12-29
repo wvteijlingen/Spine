@@ -39,10 +39,10 @@ public protocol ValueFormatter {
 }
 
 /**
-A value formatter directory keeps a list of value formatters, and chooses between these value formatters
+A value formatter Registry keeps a list of value formatters, and chooses between these value formatters
 to transform values between the serialized and deserialized form.
 */
-struct ValueFormatterDirectory {
+struct ValueFormatterRegistry {
 	/// Registered serializer functions.
 	private var serializers: [(AnyObject, Attribute) -> AnyObject?] = []
 	
@@ -52,10 +52,10 @@ struct ValueFormatterDirectory {
 	/**
 	Returns a new value formatter directory configured with the build in default value formatters.
 	
-	- returns: ValueFormatterDirectory
+	- returns: ValueFormatterRegistry
 	*/
-	static func defaultDirectory() -> ValueFormatterDirectory {
-		var directory = ValueFormatterDirectory()
+	static func defaultRegistry() -> ValueFormatterRegistry {
+		var directory = ValueFormatterRegistry()
 		directory.registerFormatter(URLValueFormatter())
 		directory.registerFormatter(DateValueFormatter())
 		return directory

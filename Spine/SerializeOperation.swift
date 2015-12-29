@@ -17,7 +17,7 @@ This process is the inverse of that of the DeserializeOperation.
 */
 class SerializeOperation: NSOperation {
 	private let resources: [Resource]
-	let valueFormatters: ValueFormatterDirectory
+	let valueFormatters: ValueFormatterRegistry
 	let keyFormatter: KeyFormatter
 	var options: SerializationOptions = [.IncludeID]
 	
@@ -26,7 +26,7 @@ class SerializeOperation: NSOperation {
 	
 	// MARK: Initializers
 	
-	init(resources: [Resource], valueFormatters: ValueFormatterDirectory, keyFormatter: KeyFormatter) {
+	init(resources: [Resource], valueFormatters: ValueFormatterRegistry, keyFormatter: KeyFormatter) {
 		self.resources = resources
 		self.valueFormatters = valueFormatters
 		self.keyFormatter = keyFormatter

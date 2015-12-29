@@ -63,7 +63,7 @@ protocol SerializerProtocol {
 	var resourceFactory: ResourceFactory { get set }
 	
 	/// The transformers used for transforming to and from the serialized representation.
-	var valueFormatters: ValueFormatterDirectory { get set }
+	var valueFormatters: ValueFormatterRegistry { get set }
 	
 	var keyFormatter: KeyFormatter { get set }
 	
@@ -99,10 +99,10 @@ The built in serializer that (de)serializes according to the JSON:API specificat
 */
 class JSONSerializer: SerializerProtocol {
 	var resourceFactory: ResourceFactory
-	var valueFormatters: ValueFormatterDirectory
+	var valueFormatters: ValueFormatterRegistry
 	var keyFormatter: KeyFormatter
 	
-	init(resourceFactory: ResourceFactory = ResourceFactory(), valueFormatters: ValueFormatterDirectory = ValueFormatterDirectory.defaultDirectory(), keyFormatter: KeyFormatter = AsIsKeyFormatter()) {
+	init(resourceFactory: ResourceFactory = ResourceFactory(), valueFormatters: ValueFormatterRegistry = ValueFormatterRegistry.defaultRegistry(), keyFormatter: KeyFormatter = AsIsKeyFormatter()) {
 		self.resourceFactory = resourceFactory
 		self.valueFormatters = valueFormatters
 		self.keyFormatter = keyFormatter

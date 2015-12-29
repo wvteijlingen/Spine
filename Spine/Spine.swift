@@ -48,7 +48,7 @@ public class Spine {
 		
 		self.router = router
 		self.networkClient = networkClient
-		self.serializer = JSONSerializer(resourceFactory: ResourceFactory(), valueFormatters: ValueFormatterDirectory.defaultDirectory(), keyFormatter: keyFormatter)
+		self.serializer = JSONSerializer(resourceFactory: ResourceFactory(), valueFormatters: ValueFormatterRegistry.defaultRegistry(), keyFormatter: keyFormatter)
 		self.operationQueue.name = "com.wardvanteijlingen.spine"
 	}
 	
