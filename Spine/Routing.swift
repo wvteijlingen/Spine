@@ -135,17 +135,22 @@ public class JSONAPIRouter: Router {
 		
 		// Fields
 		for (resourceType, fields) in query.fields {
-			let item = NSURLQueryItem(name: "fields[\(resourceType)]", value: fields.joinWithSeparator(","))
+			let keys = fields.map { fieldName in
+				return keyFormatter.format(T.fieldNamed(fieldName)!)
+			}
+			let item = NSURLQueryItem(name: "fields[\(resourceType)]", value: keys.joinWithSeparator(","))
 			setQueryItem(item, forQueryItems: &queryItems)
 		}
 		
 		// Sorting
 		if !query.sortDescriptors.isEmpty {
 			let descriptorStrings = query.sortDescriptors.map { descriptor -> String in
+				let field = T.fieldNamed(descriptor.key!)
+				let key = self.keyFormatter.format(field!)
 				if descriptor.ascending {
-					return "+\(descriptor.key!)"
+					return "+\(key)"
 				} else {
-					return "-\(descriptor.key!)"
+					return "-\(key)"
 				}
 			}
 			

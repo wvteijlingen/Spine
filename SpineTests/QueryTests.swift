@@ -183,16 +183,16 @@ class QuerySparseFieldsetsTests: XCTestCase {
 
 	func testRestrictPropertiesTo() {
 		var query = Query(resourceType: Foo.self)
-		query.restrictFieldsTo("firstProperty", "secondProperty")
+		query.restrictFieldsTo("stringAttribute", "integerAttribute")
 		
-		XCTAssertEqual(query.fields, [Foo.resourceType: ["firstProperty", "secondProperty"]], "Fields not as expected")
+		XCTAssertEqual(query.fields, [Foo.resourceType: ["stringAttribute", "integerAttribute"]], "Fields not as expected")
 	}
 	
 	func testRestrictPropertiesOfResourceTypeTo() {
 		var query = Query(resourceType: Foo.self)
-		query.restrictFieldsOfResourceType("bars", to: "firstProperty", "secondProperty")
+		query.restrictFieldsOfResourceType("bars", to: "stringAttribute", "integerAttribute")
 		
-		XCTAssertEqual(query.fields, ["bars": ["firstProperty", "secondProperty"]], "Fields not as expected")
+		XCTAssertEqual(query.fields, ["bars": ["stringAttribute", "integerAttribute"]], "Fields not as expected")
 	}
 }
 
@@ -200,18 +200,18 @@ class QuerySortOrderTests: XCTestCase {
 
 	func testAddAscendingOrder() {
 		var query = Query(resourceType: Foo.self)
-		query.addAscendingOrder("orderKey")
+		query.addAscendingOrder("integerAttribute")
 		
-		let sortDescriptor = NSSortDescriptor(key: "orderKey", ascending: true)
+		let sortDescriptor = NSSortDescriptor(key: "integerAttribute", ascending: true)
 		
 		XCTAssertEqual(query.sortDescriptors, [sortDescriptor], "Sort descriptors not as expected")
 	}
 	
 	func testAddDescendingOrder() {
 		var query = Query(resourceType: Foo.self)
-		query.addDescendingOrder("orderKey")
+		query.addDescendingOrder("integerAttribute")
 		
-		let sortDescriptor = NSSortDescriptor(key: "orderKey", ascending: false)
+		let sortDescriptor = NSSortDescriptor(key: "integerAttribute", ascending: false)
 		
 		XCTAssertEqual(query.sortDescriptors, [sortDescriptor], "Sort descriptors not as expected")
 	}

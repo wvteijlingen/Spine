@@ -258,6 +258,10 @@ public struct Query<T: Resource> {
 	public mutating func restrictFieldsTo(fieldNames: String...) {
 		assert(resourceType != nil, "Cannot restrict fields for query without resource type, use `restrictFieldsOfResourceType` or set a resource type.")
 		
+		for fieldName in fieldNames {
+			assert(T.fieldNamed(fieldName) != nil, "Cannot restrict to field \(fieldName) of resource \(T.resourceType). No such field has been configured.")
+		}
+		
 		if var fields = fields[resourceType!] {
 			fields += fieldNames
 		} else {
@@ -277,6 +281,11 @@ public struct Query<T: Resource> {
 	- returns: The query
 	*/
 	public mutating func restrictFieldsOfResourceType(type: String, to fieldNames: String...) {
+		
+		for fieldName in fieldNames {
+			assert(T.fieldNamed(fieldName) != nil, "Cannot restrict to field \(fieldName) of resource \(T.resourceType). No such field has been configured.")
+		}
+		
 		if var fields = fields[type] {
 			fields += fieldNames
 		} else {
@@ -294,8 +303,12 @@ public struct Query<T: Resource> {
 	
 	- returns: The query
 	*/
-	public mutating func addAscendingOrder(property: String) {
-		sortDescriptors.append(NSSortDescriptor(key: property, ascending: true))
+	public mutating func addAscendingOrder(fieldName: String) {
+		if let _ = T.fieldNamed(fieldName) {
+			sortDescriptors.append(NSSortDescriptor(key: fieldName, ascending: true))
+		} else {
+			assertionFailure("Cannot add order on field \(fieldName) of resource \(T.resourceType). No such field has been configured.")
+		}
 	}
 	
 	/**
@@ -305,8 +318,12 @@ public struct Query<T: Resource> {
 	
 	- returns: The query
 	*/
-	public mutating func addDescendingOrder(property: String) {
-		sortDescriptors.append(NSSortDescriptor(key: property, ascending: false))
+	public mutating func addDescendingOrder(fieldName: String) {
+		if let _ = T.fieldNamed(fieldName) {
+			sortDescriptors.append(NSSortDescriptor(key: fieldName, ascending: false))
+		} else {
+			assertionFailure("Cannot add order on field \(fieldName) of resource \(T.resourceType). No such field has been configured.")
+		}
 	}
 	
 	
