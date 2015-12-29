@@ -36,7 +36,7 @@ class RoutingTests: XCTestCase {
 		query.addDescendingOrder("descendingSort")
 		
 		let URL = spine.router.URLForQuery(query)
-		let expectedURL = NSURL(string: "http://example.com/foos?filter[id]=1,2&include=toOneAttribute,toManyAttribute&filter[stringAttribute]=stringValue&fields[foos]=firstField,secondField&sort=+ascendingSort,-descendingSort")!
+		let expectedURL = NSURL(string: "http://example.com/foos?filter[id]=1,2&include=to-one-attribute,to-many-attribute&filter[string-attribute]=stringValue&fields[foos]=firstField,secondField&sort=+ascendingSort,-descendingSort")!
 		
 		XCTAssertEqual(URL, expectedURL, "URL not as expected.")
 	}

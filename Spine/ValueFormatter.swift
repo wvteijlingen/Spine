@@ -1,5 +1,5 @@
 //
-//  Transformer.swift
+//  ValueFormatter.swift
 //  Spine
 //
 //  Created by Ward van Teijlingen on 30-12-14.
@@ -9,10 +9,10 @@
 import Foundation
 
 /**
-The Transformer protocol declares methods and properties that a transformer must implement.
-A transformer transforms values between the serialized and deserialized form.
+The ValueFormatter protocol declares methods and properties that a value formatter must implement.
+A value formatter transforms values between the serialized and deserialized form.
 */
-public protocol Transformer {
+public protocol ValueFormatter {
 	typealias SerializedType
 	typealias DeserializedType
 	typealias AttributeType
@@ -39,10 +39,10 @@ public protocol Transformer {
 }
 
 /**
-A transformer directory keeps a list of transformers, and chooses between these transformers
+A value formatter directory keeps a list of value formatters, and chooses between these value formatters
 to transform values between the serialized and deserialized form.
 */
-struct TransformerDirectory {
+struct ValueFormatterDirectory {
 	/// Registered serializer functions.
 	private var serializers: [(AnyObject, Attribute) -> AnyObject?] = []
 	
@@ -50,27 +50,27 @@ struct TransformerDirectory {
 	private var deserializers: [(AnyObject, Attribute) -> AnyObject?] = []
 	
 	/**
-	Returns a new transformer directory configured with the build in default transformers.
+	Returns a new value formatter directory configured with the build in default value formatters.
 	
-	- returns: TransformerDirectory
+	- returns: ValueFormatterDirectory
 	*/
-	static func defaultTransformerDirectory() -> TransformerDirectory {
-		var directory = TransformerDirectory()
-		directory.registerTransformer(URLTransformer())
-		directory.registerTransformer(DateTransformer())
+	static func defaultDirectory() -> ValueFormatterDirectory {
+		var directory = ValueFormatterDirectory()
+		directory.registerFormatter(URLValueFormatter())
+		directory.registerFormatter(DateValueFormatter())
 		return directory
 	}
 	
 	/**
-	Registers the given transformer.
+	Registers the given value formatter.
 	
-	- parameter transformer: The transformer to register.
+	- parameter formatter: The value formatter to register.
 	*/
-	mutating func registerTransformer<T: Transformer>(transformer: T) {
+	mutating func registerFormatter<T: ValueFormatter>(formatter: T) {
 		serializers.append { (value: AnyObject, attribute: Attribute) -> AnyObject? in
 			if let typedAttribute = attribute as? T.AttributeType {
 				if let typedValue = value as? T.DeserializedType {
-					return transformer.serialize(typedValue, attribute: typedAttribute)
+					return formatter.serialize(typedValue, attribute: typedAttribute)
 				}
 			}
 			
@@ -80,7 +80,7 @@ struct TransformerDirectory {
 		deserializers.append { (value: AnyObject, attribute: Attribute) -> AnyObject? in
 			if let typedAttribute = attribute as? T.AttributeType {
 				if let typedValue = value as? T.SerializedType {
-					return transformer.deserialize(typedValue, attribute: typedAttribute)
+					return formatter.deserialize(typedValue, attribute: typedAttribute)
 				}
 			}
 			
@@ -91,7 +91,7 @@ struct TransformerDirectory {
 	/**
 	Returns the deserialized form of the given value for the given attribute.
 	
-	The actual transformer used is the first registered transformer that supports the given
+	The actual value formatter used is the first registered formatter that supports the given
 	value type for the given attribute type.
 	
 	- parameter value:     The value to deserialize.
@@ -112,7 +112,7 @@ struct TransformerDirectory {
 	/**
 	Returns the serialized form of the given value for the given attribute.
 	
-	The actual transformer used is the first registered transformer that supports the given
+	The actual value formatter used is the first registered formatter that supports the given
 	value type for the given attribute type.
 	
 	- parameter value:     The value to serialize.
@@ -132,14 +132,14 @@ struct TransformerDirectory {
 }
 
 
-// MARK: - Built in transformers
+// MARK: - Built in value formatters
 
 /**
-URLTransformer is a transformer that transforms between NSURL and String, and vice versa.
+URLValueFormatter is a value formatter that transforms between NSURL and String, and vice versa.
 If a baseURL has been configured in the URLAttribute, and the given String is not an absolute URL,
 it will return an absolute NSURL, relative to the baseURL.
 */
-private struct URLTransformer: Transformer {
+private struct URLValueFormatter: ValueFormatter {
 	func deserialize(value: String, attribute: URLAttribute) -> AnyObject {
 		return NSURL(string: value, relativeToURL: attribute.baseURL)!
 	}
@@ -150,10 +150,10 @@ private struct URLTransformer: Transformer {
 }
 
 /**
-URLTransformer is a transformer that transforms between NSDate and String, and vice versa.
+DateValueFormatter is a value formatter that transforms between NSDate and String, and vice versa.
 It uses the date format configured in the DateAttribute.
 */
-private struct DateTransformer: Transformer {
+private struct DateValueFormatter: ValueFormatter {
 	func formatter(attribute: DateAttribute) -> NSDateFormatter {
 		let formatter = NSDateFormatter()
 		formatter.dateFormat = attribute.format

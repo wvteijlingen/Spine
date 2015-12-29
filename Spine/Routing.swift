@@ -71,7 +71,8 @@ public class JSONAPIRouter: Router {
 	
 	public func URLForRelationship<T: Resource>(relationship: Relationship, ofResource resource: T) -> NSURL {
 		let resourceURL = resource.URL ?? URLForResourceType(resource.resourceType).URLByAppendingPathComponent("/\(resource.id!)")
-		return resourceURL.URLByAppendingPathComponent("/links/\(relationship.serializedName)")
+		let key = keyFormatter.format(relationship)
+		return resourceURL.URLByAppendingPathComponent("/links/\(key)")
 	}
 
 	public func URLForQuery<T: Resource>(query: Query<T>) -> NSURL {
@@ -113,7 +114,7 @@ public class JSONAPIRouter: Router {
 				var relatedResourceType: Resource.Type = T.self
 				for part in include.componentsSeparatedByString(".") {
 					if let relationship = relatedResourceType.fieldNamed(part) as? Relationship {
-						keys.append(relationship.serializedName)
+						keys.append(keyFormatter.format(relationship))
 						relatedResourceType = relationship.linkedType
 					}
 				}
@@ -181,7 +182,8 @@ public class JSONAPIRouter: Router {
 	
 	public func queryItemForFilter(field: Field, value: AnyObject, operatorType: NSPredicateOperatorType) -> NSURLQueryItem {
 		assert(operatorType == .EqualToPredicateOperatorType, "The built in router only supports Query filter expressions of type 'equalTo'")
-		return NSURLQueryItem(name: "filter[\(field.serializedName)]", value: "\(value)")
+		let key = keyFormatter.format(field)
+		return NSURLQueryItem(name: "filter[\(key)]", value: "\(value)")
 	}
 
 	/**

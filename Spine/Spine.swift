@@ -42,9 +42,13 @@ public class Spine {
 	Creates a new Spine instance using the given router and network client.
 	*/
 	public init(router: Router, networkClient: NetworkClient) {
+		if(router.keyFormatter == nil) {
+			router.keyFormatter = keyFormatter
+		}
+		
 		self.router = router
 		self.networkClient = networkClient
-		self.serializer = JSONSerializer(resourceFactory: ResourceFactory(), transformers: TransformerDirectory.defaultTransformerDirectory(), keyFormatter: keyFormatter)
+		self.serializer = JSONSerializer(resourceFactory: ResourceFactory(), valueFormatters: ValueFormatterDirectory.defaultDirectory(), keyFormatter: keyFormatter)
 		self.operationQueue.name = "com.wardvanteijlingen.spine"
 	}
 	
@@ -435,8 +439,8 @@ public extension Spine {
 	
 	- parameter transformer: The Transformer to register.
 	*/
-	func registerTransformer<T: Transformer>(transformer: T) {
-		serializer.transformers.registerTransformer(transformer)
+	func registerValueFormatter<T: ValueFormatter>(formatter: T) {
+		serializer.valueFormatters.registerFormatter(formatter)
 	}
 }
 

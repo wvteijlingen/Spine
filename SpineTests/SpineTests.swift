@@ -394,7 +394,7 @@ class SaveTests: SpineTests {
 			if(request.URL! == NSURL(string:"http://example.com/foos/1")!) {
 				resourcePatched = true
 			}
-			if(request.URL! == NSURL(string:"http://example.com/foos/1/links/toOneAttribute")!) {
+			if(request.URL! == NSURL(string:"http://example.com/foos/1/links/to-one-attribute")!) {
 				toOnePatched = true
 			}
 			return (responseData: self.fixture.data, statusCode: 201, error: nil)

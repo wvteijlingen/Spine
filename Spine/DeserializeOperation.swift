@@ -19,7 +19,7 @@ class DeserializeOperation: NSOperation {
 	
 	// Input
 	let data: JSON
-	let transformers: TransformerDirectory
+	let valueFormatters: ValueFormatterDirectory
 	let resourceFactory: ResourceFactory
 	let keyFormatter: KeyFormatter
 	
@@ -39,10 +39,10 @@ class DeserializeOperation: NSOperation {
 	
 	// MARK: Initializers
 	
-	init(data: NSData, resourceFactory: ResourceFactory, transformers: TransformerDirectory, keyFormatter: KeyFormatter) {
+	init(data: NSData, resourceFactory: ResourceFactory, valueFormatters: ValueFormatterDirectory, keyFormatter: KeyFormatter) {
 		self.data = JSON(data: data)
 		self.resourceFactory = resourceFactory
-		self.transformers = transformers
+		self.valueFormatters = valueFormatters
 		self.keyFormatter = keyFormatter
 	}
 	
@@ -193,7 +193,7 @@ class DeserializeOperation: NSOperation {
 		for case let field as Attribute in resource.fields {
 			let key = keyFormatter.format(field)
 			if let extractedValue: AnyObject = self.extractAttribute(serializedData, key: key) {
-				let formattedValue: AnyObject = self.transformers.deserialize(extractedValue, forAttribute: field)
+				let formattedValue: AnyObject = self.valueFormatters.deserialize(extractedValue, forAttribute: field)
 				resource.setValue(formattedValue, forField: field.name)
 			}
 		}

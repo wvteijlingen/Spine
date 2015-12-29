@@ -17,7 +17,7 @@ This process is the inverse of that of the DeserializeOperation.
 */
 class SerializeOperation: NSOperation {
 	private let resources: [Resource]
-	let transformers: TransformerDirectory
+	let valueFormatters: ValueFormatterDirectory
 	let keyFormatter: KeyFormatter
 	var options: SerializationOptions = [.IncludeID]
 	
@@ -26,9 +26,9 @@ class SerializeOperation: NSOperation {
 	
 	// MARK: Initializers
 	
-	init(resources: [Resource], transformers: TransformerDirectory, keyFormatter: KeyFormatter) {
+	init(resources: [Resource], valueFormatters: ValueFormatterDirectory, keyFormatter: KeyFormatter) {
 		self.resources = resources
-		self.transformers = transformers
+		self.valueFormatters = valueFormatters
 		self.keyFormatter = keyFormatter
 	}
 	
@@ -95,7 +95,7 @@ class SerializeOperation: NSOperation {
 			
 			//TODO: Dirty checking
 			if let unformattedValue: AnyObject = resource.valueForField(field.name) {
-				addAttribute(&attributes, key: key, value: self.transformers.serialize(unformattedValue, forAttribute: field))
+				addAttribute(&attributes, key: key, value: self.valueFormatters.serialize(unformattedValue, forAttribute: field))
 			} else {
 				addAttribute(&attributes, key: key, value: NSNull())
 			}
