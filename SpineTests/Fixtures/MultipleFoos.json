@@ -3,24 +3,24 @@
 		"id": "1",
 		"type": "foos",
 		"attributes": {
-			"stringAttribute": "stringAttributeValue",
-			"integerAttribute": 10,
-			"floatAttribute": 5.5,
-			"booleanAttribute": true,
-			"nilAttribute": null,
-			"dateAttribute": "1970-01-01T01:00:00.000+01:00"
+			"string-attribute": "stringAttributeValue",
+			"integer-attribute": 10,
+			"float-attribute": 5.5,
+			"boolean-attribute": true,
+			"nil-attribute": null,
+			"date-attribute": "1970-01-01T01:00:00.000+01:00"
 		},
 		"links": {
 			"self": "http://example.com/foos/1"
 		},
 		"relationships": {
-			"toOneAttribute": {
+			"to-one-attribute": {
 				"links": {
 					"self": "http://example.com/foos/1/links/toOneAttribute",
 					"related": "http://example.com/bars/10"
 				}
 			},
-			"toManyAttribute": {
+			"to-many-attribute": {
 				"links": {
 					"self": "http://example.com/foos/1/links/toManyAttribute",
 					"related": "http://example.com/bars/11,12"
@@ -31,24 +31,24 @@
 		"id": "2",
 		"type": "foos",
 		"attributes": {
-			"stringAttribute": "stringAttributeValue",
-			"integerAttribute": 10,
-			"floatAttribute": 5.5,
-			"booleanAttribute": true,
-			"nilAttribute": null,
-			"dateAttribute": "1970-01-01T01:00:00.000+01:00"
+			"string-attribute": "stringAttributeValue",
+			"integer-attribute": 10,
+			"float-attribute": 5.5,
+			"boolean-attribute": true,
+			"nil-attribute": null,
+			"date-attribute": "1970-01-01T01:00:00.000+01:00"
 		},
 		"links": {
 			"self": "http://example.com/foos/1"
 		},
 		"relationships": {
-			"toOneAttribute": {
+			"to-one-attribute": {
 				"links": {
 					"self": "http://example.com/foos/1/links/toOneAttribute",
 					"related": "http://example.com/bars/10"
 				}
 			},
-			"toManyAttribute": {
+			"to-many-attribute": {
 				"links": {
 					"self": "http://example.com/foos/1/links/toManyAttribute",
 					"related": "http://example.com/bars/11,12"

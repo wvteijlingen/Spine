@@ -12,9 +12,10 @@ import Foundation
 The RouterProtocol declares methods and properties that a router should implement.
 The router is used to build URLs for API requests.
 */
-public protocol Router {
+public protocol Router: class {
 	/// The base URL of the API.
 	var baseURL: NSURL! { get set }
+	var keyFormatter: KeyFormatter! { get set }
 	
 	/**
 	Returns an NSURL that points to the collection of resources with a given type.
@@ -60,6 +61,7 @@ and override `queryItemsForPagination` to add support for other pagination strat
 */
 public class JSONAPIRouter: Router {
 	public var baseURL: NSURL!
+	public var keyFormatter: KeyFormatter!
 
 	public init() { }
 	
@@ -69,7 +71,8 @@ public class JSONAPIRouter: Router {
 	
 	public func URLForRelationship<T: Resource>(relationship: Relationship, ofResource resource: T) -> NSURL {
 		let resourceURL = resource.URL ?? URLForResourceType(resource.resourceType).URLByAppendingPathComponent("/\(resource.id!)")
-		return resourceURL.URLByAppendingPathComponent("/links/\(relationship.serializedName)")
+		let key = keyFormatter.format(relationship)
+		return resourceURL.URLByAppendingPathComponent("/links/\(key)")
 	}
 
 	public func URLForQuery<T: Resource>(query: Query<T>) -> NSURL {
@@ -103,29 +106,51 @@ public class JSONAPIRouter: Router {
 		
 		// Includes
 		if !query.includes.isEmpty {
-			let item = NSURLQueryItem(name: "include", value: query.includes.joinWithSeparator(","))
+			var resolvedIncludes = [String]()
+			
+			for include in query.includes {
+				var keys = [String]()
+				
+				var relatedResourceType: Resource.Type = T.self
+				for part in include.componentsSeparatedByString(".") {
+					if let relationship = relatedResourceType.fieldNamed(part) as? Relationship {
+						keys.append(keyFormatter.format(relationship))
+						relatedResourceType = relationship.linkedType
+					}
+				}
+				
+				resolvedIncludes.append(keys.joinWithSeparator("."))
+			}
+			
+			let item = NSURLQueryItem(name: "include", value: resolvedIncludes.joinWithSeparator(","))
 			setQueryItem(item, forQueryItems: &queryItems)
 		}
 		
 		// Filters
 		for filter in query.filters {
-			let item = queryItemForFilter(filter)
+			let fieldName = filter.leftExpression.keyPath
+			let item = queryItemForFilter(T.fieldNamed(fieldName)!, value: filter.rightExpression.constantValue, operatorType: filter.predicateOperatorType)
 			setQueryItem(item, forQueryItems: &queryItems)
 		}
 		
 		// Fields
 		for (resourceType, fields) in query.fields {
-			let item = NSURLQueryItem(name: "fields[\(resourceType)]", value: fields.joinWithSeparator(","))
+			let keys = fields.map { fieldName in
+				return keyFormatter.format(T.fieldNamed(fieldName)!)
+			}
+			let item = NSURLQueryItem(name: "fields[\(resourceType)]", value: keys.joinWithSeparator(","))
 			setQueryItem(item, forQueryItems: &queryItems)
 		}
 		
 		// Sorting
 		if !query.sortDescriptors.isEmpty {
 			let descriptorStrings = query.sortDescriptors.map { descriptor -> String in
+				let field = T.fieldNamed(descriptor.key!)
+				let key = self.keyFormatter.format(field!)
 				if descriptor.ascending {
-					return "+\(descriptor.key!)"
+					return "+\(key)"
 				} else {
-					return "-\(descriptor.key!)"
+					return "-\(key)"
 				}
 			}
 			
@@ -149,17 +174,21 @@ public class JSONAPIRouter: Router {
 	}
 	
 	/**
-	Returns an NSURLQueryItem that represents the given comparison predicate in an URL.
+	Returns an NSURLQueryItem that represents a filter in a URL.
 	By default this method only supports 'equal to' predicates. You can override
 	this method to add support for other filtering strategies.
 	
-	- parameter filter: The NSComparisonPredicate.
+	- parameter field:        The field that is filtered.
+	- parameter value:        The value on which is filtered.
+	- parameter operatorType: The NSPredicateOperatorType for the filter.
 	
-	- returns: The NSURLQueryItem.
+	- returns: An NSURLQueryItem representing the filter.
 	*/
-	public func queryItemForFilter(filter: NSComparisonPredicate) -> NSURLQueryItem {
-		assert(filter.predicateOperatorType == .EqualToPredicateOperatorType, "The built in router only supports Query filter expressions of type 'equalTo'")
-		return NSURLQueryItem(name: "filter[\(filter.leftExpression.keyPath)]", value: "\(filter.rightExpression.constantValue)")
+	
+	public func queryItemForFilter(field: Field, value: AnyObject, operatorType: NSPredicateOperatorType) -> NSURLQueryItem {
+		assert(operatorType == .EqualToPredicateOperatorType, "The built in router only supports Query filter expressions of type 'equalTo'")
+		let key = keyFormatter.format(field)
+		return NSURLQueryItem(name: "filter[\(key)]", value: "\(value)")
 	}
 
 	/**

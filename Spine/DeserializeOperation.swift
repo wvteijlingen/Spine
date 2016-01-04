@@ -19,8 +19,9 @@ class DeserializeOperation: NSOperation {
 	
 	// Input
 	let data: JSON
-	var transformers: TransformerDirectory = TransformerDirectory()
-	var resourceFactory: ResourceFactory
+	let valueFormatters: ValueFormatterRegistry
+	let resourceFactory: ResourceFactory
+	let keyFormatter: KeyFormatter
 	
 	// Output
 	var result: Failable<JSONAPIDocument>?
@@ -38,9 +39,11 @@ class DeserializeOperation: NSOperation {
 	
 	// MARK: Initializers
 	
-	init(data: NSData, resourceFactory: ResourceFactory) {
+	init(data: NSData, resourceFactory: ResourceFactory, valueFormatters: ValueFormatterRegistry, keyFormatter: KeyFormatter) {
 		self.data = JSON(data: data)
 		self.resourceFactory = resourceFactory
+		self.valueFormatters = valueFormatters
+		self.keyFormatter = keyFormatter
 	}
 	
 	
@@ -188,8 +191,9 @@ class DeserializeOperation: NSOperation {
 	*/
 	private func extractAttributes(serializedData: JSON, intoResource resource: Resource) {
 		for case let field as Attribute in resource.fields {
-			if let extractedValue: AnyObject = self.extractAttribute(serializedData, key: field.serializedName) {
-				let formattedValue: AnyObject = self.transformers.deserialize(extractedValue, forAttribute: field)
+			let key = keyFormatter.format(field)
+			if let extractedValue: AnyObject = self.extractAttribute(serializedData, key: key) {
+				let formattedValue: AnyObject = self.valueFormatters.unformat(extractedValue, forAttribute: field)
 				resource.setValue(formattedValue, forField: field.name)
 			}
 		}
@@ -228,13 +232,14 @@ class DeserializeOperation: NSOperation {
 	*/
 	private func extractRelationships(serializedData: JSON, intoResource resource: Resource) {
 		for field in resource.fields {
+			let key = keyFormatter.format(field)
 			switch field {
 			case let toOne as ToOneRelationship:
-				if let linkedResource = extractToOneRelationship(serializedData, key: toOne.serializedName, linkedType: toOne.linkedType, resource: resource) {
+				if let linkedResource = extractToOneRelationship(serializedData, key: key, linkedType: toOne.linkedType.resourceType, resource: resource) {
 					resource.setValue(linkedResource, forField: toOne.name)
 				}
 			case let toMany as ToManyRelationship:
-				if let linkedResourceCollection = extractToManyRelationship(serializedData, key: toMany.serializedName, resource: resource) {
+				if let linkedResourceCollection = extractToManyRelationship(serializedData, key: key, resource: resource) {
 					resource.setValue(linkedResourceCollection, forField: toMany.name)
 				}
 			default: ()

@@ -139,6 +139,11 @@ public class Resource: NSObject, NSCoding {
 		
 		isLoaded = false
 	}
+		
+	class func fieldNamed(name: String) -> Field? {
+		return fields.filter { $0.name == name }.first
+	}
+
 }
 
 extension Resource {

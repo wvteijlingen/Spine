@@ -17,7 +17,8 @@ This process is the inverse of that of the DeserializeOperation.
 */
 class SerializeOperation: NSOperation {
 	private let resources: [Resource]
-	var transformers = TransformerDirectory()
+	let valueFormatters: ValueFormatterRegistry
+	let keyFormatter: KeyFormatter
 	var options: SerializationOptions = [.IncludeID]
 	
 	var result: NSData?
@@ -25,8 +26,10 @@ class SerializeOperation: NSOperation {
 	
 	// MARK: Initializers
 	
-	init(resources: [Resource]) {
+	init(resources: [Resource], valueFormatters: ValueFormatterRegistry, keyFormatter: KeyFormatter) {
 		self.resources = resources
+		self.valueFormatters = valueFormatters
+		self.keyFormatter = keyFormatter
 	}
 	
 	
@@ -86,13 +89,13 @@ class SerializeOperation: NSOperation {
 		var attributes = [String: AnyObject]();
 		
 		for case let field as Attribute in resource.fields where field.isReadOnly == false {
-			let key = field.serializedName
+			let key = keyFormatter.format(field)
 			
-			Spine.logDebug(.Serializing, "Serializing attribute \(field) with name '\(field.name) as '\(key)'")
+			Spine.logDebug(.Serializing, "Serializing attribute \(field) as '\(key)'")
 			
 			//TODO: Dirty checking
 			if let unformattedValue: AnyObject = resource.valueForField(field.name) {
-				addAttribute(&attributes, key: key, value: self.transformers.serialize(unformattedValue, forAttribute: field))
+				addAttribute(&attributes, key: key, value: self.valueFormatters.format(unformattedValue, forAttribute: field))
 			} else {
 				addAttribute(&attributes, key: key, value: NSNull())
 			}
@@ -128,18 +131,18 @@ class SerializeOperation: NSOperation {
 	*/
 	private func addRelationships(inout serializedData: [String: AnyObject], resource: Resource) {
 		for case let field as Relationship in resource.fields where field.isReadOnly == false {
-			let key = field.serializedName
+			let key = keyFormatter.format(field)
 			
-			Spine.logDebug(.Serializing, "Serializing relationship \(field) with name '\(field.name) as '\(key)'")
+			Spine.logDebug(.Serializing, "Serializing relationship \(field) as '\(key)'")
 			
 			switch field {
 			case let toOne as ToOneRelationship:
 				if options.contains(.IncludeToOne) {
-					addToOneRelationship(&serializedData, key: key, type: toOne.linkedType, linkedResource: resource.valueForField(field.name) as? Resource)
+					addToOneRelationship(&serializedData, key: key, type: toOne.linkedType.resourceType, linkedResource: resource.valueForField(field.name) as? Resource)
 				}
 			case let toMany as ToManyRelationship:
 				if options.contains(.IncludeToMany) {
-					addToManyRelationship(&serializedData, key: key, type: toMany.linkedType, linkedResources: resource.valueForField(field.name) as? ResourceCollection)
+					addToManyRelationship(&serializedData, key: key, type: toMany.linkedType.resourceType, linkedResources: resource.valueForField(field.name) as? ResourceCollection)
 				}
 			default: ()
 			}

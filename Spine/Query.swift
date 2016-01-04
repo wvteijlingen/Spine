@@ -116,7 +116,7 @@ public struct Query<T: Resource> {
 	*/
 	public mutating func include(relationshipNames: String...) {
 		for relationshipName in relationshipNames {
-				includes.append(relationshipName)
+			includes.append(relationshipName)
 		}
 	}
 	
@@ -137,7 +137,7 @@ public struct Query<T: Resource> {
 	private mutating func addPredicateWithField(fieldName: String, value: AnyObject, type: NSPredicateOperatorType) {
 		if let field = T.fields.filter({ $0.name == fieldName }).first {
 			let predicate = NSComparisonPredicate(
-				leftExpression: NSExpression(forKeyPath: field.serializedName),
+				leftExpression: NSExpression(forKeyPath: field.name),
 				rightExpression: NSExpression(forConstantValue: value),
 				modifier: .DirectPredicateModifier,
 				type: type,
@@ -258,6 +258,10 @@ public struct Query<T: Resource> {
 	public mutating func restrictFieldsTo(fieldNames: String...) {
 		assert(resourceType != nil, "Cannot restrict fields for query without resource type, use `restrictFieldsOfResourceType` or set a resource type.")
 		
+		for fieldName in fieldNames {
+			assert(T.fieldNamed(fieldName) != nil, "Cannot restrict to field \(fieldName) of resource \(T.resourceType). No such field has been configured.")
+		}
+		
 		if var fields = fields[resourceType!] {
 			fields += fieldNames
 		} else {
@@ -277,6 +281,11 @@ public struct Query<T: Resource> {
 	- returns: The query
 	*/
 	public mutating func restrictFieldsOfResourceType(type: String, to fieldNames: String...) {
+		
+		for fieldName in fieldNames {
+			assert(T.fieldNamed(fieldName) != nil, "Cannot restrict to field \(fieldName) of resource \(T.resourceType). No such field has been configured.")
+		}
+		
 		if var fields = fields[type] {
 			fields += fieldNames
 		} else {
@@ -288,25 +297,33 @@ public struct Query<T: Resource> {
 	// MARK: Sorting
 	
 	/**
-	Sort in ascending order by the the given property. Previously added properties precedence over this property.
+	Sort in ascending order by the the given field. Previously added field take precedence over this field.
 	
-	- parameter property: The property which to order by.
+	- parameter fieldName: The name of the field which to order by.
 	
 	- returns: The query
 	*/
-	public mutating func addAscendingOrder(property: String) {
-		sortDescriptors.append(NSSortDescriptor(key: property, ascending: true))
+	public mutating func addAscendingOrder(fieldName: String) {
+		if let _ = T.fieldNamed(fieldName) {
+			sortDescriptors.append(NSSortDescriptor(key: fieldName, ascending: true))
+		} else {
+			assertionFailure("Cannot add order on field \(fieldName) of resource \(T.resourceType). No such field has been configured.")
+		}
 	}
 	
 	/**
-	Sort in descending order by the the given property. Previously added properties precedence over this property.
+	Sort in descending order by the the given field. Previously added field take precedence over this property.
 	
-	- parameter property: The property which to order by.
+	- parameter property: The name of the field which to order by.
 	
 	- returns: The query
 	*/
-	public mutating func addDescendingOrder(property: String) {
-		sortDescriptors.append(NSSortDescriptor(key: property, ascending: false))
+	public mutating func addDescendingOrder(fieldName: String) {
+		if let _ = T.fieldNamed(fieldName) {
+			sortDescriptors.append(NSSortDescriptor(key: fieldName, ascending: false))
+		} else {
+			assertionFailure("Cannot add order on field \(fieldName) of resource \(T.resourceType). No such field has been configured.")
+		}
 	}
 	
 	

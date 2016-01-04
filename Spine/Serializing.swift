@@ -60,10 +60,13 @@ and uses SerializationOperations and DeserialisationOperations for (de)s
 */
 protocol SerializerProtocol {
 	/// The resource factory used for dispensing resources.
-	var resourceFactory: ResourceFactory { get }
+	var resourceFactory: ResourceFactory { get set }
 	
 	/// The transformers used for transforming to and from the serialized representation.
-	var transformers: TransformerDirectory { get }
+	var valueFormatters: ValueFormatterRegistry { get set }
+	
+	/// The key formatter used for formatting field names to keys.
+	var keyFormatter: KeyFormatter { get set }
 	
 	/**
 	Deserializes the given data into a SerializationResult. This is a thin wrapper around
@@ -96,13 +99,18 @@ protocol SerializerProtocol {
 The built in serializer that (de)serializes according to the JSON:API specification.
 */
 class JSONSerializer: SerializerProtocol {
-	var resourceFactory = ResourceFactory()
-	var transformers = TransformerDirectory.defaultTransformerDirectory()
+	var resourceFactory: ResourceFactory
+	var valueFormatters: ValueFormatterRegistry
+	var keyFormatter: KeyFormatter
 	
+	init(resourceFactory: ResourceFactory = ResourceFactory(), valueFormatters: ValueFormatterRegistry = ValueFormatterRegistry.defaultRegistry(), keyFormatter: KeyFormatter = AsIsKeyFormatter()) {
+		self.resourceFactory = resourceFactory
+		self.valueFormatters = valueFormatters
+		self.keyFormatter = keyFormatter
+	}
 	
 	func deserializeData(data: NSData, mappingTargets: [Resource]? = nil) throws -> JSONAPIDocument {
-		let deserializeOperation = DeserializeOperation(data: data, resourceFactory: resourceFactory)
-		deserializeOperation.transformers = transformers
+		let deserializeOperation = DeserializeOperation(data: data, resourceFactory: resourceFactory, valueFormatters: valueFormatters, keyFormatter: keyFormatter)
 		
 		if let mappingTargets = mappingTargets {
 			deserializeOperation.addMappingTargets(mappingTargets)
@@ -119,9 +127,8 @@ class JSONSerializer: SerializerProtocol {
 	}
 	
 	func serializeResources(resources: [Resource], options: SerializationOptions = [.IncludeID]) -> NSData {
-		let serializeOperation = SerializeOperation(resources: resources)
+		let serializeOperation = SerializeOperation(resources: resources, valueFormatters: valueFormatters, keyFormatter: keyFormatter)
 		serializeOperation.options = options
-		serializeOperation.transformers = transformers
 		
 		serializeOperation.start()
 		return serializeOperation.result!

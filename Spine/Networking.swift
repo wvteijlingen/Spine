@@ -104,15 +104,15 @@ public class HTTPClient: NetworkClient {
 			
 			if let error = networkError {
 				// Network error
-				Spine.logError(.Networking, "\(request.URL) - \(error.localizedDescription)")
+				Spine.logError(.Networking, "\(request.URL!) - \(error.localizedDescription)")
 				
 			} else if let statusCode = response?.statusCode where 200 ... 299 ~= statusCode {
 				// Success
-				Spine.logInfo(.Networking, "\(statusCode): \(request.URL)")
+				Spine.logInfo(.Networking, "\(statusCode): \(request.URL!)")
 				
 			} else {
 				// API Error
-				Spine.logWarning(.Networking, "\(response?.statusCode): \(request.URL)")
+				Spine.logWarning(.Networking, "\(response!.statusCode): \(request.URL!)")
 			}
 			
 			if Spine.shouldLog(.Debug, domain: .Networking) {
