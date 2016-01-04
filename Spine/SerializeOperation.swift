@@ -127,7 +127,7 @@ class SerializeOperation: NSOperation {
 	- parameter resource:       The resource whose relationships to add.
 	*/
 	private func addRelationships(inout serializedData: [String: AnyObject], resource: Resource) {
-		for case let field as Relationship in resource.fields {
+		for case let field as Relationship in resource.fields where field.isReadOnly == false {
 			let key = field.serializedName
 			
 			Spine.logDebug(.Serializing, "Serializing relationship \(field) with name '\(field.name) as '\(key)'")
