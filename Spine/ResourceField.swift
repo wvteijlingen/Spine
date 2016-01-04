@@ -39,7 +39,7 @@ public class Field {
 	
 	var isReadOnly: Bool = false
 
-	public init() {}
+	private init() {}
 	
 	/**
 	Sets the serialized name.
@@ -63,7 +63,9 @@ public class Field {
 /**
  *  A basic attribute field.
  */
-public class Attribute: Field { }
+public class Attribute: Field {
+	override public init() {}
+}
 
 /**
  *  An URL attribute that maps to an NSURL property.
