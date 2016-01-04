@@ -193,7 +193,7 @@ class DeserializeOperation: NSOperation {
 		for case let field as Attribute in resource.fields {
 			let key = keyFormatter.format(field)
 			if let extractedValue: AnyObject = self.extractAttribute(serializedData, key: key) {
-				let formattedValue: AnyObject = self.valueFormatters.deserialize(extractedValue, forAttribute: field)
+				let formattedValue: AnyObject = self.valueFormatters.unformat(extractedValue, forAttribute: field)
 				resource.setValue(formattedValue, forField: field.name)
 			}
 		}

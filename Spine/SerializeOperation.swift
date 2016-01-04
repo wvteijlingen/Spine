@@ -95,7 +95,7 @@ class SerializeOperation: NSOperation {
 			
 			//TODO: Dirty checking
 			if let unformattedValue: AnyObject = resource.valueForField(field.name) {
-				addAttribute(&attributes, key: key, value: self.valueFormatters.serialize(unformattedValue, forAttribute: field))
+				addAttribute(&attributes, key: key, value: self.valueFormatters.format(unformattedValue, forAttribute: field))
 			} else {
 				addAttribute(&attributes, key: key, value: NSNull())
 			}
