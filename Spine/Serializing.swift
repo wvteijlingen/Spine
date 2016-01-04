@@ -65,6 +65,7 @@ protocol SerializerProtocol {
 	/// The transformers used for transforming to and from the serialized representation.
 	var valueFormatters: ValueFormatterRegistry { get set }
 	
+	/// The key formatter used for formatting field names to keys.
 	var keyFormatter: KeyFormatter { get set }
 	
 	/**

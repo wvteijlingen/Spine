@@ -297,9 +297,9 @@ public struct Query<T: Resource> {
 	// MARK: Sorting
 	
 	/**
-	Sort in ascending order by the the given property. Previously added properties precedence over this property.
+	Sort in ascending order by the the given field. Previously added field take precedence over this field.
 	
-	- parameter property: The property which to order by.
+	- parameter fieldName: The name of the field which to order by.
 	
 	- returns: The query
 	*/
@@ -312,9 +312,9 @@ public struct Query<T: Resource> {
 	}
 	
 	/**
-	Sort in descending order by the the given property. Previously added properties precedence over this property.
+	Sort in descending order by the the given field. Previously added field take precedence over this property.
 	
-	- parameter property: The property which to order by.
+	- parameter property: The name of the field which to order by.
 	
 	- returns: The query
 	*/
