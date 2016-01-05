@@ -97,7 +97,7 @@ class ConcurrentOperation: NSOperation {
 	var networkClient: NetworkClient {
 		return spine.networkClient
 	}
-	var serializer: JSONSerializer {
+	var serializer: Serializer {
 		return spine.serializer
 	}
 	
@@ -243,16 +243,27 @@ class SaveOperation: ConcurrentOperation {
 	}
 	
 	override func execute() {
-		let URL: NSURL, method: String, payload: NSData
+		let URL: NSURL
+		let method: String
+		let options: SerializationOptions
+		let payload: NSData
 
 		if isNewResource {
 			URL = router.URLForResourceType(resource.resourceType)
 			method = "POST"
-			payload = serializer.serializeResources([resource], options: [.IncludeToOne, .IncludeToMany])
+			options = [.IncludeToOne, .IncludeToMany]
 		} else {
 			URL = router.URLForQuery(Query(resource: resource))
 			method = "PATCH"
-			payload = serializer.serializeResources([resource])
+			options = [.IncludeID]
+		}
+		
+		do {
+			payload = try serializer.serializeResources([resource], options: options)
+		} catch let error as NSError {
+			self.result = Failable.Failure(error)
+			self.state = .Finished
+			return
 		}
 		
 		Spine.logInfo(.Spine, "Saving resource \(resource) using URL: \(URL)")

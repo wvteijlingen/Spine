@@ -22,7 +22,7 @@ public class Spine {
 	public let networkClient: NetworkClient
 	
 	/// The serializer to use for serializing and deserializing of JSON representations.
-	let serializer: JSONSerializer
+	let serializer: Serializer
 	
 	/// The key formatter to use for formatting field names to keys.
 	public var keyFormatter: KeyFormatter = DasherizedKeyFormatter() {
@@ -42,14 +42,13 @@ public class Spine {
 	Creates a new Spine instance using the given router and network client.
 	*/
 	public init(router: Router, networkClient: NetworkClient) {
-		if(router.keyFormatter == nil) {
-			router.keyFormatter = keyFormatter
-		}
-		
 		self.router = router
 		self.networkClient = networkClient
-		self.serializer = JSONSerializer(resourceFactory: ResourceFactory(), valueFormatters: ValueFormatterRegistry.defaultRegistry(), keyFormatter: keyFormatter)
+		self.serializer = Serializer(resourceFactory: ResourceFactory(), valueFormatters: ValueFormatterRegistry.defaultRegistry(), keyFormatter: keyFormatter)
 		self.operationQueue.name = "com.wardvanteijlingen.spine"
+		
+		self.router.keyFormatter = keyFormatter
+		self.serializer.keyFormatter = keyFormatter
 	}
 	
 	/**

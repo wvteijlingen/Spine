@@ -11,7 +11,7 @@ import XCTest
 import SwiftyJSON
 
 class SerializerTests: XCTestCase {
-	let serializer: JSONSerializer = JSONSerializer(keyFormatter: DasherizedKeyFormatter())
+	let serializer = Serializer(keyFormatter: DasherizedKeyFormatter())
 	
 	override func setUp() {
 		super.setUp()
@@ -39,7 +39,7 @@ class SerializingTests: SerializerTests {
 	}
 	
 	func serializedJSONWithOptions(options: SerializationOptions) -> JSON {
-		let serializedData = serializer.serializeResources([foo], options: options)
+		let serializedData = try! serializer.serializeResources([foo], options: options)
 		return JSON(data: serializedData)
 	}
 	
@@ -86,7 +86,7 @@ class SerializingTests: SerializerTests {
 	
 	func testSerializeSingleResourceWithoutToManyRelationships() {
 		let options:SerializationOptions = [.IncludeID, .IncludeToOne]
-		let serializedData = serializer.serializeResources([foo], options: options)
+		let serializedData = try! serializer.serializeResources([foo], options: options)
 		let json = JSON(data: serializedData)
 		
 		XCTAssertNotNil(json["data"]["relationships"]["to-many-attribute"].error, "Expected serialized to-many to be absent.")

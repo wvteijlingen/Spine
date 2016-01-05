@@ -7,7 +7,6 @@
 //
 
 import Foundation
-import SwiftyJSON
 
 /**
 A JSONAPIDocument represents a JSON API document containing
@@ -52,63 +51,43 @@ struct SerializationOptions: OptionSetType {
 }
 
 /**
-The SerializerProtocol declares methods and properties that a serializer must implement.
-
-The serializer is responsible for serializing and deserialing resources.
-It stores information about the Resource classes using a ResourceClassMap
-and uses SerializationOperations and DeserialisationOperations for (de)s
-*/
-protocol SerializerProtocol {
-	/// The resource factory used for dispensing resources.
-	var resourceFactory: ResourceFactory { get set }
-	
-	/// The transformers used for transforming to and from the serialized representation.
-	var valueFormatters: ValueFormatterRegistry { get set }
-	
-	/// The key formatter used for formatting field names to keys.
-	var keyFormatter: KeyFormatter { get set }
-	
-	/**
-	Deserializes the given data into a SerializationResult. This is a thin wrapper around
-	a DeserializeOperation that does the actual deserialization.
-	
-	Use this method if you want to deserialize onto existing Resource instances. Otherwise, use
-	the regular `deserializeData` method.
-	
-	- parameter data:  The data to deserialize.
-	- parameter store: A Store that contains Resource instances onto which data will be deserialize.
-	
-	- returns: A DeserializationResult that contains either a Store or an error.
-	*/
-	func deserializeData(data: NSData, mappingTargets: [Resource]?) throws -> JSONAPIDocument
-	
-	/**
-	Serializes the given Resources into a multidimensional dictionary/array structure
-	that can be passed to NSJSONSerialization.
-	
-	- parameter resources: The resources to serialize.
-	- parameter mode:      The serialization mode to use.
-	
-	- returns: A multidimensional dictionary/array structure.
-	*/
-
-	func serializeResources(resources: [Resource], options: SerializationOptions) -> NSData
-}
-
-/**
 The built in serializer that (de)serializes according to the JSON:API specification.
 */
-class JSONSerializer: SerializerProtocol {
+class Serializer {
+	/// The resource factory used for dispensing resources.
 	var resourceFactory: ResourceFactory
+	
+	/// The transformers used for transforming to and from the serialized representation.
 	var valueFormatters: ValueFormatterRegistry
+	
+	/// The key formatter used for formatting field names to keys.
 	var keyFormatter: KeyFormatter
 	
+	/**
+	Initializes a new JSONSerializer.
+	
+	- parameter resourceFactory: The resource factory to use for creating resource instances. Defaults to empty resource factory.
+	- parameter valueFormatters: ValueFormatterRegistry containing value formatters to use for (de)serializing.
+	- parameter keyFormatter:    KeyFormatter to use for (un)formatting keys. Defaults to the AsIsKeyFormatter.
+	
+	- returns: JSONSerializer.
+	*/
 	init(resourceFactory: ResourceFactory = ResourceFactory(), valueFormatters: ValueFormatterRegistry = ValueFormatterRegistry.defaultRegistry(), keyFormatter: KeyFormatter = AsIsKeyFormatter()) {
 		self.resourceFactory = resourceFactory
 		self.valueFormatters = valueFormatters
 		self.keyFormatter = keyFormatter
 	}
+
+	/**
+	Deserializes the given data into a JSONAPIDocument.
 	
+	- parameter data:           The data to deserialize.
+	- parameter mappingTargets: Optional resources onto which data will be deserialized.
+	
+	- throws: NSError that can occur in the deserialization.
+	
+	- returns: A JSONAPIDocument.
+	*/
 	func deserializeData(data: NSData, mappingTargets: [Resource]? = nil) throws -> JSONAPIDocument {
 		let deserializeOperation = DeserializeOperation(data: data, resourceFactory: resourceFactory, valueFormatters: valueFormatters, keyFormatter: keyFormatter)
 		
@@ -126,12 +105,43 @@ class JSONSerializer: SerializerProtocol {
 		}
 	}
 	
-	func serializeResources(resources: [Resource], options: SerializationOptions = [.IncludeID]) -> NSData {
-		let serializeOperation = SerializeOperation(resources: resources, valueFormatters: valueFormatters, keyFormatter: keyFormatter)
+	/**
+	Serializes the given JSON:API document into NSData. Currently only the main data is serialized.
+	
+	- parameter document: The JSONAPIDocument to serialize.
+	- parameter options:  The serialization options to use.
+	
+	- throws: NSError that can occur in the serialization.
+	
+	- returns: Serialized data.
+	*/
+	func serializeDocument(document: JSONAPIDocument, options: SerializationOptions = [.IncludeID]) throws -> NSData {
+		let serializeOperation = SerializeOperation(document: document, valueFormatters: valueFormatters, keyFormatter: keyFormatter)
 		serializeOperation.options = options
 		
 		serializeOperation.start()
-		return serializeOperation.result!
+		
+		switch serializeOperation.result! {
+		case .Failure(let error):
+			throw error
+		case .Success(let data):
+			return data
+		}
+	}
+	
+	/**
+	Serializes the given Resources into NSData.
+	
+	- parameter resources: The resources to serialize.
+	- parameter options:   The serialization options to use.
+	
+	- throws: NSError that can occur in the serialization.
+	
+	- returns: Serialized data.
+	*/
+	func serializeResources(resources: [Resource], options: SerializationOptions = [.IncludeID]) throws -> NSData {
+		let document = JSONAPIDocument(data: resources, included: nil, errors: nil, meta: nil, links: nil, jsonapi: nil)
+		return try serializeDocument(document, options: options)
 	}
 }
 

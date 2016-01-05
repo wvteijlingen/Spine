@@ -10,21 +10,15 @@ import Foundation
 import SwiftyJSON
 
 /**
-A DeserializeOperation is responsible for deserializing a single server response.
-The serialized data is converted into Resource instances using a layered process.
-
-This process is the inverse of that of the SerializeOperation.
+A DeserializeOperation deserializes JSON data in the form of NSData to a JSONAPIDocument.
 */
 class DeserializeOperation: NSOperation {
 	
 	// Input
-	let data: JSON
-	let valueFormatters: ValueFormatterRegistry
-	let resourceFactory: ResourceFactory
-	let keyFormatter: KeyFormatter
-	
-	// Output
-	var result: Failable<JSONAPIDocument>?
+	private let data: JSON
+	private let valueFormatters: ValueFormatterRegistry
+	private let resourceFactory: ResourceFactory
+	private let keyFormatter: KeyFormatter
 	
 	// Extracted objects
 	private var extractedPrimaryResources: [Resource] = []
@@ -33,8 +27,10 @@ class DeserializeOperation: NSOperation {
 	private var extractedMeta: [String: AnyObject]?
 	private var extractedLinks: [String: NSURL]?
 	private var extractedJSONAPI: [String: AnyObject]?
-	
 	private var resourcePool: [Resource] = []
+	
+	// Output
+	var result: Failable<JSONAPIDocument>?
 	
 	
 	// MARK: Initializers
@@ -236,11 +232,15 @@ class DeserializeOperation: NSOperation {
 			switch field {
 			case let toOne as ToOneRelationship:
 				if let linkedResource = extractToOneRelationship(serializedData, key: key, linkedType: toOne.linkedType.resourceType, resource: resource) {
-					resource.setValue(linkedResource, forField: toOne.name)
+					if linkedResource.isLoaded || resource.valueForField(toOne.name) == nil {
+						resource.setValue(linkedResource, forField: toOne.name)
+					}
 				}
 			case let toMany as ToManyRelationship:
 				if let linkedResourceCollection = extractToManyRelationship(serializedData, key: key, resource: resource) {
-					resource.setValue(linkedResourceCollection, forField: toMany.name)
+					if linkedResourceCollection.linkage != nil || resource.valueForField(toMany.name) == nil {
+						resource.setValue(linkedResourceCollection, forField: toMany.name)
+					}
 				}
 			default: ()
 			}

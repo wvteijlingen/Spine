@@ -10,10 +10,7 @@ import Foundation
 import SwiftyJSON
 
 /**
-A SerializeOperation is responsible for serializing resource into a multidimensional dictionary/array structure.
-The resouces are converted to their serialized form using a layered process.
-
-This process is the inverse of that of the DeserializeOperation.
+A SerializeOperation serializes a JSONAPIDocument to JSON data in the form of NSData.
 */
 class SerializeOperation: NSOperation {
 	private let resources: [Resource]
@@ -21,13 +18,13 @@ class SerializeOperation: NSOperation {
 	let keyFormatter: KeyFormatter
 	var options: SerializationOptions = [.IncludeID]
 	
-	var result: NSData?
+	var result: Failable<NSData>?
 	
 	
 	// MARK: Initializers
 	
-	init(resources: [Resource], valueFormatters: ValueFormatterRegistry, keyFormatter: KeyFormatter) {
-		self.resources = resources
+	init(document: JSONAPIDocument, valueFormatters: ValueFormatterRegistry, keyFormatter: KeyFormatter) {
+		self.resources = document.data ?? []
 		self.valueFormatters = valueFormatters
 		self.keyFormatter = keyFormatter
 	}
@@ -36,16 +33,21 @@ class SerializeOperation: NSOperation {
 	// MARK: NSOperation
 	
 	override func main() {
+		let JSON: AnyObject
+		
 		if resources.count == 1 {
-			let serializedData = serializeResource(resources.first!)
-			result = try? NSJSONSerialization.dataWithJSONObject(["data": serializedData], options: NSJSONWritingOptions(rawValue: 0))
-			
+			JSON = serializeResource(resources.first!)
 		} else  {
-			let data = resources.map { resource in
+			JSON = resources.map { resource in
 				self.serializeResource(resource)
 			}
-			
-			result = try? NSJSONSerialization.dataWithJSONObject(["data": data], options: NSJSONWritingOptions(rawValue: 0))
+		}
+		
+		do {
+			let serialized = try NSJSONSerialization.dataWithJSONObject(["data": JSON], options: NSJSONWritingOptions(rawValue: 0))
+			result = Failable.Success(serialized)
+		} catch let error as NSError {
+			result = Failable.Failure(error)
 		}
 	}
 	
