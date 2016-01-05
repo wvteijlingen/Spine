@@ -10,27 +10,27 @@ This library was born out of a hobby project. Some things are still lacking, one
 
 Supported features
 ==================
-| Feature                        | Enabled   | Note                                                        |
-| ------------------------------ | --------- | ----------------------------------------------------------- |
-| Fetching resources             | Yes       |                                                             |
-| Creating resources             | Yes       |                                                             |
-| Updating resources             | Yes       |                                                             |
-| Deleting resources             | Yes       |                                                             |
-| Top level metadata             | Yes        |                                                             |
-| Top level errors               | Yes       |                                                             |
-| Top level links                | Partially | Currently only pagination links are supported               |
-| Top level JSON API Object      | Yes        |                                                             |
-| Client generated ID's          | No        |                                                             |
-| Resource metadata              | Yes       |                                                             |
-| Custom resource links          | No        |                                                             |
-| Relationships                  | Yes       |                                                             |
-| Inclusion of related resources | Yes       |                                                             |
-| Sparse fieldsets               | Partially | Fetching only, all fields will be saved                     |
-| Sorting                        | Yes       |                                                             |
-| Filtering                      | Yes       | Supports custom filter strategies                           |
-| Pagination                     | Yes       | Offset based, cursor based and custom pagination strategies |
-| Bulk extension                 | No        |                                                             |
-| JSON Patch extension           | No        |                                                             |
+| Feature                        | Supported | Note                                            |
+| ------------------------------ | --------- | ----------------------------------------------- |
+| Fetching resources             | Yes       |                                                 |
+| Creating resources             | Yes       |                                                 |
+| Updating resources             | Yes       |                                                 |
+| Deleting resources             | Yes       |                                                 |
+| Top level metadata             | Yes       |                                                 |
+| Top level errors               | Yes       |                                                 |
+| Top level links                | Partially | Only pagination links are supported             |
+| Top level JSON API Object      | Yes       |                                                 |
+| Client generated ID's          | No        |                                                 |
+| Resource metadata              | Yes       |                                                 |
+| Custom resource links          | No        |                                                 |
+| Relationships                  | Yes       |                                                 |
+| Inclusion of related resources | Yes       |                                                 |
+| Sparse fieldsets               | Partially | Fetching only, all fields will be saved         |
+| Sorting                        | Yes       |                                                 |
+| Filtering                      | Yes       | Supports custom filter strategies               |
+| Pagination                     | Yes       | Offset, cursor and custom pagination strategies |
+| Bulk extension                 | No        |                                                 |
+| JSON Patch extension           | No        |                                                 |
 
 Installation
 ============
@@ -52,7 +52,7 @@ let spine = Spine(baseURL: baseURL)
 ### 2. Register your resource classes
 Every resource is mapped to a class that inherits from `Resource`. A subclass should override the variables `resourceType` and `fields`. The `resourceType` should contain the type of resource in plural form. The `fields` array should contain an array of fields that must be persisted. Fields that are not in this array are ignored.
 
-Each class must be registered using a factory method. This is done using the `registerResource` method.
+Each class must be using the `registerResource` method.
 
 ```swift
 // Resource class
@@ -71,16 +71,16 @@ class Post: Resource {
 		return fieldsFromDictionary([
 			"title": Attribute(),
 			"body": Attribute().serializeAs("content"),
-			"creationDate": DateAttribute().serializeAs("created-at"),
-			"author": ToOneRelationship(User.resourceType),
-			"comments": ToManyRelationship(Comment.resourceType)
+			"creationDate": DateAttribute(),
+			"author": ToOneRelationship(User),
+			"comments": ToManyRelationship(Comment)
 		])
 	}
 }
 
 
 // Register resource class
-spine.registerResource(Post.resourceType) { Post() }
+spine.registerResource(Post)
 ```
 
 ### 3. Fetching resources
@@ -103,7 +103,7 @@ spine.findOne("1", ofType: Post.self)  // Fetch a single posts with ID 1
 var query = Query(resourceType: Post.self)
 query.include("author", "comments", "comments.author") // Sideload relationships
 query.whereProperty("upvotes", equalTo: 8) // Only with 8 upvotes
-query.addAscendingOrder("created-at") // Sort on creation date
+query.addAscendingOrder("creationDate") // Sort on creation date
 
 spine.find(query).onSuccess { resources, meta, jsonapi in
     println("Fetched resource collection: \(resources)")
