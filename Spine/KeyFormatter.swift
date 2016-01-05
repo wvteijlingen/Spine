@@ -24,6 +24,8 @@ public struct AsIsKeyFormatter: KeyFormatter {
 	public func format(field: Field) -> String {
 		return field.serializedName
 	}
+	
+	public init() { }
 }
 
 /**
@@ -36,6 +38,8 @@ public struct DasherizedKeyFormatter: KeyFormatter {
 		let dashed = regex!.stringByReplacingMatchesInString(name, options: NSMatchingOptions(), range: NSMakeRange(0, name.characters.count), withTemplate: "-$1$2")
 		return dashed.lowercaseString.stringByTrimmingCharactersInSet(NSCharacterSet(charactersInString: "-"))
 	}
+	
+	public init() { }
 }
 
 /*
@@ -48,4 +52,6 @@ public struct UnderscoredKeyFormatter: KeyFormatter {
 		let underscored = regex!.stringByReplacingMatchesInString(name, options: NSMatchingOptions(), range: NSMakeRange(0, name.characters.count), withTemplate: "_$1$2")
 		return underscored.lowercaseString.stringByTrimmingCharactersInSet(NSCharacterSet(charactersInString: "_"))
 	}
+	
+	public init() { }
 }
