@@ -32,26 +32,32 @@ public struct AsIsKeyFormatter: KeyFormatter {
 DasherizedKeyFormatter formats field names as dasherized keys. Eg. someFieldName -> some-field-name.
 */
 public struct DasherizedKeyFormatter: KeyFormatter {
+	let regex: NSRegularExpression
+	
 	public func format(field: Field) -> String {
 		let name = field.serializedName
-		let regex = try? NSRegularExpression(pattern: "(?<=[a-z])([A-Z])|([A-Z])(?=[a-z])", options: NSRegularExpressionOptions())
-		let dashed = regex!.stringByReplacingMatchesInString(name, options: NSMatchingOptions(), range: NSMakeRange(0, name.characters.count), withTemplate: "-$1$2")
+		let dashed = regex.stringByReplacingMatchesInString(name, options: NSMatchingOptions(), range: NSMakeRange(0, name.characters.count), withTemplate: "-$1$2")
 		return dashed.lowercaseString.stringByTrimmingCharactersInSet(NSCharacterSet(charactersInString: "-"))
 	}
 	
-	public init() { }
+	public init() {
+		regex = try! NSRegularExpression(pattern: "(?<=[a-z])([A-Z])|([A-Z])(?=[a-z])", options: NSRegularExpressionOptions())
+	}
 }
 
 /*
 UnderscoredKeyFormatter formats field names as underscored keys. Eg. someFieldName -> some_field_name.
 */
 public struct UnderscoredKeyFormatter: KeyFormatter {
+	let regex: NSRegularExpression
+	
 	public func format(field: Field) -> String {
 		let name = field.serializedName
-		let regex = try? NSRegularExpression(pattern: "(?<=[a-z])([A-Z])|([A-Z])(?=[a-z])", options: NSRegularExpressionOptions())
-		let underscored = regex!.stringByReplacingMatchesInString(name, options: NSMatchingOptions(), range: NSMakeRange(0, name.characters.count), withTemplate: "_$1$2")
+		let underscored = regex.stringByReplacingMatchesInString(name, options: NSMatchingOptions(), range: NSMakeRange(0, name.characters.count), withTemplate: "_$1$2")
 		return underscored.lowercaseString.stringByTrimmingCharactersInSet(NSCharacterSet(charactersInString: "_"))
 	}
 	
-	public init() { }
+	public init() {
+		regex = try! NSRegularExpression(pattern: "(?<=[a-z])([A-Z])|([A-Z])(?=[a-z])", options: NSRegularExpressionOptions())
+	}
 }
