@@ -155,10 +155,14 @@ public class LinkedResourceCollection: ResourceCollection {
 	*/
 	public func addResource(resource: Resource) {
 		resources.append(resource)
-		addedResources.append(resource)
-		removedResources = removedResources.filter { $0 !== resource }
+
+		if let index = removedResources.indexOf(resource) {
+			removedResources.removeAtIndex(index)
+		} else {
+			addedResources.append(resource)
+		}
 	}
-	
+
 	/**
 	Adds the given resources to this collection. This marks the resources as added.
 	
@@ -177,10 +181,14 @@ public class LinkedResourceCollection: ResourceCollection {
 	*/
 	public func removeResource(resource: Resource) {
 		resources = resources.filter { $0 !== resource }
-		addedResources = addedResources.filter { $0 !== resource }
-		removedResources.append(resource)
+
+		if let index = addedResources.indexOf(resource) {
+			addedResources.removeAtIndex(index)
+		} else {
+			removedResources.append(resource)
+		}
 	}
-	
+
 	/**
 	Adds the given resource to this collection, but does not mark it as added.
 	
