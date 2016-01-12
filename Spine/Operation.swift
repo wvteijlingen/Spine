@@ -458,7 +458,7 @@ private class RelationshipRemoveOperation: RelationshipOperation {
 	
 	override func execute() {
 		let resourceCollection = resource.valueForField(relationship.name) as! LinkedResourceCollection
-		let relatedResources = resourceCollection.addedResources
+		let relatedResources = resourceCollection.removedResources
 		
 		guard !relatedResources.isEmpty else {
 			self.result = Failable()
@@ -466,6 +466,10 @@ private class RelationshipRemoveOperation: RelationshipOperation {
 			return
 		}
 
-		networkClient.request("DELETE", URL: resourceCollection.linkURL!, callback: handleNetworkResponse)
+		let linkage = convertResourcesToLinkage(relatedResources)
+
+		if let jsonPayload = try? NSJSONSerialization.dataWithJSONObject(["data": linkage], options: NSJSONWritingOptions(rawValue: 0)) {
+			networkClient.request("DELETE", URL: resourceCollection.linkURL!, payload: jsonPayload, callback: handleNetworkResponse)
+		}
 	}
 }
