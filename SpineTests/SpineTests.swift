@@ -365,8 +365,15 @@ class SaveTests: SpineTests {
 	
 	override func setUp() {
 		super.setUp()
+
 		fixture = JSONFixtureWithName("SingleFoo")
-		foo = Foo()
+
+		do {
+			let document = try spine.serializer.deserializeData(fixture.data)
+			foo = document.data!.first as! Foo
+		} catch let error as NSError {
+			XCTFail("Deserialisation failed with error: \(error).")
+		}
 	}
 	
 	func testItShouldPOSTWhenCreatingANewResource() {
@@ -376,6 +383,7 @@ class SaveTests: SpineTests {
 			return (responseData: self.fixture.data, statusCode: 201, error: nil)
 		}
 
+		foo = Foo()
 		let future = spine.save(foo)
 		let expectation = expectationWithDescription("")
 		assertFutureSuccess(future, expectation: expectation)
@@ -394,13 +402,12 @@ class SaveTests: SpineTests {
 			if(request.URL! == NSURL(string:"http://example.com/foos/1")!) {
 				resourcePatched = true
 			}
-			if(request.URL! == NSURL(string:"http://example.com/foos/1/links/to-one-attribute")!) {
+			if(request.URL! == NSURL(string:"http://example.com/foos/1/relationships/to-one-attribute")!) {
 				toOnePatched = true
 			}
 			return (responseData: self.fixture.data, statusCode: 201, error: nil)
 		}
-		
-		foo.id = "1"
+
 		let future = spine.save(foo)
 		let expectation = expectationWithDescription("")
 		assertFutureSuccess(future, expectation: expectation)
@@ -415,7 +422,6 @@ class SaveTests: SpineTests {
 	func testItShouldFailOnAPIError() {
 		HTTPClient.respondWith(400)
 		
-		let foo = Foo()
 		let expectation = expectationWithDescription("testCreateResourceWithAPIError")
 		let future = spine.save(foo)
 		assertFutureFailure(future, withErrorDomain: SpineServerErrorDomain, errorCode: 400, expectation: expectation)
@@ -428,7 +434,6 @@ class SaveTests: SpineTests {
 	func testItShouldFailOnNetworkError() {
 		HTTPClient.simulateNetworkErrorWithCode(999)
 		
-		let foo = Foo()
 		let expectation = expectationWithDescription("testDeleteResourceWithNetworkError")
 		let future = spine.save(foo)
 		assertFutureFailure(future, withErrorDomain: "SimulatedNetworkError", errorCode: 999, expectation: expectation)

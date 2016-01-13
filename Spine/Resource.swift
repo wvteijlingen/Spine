@@ -68,6 +68,9 @@ public class Resource: NSObject, NSCoding {
 	/// The metadata for this resource.
 	public var meta: [String: AnyObject]?
 	
+	/// The relationships dictionary for this resource.
+	public var relationships: [String: [String: AnyObject]]?
+	
 	public required override init() {
 		super.init()
 	}

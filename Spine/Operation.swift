@@ -408,8 +408,10 @@ private class RelationshipReplaceOperation: RelationshipOperation {
 		let linkage = convertResourcesToLinkage([relatedResource])
 		
 		if let jsonPayload = try? NSJSONSerialization.dataWithJSONObject(["data": linkage], options: NSJSONWritingOptions(rawValue: 0)) {
-			let URL = router.URLForRelationship(relationship, ofResource: resource)
-			networkClient.request("PATCH", URL: URL, payload: jsonPayload, callback: handleNetworkResponse)
+			if let links = resource.relationships![relationship.name]?["links"] as? NSDictionary {
+				let URL = NSURL(string: links["self"] as! String)
+				networkClient.request("PATCH", URL: URL!, payload: jsonPayload, callback: handleNetworkResponse)
+			}
 		}
 	}
 }
@@ -438,8 +440,7 @@ private class RelationshipAddOperation: RelationshipOperation {
 		let linkage = convertResourcesToLinkage(relatedResources)
 		
 		if let jsonPayload = try? NSJSONSerialization.dataWithJSONObject(["data": linkage], options: NSJSONWritingOptions(rawValue: 0)) {
-			let URL = router.URLForRelationship(relationship, ofResource: self.resource)
-			networkClient.request("POST", URL: URL, payload: jsonPayload, callback: handleNetworkResponse)
+			networkClient.request("POST", URL: resourceCollection.linkURL!, payload: jsonPayload, callback: handleNetworkResponse)
 		}
 	}
 }
@@ -464,8 +465,7 @@ private class RelationshipRemoveOperation: RelationshipOperation {
 			self.state = .Finished
 			return
 		}
-		
-		let URL = router.URLForRelationship(relationship, ofResource: self.resource)
-		networkClient.request("DELETE", URL: URL, callback: handleNetworkResponse)
+
+		networkClient.request("DELETE", URL: resourceCollection.linkURL!, callback: handleNetworkResponse)
 	}
 }
