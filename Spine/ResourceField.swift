@@ -25,7 +25,7 @@ public class Field {
 	/// however it should *never* be nil.
 	var name: String! = nil
 	
-	/// The name of the field as it appears in the JSON representation.
+	/// The name of the field that will be used for formatting to the JSON key.
 	/// This can be nil, in which case the regular name will be used.
 	var serializedName: String {
 		get {

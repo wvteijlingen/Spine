@@ -344,22 +344,47 @@ public struct Query<T: Resource> {
 
 // MARK: - Pagination
 
+/**
+The Pagination protocol is an empty protocol to which pagination configurations must adhere.
+*/
 public protocol Pagination { }
 
+/**
+Page based pagination is a pagination strategy that returns results based on pages of a fixed size.
+*/
 public struct PageBasedPagination: Pagination {
 	var pageNumber: Int
 	var pageSize: Int
 	
+	/**
+	Instantiates a new PageBasedPagination struct.
+	
+	- parameter pageNumber: The number of the page to return.
+	- parameter pageSize:   The size of each page.
+	
+	- returns: PageBasedPagination
+	*/
 	public init(pageNumber: Int, pageSize: Int) {
 		self.pageNumber = pageNumber
 		self.pageSize = pageSize
 	}
 }
 
+/**
+Offet based pagination is a pagination strategy that returns results based on an offset from the beginning of the result set.
+*/
 public struct OffsetBasedPagination: Pagination {
 	var offset: Int
 	var limit: Int
 	
+	/**
+	Instantiates a new OffsetBasedPagination struct.
+	
+	- parameter offset: The offset from the beginning of the result set.
+	- parameter limit:  The number of resources to return.
+	
+	- returns: OffsetBasedPagination
+	*/
 	public init(offset: Int, limit: Int) {
 		self.offset = offset
 		self.limit = limit
