@@ -89,8 +89,8 @@ class LinkedResourceCollectionTests: XCTestCase {
 		collection.addResourceAsExisting(foo)
 		
 		XCTAssert(collection.resources == [foo], "Expected collection to contain resource.")
-		XCTAssert(collection.addedResources.isEmpty , "Expected addedResources to be empty.")
-		XCTAssert(collection.removedResources.isEmpty , "Expected addedResources to be empty.")
+		XCTAssert(collection.addedResources.isEmpty, "Expected addedResources to be empty.")
+		XCTAssert(collection.removedResources.isEmpty, "Expected addedResources to be empty.")
 	}
 	
 	func testAdd() {
@@ -102,15 +102,40 @@ class LinkedResourceCollectionTests: XCTestCase {
 		XCTAssert(collection.resources == [foo], "Expected collection to contain resource.")
 		XCTAssert(collection.addedResources == [foo], "Expected addedResources to contain resource.")
 	}
-	
+
+	func testAddRemoved() {
+		let collection = LinkedResourceCollection(resourcesURL: nil, linkURL: nil, linkage: nil)
+		let foo = Foo()
+
+		collection.addResourceAsExisting(foo)
+		collection.removeResource(foo)
+		collection.addResource(foo)
+
+		XCTAssert(collection.resources == [foo], "Expected collection to contain resource.")
+		XCTAssert(collection.addedResources.isEmpty, "Expected addedResources to be empty.")
+		XCTAssert(collection.removedResources.isEmpty, "Expected removedResources to be empty.")
+	}
+
 	func testRemove() {
 		let collection = LinkedResourceCollection(resourcesURL: nil, linkURL: nil, linkage: nil)
 		let foo = Foo()
 		
-		collection.addResource(foo)
+		collection.addResourceAsExisting(foo)
 		collection.removeResource(foo)
 		
 		XCTAssert(collection.resources.isEmpty, "Expected collection to be empty.")
-		XCTAssert(collection.removedResources == [foo] , "Expected removedResource to contain resource.")
+		XCTAssert(collection.removedResources == [foo], "Expected removedResources to contain resource.")
+	}
+
+	func testRemoveAdded() {
+		let collection = LinkedResourceCollection(resourcesURL: nil, linkURL: nil, linkage: nil)
+		let foo = Foo()
+
+		collection.addResource(foo)
+		collection.removeResource(foo)
+
+		XCTAssert(collection.resources.isEmpty, "Expected collection to be empty.")
+		XCTAssert(collection.addedResources.isEmpty, "Expected addedResources to be empty.")
+		XCTAssert(collection.removedResources.isEmpty, "Expected removedResources to be empty.")
 	}
 }
