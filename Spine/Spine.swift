@@ -22,7 +22,7 @@ public class Spine {
 	public let networkClient: NetworkClient
 	
 	/// The serializer to use for serializing and deserializing of JSON representations.
-	let serializer: Serializer
+	let serializer: Serializer = Serializer()
 	
 	/// The key formatter to use for formatting field names to keys.
 	public var keyFormatter: KeyFormatter = DasherizedKeyFormatter() {
@@ -44,7 +44,6 @@ public class Spine {
 	public init(router: Router, networkClient: NetworkClient) {
 		self.router = router
 		self.networkClient = networkClient
-		self.serializer = Serializer(resourceFactory: ResourceFactory(), valueFormatters: ValueFormatterRegistry.defaultRegistry(), keyFormatter: keyFormatter)
 		self.operationQueue.name = "com.wardvanteijlingen.spine"
 		
 		self.router.keyFormatter = keyFormatter
@@ -415,22 +414,7 @@ public extension Spine {
 	- parameter resourceClass: The resource class to register.
 	*/
 	func registerResource(resourceClass: Resource.Type) {
-		serializer.resourceFactory.registerResource(resourceClass.resourceType, factory: {
-			resourceClass.init()
-		})
-	}
-	
-	/**
-	Registers a factory function `factory` for instantiating resources of type `type`.
-	
-	You should generally use the `registerResource(resourceClass:)` method,
-	but you can use this method if you need to do some custom instantiation.
-	
-	- parameter type:    The resource type to register the factory function for.
-	- parameter factory: The factory method that returns an instance of a resource.
-	*/
-	func registerResource(type: String, factory: () -> Resource) {
-		serializer.resourceFactory.registerResource(type, factory: factory)
+		serializer.registerResource(resourceClass)
 	}
 	
 	/**
@@ -439,7 +423,7 @@ public extension Spine {
 	- parameter transformer: The Transformer to register.
 	*/
 	func registerValueFormatter<T: ValueFormatter>(formatter: T) {
-		serializer.valueFormatters.registerFormatter(formatter)
+		serializer.registerValueFormatter(formatter)
 	}
 }
 
