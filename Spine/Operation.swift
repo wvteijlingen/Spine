@@ -319,8 +319,8 @@ class SaveOperation: ConcurrentOperation {
 	private func updateRelationships() {
 		self.relationshipOperationQueue.addObserver(self, forKeyPath: "operations", options: NSKeyValueObservingOptions(), context: nil)
 		
-		let completionHandler: (result: Failable<Void>) -> Void = { result in
-			if let error = result.error {
+		let completionHandler: (result: Failable<Void>?) -> Void = { result in
+			if let error = result?.error {
 				self.relationshipOperationQueue.cancelAllOperations()
 				self.result = Failable(error)
 			}
@@ -331,21 +331,21 @@ class SaveOperation: ConcurrentOperation {
 			case let toOne as ToOneRelationship:
 				if resource.valueForField(toOne.name) != nil {
 					let operation = RelationshipToOneUpdateOperation(resource: resource, relationship: toOne, spine: spine)
-					operation.completionBlock = { [unowned operation] in completionHandler(result: operation.result!) }
+					operation.completionBlock = { [unowned operation] in completionHandler(result: operation.result) }
 					relationshipOperationQueue.addOperation(operation)
 				} else {
 					let operation = RelationshipToOneRemoveOperation(resource: resource, relationship: toOne, spine: spine)
-					operation.completionBlock = { [unowned operation] in completionHandler(result: operation.result!) }
+					operation.completionBlock = { [unowned operation] in completionHandler(result: operation.result) }
 					relationshipOperationQueue.addOperation(operation)
 				}
 
 			case let toMany as ToManyRelationship:
 				let addOperation = RelationshipToManyAddOperation(resource: resource, relationship: toMany, spine: spine)
-				addOperation.completionBlock = { [unowned addOperation] in completionHandler(result: addOperation.result!) }
+				addOperation.completionBlock = { [unowned addOperation] in completionHandler(result: addOperation.result) }
 				relationshipOperationQueue.addOperation(addOperation)
 				
 				let removeOperation = RelationshipToManyRemoveOperation(resource: resource, relationship: toMany, spine: spine)
-				removeOperation.completionBlock = { [unowned removeOperation] in completionHandler(result: removeOperation.result!) }
+				removeOperation.completionBlock = { [unowned removeOperation] in completionHandler(result: removeOperation.result) }
 				relationshipOperationQueue.addOperation(removeOperation)
 			default: ()
 			}
@@ -359,8 +359,11 @@ class SaveOperation: ConcurrentOperation {
 		}
 		
 		if queue.operationCount == 0 {
-			self.deserializeIntoResource()
-			self.result = Failable.Success()
+			if result == nil {
+				self.deserializeIntoResource()
+				self.result = Failable.Success()
+			}
+
 			self.state = .Finished
 		}
 	}

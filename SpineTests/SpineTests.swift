@@ -560,6 +560,26 @@ class SaveRelationshipsTests: SpineTests {
 		}
 	}
 
+	func testItShouldFailOnAPIError() {
+		HTTPClient.handler = { request, payload in
+			print(request.URL!)
+			if(request.HTTPMethod! == "DELETE" && request.URL! == NSURL(string: "http://example.com/foos/1/relationships/to-one-attribute")!) {
+				return (responseData: nil, statusCode: 422, error: NSError(domain: "SimulatedAPIError", code: 422, userInfo: nil))
+			}
+			return (responseData: self.fixture.data, statusCode: 201, error: nil)
+		}
+
+		foo.toOneAttribute = nil
+
+		let expectation = expectationWithDescription("SimulatedAPIError")
+		let future = spine.save(foo)
+		assertFutureFailure(future, withErrorDomain: "SimulatedAPIError", errorCode: 422, expectation: expectation)
+
+		waitForExpectationsWithTimeout(10) { error in
+			XCTAssertNil(error, "\(error)")
+		}
+	}
+
 }
 
 class PaginatingTests: SpineTests {
