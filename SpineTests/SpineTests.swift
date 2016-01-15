@@ -395,15 +395,11 @@ class SaveTests: SpineTests {
 
 	func testItShouldPATCHWhenUpdatingAResource() {
 		var resourcePatched = false
-		var toOnePatched = false
 		
 		HTTPClient.handler = { request, payload in
 			XCTAssertEqual(request.HTTPMethod!, "PATCH", "HTTP method not as expected.")
-			if(request.URL! == NSURL(string:"http://example.com/foos/1")!) {
+			if(request.URL! == NSURL(string: "http://example.com/foos/1")!) {
 				resourcePatched = true
-			}
-			if(request.URL! == NSURL(string:"http://example.com/foos/1/relationships/to-one-attribute")!) {
-				toOnePatched = true
 			}
 			return (responseData: self.fixture.data, statusCode: 201, error: nil)
 		}
@@ -415,7 +411,6 @@ class SaveTests: SpineTests {
 		waitForExpectationsWithTimeout(10) { error in
 			XCTAssertNil(error, "\(error)")
 			XCTAssertTrue(resourcePatched)
-			XCTAssertTrue(toOnePatched)
 		}
 	}
 	
@@ -444,6 +439,128 @@ class SaveTests: SpineTests {
 	}
 }
 
+class SaveRelationshipsTests: SpineTests {
+
+	var fixture: (data: NSData, json: JSON)!
+	var foo: Foo!
+
+	override func setUp() {
+		super.setUp()
+
+		fixture = JSONFixtureWithName("SingleFooIncludingBars")
+
+		do {
+			let document = try spine.serializer.deserializeData(fixture.data)
+			foo = document.data!.first as! Foo
+		} catch let error as NSError {
+			XCTFail("Deserialisation failed with error: \(error).")
+		}
+	}
+
+	func testItShouldPATCHToOne() {
+		var relationshipUpdated = false
+
+		HTTPClient.handler = { request, payload in
+			if(request.HTTPMethod! == "PATCH" && request.URL! == NSURL(string: "http://example.com/foos/1/relationships/to-one-attribute")!) {
+				let data = JSON(data: payload!)["data"].dictionary!
+				if data["type"]!.string == "bars" && data["id"]!.string == "10" {
+					relationshipUpdated = true
+				}
+			}
+			return (responseData: self.fixture.data, statusCode: 201, error: nil)
+		}
+
+		let future = spine.save(foo)
+		let expectation = expectationWithDescription("")
+		assertFutureSuccess(future, expectation: expectation)
+
+		waitForExpectationsWithTimeout(10) { error in
+			XCTAssertNil(error, "\(error)")
+			XCTAssertTrue(relationshipUpdated)
+		}
+	}
+
+	func testItShouldDELETEToOne() {
+		var relationshipUpdated = false
+
+		HTTPClient.handler = { request, payload in
+			if(request.HTTPMethod! == "DELETE" && request.URL! == NSURL(string: "http://example.com/foos/1/relationships/to-one-attribute")!) {
+				if payload == nil {
+					relationshipUpdated = true
+				}
+			}
+			return (responseData: self.fixture.data, statusCode: 201, error: nil)
+		}
+
+		foo.toOneAttribute = nil
+
+		let future = spine.save(foo)
+		let expectation = expectationWithDescription("")
+		assertFutureSuccess(future, expectation: expectation)
+
+		waitForExpectationsWithTimeout(10) { error in
+			XCTAssertNil(error, "\(error)")
+			XCTAssertTrue(relationshipUpdated)
+		}
+	}
+
+	func testItShouldPOSTToMany() {
+		var relationshipUpdated = false
+
+		HTTPClient.handler = { request, payload in
+			if(request.HTTPMethod! == "POST" && request.URL! == NSURL(string: "http://example.com/foos/1/relationships/to-many-attribute")!) {
+				let data = JSON(data: payload!)["data"].array!
+				XCTAssertEqual(data.count, 1, "Expected data count to be 1.")
+
+				if data[0]["type"].string == "bars" && data[0]["id"].string == "13" {
+					relationshipUpdated = true
+				}
+			}
+			return (responseData: self.fixture.data, statusCode: 201, error: nil)
+		}
+
+		let bar = Bar(id: "13")
+		foo.toManyAttribute!.linkResource(bar)
+
+		let future = spine.save(foo)
+		let expectation = expectationWithDescription("")
+		assertFutureSuccess(future, expectation: expectation)
+
+		waitForExpectationsWithTimeout(10) { error in
+			XCTAssertNil(error, "\(error)")
+			XCTAssertTrue(relationshipUpdated)
+		}
+	}
+
+	func testItShouldDELETEToMany() {
+		var relationshipUpdated = false
+
+		HTTPClient.handler = { request, payload in
+			if(request.HTTPMethod! == "DELETE" && request.URL! == NSURL(string: "http://example.com/foos/1/relationships/to-many-attribute")!) {
+				let data = JSON(data: payload!)["data"].array!
+				XCTAssertEqual(data.count, 1, "Expected data count to be 1.")
+
+				if data[0]["type"].string == "bars" && data[0]["id"].string == "11" {
+					relationshipUpdated = true
+				}
+			}
+			return (responseData: self.fixture.data, statusCode: 201, error: nil)
+		}
+
+		let bar = foo.toManyAttribute!.resources.first!
+		foo.toManyAttribute!.unlinkResource(bar)
+
+		let future = spine.save(foo)
+		let expectation = expectationWithDescription("")
+		assertFutureSuccess(future, expectation: expectation)
+
+		waitForExpectationsWithTimeout(10) { error in
+			XCTAssertNil(error, "\(error)")
+			XCTAssertTrue(relationshipUpdated)
+		}
+	}
+
+}
 
 class PaginatingTests: SpineTests {
 	func testLoadNextPageInCollection() {
