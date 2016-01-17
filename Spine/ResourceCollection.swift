@@ -9,11 +9,7 @@
 import Foundation
 import BrightFutures
 
-/**
-A ResourceCollection represents a collection of resources.
-It contains a URL where the resources can be fetched.
-For collections that can be paginated, pagination data is stored as well.
-*/
+/// A ResourceCollection represents a collection of resources.
 public class ResourceCollection: NSObject, NSCoding {
 	/// Whether the resources for this collection are loaded
 	public var isLoaded: Bool = false
@@ -72,8 +68,8 @@ public class ResourceCollection: NSObject, NSCoding {
 		return resources[index]
 	}
 	
-	/// Returns a loaded resource identified by the given type and id,
-	/// or nil if no loaded resource was found.
+	/// Returns a resource identified by the given type and id,
+	/// or nil if no resource was found.
 	public subscript (type: String, id: String) -> Resource? {
 		return resources.filter { $0.id == id && $0.resourceType == type }.first
 	}
@@ -81,6 +77,14 @@ public class ResourceCollection: NSObject, NSCoding {
 	/// Returns how many resources are loaded.
 	public var count: Int {
 		return resources.count
+	}
+	
+	// MARK: Mutators
+	
+	/// Append `resource` to the collection.
+	public func appendResource(resource: Resource) {
+		assert(resource.id != nil, "Cannot appendResource resource that hasn't been persisted yet.")
+		resources.append(resource)
 	}
 }
 
@@ -92,14 +96,11 @@ extension ResourceCollection: SequenceType {
 	}
 }
 
-/**
-A LinkedResourceCollection represents a collection of resources that is linked from another resource.
-The main differences with ResourceCollection is that it is mutable,
-and the addition of `linkage`, and a self `URL` property.
-
-A LinkedResourceCollection keeps track of resources that are added to and removed from the collection.
-This allows Spine to make partial updates to the collection when it is persisted.
-*/
+/// `LinkedResourceCollection` represents a collection of resources that is linked from another resource.
+/// On top of `ResourceCollection` it offers mutability, `linkage` and a self `URL` properties.
+///
+/// A `LinkedResourceCollection` keeps track of resources that are linked and unlinked from the collection.
+/// This allows Spine to make partial updates to the collection when it the parent resource is persisted.
 public class LinkedResourceCollection: ResourceCollection {
 	/// The type/id pairs of resources present in this link.
 	public var linkage: [ResourceIdentifier]?
@@ -148,54 +149,58 @@ public class LinkedResourceCollection: ResourceCollection {
 	
 	// MARK: Mutators
 	
-	/**
-	Adds the given resource to this collection. This marks the resource as added.
-	
-	- parameter resource: The resource to add.
-	*/
-	public func addResource(resource: Resource) {
+	/// Link `resource` to the parent resource by appending it to the collection.
+	/// This marks the resource as newly linked. The relationship will be persisted when
+	/// the parent resource is saved.
+	public func linkResource(resource: Resource) {
+		assert(resource.id != nil, "Cannot link resource that hasn't been persisted yet.")
+		
 		resources.append(resource)
-
+		
 		if let index = removedResources.indexOf(resource) {
 			removedResources.removeAtIndex(index)
 		} else {
 			addedResources.append(resource)
 		}
 	}
-
-	/**
-	Adds the given resources to this collection. This marks the resources as added.
 	
-	- parameter resources: The resources to add.
-	*/
-	public func addResources(resources: [Resource]) {
-		for resource in resources {
-			addResource(resource)
-		}
-	}
-
-	/**
-	Removes the given resource from this collection. This marks the resource as removed.
-	
-	- parameter resource: The resource to remove.
-	*/
-	public func removeResource(resource: Resource) {
+	/// Unlink `resource` from the parent resource by removing it from the collection.
+	/// This marks the resource as unlinked. The relationship will be persisted when
+	/// the parent resource is saved.
+	public func unlinkResource(resource: Resource) {
+		assert(resource.id != nil, "Cannot unlink resource that hasn't been persisted yet.")
+		
 		resources = resources.filter { $0 !== resource }
-
+		
 		if let index = addedResources.indexOf(resource) {
 			addedResources.removeAtIndex(index)
 		} else {
 			removedResources.append(resource)
 		}
 	}
-
-	/**
-	Adds the given resource to this collection, but does not mark it as added.
 	
-	- parameter resource: The resource to add.
-	*/
-	internal func addResourceAsExisting(resource: Resource) {
-		resources.append(resource)
+	/// Link `resources` to the parent resource by appending them to the collection.
+	/// This marks the resources as newly linked. The relationship will be persisted when
+	/// the parent resource is saved.
+	public func linkResources(resources: [Resource]) {
+		for resource in resources {
+			linkResource(resource)
+		}
+	}
+	
+	/// Unlink `resources` from the parent resource by removing then from the collection.
+	/// This marks the resources as unlinked. The relationship will be persisted when
+	/// the parent resource is saved.
+	public func unlinkResources(resource: [Resource]) {
+		for resource in resources {
+			unlinkResource(resource)
+		}
+	}
+	
+	/// Append `resource` to the collection as if it was already linked.
+	/// If it was previously linked or unlinked, this status will be removed.
+	public override func appendResource(resource: Resource) {
+		super.appendResource(resource)
 		removedResources = removedResources.filter { $0 !== resource }
 		addedResources = addedResources.filter { $0 !== resource }
 	}
