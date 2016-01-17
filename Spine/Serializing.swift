@@ -114,22 +114,22 @@ resources, errors, metadata, links and jsonapi data.
 */
 public struct JSONAPIDocument {
 	/// Primary resources extracted from the response.
-	var data: [Resource]?
+	public var data: [Resource]?
 	
 	/// Included resources extracted from the response.
-	var included: [Resource]?
+	public var included: [Resource]?
 	
 	/// Errors extracted from the response.
-	var errors: [NSError]?
+	public var errors: [NSError]?
 	
 	/// Metadata extracted from the reponse.
-	var meta: [String: AnyObject]?
+	public var meta: [String: AnyObject]?
 	
 	/// Links extracted from the response.
-	var links: [String: NSURL]?
+	public var links: [String: NSURL]?
 	
 	/// JSONAPI information extracted from the response.
-	var jsonapi: [String: AnyObject]?
+	public var jsonapi: [String: AnyObject]?
 }
 
 public struct SerializationOptions: OptionSetType {

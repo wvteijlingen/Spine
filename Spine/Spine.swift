@@ -22,7 +22,7 @@ public class Spine {
 	public let networkClient: NetworkClient
 	
 	/// The serializer to use for serializing and deserializing of JSON representations.
-	let serializer: Serializer = Serializer()
+	public let serializer: Serializer = Serializer()
 	
 	/// The key formatter to use for formatting field names to keys.
 	public var keyFormatter: KeyFormatter = DasherizedKeyFormatter() {
