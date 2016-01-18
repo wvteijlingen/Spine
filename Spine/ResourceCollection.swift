@@ -86,6 +86,13 @@ public class ResourceCollection: NSObject, NSCoding {
 		assert(resource.id != nil, "Cannot appendResource resource that hasn't been persisted yet.")
 		resources.append(resource)
 	}
+	
+	/// Append `resources` to the collection.
+	public func appendResources(resources: [Resource]) {
+		for resource in resources {
+			appendResource(resource)
+		}
+	}
 }
 
 extension ResourceCollection: SequenceType {
@@ -197,11 +204,19 @@ public class LinkedResourceCollection: ResourceCollection {
 		}
 	}
 	
-	/// Append `resource` to the collection as if it was already linked.
+	/// Append `resource` to the collection as if it is already linked.
 	/// If it was previously linked or unlinked, this status will be removed.
 	public override func appendResource(resource: Resource) {
 		super.appendResource(resource)
 		removedResources = removedResources.filter { $0 !== resource }
 		addedResources = addedResources.filter { $0 !== resource }
+	}
+	
+	/// Append `resources` to the collection as if they are already linked.
+	/// If a resource was previously linked or unlinked, this status will be removed.
+	public override func appendResources(resources: [Resource]) {
+		for resource in resources {
+			appendResource(resource)
+		}
 	}
 }
