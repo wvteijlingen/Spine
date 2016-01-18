@@ -9,7 +9,7 @@
 import Foundation
 
 /**
-The built in serializer that (de)serializes according to the JSON:API specification.
+Serializer (de)serializes according to the JSON:API specification.
 */
 public class Serializer {
 	/// The resource factory used for dispensing resources.
@@ -137,14 +137,14 @@ public struct SerializationOptions: OptionSetType {
 	public init(rawValue: Int) { self.rawValue = rawValue }
 	
 	/// Whether to include the resource ID in the serialized representation.
-	static let IncludeID = SerializationOptions(rawValue: 1 << 1)
+	public static let IncludeID = SerializationOptions(rawValue: 1 << 1)
 	
 	/// Whether to only serialize fields that are dirty.
-	static let DirtyFieldsOnly = SerializationOptions(rawValue: 1 << 2)
+	public static let DirtyFieldsOnly = SerializationOptions(rawValue: 1 << 2)
 	
 	/// Whether to include to-many linked resources in the serialized representation.
-	static let IncludeToMany = SerializationOptions(rawValue: 1 << 3)
+	public static let IncludeToMany = SerializationOptions(rawValue: 1 << 3)
 	
 	/// Whether to include to-one linked resources in the serialized representation.
-	static let IncludeToOne = SerializationOptions(rawValue: 1 << 4)
+	public static let IncludeToOne = SerializationOptions(rawValue: 1 << 4)
 }
