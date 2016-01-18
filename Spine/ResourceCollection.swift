@@ -51,12 +51,16 @@ public class ResourceCollection: NSObject, NSCoding {
 	public required init?(coder: NSCoder) {
 		isLoaded = coder.decodeBoolForKey("isLoaded")
 		resourcesURL = coder.decodeObjectForKey("resourcesURL") as? NSURL
+		nextURL = coder.decodeObjectForKey("nextURL") as? NSURL
+		previousURL = coder.decodeObjectForKey("previousURL") as? NSURL
 		resources = coder.decodeObjectForKey("resources") as! [Resource]
 	}
 	
 	public func encodeWithCoder(coder: NSCoder) {
 		coder.encodeBool(isLoaded, forKey: "isLoaded")
 		coder.encodeObject(resourcesURL, forKey: "resourcesURL")
+		coder.encodeObject(nextURL, forKey: "nextURL")
+		coder.encodeObject(previousURL, forKey: "previousURL")
 		coder.encodeObject(resources, forKey: "resources")
 	}
 	
