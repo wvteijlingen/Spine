@@ -1,5 +1,5 @@
 //
-//  Mapping.swift
+//  Serializing.swift
 //  Spine
 //
 //  Created by Ward van Teijlingen on 23-08-14.
@@ -9,75 +9,20 @@
 import Foundation
 
 /**
-A JSONAPIDocument represents a JSON API document containing
-resources, errors, metadata, links and jsonapi data.
+Serializer (de)serializes according to the JSON:API specification.
 */
-struct JSONAPIDocument {
-	/// Primary resources extracted from the response.
-	var data: [Resource]?
-	
-	/// Included resources extracted from the response.
-	var included: [Resource]?
-	
-	/// Errors extracted from the response.
-	var errors: [NSError]?
-	
-	/// Metadata extracted from the reponse.
-	var meta: [String: AnyObject]?
-	
-	/// Links extracted from the response.
-	var links: [String: NSURL]?
-	
-	/// JSONAPI information extracted from the response.
-	var jsonapi: [String: AnyObject]?
-}
-
-
-struct SerializationOptions: OptionSetType {
-	let rawValue: Int
-	init(rawValue: Int) { self.rawValue = rawValue }
-	
-	/// Whether to include the resource ID in the serialized representation.
-	static let IncludeID = SerializationOptions(rawValue: 1 << 1)
-	
-	/// Whether to only serialize fields that are dirty.
-	static let DirtyFieldsOnly = SerializationOptions(rawValue: 1 << 2)
-	
-	/// Whether to include to-many linked resources in the serialized representation.
-	static let IncludeToMany = SerializationOptions(rawValue: 1 << 3)
-	
-	/// Whether to include to-one linked resources in the serialized representation.
-	static let IncludeToOne = SerializationOptions(rawValue: 1 << 4)
-}
-
-/**
-The built in serializer that (de)serializes according to the JSON:API specification.
-*/
-class Serializer {
+public class Serializer {
 	/// The resource factory used for dispensing resources.
-	var resourceFactory: ResourceFactory
+	private var resourceFactory = ResourceFactory()
 	
 	/// The transformers used for transforming to and from the serialized representation.
-	var valueFormatters: ValueFormatterRegistry
+	private var valueFormatters = ValueFormatterRegistry.defaultRegistry()
 	
 	/// The key formatter used for formatting field names to keys.
-	var keyFormatter: KeyFormatter
+	public var keyFormatter: KeyFormatter = AsIsKeyFormatter()
 	
-	/**
-	Initializes a new JSONSerializer.
+	public init() {}
 	
-	- parameter resourceFactory: The resource factory to use for creating resource instances. Defaults to empty resource factory.
-	- parameter valueFormatters: ValueFormatterRegistry containing value formatters to use for (de)serializing.
-	- parameter keyFormatter:    KeyFormatter to use for (un)formatting keys. Defaults to the AsIsKeyFormatter.
-	
-	- returns: JSONSerializer.
-	*/
-	init(resourceFactory: ResourceFactory = ResourceFactory(), valueFormatters: ValueFormatterRegistry = ValueFormatterRegistry.defaultRegistry(), keyFormatter: KeyFormatter = AsIsKeyFormatter()) {
-		self.resourceFactory = resourceFactory
-		self.valueFormatters = valueFormatters
-		self.keyFormatter = keyFormatter
-	}
-
 	/**
 	Deserializes the given data into a JSONAPIDocument.
 	
@@ -88,7 +33,7 @@ class Serializer {
 	
 	- returns: A JSONAPIDocument.
 	*/
-	func deserializeData(data: NSData, mappingTargets: [Resource]? = nil) throws -> JSONAPIDocument {
+	public func deserializeData(data: NSData, mappingTargets: [Resource]? = nil) throws -> JSONAPIDocument {
 		let deserializeOperation = DeserializeOperation(data: data, resourceFactory: resourceFactory, valueFormatters: valueFormatters, keyFormatter: keyFormatter)
 		
 		if let mappingTargets = mappingTargets {
@@ -115,7 +60,7 @@ class Serializer {
 	
 	- returns: Serialized data.
 	*/
-	func serializeDocument(document: JSONAPIDocument, options: SerializationOptions = [.IncludeID]) throws -> NSData {
+	public func serializeDocument(document: JSONAPIDocument, options: SerializationOptions = [.IncludeID]) throws -> NSData {
 		let serializeOperation = SerializeOperation(document: document, valueFormatters: valueFormatters, keyFormatter: keyFormatter)
 		serializeOperation.options = options
 		
@@ -139,72 +84,67 @@ class Serializer {
 	
 	- returns: Serialized data.
 	*/
-	func serializeResources(resources: [Resource], options: SerializationOptions = [.IncludeID]) throws -> NSData {
+	public func serializeResources(resources: [Resource], options: SerializationOptions = [.IncludeID]) throws -> NSData {
 		let document = JSONAPIDocument(data: resources, included: nil, errors: nil, meta: nil, links: nil, jsonapi: nil)
 		return try serializeDocument(document, options: options)
+	}
+
+	/**
+	Registers a resource class.
+	
+	- parameter resourceClass: The resource class to register.
+	*/
+	public func registerResource(resourceClass: Resource.Type) {
+		resourceFactory.registerResource(resourceClass)
+	}
+	
+	/**
+	Registers transformer `transformer`.
+	
+	- parameter transformer: The Transformer to register.
+	*/
+	public func registerValueFormatter<T: ValueFormatter>(formatter: T) {
+		valueFormatters.registerFormatter(formatter)
 	}
 }
 
 /**
-A ResourceFactory creates resources from given factory funtions.
+A JSONAPIDocument represents a JSON API document containing
+resources, errors, metadata, links and jsonapi data.
 */
-struct ResourceFactory {
+public struct JSONAPIDocument {
+	/// Primary resources extracted from the response.
+	public var data: [Resource]?
 	
-	private var factoryFunctions: [ResourceType: () -> Resource] = [:]
+	/// Included resources extracted from the response.
+	public var included: [Resource]?
+	
+	/// Errors extracted from the response.
+	public var errors: [NSError]?
+	
+	/// Metadata extracted from the reponse.
+	public var meta: [String: AnyObject]?
+	
+	/// Links extracted from the response.
+	public var links: [String: NSURL]?
+	
+	/// JSONAPI information extracted from the response.
+	public var jsonapi: [String: AnyObject]?
+}
 
-	/**
-	Registers a given factory function that creates resource with a given type.
-	Registering a function for an already registered resource type will override that factory function.
+public struct SerializationOptions: OptionSetType {
+	public let rawValue: Int
+	public init(rawValue: Int) { self.rawValue = rawValue }
 	
-	- parameter type:    The resource type for which to register a factory function.
-	- parameter factory: The factory function that returns a resource.
-	*/
-	mutating func registerResource(type: ResourceType, factory: () -> Resource) {
-		factoryFunctions[type] = factory
-	}
-
-	/**
-	Instantiates a resource with the given type, by using a registered factory function.
+	/// Whether to include the resource ID in the serialized representation.
+	public static let IncludeID = SerializationOptions(rawValue: 1 << 1)
 	
-	- parameter type: The resource type to instantiate.
+	/// Whether to only serialize fields that are dirty.
+	public static let DirtyFieldsOnly = SerializationOptions(rawValue: 1 << 2)
 	
-	- returns: An instantiated resource.
-	*/
-	func instantiate(type: ResourceType) -> Resource {
-		assert(factoryFunctions[type] != nil, "Cannot instantiate resource of type \(type). You must register this type with Spine first.")
-		return factoryFunctions[type]!()
-	}
+	/// Whether to include to-many linked resources in the serialized representation.
+	public static let IncludeToMany = SerializationOptions(rawValue: 1 << 3)
 	
-	/**
-	Dispenses a resource with the given type and id, optionally by finding it in a pool of existing resource instances.
-	
-	This methods tries to find a resource with the given type and id in the pool. If no matching resource is found,
-	it tries to find the nth resource, indicated by `index`, of the given type from the pool. If still no resource is found,
-	it instantiates a new resource with the given id and adds this to the pool.
-	
-	- parameter type:  The resource type to dispense.
-	- parameter id:    The id of the resource to dispense.
-	- parameter pool:  An array of resources in which to find exisiting matching resources.
-	- parameter index: Optional index of the resource in the pool.
-	
-	- returns: A resource with the given type and id.
-	*/
-	func dispense(type: ResourceType, id: String, inout pool: [Resource], index: Int? = nil) -> Resource {
-		var resource: Resource! = pool.filter { $0.resourceType == type && $0.id == id }.first
-		
-		if resource == nil && index != nil && !pool.isEmpty {
-			let applicableResources = pool.filter { $0.resourceType == type }
-			if index! < applicableResources.count {
-				resource = applicableResources[index!]
-			}
-		}
-		
-		if resource == nil {
-			resource = instantiate(type)
-			resource.id = id
-			pool.append(resource)
-		}
-
-		return resource
-	}
+	/// Whether to include to-one linked resources in the serialized representation.
+	public static let IncludeToOne = SerializationOptions(rawValue: 1 << 4)
 }

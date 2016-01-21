@@ -11,12 +11,13 @@ import XCTest
 import SwiftyJSON
 
 class SerializerTests: XCTestCase {
-	let serializer = Serializer(keyFormatter: DasherizedKeyFormatter())
+	let serializer = Serializer()
 	
 	override func setUp() {
 		super.setUp()
-		serializer.resourceFactory.registerResource(Foo.resourceType) { Foo() }
-		serializer.resourceFactory.registerResource(Bar.resourceType) { Bar() }
+		serializer.keyFormatter = DasherizedKeyFormatter()
+		serializer.registerResource(Foo)
+		serializer.registerResource(Bar)
 	}
 }
 
