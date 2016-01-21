@@ -41,19 +41,18 @@ func assertFutureSuccess<T, E>(future: Future<T, E>, expectation: XCTestExpectat
 	}
 }
 
-func assertFutureFailure<T>(future: Future<T, NSError>, withError expectedError: NSError, expectation: XCTestExpectation) {
+func assertFutureFailure<T>(future: Future<T, SpineError>, withError expectedError: SpineError, expectation: XCTestExpectation) {
 	future.onSuccess { resources in
 		expectation.fulfill()
 		XCTFail("Expected success callback to not be called.")
 	}.onFailure { error in
 		expectation.fulfill()
-		XCTAssertEqual(error.domain, expectedError.domain, "Expected error domain to be \(expectedError.domain).")
-		XCTAssertEqual(error.code, expectedError.code, "Expected error code to be \(expectedError.code).")
+		XCTAssertEqual(error, expectedError, "Expected error to be be \(expectedError).")
 	}
 }
 
-func assertFutureFailure<T>(future: Future<T, NSError>, withErrorDomain domain: String, errorCode code: Int, expectation: XCTestExpectation) {
-	let expectedError = NSError(domain: domain, code: code, userInfo: nil)
+func assertFutureFailure<T>(future: Future<T, SpineError>, withStatusCode code: Int, expectation: XCTestExpectation) {
+	let expectedError = SpineError.ServerError(statusCode: code, apiErrors: nil)
 	assertFutureFailure(future, withError: expectedError, expectation: expectation)
 }
 

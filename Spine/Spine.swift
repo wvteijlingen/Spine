@@ -101,8 +101,8 @@ public class Spine {
 	
 	- returns: A future that resolves to a tuple containing the fetched ResourceCollection, the document meta, and the document jsonapi object.
 	*/
-	public func find<T: Resource>(query: Query<T>) -> Future<(resources: ResourceCollection, meta: Metadata?, jsonapi: JSONAPIData?), NSError> {
-		let promise = Promise<(resources: ResourceCollection, meta: Metadata?, jsonapi: JSONAPIData?), NSError>()
+	public func find<T: Resource>(query: Query<T>) -> Future<(resources: ResourceCollection, meta: Metadata?, jsonapi: JSONAPIData?), SpineError> {
+		let promise = Promise<(resources: ResourceCollection, meta: Metadata?, jsonapi: JSONAPIData?), SpineError>()
 		
 		let operation = FetchOperation(query: query, spine: self)
 		
@@ -130,7 +130,7 @@ public class Spine {
 	
 	- returns: A future that resolves to a tuple containing the fetched ResourceCollection, the document meta, and the document jsonapi object.
 	*/
-	public func find<T: Resource>(IDs: [String], ofType type: T.Type) -> Future<(resources: ResourceCollection, meta: Metadata?, jsonapi: JSONAPIData?), NSError> {
+	public func find<T: Resource>(IDs: [String], ofType type: T.Type) -> Future<(resources: ResourceCollection, meta: Metadata?, jsonapi: JSONAPIData?), SpineError> {
 		let query = Query(resourceType: type, resourceIDs: IDs)
 		return find(query)
 	}
@@ -144,15 +144,15 @@ public class Spine {
 	
 	- returns: A future that resolves to a tuple containing the fetched resource, the document meta, and the document jsonapi object.
 	*/
-	public func findOne<T: Resource>(query: Query<T>) -> Future<(resource: T, meta: Metadata?, jsonapi: JSONAPIData?), NSError> {
-		let promise = Promise<(resource: T, meta: Metadata?, jsonapi: JSONAPIData?), NSError>()
+	public func findOne<T: Resource>(query: Query<T>) -> Future<(resource: T, meta: Metadata?, jsonapi: JSONAPIData?), SpineError> {
+		let promise = Promise<(resource: T, meta: Metadata?, jsonapi: JSONAPIData?), SpineError>()
 		
 		let operation = FetchOperation(query: query, spine: self)
 		
 		operation.completionBlock = { [unowned operation] in
 			switch operation.result! {
 			case .Success(let document) where document.data?.count == 0 || document.data == nil:
-				promise.failure(NSError(domain: SpineClientErrorDomain, code: SpineErrorCodes.ResourceNotFound, userInfo: nil))
+				promise.failure(SpineError.ResourceNotFound)
 			case .Success(let document):
 				let firstResource = document.data!.first as! T
 				let response = (resource: firstResource, meta: document.meta, jsonapi: document.jsonapi)
@@ -177,7 +177,7 @@ public class Spine {
 	
 	- returns: A future that resolves to a tuple containing the fetched resource, the document meta, and the document jsonapi object.
 	*/
-	public func findOne<T: Resource>(ID: String, ofType type: T.Type) -> Future<(resource: T, meta: Metadata?, jsonapi: JSONAPIData?), NSError> {
+	public func findOne<T: Resource>(ID: String, ofType type: T.Type) -> Future<(resource: T, meta: Metadata?, jsonapi: JSONAPIData?), SpineError> {
 		let query = Query(resourceType: type, resourceIDs: [ID])
 		return findOne(query)
 	}
@@ -190,7 +190,7 @@ public class Spine {
 	
 	- returns: A future that resolves to a tuple containing the fetched ResourceCollection, the document meta, and the document jsonapi object.
 	*/
-	public func findAll<T: Resource>(type: T.Type) -> Future<(resources: ResourceCollection, meta: Metadata?, jsonapi: JSONAPIData?), NSError> {
+	public func findAll<T: Resource>(type: T.Type) -> Future<(resources: ResourceCollection, meta: Metadata?, jsonapi: JSONAPIData?), SpineError> {
 		let query = Query(resourceType: type)
 		return find(query)
 	}
@@ -214,7 +214,7 @@ public class Spine {
 	
 	- returns: A future that resolves to the loaded resource.
 	*/
-	public func load<T: Resource>(resource: T, queryCallback: ((Query<T>) -> Query<T>)? = nil) -> Future<T, NSError> {
+	public func load<T: Resource>(resource: T, queryCallback: ((Query<T>) -> Query<T>)? = nil) -> Future<T, SpineError> {
 		var query = Query(resource: resource)
 		if let callback = queryCallback {
 			query = callback(query)
@@ -238,7 +238,7 @@ public class Spine {
 	
 	- returns: A future that resolves to the reloaded resource.
 	*/
-	public func reload<T: Resource>(resource: T, queryCallback: ((Query<T>) -> Query<T>)? = nil) -> Future<T, NSError> {
+	public func reload<T: Resource>(resource: T, queryCallback: ((Query<T>) -> Query<T>)? = nil) -> Future<T, SpineError> {
 		var query = Query(resource: resource)
 		if let callback = queryCallback {
 			query = callback(query)
@@ -246,8 +246,8 @@ public class Spine {
 		return loadResourceByExecutingQuery(resource, query: query, skipIfLoaded: false)
 	}
 	
-	func loadResourceByExecutingQuery<T: Resource>(resource: T, query: Query<T>, skipIfLoaded: Bool = true) -> Future<T, NSError> {
-		let promise = Promise<T, NSError>()
+	func loadResourceByExecutingQuery<T: Resource>(resource: T, query: Query<T>, skipIfLoaded: Bool = true) -> Future<T, SpineError> {
+		let promise = Promise<T, SpineError>()
 		
 		if skipIfLoaded && resource.isLoaded {
 			promise.success(resource)
@@ -280,8 +280,8 @@ public class Spine {
 	
 	- returns: A future that resolves to the ResourceCollection including the newly loaded resources.
 	*/
-	public func loadNextPageOfCollection(collection: ResourceCollection) -> Future<ResourceCollection, NSError> {
-		let promise = Promise<ResourceCollection, NSError>()
+	public func loadNextPageOfCollection(collection: ResourceCollection) -> Future<ResourceCollection, SpineError> {
+		let promise = Promise<ResourceCollection, SpineError>()
 		
 		if let nextURL = collection.nextURL {
 			let query = Query(URL: nextURL)
@@ -305,7 +305,7 @@ public class Spine {
 			addOperation(operation)
 			
 		} else {
-			promise.failure(NSError(domain: SpineClientErrorDomain, code: SpineErrorCodes.NextPageNotAvailable, userInfo: nil))
+			promise.failure(SpineError.NextPageNotAvailable)
 		}
 		
 		return promise.future
@@ -319,8 +319,8 @@ public class Spine {
 	
 	- returns: A future that resolves to the ResourceCollection including the newly loaded resources.
 	*/
-	public func loadPreviousPageOfCollection(collection: ResourceCollection) -> Future<ResourceCollection, NSError> {
-		let promise = Promise<ResourceCollection, NSError>()
+	public func loadPreviousPageOfCollection(collection: ResourceCollection) -> Future<ResourceCollection, SpineError> {
+		let promise = Promise<ResourceCollection, SpineError>()
 		
 		if let previousURL = collection.previousURL {
 			let query = Query(URL: previousURL)
@@ -344,7 +344,7 @@ public class Spine {
 			addOperation(operation)
 			
 		} else {
-			promise.failure(NSError(domain: SpineClientErrorDomain, code: SpineErrorCodes.PreviousPageNotAvailable, userInfo: nil))
+			promise.failure(SpineError.PreviousPageNotAvailable)
 		}
 		
 		return promise.future
@@ -360,8 +360,8 @@ public class Spine {
 	
 	- returns: A future that resolves to the saved resource.
 	*/
-	public func save(resource: Resource) -> Future<Resource, NSError> {
-		let promise = Promise<Resource, NSError>()
+	public func save(resource: Resource) -> Future<Resource, SpineError> {
+		let promise = Promise<Resource, SpineError>()
 		
 		let operation = SaveOperation(resource: resource, spine: self)
 		
@@ -385,8 +385,8 @@ public class Spine {
 	
 	- returns: A future
 	*/
-	public func delete(resource: Resource) -> Future<Void, NSError> {
-		let promise = Promise<Void, NSError>()
+	public func delete(resource: Resource) -> Future<Void, SpineError> {
+		let promise = Promise<Void, SpineError>()
 		
 		let operation = DeleteOperation(resource: resource, spine: self)
 		
@@ -436,19 +436,19 @@ Represents the result of a failable operation.
 - Success: The operation succeeded with the given result.
 - Failure: The operation failed with the given error.
 */
-enum Failable<T> {
+enum Failable<T, E: ErrorType> {
 	case Success(T)
-	case Failure(NSError)
+	case Failure(E)
 	
 	init(_ value: T) {
 		self = .Success(value)
 	}
 	
-	init(_ error: NSError) {
+	init(_ error: E) {
 		self = .Failure(error)
 	}
 	
-	var error: NSError? {
+	var error: E? {
 		switch self {
 		case .Failure(let error):
 			return error

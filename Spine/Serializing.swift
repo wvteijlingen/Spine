@@ -120,7 +120,7 @@ public struct JSONAPIDocument {
 	public var included: [Resource]?
 	
 	/// Errors extracted from the response.
-	public var errors: [NSError]?
+	public var errors: [APIError]?
 	
 	/// Metadata extracted from the reponse.
 	public var meta: [String: AnyObject]?
