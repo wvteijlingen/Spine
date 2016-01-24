@@ -360,8 +360,8 @@ public class Spine {
 	
 	- returns: A future that resolves to the saved resource.
 	*/
-	public func save(resource: Resource) -> Future<Resource, NSError> {
-		let promise = Promise<Resource, NSError>()
+	public func save<T: Resource>(resource: T) -> Future<T, NSError> {
+		let promise = Promise<T, NSError>()
 		
 		let operation = SaveOperation(resource: resource, spine: self)
 		
@@ -385,7 +385,7 @@ public class Spine {
 	
 	- returns: A future
 	*/
-	public func delete(resource: Resource) -> Future<Void, NSError> {
+	public func delete<T: Resource>(resource: T) -> Future<Void, NSError> {
 		let promise = Promise<Void, NSError>()
 		
 		let operation = DeleteOperation(resource: resource, spine: self)
