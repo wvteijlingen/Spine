@@ -100,12 +100,14 @@ public class Resource: NSObject, NSCoding {
 		self.id = coder.decodeObjectForKey("id") as? String
 		self.URL = coder.decodeObjectForKey("URL") as? NSURL
 		self.isLoaded = coder.decodeBoolForKey("isLoaded")
+		self.meta = coder.decodeObjectForKey("meta") as? [String: AnyObject]
 	}
 	
 	public func encodeWithCoder(coder: NSCoder) {
 		coder.encodeObject(self.id, forKey: "id")
 		coder.encodeObject(self.URL, forKey: "URL")
 		coder.encodeBool(self.isLoaded, forKey: "isLoaded")
+		coder.encodeObject(self.meta, forKey: "meta")
 	}
 	
 	/**
