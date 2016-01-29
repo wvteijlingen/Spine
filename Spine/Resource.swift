@@ -19,38 +19,21 @@ public struct ResourceIdentifier: Equatable {
 	
 	/// The resource ID.
 	var id: String
-	
-	/**
-	Instantiates a new ResourceIdentifier with the given type and id.
-	
-	- parameter type: The type of the resource.
-	- parameter id:   The ID of the resource.
-	
-	- returns: A ResourceIdentifier
-	*/
+
+	/// Constructs a new ResourceIdentifier instance with given `type` and `id`.
 	init(type: ResourceType, id: String) {
 		self.type = type
 		self.id = id
 	}
-	
-	/**
-	Instantiates a new ResourceIdentifier from the given dictionary.
-	The dictionary must contain values for the "type" and "id" keys.
-	
-	- parameter dictionary: Dictionary containing the type and id.
-	
-	- returns: A ResourceIdentifier
-	*/
+
+	/// Constructs a new ResourceIdentifier instance from the given dictionary.
+	/// The dictionary must contain values for the "type" and "id" keys.
 	init(dictionary: NSDictionary) {
 		type = dictionary["type"] as! ResourceType
 		id = dictionary["id"] as! String
 	}
-	
-	/**
-	Returns a dictionary with "type" and "id" keys.
-	
-	- returns: Dictionary containing the type and id.
-	*/
+
+	/// Returns a dictionary with "type" and "id" keys containing the type and id.
 	func toDictionary() -> NSDictionary {
 		return ["type": type, "id": id]
 	}
@@ -69,15 +52,9 @@ public class Resource: NSObject, NSCoding {
 	public class var resourceType: ResourceType {
 		fatalError("Override resourceType in a subclass.")
 	}
-	
-	/// Instance counterpart of `resourceType` method.
-	final var resourceType: ResourceType { return self.dynamicType.resourceType }
-	
+
 	/// All fields that must be persisted in the API.
 	public class var fields: [Field] { return [] }
-	
-	/// Instance counterpart of `resourceType` method.
-	final var fields: [Field] { return self.dynamicType.fields }
 	
 	/// The ID of this resource.
 	public var id: String?
@@ -109,31 +86,18 @@ public class Resource: NSObject, NSCoding {
 		coder.encodeBool(self.isLoaded, forKey: "isLoaded")
 		coder.encodeObject(self.meta, forKey: "meta")
 	}
-	
-	/**
-	Returns the attribute value for the given key
-	
-	- parameter field: The name of the field to get the value for.
-	
-	- returns: The value of the field.
-	*/
+
+  /// Returns the value for the field named `field`.
 	public func valueForField(field: String) -> AnyObject? {
 		return valueForKey(field)
 	}
-	
-	/**
-	Sets the given attribute value for the given key.
-	
-	- parameter value: The value to set.
-	- parameter field: The name of the field to set the value for.
-	*/
+
+	/// Sets the value for the field named `field` to `value`.
 	public func setValue(value: AnyObject?, forField field: String) {
 		setValue(value, forKey: field)
 	}
 
-	/**
-	Sets all fields of resource `resource` to nil and sets `isLoaded` to false.
-	*/
+	/// Set the values for all fields to nil and sets `isLoaded` to false.
 	public func unload() {
 		for field in self.fields {
 			self.setValue(nil, forField: field.name)
@@ -141,7 +105,8 @@ public class Resource: NSObject, NSCoding {
 		
 		isLoaded = false
 	}
-		
+	
+	/// Returns the field named `name`, or nil if no such field exists.
 	class func fieldNamed(name: String) -> Field? {
 		return fields.filter { $0.name == name }.first
 	}
@@ -156,6 +121,12 @@ extension Resource {
 	override public var debugDescription: String {
 		return description
 	}
+}
+
+/// Instance counterparts of class functions
+extension Resource {
+	final var resourceType: ResourceType { return self.dynamicType.resourceType }
+	final var fields: [Field] { return self.dynamicType.fields }
 }
 
 public func == <T: Resource> (left: T, right: T) -> Bool {
