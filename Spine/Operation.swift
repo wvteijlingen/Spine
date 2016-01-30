@@ -259,7 +259,7 @@ class SaveOperation: ConcurrentOperation {
 		}
 		
 		do {
-			let payload = try serializePayload(resource, options: options)
+			payload = try serializePayload(resource, options: options)
 		} catch let error {
 			self.result = .Failure(error as! SpineError)
 			self.state = .Finished
@@ -416,7 +416,7 @@ private class RelationshipOperation: ConcurrentOperation {
 			} catch let error as SpineError {
 				self.result = .Failure(error)
 			} catch {
-				self.result = .Failure(SpineError.DeserializingError)
+				self.result = .Failure(SpineError.SerializerError)
 			}
 		} else {
 			self.result = .Failure(errorFromStatusCode(statusCode!))

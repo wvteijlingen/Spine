@@ -51,9 +51,34 @@ func assertFutureFailure<T>(future: Future<T, SpineError>, withError expectedErr
 	}
 }
 
-func assertFutureFailure<T>(future: Future<T, SpineError>, withStatusCode code: Int, expectation: XCTestExpectation) {
-	let expectedError = SpineError.ServerError(statusCode: code, apiErrors: nil)
-	assertFutureFailure(future, withError: expectedError, expectation: expectation)
+func assertFutureFailureWithServerError<T>(future: Future<T, SpineError>, statusCode code: Int, expectation: XCTestExpectation) {
+	future.onSuccess { resources in
+		expectation.fulfill()
+		XCTFail("Expected success callback to not be called.")
+		}.onFailure { error in
+			expectation.fulfill()
+			switch error {
+			case .ServerError(let statusCode, _):
+				XCTAssertEqual(statusCode, code, "Expected error to be be .ServerError with statusCode \(code)")
+			default:
+				XCTFail("Expected error to be be .ServerError")
+			}
+	}
+}
+
+func assertFutureFailureWithNetworkError<T>(future: Future<T, SpineError>, code: Int, expectation: XCTestExpectation) {
+	future.onSuccess { resources in
+		expectation.fulfill()
+		XCTFail("Expected success callback to not be called.")
+	}.onFailure { error in
+		expectation.fulfill()
+		switch error {
+		case .NetworkError(let error):
+			XCTAssertEqual(error.code, code, "Expected error to be be .NetworkError with code \(code)")
+		default:
+			XCTFail("Expected error to be be .NetworkError")
+		}
+	}
 }
 
 func assertFooResource(foo: Foo, isEqualToJSON json: JSON) {
