@@ -44,6 +44,14 @@ class ResourceCollectionTests: XCTestCase {
 		
 		XCTAssertEqual(collection.count, 2, "Expected count to be 2.")
 	}
+	
+	func testAppendResource() {
+		let foo = Foo(id: "1")
+		let collection = ResourceCollection(resources: [])
+		
+		collection.appendResource(foo)
+		XCTAssertEqual(collection.resources, [foo], "Expected resources to be equal.")
+	}
 }
 
 
@@ -82,57 +90,57 @@ class LinkedResourceCollectionTests: XCTestCase {
 		XCTAssertEqual(collection.linkage![1], ResourceIdentifier(type: "foos", id: "2"), "Expected second linkage item to be equal.")
 	}
 	
-	func testAddAsExisting() {
+	func testAppendResource() {
 		let collection = LinkedResourceCollection(resourcesURL: nil, linkURL: nil, linkage: nil)
-		let foo = Foo()
+		let foo = Foo(id: "1")
 		
-		collection.addResourceAsExisting(foo)
+		collection.appendResource(foo)
 		
 		XCTAssert(collection.resources == [foo], "Expected collection to contain resource.")
 		XCTAssert(collection.addedResources.isEmpty, "Expected addedResources to be empty.")
 		XCTAssert(collection.removedResources.isEmpty, "Expected addedResources to be empty.")
 	}
 	
-	func testAdd() {
+	func testLinkResource() {
 		let collection = LinkedResourceCollection(resourcesURL: nil, linkURL: nil, linkage: nil)
-		let foo = Foo()
+		let foo = Foo(id: "1")
 		
-		collection.addResource(foo)
+		collection.linkResource(foo)
 		
 		XCTAssert(collection.resources == [foo], "Expected collection to contain resource.")
 		XCTAssert(collection.addedResources == [foo], "Expected addedResources to contain resource.")
 	}
 
-	func testAddRemoved() {
+	func testLinkUnlinked() {
 		let collection = LinkedResourceCollection(resourcesURL: nil, linkURL: nil, linkage: nil)
-		let foo = Foo()
+		let foo = Foo(id: "1")
 
-		collection.addResourceAsExisting(foo)
-		collection.removeResource(foo)
-		collection.addResource(foo)
+		collection.appendResource(foo)
+		collection.unlinkResource(foo)
+		collection.linkResource(foo)
 
 		XCTAssert(collection.resources == [foo], "Expected collection to contain resource.")
 		XCTAssert(collection.addedResources.isEmpty, "Expected addedResources to be empty.")
 		XCTAssert(collection.removedResources.isEmpty, "Expected removedResources to be empty.")
 	}
 
-	func testRemove() {
+	func testUnlink() {
 		let collection = LinkedResourceCollection(resourcesURL: nil, linkURL: nil, linkage: nil)
-		let foo = Foo()
+		let foo = Foo(id: "1")
 		
-		collection.addResourceAsExisting(foo)
-		collection.removeResource(foo)
+		collection.appendResource(foo)
+		collection.unlinkResource(foo)
 		
 		XCTAssert(collection.resources.isEmpty, "Expected collection to be empty.")
 		XCTAssert(collection.removedResources == [foo], "Expected removedResources to contain resource.")
 	}
 
-	func testRemoveAdded() {
+	func testUnlinkLinked() {
 		let collection = LinkedResourceCollection(resourcesURL: nil, linkURL: nil, linkage: nil)
-		let foo = Foo()
+		let foo = Foo(id: "1")
 
-		collection.addResource(foo)
-		collection.removeResource(foo)
+		collection.linkResource(foo)
+		collection.unlinkResource(foo)
 
 		XCTAssert(collection.resources.isEmpty, "Expected collection to be empty.")
 		XCTAssert(collection.addedResources.isEmpty, "Expected addedResources to be empty.")

@@ -35,8 +35,8 @@ class SerializingTests: SerializerTests {
 		foo.dateAttribute = NSDate(timeIntervalSince1970: 0)
 		foo.toOneAttribute = Bar(id: "10")
 		foo.toManyAttribute = LinkedResourceCollection(resourcesURL: nil, linkURL: nil, homogenousType: "bars", IDs: [])
-		foo.toManyAttribute?.addResourceAsExisting(Bar(id: "11"))
-		foo.toManyAttribute?.addResourceAsExisting(Bar(id: "12"))
+		foo.toManyAttribute?.appendResource(Bar(id: "11"))
+		foo.toManyAttribute?.appendResource(Bar(id: "12"))
 	}
 	
 	func serializedJSONWithOptions(options: SerializationOptions) -> JSON {

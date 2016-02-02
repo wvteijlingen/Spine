@@ -108,11 +108,11 @@ public class HTTPClient: NetworkClient {
 				
 			} else if let statusCode = response?.statusCode where 200 ... 299 ~= statusCode {
 				// Success
-				Spine.logInfo(.Networking, "\(statusCode): \(request.URL!)")
+				Spine.logInfo(.Networking, "\(statusCode): \(request.URL!) – (\(data!.length) bytes)")
 				
 			} else {
 				// API Error
-				Spine.logWarning(.Networking, "\(response!.statusCode): \(request.URL!)")
+				Spine.logWarning(.Networking, "\(response!.statusCode): \(request.URL!) – (\(data!.length) bytes)")
 			}
 			
 			if Spine.shouldLog(.Debug, domain: .Networking) {
