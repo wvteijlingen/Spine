@@ -222,13 +222,18 @@ class DeserializeOperation: NSOperation {
 	This method loops over all the relationships in the passed resource, maps the relationship name
 	to the key for the serialized form and invokes `extractToOneRelationship` or `extractToManyRelationship`.
 	It then sets the extracted ResourceRelationship on the resource.
+	It also sets `relationships` dictionary on parent resource containing the links to all related resources.
 	
 	- parameter serializedData: The data from which to extract the relationships.
 	- parameter resource:       The resource into which to extract the relationships.
 	*/
 	private func extractRelationships(serializedData: JSON, intoResource resource: Resource) {
+		resource.relationships = [String: [String: AnyObject]]()
+
 		for field in resource.fields {
 			let key = keyFormatter.format(field)
+			resource.relationships![field.name] = serializedData["relationships"][key].dictionaryObject
+
 			switch field {
 			case let toOne as ToOneRelationship:
 				if let linkedResource = extractToOneRelationship(serializedData, key: key, linkedType: toOne.linkedType.resourceType, resource: resource) {

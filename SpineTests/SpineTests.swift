@@ -365,8 +365,15 @@ class SaveTests: SpineTests {
 	
 	override func setUp() {
 		super.setUp()
+
 		fixture = JSONFixtureWithName("SingleFoo")
-		foo = Foo()
+
+		do {
+			let document = try spine.serializer.deserializeData(fixture.data)
+			foo = document.data!.first as! Foo
+		} catch let error as NSError {
+			XCTFail("Deserialisation failed with error: \(error).")
+		}
 	}
 	
 	func testItShouldPOSTWhenCreatingANewResource() {
@@ -376,6 +383,7 @@ class SaveTests: SpineTests {
 			return (responseData: self.fixture.data, statusCode: 201, error: nil)
 		}
 
+		foo = Foo()
 		let future = spine.save(foo)
 		let expectation = expectationWithDescription("")
 		assertFutureSuccess(future, expectation: expectation)
@@ -387,20 +395,15 @@ class SaveTests: SpineTests {
 
 	func testItShouldPATCHWhenUpdatingAResource() {
 		var resourcePatched = false
-		var toOnePatched = false
 		
 		HTTPClient.handler = { request, payload in
 			XCTAssertEqual(request.HTTPMethod!, "PATCH", "HTTP method not as expected.")
-			if(request.URL! == NSURL(string:"http://example.com/foos/1")!) {
+			if(request.URL! == NSURL(string: "http://example.com/foos/1")!) {
 				resourcePatched = true
-			}
-			if(request.URL! == NSURL(string:"http://example.com/foos/1/links/to-one-attribute")!) {
-				toOnePatched = true
 			}
 			return (responseData: self.fixture.data, statusCode: 201, error: nil)
 		}
-		
-		foo.id = "1"
+
 		let future = spine.save(foo)
 		let expectation = expectationWithDescription("")
 		assertFutureSuccess(future, expectation: expectation)
@@ -408,14 +411,12 @@ class SaveTests: SpineTests {
 		waitForExpectationsWithTimeout(10) { error in
 			XCTAssertNil(error, "\(error)")
 			XCTAssertTrue(resourcePatched)
-			XCTAssertTrue(toOnePatched)
 		}
 	}
 	
 	func testItShouldFailOnAPIError() {
 		HTTPClient.respondWith(400)
 		
-		let foo = Foo()
 		let expectation = expectationWithDescription("testCreateResourceWithAPIError")
 		let future = spine.save(foo)
 		assertFutureFailure(future, withErrorDomain: SpineServerErrorDomain, errorCode: 400, expectation: expectation)
@@ -428,7 +429,6 @@ class SaveTests: SpineTests {
 	func testItShouldFailOnNetworkError() {
 		HTTPClient.simulateNetworkErrorWithCode(999)
 		
-		let foo = Foo()
 		let expectation = expectationWithDescription("testDeleteResourceWithNetworkError")
 		let future = spine.save(foo)
 		assertFutureFailure(future, withErrorDomain: "SimulatedNetworkError", errorCode: 999, expectation: expectation)
@@ -439,6 +439,148 @@ class SaveTests: SpineTests {
 	}
 }
 
+class SaveRelationshipsTests: SpineTests {
+
+	var fixture: (data: NSData, json: JSON)!
+	var foo: Foo!
+
+	override func setUp() {
+		super.setUp()
+
+		fixture = JSONFixtureWithName("SingleFooIncludingBars")
+
+		do {
+			let document = try spine.serializer.deserializeData(fixture.data)
+			foo = document.data!.first as! Foo
+		} catch let error as NSError {
+			XCTFail("Deserialisation failed with error: \(error).")
+		}
+	}
+
+	func testItShouldPATCHToOne() {
+		var relationshipUpdated = false
+
+		HTTPClient.handler = { request, payload in
+			if(request.HTTPMethod! == "PATCH" && request.URL! == NSURL(string: "http://example.com/foos/1/relationships/to-one-attribute")!) {
+				let data = JSON(data: payload!)["data"].dictionary!
+				if data["type"]!.string == "bars" && data["id"]!.string == "10" {
+					relationshipUpdated = true
+				}
+			}
+			return (responseData: self.fixture.data, statusCode: 201, error: nil)
+		}
+
+		let future = spine.save(foo)
+		let expectation = expectationWithDescription("")
+		assertFutureSuccess(future, expectation: expectation)
+
+		waitForExpectationsWithTimeout(10) { error in
+			XCTAssertNil(error, "\(error)")
+			XCTAssertTrue(relationshipUpdated)
+		}
+	}
+
+	func testItShouldDELETEToOne() {
+		var relationshipUpdated = false
+
+		HTTPClient.handler = { request, payload in
+			if(request.HTTPMethod! == "DELETE" && request.URL! == NSURL(string: "http://example.com/foos/1/relationships/to-one-attribute")!) {
+				if payload == nil {
+					relationshipUpdated = true
+				}
+			}
+			return (responseData: self.fixture.data, statusCode: 201, error: nil)
+		}
+
+		foo.toOneAttribute = nil
+
+		let future = spine.save(foo)
+		let expectation = expectationWithDescription("")
+		assertFutureSuccess(future, expectation: expectation)
+
+		waitForExpectationsWithTimeout(10) { error in
+			XCTAssertNil(error, "\(error)")
+			XCTAssertTrue(relationshipUpdated)
+		}
+	}
+
+	func testItShouldPOSTToMany() {
+		var relationshipUpdated = false
+
+		HTTPClient.handler = { request, payload in
+			if(request.HTTPMethod! == "POST" && request.URL! == NSURL(string: "http://example.com/foos/1/relationships/to-many-attribute")!) {
+				let data = JSON(data: payload!)["data"].array!
+				XCTAssertEqual(data.count, 1, "Expected data count to be 1.")
+
+				if data[0]["type"].string == "bars" && data[0]["id"].string == "13" {
+					relationshipUpdated = true
+				}
+			}
+			return (responseData: self.fixture.data, statusCode: 201, error: nil)
+		}
+
+		let bar = Bar(id: "13")
+		foo.toManyAttribute!.linkResource(bar)
+
+		let future = spine.save(foo)
+		let expectation = expectationWithDescription("")
+		assertFutureSuccess(future, expectation: expectation)
+
+		waitForExpectationsWithTimeout(10) { error in
+			XCTAssertNil(error, "\(error)")
+			XCTAssertTrue(relationshipUpdated)
+		}
+	}
+
+	func testItShouldDELETEToMany() {
+		var relationshipUpdated = false
+
+		HTTPClient.handler = { request, payload in
+			if(request.HTTPMethod! == "DELETE" && request.URL! == NSURL(string: "http://example.com/foos/1/relationships/to-many-attribute")!) {
+				let data = JSON(data: payload!)["data"].array!
+				XCTAssertEqual(data.count, 1, "Expected data count to be 1.")
+
+				if data[0]["type"].string == "bars" && data[0]["id"].string == "11" {
+					relationshipUpdated = true
+				}
+			}
+			return (responseData: self.fixture.data, statusCode: 201, error: nil)
+		}
+
+		let bar = foo.toManyAttribute!.resources.first!
+		foo.toManyAttribute!.unlinkResource(bar)
+
+		let future = spine.save(foo)
+		let expectation = expectationWithDescription("")
+		assertFutureSuccess(future, expectation: expectation)
+
+		waitForExpectationsWithTimeout(10) { error in
+			XCTAssertNil(error, "\(error)")
+			XCTAssertTrue(relationshipUpdated)
+		}
+	}
+
+	func testItShouldFailOnAPIError() {
+		HTTPClient.handler = { request, payload in
+			print(request.URL!)
+			if(request.HTTPMethod! == "DELETE" && request.URL! == NSURL(string: "http://example.com/foos/1/relationships/to-one-attribute")!) {
+				return (responseData: nil, statusCode: 422, error: NSError(domain: "SimulatedAPIError", code: 422, userInfo: nil))
+			}
+			return (responseData: self.fixture.data, statusCode: 201, error: nil)
+		}
+
+		foo.toOneAttribute = nil
+
+		let expectation = expectationWithDescription("SimulatedAPIError")
+		let future = spine.save(foo)
+		assertFutureFailure(future, withErrorDomain: "SimulatedAPIError", errorCode: 422, expectation: expectation)
+
+		waitForExpectationsWithTimeout(10) { error in
+			XCTAssertNil(error, "\(error)")
+		}
+	}
+
+}
 
 class PaginatingTests: SpineTests {
 	func testLoadNextPageInCollection() {

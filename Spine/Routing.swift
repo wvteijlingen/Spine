@@ -27,16 +27,6 @@ public protocol Router: class {
 	func URLForResourceType(type: ResourceType) -> NSURL
 	
 	/**
-	Returns an NSURL that points to a relationship of a resource.
-	
-	- parameter relationship: The relationship to get the URL for.
-	- parameter resource:     The resource that contains the relationship.
-	
-	- returns: The NSURL.
-	*/
-	func URLForRelationship<T: Resource>(relationship: Relationship, ofResource resource: T) -> NSURL
-	
-	/**
 	Returns an NSURL that represents the given query.
 	
 	- parameter query: The query to turn into an NSURL.
@@ -69,12 +59,6 @@ public class JSONAPIRouter: Router {
 		return baseURL.URLByAppendingPathComponent(type)
 	}
 	
-	public func URLForRelationship<T: Resource>(relationship: Relationship, ofResource resource: T) -> NSURL {
-		let resourceURL = resource.URL ?? URLForResourceType(resource.resourceType).URLByAppendingPathComponent("/\(resource.id!)")
-		let key = keyFormatter.format(relationship)
-		return resourceURL.URLByAppendingPathComponent("/links/\(key)")
-	}
-
 	public func URLForQuery<T: Resource>(query: Query<T>) -> NSURL {
 		var URL: NSURL!
 		var preBuiltURL = false

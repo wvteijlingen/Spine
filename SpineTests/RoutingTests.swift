@@ -17,15 +17,6 @@ class RoutingTests: XCTestCase {
 		let expectedURL = NSURL(string: "http://example.com/foos")!
 		XCTAssertEqual(URL, expectedURL, "URL not as expected.")
 	}
-	
-	func testURLForRelationship() {
-		let resource = Foo(id: "1")
-		let relationship = ToOneRelationship(Bar).serializeAs("relationship")
-		let URL = spine.router.URLForRelationship(relationship, ofResource: resource)
-		
-		let expectedURL = NSURL(string: "http://example.com/foos/1/links/relationship")!
-		XCTAssertEqual(URL, expectedURL, "URL not as expected.")
-	}
 
 	func testURLForQuery() {
 		var query = Query(resourceType: Foo.self, resourceIDs: ["1", "2"])
