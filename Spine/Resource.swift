@@ -43,6 +43,13 @@ public func ==(lhs: ResourceIdentifier, rhs: ResourceIdentifier) -> Bool {
 	return lhs.type == rhs.type && lhs.id == rhs.id
 }
 
+struct RelationshipData {
+	var selfURL: NSURL?
+	var relatedURL: NSURL?
+	var data: [ResourceIdentifier]?
+}
+
+
 /**
 A base recource class that provides some defaults for resources.
 You can create custom resource classes by subclassing from Resource.
@@ -68,8 +75,8 @@ public class Resource: NSObject, NSCoding {
 	/// The metadata for this resource.
 	public var meta: [String: AnyObject]?
 	
-	/// The relationships dictionary for this resource.
-	public var relationships: [String: [String: AnyObject]]?
+	/// Raw relationship data keyed by relationship name.
+	var relationships: [String: RelationshipData] = [:]
 	
 	public required override init() {
 		super.init()

@@ -21,6 +21,8 @@ class SpineTests: XCTestCase {
 		spine = Spine(baseURL: NSURL(string:"http://example.com")!, networkClient: HTTPClient)
 		spine.registerResource(Foo)
 		spine.registerResource(Bar)
+		
+		Spine.setLogLevel(.Info, forDomain: .Spine)
 	}
 }
 
@@ -304,7 +306,6 @@ class FindOneByQueryTests: SpineTests {
 
 }
 
-
 class DeleteTests: SpineTests {
 	
 	func testItShouldSucceed() {
@@ -356,7 +357,6 @@ class DeleteTests: SpineTests {
 	}
 	
 }
-
 
 class SaveTests: SpineTests {
 	
@@ -457,13 +457,13 @@ class SaveRelationshipsTests: SpineTests {
 		}
 	}
 
-	func testItShouldPATCHToOne() {
+	func testItShouldPATCHToOneRelationships() {
 		var relationshipUpdated = false
 
 		HTTPClient.handler = { request, payload in
-			if(request.HTTPMethod! == "PATCH" && request.URL! == NSURL(string: "http://example.com/foos/1/relationships/to-one-attribute")!) {
-				let data = JSON(data: payload!)["data"].dictionary!
-				if data["type"]!.string == "bars" && data["id"]!.string == "10" {
+			if(request.HTTPMethod! == "PATCH" && request.URL!.absoluteString == "http://example.com/foos/1/relationships/to-one-attribute") {
+				let json = JSON(data: payload!)
+				if json["data"]["type"].string == "bars" && json["data"]["id"].string == "10" {
 					relationshipUpdated = true
 				}
 			}
@@ -480,36 +480,12 @@ class SaveRelationshipsTests: SpineTests {
 		}
 	}
 
-	func testItShouldDELETEToOne() {
+	func testItShouldPOSTToManyRelationships() {
 		var relationshipUpdated = false
 
 		HTTPClient.handler = { request, payload in
-			if(request.HTTPMethod! == "DELETE" && request.URL! == NSURL(string: "http://example.com/foos/1/relationships/to-one-attribute")!) {
-				if payload == nil {
-					relationshipUpdated = true
-				}
-			}
-			return (responseData: self.fixture.data, statusCode: 201, error: nil)
-		}
-
-		foo.toOneAttribute = nil
-
-		let future = spine.save(foo)
-		let expectation = expectationWithDescription("")
-		assertFutureSuccess(future, expectation: expectation)
-
-		waitForExpectationsWithTimeout(10) { error in
-			XCTAssertNil(error, "\(error)")
-			XCTAssertTrue(relationshipUpdated)
-		}
-	}
-
-	func testItShouldPOSTToMany() {
-		var relationshipUpdated = false
-
-		HTTPClient.handler = { request, payload in
-			if(request.HTTPMethod! == "POST" && request.URL! == NSURL(string: "http://example.com/foos/1/relationships/to-many-attribute")!) {
-				let data = JSON(data: payload!)["data"].array!
+			if(request.HTTPMethod! == "POST" && request.URL!.absoluteString == "http://example.com/foos/1/relationships/to-many-attribute") {
+				let data = JSON(data: payload!)["data"].arrayValue
 				XCTAssertEqual(data.count, 1, "Expected data count to be 1.")
 
 				if data[0]["type"].string == "bars" && data[0]["id"].string == "13" {
@@ -532,12 +508,12 @@ class SaveRelationshipsTests: SpineTests {
 		}
 	}
 
-	func testItShouldDELETEToMany() {
+	func testItShouldDELETEToManyRelationships() {
 		var relationshipUpdated = false
 
 		HTTPClient.handler = { request, payload in
-			if(request.HTTPMethod! == "DELETE" && request.URL! == NSURL(string: "http://example.com/foos/1/relationships/to-many-attribute")!) {
-				let data = JSON(data: payload!)["data"].array!
+			if(request.HTTPMethod! == "DELETE" && request.URL!.absoluteString == "http://example.com/foos/1/relationships/to-many-attribute") {
+				let data = JSON(data: payload!)["data"].arrayValue
 				XCTAssertEqual(data.count, 1, "Expected data count to be 1.")
 
 				if data[0]["type"].string == "bars" && data[0]["id"].string == "11" {
@@ -562,8 +538,7 @@ class SaveRelationshipsTests: SpineTests {
 
 	func testItShouldFailOnAPIError() {
 		HTTPClient.handler = { request, payload in
-			print(request.URL!)
-			if(request.HTTPMethod! == "DELETE" && request.URL! == NSURL(string: "http://example.com/foos/1/relationships/to-one-attribute")!) {
+			if(request.HTTPMethod! == "DELETE" && request.URL!.absoluteString == "http://example.com/foos/1/relationships/to-one-attribute") {
 				return (responseData: nil, statusCode: 422, error: NSError(domain: "SimulatedAPIError", code: 422, userInfo: nil))
 			}
 			return (responseData: self.fixture.data, statusCode: 201, error: nil)
@@ -579,7 +554,6 @@ class SaveRelationshipsTests: SpineTests {
 			XCTAssertNil(error, "\(error)")
 		}
 	}
-
 }
 
 class PaginatingTests: SpineTests {

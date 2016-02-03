@@ -228,11 +228,9 @@ class DeserializeOperation: NSOperation {
 	- parameter resource:       The resource into which to extract the relationships.
 	*/
 	private func extractRelationships(serializedData: JSON, intoResource resource: Resource) {
-		resource.relationships = [String: [String: AnyObject]]()
-
 		for field in resource.fields {
 			let key = keyFormatter.format(field)
-			resource.relationships![field.name] = serializedData["relationships"][key].dictionaryObject
+			resource.relationships[field.name] = extractRelationshipData(serializedData["relationships"][key])
 
 			switch field {
 			case let toOne as ToOneRelationship:
@@ -277,7 +275,6 @@ class DeserializeOperation: NSOperation {
 			if let resourceURL = linkData["links"]?["related"].URL {
 				resource!.URL = resourceURL
 			}
-			
 		}
 		
 		return resource
@@ -309,6 +306,24 @@ class DeserializeOperation: NSOperation {
 		}
 		
 		return resourceCollection
+	}
+	
+	private func extractRelationshipData(linkData: JSON) -> RelationshipData {
+		let selfURL = linkData["links"]["self"].URL
+		let relatedURL = linkData["links"]["related"].URL
+		let data: [ResourceIdentifier]?
+		
+		if let toOne = linkData["data"].dictionary {
+			data = [ResourceIdentifier(type: toOne["type"]!.stringValue, id: toOne["id"]!.stringValue)]
+		} else if let toMany = linkData["data"].array {
+			data = toMany.map { JSON -> ResourceIdentifier in
+				return ResourceIdentifier(type: JSON["type"].stringValue, id: JSON["id"].stringValue)
+			}
+		} else {
+			data = nil
+		}
+		
+		return RelationshipData(selfURL: selfURL, relatedURL: relatedURL, data: data)
 	}
 	
 	/**

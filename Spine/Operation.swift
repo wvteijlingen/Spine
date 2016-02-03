@@ -111,9 +111,7 @@ class ConcurrentOperation: NSOperation {
 
 // MARK: - Main operations
 
-/**
-A FetchOperation fetches a JSONAPI document from a Spine, using a given Query.
-*/
+/// FetchOperation fetches a JSONAPI document from a Spine, using a given Query.
 class FetchOperation<T: Resource>: ConcurrentOperation {
 	/// The query describing which resources to fetch.
 	let query: Query<T>
@@ -162,9 +160,7 @@ class FetchOperation<T: Resource>: ConcurrentOperation {
 	}
 }
 
-/**
-A DeleteOperation deletes a resource from a Spine.
-*/
+/// DeleteOperation deletes a resource from a Spine.
 class DeleteOperation: ConcurrentOperation {
 	/// The resource to delete.
 	let resource: Resource
@@ -207,10 +203,7 @@ class DeleteOperation: ConcurrentOperation {
 	}
 }
 
-/**
-A SaveOperation saves a resources in a Spine. It can be used to either update an existing resource,
-or to insert new resources.
-*/
+/// A SaveOperation updates or adds a resource in a Spine.
 class SaveOperation: ConcurrentOperation {
 	/// The resource to save.
 	let resource: Resource
@@ -221,7 +214,6 @@ class SaveOperation: ConcurrentOperation {
 	/// Whether the resource is a new resource, or an existing resource.
 	private let isNewResource: Bool
 	
-	private var responseData: NSData?
 	private let relationshipOperationQueue = NSOperationQueue()
 	
 	init(resource: Resource, spine: Spine) {
@@ -233,11 +225,20 @@ class SaveOperation: ConcurrentOperation {
 	}
 	
 	override func execute() {
+		// First update relationships if this is an existing resource. Otherwise the local relationships
+		// are overwritten with data that is returned from saving the resource.
+		if self.isNewResource {
+			self.updateResource()
+		} else {
+			self.updateRelationships()
+		}
+	}
+
+	private func updateResource() {
 		let URL: NSURL
 		let method: String
 		let options: SerializationOptions
-		let payload: NSData
-
+		
 		if isNewResource {
 			URL = router.URLForResourceType(resource.resourceType)
 			method = "POST"
@@ -247,6 +248,8 @@ class SaveOperation: ConcurrentOperation {
 			method = "PATCH"
 			options = [.IncludeID]
 		}
+		
+		let payload: NSData
 		
 		do {
 			payload = try serializer.serializeResources([resource], options: options)
@@ -259,60 +262,36 @@ class SaveOperation: ConcurrentOperation {
 		Spine.logInfo(.Spine, "Saving resource \(resource) using URL: \(URL)")
 		
 		networkClient.request(method, URL: URL, payload: payload) { statusCode, responseData, networkError in
+			defer { self.state = .Finished }
+			
 			guard networkError == nil else {
 				self.result = Failable.Failure(networkError!)
-				self.state = .Finished
 				return
 			}
-
+			
 			if(!statusCodeIsSuccess(statusCode)) {
 				if let data = responseData where data.length > 0 {
 					do {
 						let document = try self.serializer.deserializeData(data, mappingTargets: nil)
 						self.result = .Failure(errorFromStatusCode(statusCode!, additionalErrors: document.errors))
-						self.state = .Finished
-						return
 					} catch let error as NSError {
 						self.result = .Failure(error)
-						self.state = .Finished
-						return
 					}
 				} else {
 					self.result = .Failure(errorFromStatusCode(statusCode!))
-					self.state = .Finished
-					return
 				}
 			} else {
 				if let data = responseData where data.length > 0 {
 					do {
-						try self.serializer.deserializeData(data, mappingTargets: nil)
-						self.responseData = data
+						try self.serializer.deserializeData(data, mappingTargets: [self.resource])
+						self.result = .Success()
 					} catch let error as NSError {
 						self.result = .Failure(error)
-						self.state = .Finished
-						return
 					}
 				} else {
 					self.result = .Failure(errorFromStatusCode(statusCode!))
-					self.state = .Finished
-					return
 				}
 			}
-			
-			// Separately update relationships if this is an existing resource
-			if self.isNewResource {
-				self.deserializeIntoResource()
-				self.result = Failable.Success()
-				self.state = .Finished
-			} else {
-				self.updateRelationships()
-			}
-		}
-	}
-
-	private func deserializeIntoResource() {
-		if responseData != nil {
-			try! self.serializer.deserializeData(responseData!, mappingTargets: [self.resource])
 		}
 	}
 
@@ -329,22 +308,16 @@ class SaveOperation: ConcurrentOperation {
 		for field in resource.fields {
 			switch field {
 			case let toOne as ToOneRelationship:
-				if resource.valueForField(toOne.name) != nil {
-					let operation = RelationshipToOneUpdateOperation(resource: resource, relationship: toOne, spine: spine)
-					operation.completionBlock = { [unowned operation] in completionHandler(result: operation.result) }
-					relationshipOperationQueue.addOperation(operation)
-				} else {
-					let operation = RelationshipToOneRemoveOperation(resource: resource, relationship: toOne, spine: spine)
-					operation.completionBlock = { [unowned operation] in completionHandler(result: operation.result) }
-					relationshipOperationQueue.addOperation(operation)
-				}
+				let operation = RelationshipReplaceOperation(resource: resource, relationship: toOne, spine: spine)
+				operation.completionBlock = { [unowned operation] in completionHandler(result: operation.result) }
+				relationshipOperationQueue.addOperation(operation)
 
 			case let toMany as ToManyRelationship:
-				let addOperation = RelationshipToManyAddOperation(resource: resource, relationship: toMany, spine: spine)
+				let addOperation = RelationshipMutateOperation(resource: resource, relationship: toMany, mutation: .Add, spine: spine)
 				addOperation.completionBlock = { [unowned addOperation] in completionHandler(result: addOperation.result) }
 				relationshipOperationQueue.addOperation(addOperation)
 				
-				let removeOperation = RelationshipToManyRemoveOperation(resource: resource, relationship: toMany, spine: spine)
+				let removeOperation = RelationshipMutateOperation(resource: resource, relationship: toMany, mutation: .Remove, spine: spine)
 				removeOperation.completionBlock = { [unowned removeOperation] in completionHandler(result: removeOperation.result) }
 				relationshipOperationQueue.addOperation(removeOperation)
 			default: ()
@@ -359,21 +332,13 @@ class SaveOperation: ConcurrentOperation {
 		}
 		
 		if queue.operationCount == 0 {
-			if result == nil {
-				self.deserializeIntoResource()
-				self.result = Failable.Success()
-			}
-
-			self.state = .Finished
+			// At this point, we know all relationships are updated
+			self.updateResource()
 		}
 	}
 }
 
-
-// MARK: - Relationship operations
-
 private class RelationshipOperation: ConcurrentOperation {
-	/// The result of the operation. You can safely force unwrap this in the completionBlock.
 	var result: Failable<Void>?
 	
 	func handleNetworkResponse(statusCode: Int?, responseData: NSData?, networkError: NSError?) {
@@ -397,99 +362,108 @@ private class RelationshipOperation: ConcurrentOperation {
 			self.result = .Failure(errorFromStatusCode(statusCode!))
 		}
 	}
-
-	private func resourceLinkage(resource: Resource) -> [String: String]! {
-		assert(resource.id != nil, "Attempt to convert resource without id to linkage. Only resources with ids can be converted to linkage.")
-
-		return ["type": resource.resourceType, "id": resource.id!]
+	
+	private func toOnePayload(resource: Resource?) throws -> NSData {
+		let payloadData: AnyObject
+		
+		if let resource = resource {
+			assert(resource.id != nil, "Attempt to convert resource without id to linkage. Only resources with ids can be converted to linkage.")
+			payloadData = ["type": resource.resourceType, "id": resource.id!]
+		} else {
+			payloadData = NSNull()
+		}
+		
+		return try NSJSONSerialization.dataWithJSONObject(["data": payloadData], options: NSJSONWritingOptions(rawValue: 0))
+	}
+	
+	private func toManyPayload(resources: [Resource]) throws -> NSData {
+		let payloadData: AnyObject
+		
+		if resources.isEmpty {
+			payloadData = []
+		} else {
+			payloadData = resources.map { resource in
+				return ["type": resource.resourceType, "id": resource.id!]
+			}
+		}
+		
+		return try NSJSONSerialization.dataWithJSONObject(["data": payloadData], options: NSJSONWritingOptions(rawValue: 0))
 	}
 }
 
-private class RelationshipToOneOperation: RelationshipOperation {
+/// A RelationshipReplaceOperation replaces the entire contents of a relationship.
+private class RelationshipReplaceOperation: RelationshipOperation {
 	let resource: Resource
-	let relationship: ToOneRelationship
-	var relatedResource: Resource! {
-		return resource.valueForField(relationship.name) as! Resource
-	}
+	let relationship: Relationship
 
-	init(resource: Resource, relationship: ToOneRelationship, spine: Spine) {
+	init(resource: Resource, relationship: Relationship, spine: Spine) {
 		self.resource = resource
 		self.relationship = relationship
 		super.init()
 		self.spine = spine
 	}
 	
-	private func execute(httpMethod: String, payload: NSData?) {
-		let links = resource.relationships![relationship.name]?["links"] as? NSDictionary
-
-		guard links?["self"] != nil else {
-			self.result = Failable()
-			self.state = .Finished
+	override func execute() {
+		let URL = router.URLForRelationship(relationship, ofResource: resource)
+		let payload: NSData
+		
+		switch relationship {
+		case is ToOneRelationship:
+				payload = try! toOnePayload(resource.valueForField(relationship.name) as? Resource)
+		case is ToManyRelationship:
+			let relatedResources = (resource.valueForField(relationship.name) as? ResourceCollection)?.resources ?? []
+			payload = try! toManyPayload(relatedResources)
+		default:
+			assertionFailure("Cannot only replace relationship contents for ToOneRelationship and ToManyRelationship")
 			return
 		}
-		
-		let URL = NSURL(string: links!["self"] as! String)
-		networkClient.request(httpMethod, URL: URL!, payload: payload, callback: handleNetworkResponse)
-	}
 
-	private func payload() -> NSData! {
-		return try! NSJSONSerialization.dataWithJSONObject(["data": resourceLinkage(relatedResource)], options: NSJSONWritingOptions(rawValue: 0))
+		Spine.logInfo(.Spine, "Replacing relationship \(relationship) using URL: \(URL)")
+		networkClient.request("PATCH", URL: URL, payload: payload, callback: handleNetworkResponse)
 	}
 }
 
-private class RelationshipToOneUpdateOperation: RelationshipToOneOperation {
-	override func execute() {
-		super.execute("PATCH", payload: payload())
+/// A RelationshipMutateOperation mutates a to-many relationship by adding or removing linked resources.
+private class RelationshipMutateOperation: RelationshipOperation {
+	enum Mutation {
+		case Add, Remove
 	}
-}
-
-private class RelationshipToOneRemoveOperation: RelationshipToOneOperation {
-	override func execute() {
-		super.execute("DELETE", payload: nil)
-	}
-}
-
-private class RelationshipToManyOperation: RelationshipOperation {
+	
 	let resource: Resource
 	let relationship: ToManyRelationship
-	var resourceCollection: LinkedResourceCollection {
-		return resource.valueForField(relationship.name) as! LinkedResourceCollection
-	}
+	let mutation: Mutation
 
-	init(resource: Resource, relationship: ToManyRelationship, spine: Spine) {
+	init(resource: Resource, relationship: ToManyRelationship, mutation: Mutation, spine: Spine) {
 		self.resource = resource
 		self.relationship = relationship
+		self.mutation = mutation
 		super.init()
 		self.spine = spine
 	}
 
-	private func execute(httpMethod: String, relatedResources: [Resource]) {
+	override func execute() {
+		let resourceCollection = resource.valueForField(relationship.name) as! LinkedResourceCollection
+		let httpMethod: String
+		let relatedResources: [Resource]
+		
+		switch mutation {
+		case .Add:
+			httpMethod = "POST"
+			relatedResources = resourceCollection.addedResources
+		case .Remove:
+			httpMethod = "DELETE"
+			relatedResources = resourceCollection.removedResources
+		}
+		
 		guard !relatedResources.isEmpty else {
 			self.result = Failable()
 			self.state = .Finished
 			return
 		}
-
-		networkClient.request(httpMethod, URL: resourceCollection.linkURL!, payload: payload(relatedResources), callback: handleNetworkResponse)
-	}
-
-	private func payload(relatedResources: [Resource]) -> NSData {
-		return try! NSJSONSerialization.dataWithJSONObject(["data": linkage(relatedResources)], options: NSJSONWritingOptions(rawValue: 0))
-	}
-
-	private func linkage(relatedResources: [Resource]) -> [[String: String]] {
-		return relatedResources.map { resourceLinkage($0) }
-	}
-}
-
-private class RelationshipToManyAddOperation: RelationshipToManyOperation {
-	override func execute() {
-		super.execute("POST", relatedResources: resourceCollection.addedResources)
-	}
-}
-
-private class RelationshipToManyRemoveOperation: RelationshipToManyOperation {
-	override func execute() {
-		super.execute("DELETE", relatedResources: resourceCollection.removedResources)
+		
+		let URL = router.URLForRelationship(relationship, ofResource: resource)
+		let payload = try! toManyPayload(relatedResources)
+		Spine.logInfo(.Spine, "Mutating relationship \(relationship) using URL: \(URL)")
+		networkClient.request(httpMethod, URL: URL, payload: payload, callback: handleNetworkResponse)
 	}
 }
