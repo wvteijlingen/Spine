@@ -479,6 +479,31 @@ class SaveRelationshipsTests: SpineTests {
 			XCTAssertTrue(relationshipUpdated)
 		}
 	}
+	
+	func testItShouldPATCHToOneRelationshipsWithNull() {
+		var relationshipUpdated = false
+		
+		HTTPClient.handler = { request, payload in
+			if(request.HTTPMethod! == "PATCH" && request.URL!.absoluteString == "http://example.com/foos/1/relationships/to-one-attribute") {
+				let json = JSON(data: payload!)
+				if json["data"].type == .Null {
+					relationshipUpdated = true
+				}
+			}
+			return (responseData: self.fixture.data, statusCode: 201, error: nil)
+		}
+		
+		foo.toOneAttribute = nil
+		
+		let future = spine.save(foo)
+		let expectation = expectationWithDescription("")
+		assertFutureSuccess(future, expectation: expectation)
+		
+		waitForExpectationsWithTimeout(10) { error in
+			XCTAssertNil(error, "\(error)")
+			XCTAssertTrue(relationshipUpdated)
+		}
+	}
 
 	func testItShouldPOSTToManyRelationships() {
 		var relationshipUpdated = false
