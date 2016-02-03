@@ -538,7 +538,7 @@ class SaveRelationshipsTests: SpineTests {
 
 	func testItShouldFailOnAPIError() {
 		HTTPClient.handler = { request, payload in
-			if(request.HTTPMethod! == "DELETE" && request.URL!.absoluteString == "http://example.com/foos/1/relationships/to-one-attribute") {
+			if(request.HTTPMethod! == "PATCH" && request.URL!.absoluteString == "http://example.com/foos/1/relationships/to-one-attribute") {
 				return (responseData: nil, statusCode: 422, error: NSError(domain: "SimulatedAPIError", code: 422, userInfo: nil))
 			}
 			return (responseData: self.fixture.data, statusCode: 201, error: nil)

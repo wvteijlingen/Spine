@@ -302,6 +302,7 @@ class SaveOperation: ConcurrentOperation {
 			if let error = result?.error {
 				self.relationshipOperationQueue.cancelAllOperations()
 				self.result = Failable(error)
+				self.state = .Finished
 			}
 		}
 		
