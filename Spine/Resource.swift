@@ -10,9 +10,7 @@ import Foundation
 
 public typealias ResourceType = String
 
-/**
-A ResourceIdentifier uniquely identifies a resource that exists on the server.
-*/
+/// A ResourceIdentifier uniquely identifies a resource that exists on the server.
 public struct ResourceIdentifier: Equatable {
 	/// The resource type.
 	var type: ResourceType
@@ -43,17 +41,44 @@ public func ==(lhs: ResourceIdentifier, rhs: ResourceIdentifier) -> Bool {
 	return lhs.type == rhs.type && lhs.id == rhs.id
 }
 
+/// A RelationshipData struct holds data about a relationship.
 struct RelationshipData {
 	var selfURL: NSURL?
 	var relatedURL: NSURL?
 	var data: [ResourceIdentifier]?
+	
+	init(selfURL: NSURL?, relatedURL: NSURL?, data: [ResourceIdentifier]?) {
+		self.selfURL = selfURL
+		self.relatedURL = relatedURL
+		self.data = data
+	}
+	
+	/// Constructs a new ResourceIdentifier instance from the given dictionary.
+	/// The dictionary must contain values for the "type" and "id" keys.
+	init(dictionary: NSDictionary) {
+		selfURL = dictionary["selfURL"] as? NSURL
+		relatedURL = dictionary["relatedURL"] as? NSURL
+		data = (dictionary["data"] as? [NSDictionary])?.map(ResourceIdentifier.init)
+	}
+	
+	/// Returns a dictionary with "type" and "id" keys containing the type and id.
+	func toDictionary() -> NSDictionary {
+		var dictionary = [String: AnyObject]()
+		if let selfURL = selfURL {
+			dictionary["selfURL"] = selfURL
+		}
+		if let relatedURL = relatedURL {
+			dictionary["relatedURL"] = relatedURL
+		}
+		if let data = data {
+			dictionary["data"] = data.map { $0.toDictionary() }
+		}
+		return dictionary
+	}
 }
 
-
-/**
-A base recource class that provides some defaults for resources.
-You can create custom resource classes by subclassing from Resource.
-*/
+/// A base recource class that provides some defaults for resources.
+/// You can create custom resource classes by subclassing from Resource.
 public class Resource: NSObject, NSCoding {
 	/// The resource type in plural form.
 	public class var resourceType: ResourceType {
@@ -88,6 +113,13 @@ public class Resource: NSObject, NSCoding {
 		self.URL = coder.decodeObjectForKey("URL") as? NSURL
 		self.isLoaded = coder.decodeBoolForKey("isLoaded")
 		self.meta = coder.decodeObjectForKey("meta") as? [String: AnyObject]
+		
+		if let relationshipsData = coder.decodeObjectForKey("relationships") as? [String: NSDictionary] {
+			var relationships = [String: RelationshipData]()
+			for (key, value) in relationshipsData {
+				relationships[key] = RelationshipData.init(dictionary: value)
+			}
+		}
 	}
 	
 	public func encodeWithCoder(coder: NSCoder) {
@@ -95,6 +127,12 @@ public class Resource: NSObject, NSCoding {
 		coder.encodeObject(self.URL, forKey: "URL")
 		coder.encodeBool(self.isLoaded, forKey: "isLoaded")
 		coder.encodeObject(self.meta, forKey: "meta")
+		
+		var relationshipsData = [String: NSDictionary]()
+		for (key, value) in self.relationships {
+			relationshipsData[key] = value.toDictionary()
+		}
+		coder.encodeObject(relationshipsData, forKey: "relationships")
 	}
 
   /// Returns the value for the field named `field`.
