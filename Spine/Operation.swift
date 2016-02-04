@@ -264,41 +264,37 @@ class SaveOperation: ConcurrentOperation {
 		networkClient.request(method, URL: URL, payload: payload) { statusCode, responseData, networkError in
 			defer { self.state = .Finished }
 			
-			guard networkError == nil else {
-				self.result = Failable.Failure(SpineError.NetworkError(networkError!))
+			if let error = networkError {
+				self.result = Failable.Failure(SpineError.NetworkError(error))
 				return
 			}
 			
-			if(!statusCodeIsSuccess(statusCode)) {
-				if let data = responseData where data.length > 0 {
-					do {
-						let document = try self.serializer.deserializeData(data, mappingTargets: nil)
-						self.result = .Failure(errorFromStatusCode(statusCode!, additionalErrors: document.errors))
-					} catch is SerializerError {
-						self.result = .Failure(SpineError.SerializerError)
-					} catch let error as SpineError {
-						self.result = Failable.Failure(error)
-					} catch {
-						self.result = .Failure(SpineError.UnknownError)
-					}
-				} else {
-					self.result = .Failure(errorFromStatusCode(statusCode!))
+			let success = statusCodeIsSuccess(statusCode)
+			let document: JSONAPIDocument?
+			if let data = responseData where data.length > 0 {
+				do {
+					// Don't map onto the resources if the response is not in the success range.
+					let mappingTargets: [Resource]? = success ? [self.resource] : nil
+					document = try self.serializer.deserializeData(data, mappingTargets: mappingTargets)
+				} catch is SerializerError {
+					self.result = .Failure(SpineError.SerializerError)
+					return
+				} catch let error as SpineError {
+					self.result = Failable.Failure(error)
+					return
+				} catch {
+					self.result = .Failure(SpineError.UnknownError)
+					return
 				}
 			} else {
-				if let data = responseData where data.length > 0 {
-					do {
-						try self.serializer.deserializeData(data, mappingTargets: [self.resource])
-						self.result = .Success()
-					} catch is SerializerError {
-						self.result = .Failure(SpineError.SerializerError)
-					} catch let error as SpineError {
-						self.result = .Failure(error)
-					} catch {
-						self.result = .Failure(SpineError.UnknownError)
-					}
-				} else {
-					self.result = .Failure(errorFromStatusCode(statusCode!))
-				}
+				document = nil
+			}
+			
+			if success {
+				self.result = .Success()
+			} else {
+				let error = errorFromStatusCode(statusCode!, additionalErrors: document?.errors)
+				self.result = .Failure(error)
 			}
 		}
 	}
