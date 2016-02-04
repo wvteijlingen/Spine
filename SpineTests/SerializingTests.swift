@@ -255,10 +255,10 @@ class DeserializingTests: SerializerTests {
 		do {
 			try serializer.deserializeData(data)
 			XCTFail("Expected deserialization to fail.")
-			
-		} catch let error as NSError {
-			XCTAssertEqual(error.domain, SpineSerializingErrorDomain, "Expected error domain to be SpineSerializingErrorDomain.")
-			XCTAssertEqual(error.code, SpineErrorCodes.InvalidDocumentStructure, "Expected error code to be 'InvalidDocumentStructure'.")
+		} catch SerializerError.InvalidDocumentStructure {
+			// All is well
+		} catch {
+			XCTFail("Expected error domain to be SerializerError.TopLevelEntryMissing.")
 		}
 	}
 	
@@ -275,13 +275,15 @@ class DeserializingTests: SerializerTests {
 				
 				for (index, error) in errors.enumerate() {
 					let errorJSON = fixture.json["errors"][index]
-					XCTAssertEqual(error.domain, SpineServerErrorDomain, "Expected error domain to be SpineServerErrorDomain.")
-					XCTAssertEqual(error.code, errorJSON["code"].intValue, "Expected error code to be equal.")
-					XCTAssertEqual(error.localizedDescription, errorJSON["title"].stringValue, "Expected error description to be equal.")
+					XCTAssertEqual(error.id, errorJSON["id"].stringValue)
+					XCTAssertEqual(error.status, errorJSON["status"].stringValue)
+					XCTAssertEqual(error.code, errorJSON["code"].stringValue)
+					XCTAssertEqual(error.title, errorJSON["title"].stringValue)
+					XCTAssertEqual(error.detail, errorJSON["detail"].stringValue)
 				}
 			}
 			
-		} catch let error as NSError {
+		} catch let error {
 			XCTFail("Deserialisation failed with error: \(error).")
 		}
 	}

@@ -41,20 +41,44 @@ func assertFutureSuccess<T, E>(future: Future<T, E>, expectation: XCTestExpectat
 	}
 }
 
-func assertFutureFailure<T>(future: Future<T, NSError>, withError expectedError: NSError, expectation: XCTestExpectation) {
+func assertFutureFailure<T>(future: Future<T, SpineError>, withError expectedError: SpineError, expectation: XCTestExpectation) {
 	future.onSuccess { resources in
 		expectation.fulfill()
 		XCTFail("Expected success callback to not be called.")
 	}.onFailure { error in
 		expectation.fulfill()
-		XCTAssertEqual(error.domain, expectedError.domain, "Expected error domain to be \(expectedError.domain).")
-		XCTAssertEqual(error.code, expectedError.code, "Expected error code to be \(expectedError.code).")
+		XCTAssertEqual(error, expectedError, "Expected error to be be \(expectedError).")
 	}
 }
 
-func assertFutureFailure<T>(future: Future<T, NSError>, withErrorDomain domain: String, errorCode code: Int, expectation: XCTestExpectation) {
-	let expectedError = NSError(domain: domain, code: code, userInfo: nil)
-	assertFutureFailure(future, withError: expectedError, expectation: expectation)
+func assertFutureFailureWithServerError<T>(future: Future<T, SpineError>, statusCode code: Int, expectation: XCTestExpectation) {
+	future.onSuccess { resources in
+		expectation.fulfill()
+		XCTFail("Expected success callback to not be called.")
+		}.onFailure { error in
+			expectation.fulfill()
+			switch error {
+			case .ServerError(let statusCode, _):
+				XCTAssertEqual(statusCode, code, "Expected error to be be .ServerError with statusCode \(code)")
+			default:
+				XCTFail("Expected error to be be .ServerError")
+			}
+	}
+}
+
+func assertFutureFailureWithNetworkError<T>(future: Future<T, SpineError>, code: Int, expectation: XCTestExpectation) {
+	future.onSuccess { resources in
+		expectation.fulfill()
+		XCTFail("Expected success callback to not be called.")
+	}.onFailure { error in
+		expectation.fulfill()
+		switch error {
+		case .NetworkError(let error):
+			XCTAssertEqual(error.code, code, "Expected error to be be .NetworkError with code \(code)")
+		default:
+			XCTFail("Expected error to be be .NetworkError")
+		}
+	}
 }
 
 func assertFooResource(foo: Foo, isEqualToJSON json: JSON) {

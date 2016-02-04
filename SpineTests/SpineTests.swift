@@ -64,7 +64,7 @@ class FindAllTests: SpineTests {
 		
 		let expectation = expectationWithDescription("testFindByTypeWithAPIError")
 		let future = spine.findAll(Foo.self)
-		assertFutureFailure(future, withErrorDomain: SpineServerErrorDomain, errorCode: 404, expectation: expectation)
+		assertFutureFailureWithServerError(future, statusCode: 404, expectation: expectation)
 		
 		waitForExpectationsWithTimeout(10) { error in
 			XCTAssertNil(error, "\(error)")
@@ -73,10 +73,10 @@ class FindAllTests: SpineTests {
 	
 	func testItShouldFailOnNetworkError() {
 		HTTPClient.simulateNetworkErrorWithCode(999)
-		
 		let expectation = expectationWithDescription("testFindByTypeWithNetworkError")
 		let future = spine.findAll(Foo.self)
-		assertFutureFailure(future, withErrorDomain: "SimulatedNetworkError", errorCode: 999, expectation: expectation)
+		
+		assertFutureFailureWithNetworkError(future, code: 999, expectation: expectation)
 		
 		waitForExpectationsWithTimeout(10) { error in
 			XCTAssertNil(error, "\(error)")
@@ -120,7 +120,7 @@ class FindByIDTests: SpineTests {
 		
 		let expectation = expectationWithDescription("testFindByIDAndTypeWithAPIError")
 		let future = spine.find(["1","2"], ofType: Foo.self)
-		assertFutureFailure(future, withErrorDomain: SpineServerErrorDomain, errorCode: 404, expectation: expectation)
+		assertFutureFailureWithServerError(future, statusCode: 404, expectation: expectation)
 		
 		waitForExpectationsWithTimeout(10) { error in
 			XCTAssertNil(error, "\(error)")
@@ -129,10 +129,10 @@ class FindByIDTests: SpineTests {
 	
 	func testItShouldFailOnNetworkError() {
 		HTTPClient.simulateNetworkErrorWithCode(999)
-		
 		let expectation = expectationWithDescription("testFindByIDAndTypeWithNetworkError")
 		let future = spine.find(["1","2"], ofType: Foo.self)
-		assertFutureFailure(future, withErrorDomain: "SimulatedNetworkError", errorCode: 999, expectation: expectation)
+		
+		assertFutureFailureWithNetworkError(future, code: 999, expectation: expectation)
 		
 		waitForExpectationsWithTimeout(10) { error in
 			XCTAssertNil(error, "\(error)")
@@ -170,7 +170,7 @@ class FindOneByIDTests: SpineTests {
 		
 		let expectation = expectationWithDescription("testFindOneByTypeWithAPIError")
 		let future = spine.findOne("1", ofType: Foo.self)
-		assertFutureFailure(future, withErrorDomain: SpineServerErrorDomain, errorCode: 404, expectation: expectation)
+		assertFutureFailureWithServerError(future, statusCode: 404, expectation: expectation)
 		
 		waitForExpectationsWithTimeout(10) { error in
 			XCTAssertNil(error, "\(error)")
@@ -178,11 +178,11 @@ class FindOneByIDTests: SpineTests {
 	}
 	
 	func testItShouldFailOnNetworkError() {
-		HTTPClient.simulateNetworkErrorWithCode(999)
-		
+		let networkError = HTTPClient.simulateNetworkErrorWithCode(999)
 		let expectation = expectationWithDescription("testFindOneByTypeWithNetworkError")
 		let future = spine.findOne("1", ofType: Foo.self)
-		assertFutureFailure(future, withErrorDomain: "SimulatedNetworkError", errorCode: 999, expectation: expectation)
+		
+		assertFutureFailure(future, withError: SpineError.NetworkError(networkError), expectation: expectation)
 		
 		waitForExpectationsWithTimeout(10) { error in
 			XCTAssertNil(error, "\(error)")
@@ -228,7 +228,7 @@ class FindByQueryTests: SpineTests {
 		
 		let query = Query(resourceType: Foo.self, resourceIDs: ["1"])
 		let future = spine.find(query)
-		assertFutureFailure(future, withErrorDomain: SpineServerErrorDomain, errorCode: 404, expectation: expectation)
+		assertFutureFailureWithServerError(future, statusCode: 404, expectation: expectation)
 		
 		waitForExpectationsWithTimeout(10) { error in
 			XCTAssertNil(error, "\(error)")
@@ -242,7 +242,7 @@ class FindByQueryTests: SpineTests {
 		
 		let query = Query(resourceType: Foo.self, resourceIDs: ["1"])
 		let future = spine.find(query)
-		assertFutureFailure(future, withErrorDomain: "SimulatedNetworkError", errorCode: 999, expectation: expectation)
+		assertFutureFailureWithNetworkError(future, code: 999, expectation: expectation)
 		
 		waitForExpectationsWithTimeout(10) { error in
 			XCTAssertNil(error, "\(error)")
@@ -283,7 +283,7 @@ class FindOneByQueryTests: SpineTests {
 		
 		let query = Query(resourceType: Foo.self, resourceIDs: ["1"])
 		let future = spine.findOne(query)
-		assertFutureFailure(future, withErrorDomain: SpineServerErrorDomain, errorCode: 404, expectation: expectation)
+		assertFutureFailureWithServerError(future, statusCode: 404, expectation: expectation)
 		
 		waitForExpectationsWithTimeout(10) { error in
 			XCTAssertNil(error, "\(error)")
@@ -297,7 +297,7 @@ class FindOneByQueryTests: SpineTests {
 		
 		let query = Query(resourceType: Foo.self, resourceIDs: ["1"])
 		let future = spine.findOne(query)
-		assertFutureFailure(future, withErrorDomain: "SimulatedNetworkError", errorCode: 999, expectation: expectation)
+		assertFutureFailureWithNetworkError(future, code: 999, expectation: expectation)
 		
 		waitForExpectationsWithTimeout(10) { error in
 			XCTAssertNil(error, "\(error)")
@@ -336,7 +336,7 @@ class DeleteTests: SpineTests {
 		let bar = Bar(id: "1")
 		let expectation = expectationWithDescription("testDeleteResourceWithAPIError")
 		let future = spine.delete(bar)
-		assertFutureFailure(future, withErrorDomain: SpineServerErrorDomain, errorCode: 404, expectation: expectation)
+		assertFutureFailureWithServerError(future, statusCode: 404, expectation: expectation)
 		
 		waitForExpectationsWithTimeout(10) { error in
 			XCTAssertNil(error, "\(error)")
@@ -349,7 +349,7 @@ class DeleteTests: SpineTests {
 		let bar = Bar(id: "1")
 		let expectation = expectationWithDescription("testDeleteResourceWithNetworkError")
 		let future = spine.delete(bar)
-		assertFutureFailure(future, withErrorDomain: "SimulatedNetworkError", errorCode: 999, expectation: expectation)
+		assertFutureFailureWithNetworkError(future, code: 999, expectation: expectation)
 		
 		waitForExpectationsWithTimeout(10) { error in
 			XCTAssertNil(error, "\(error)")
@@ -419,7 +419,7 @@ class SaveTests: SpineTests {
 		
 		let expectation = expectationWithDescription("testCreateResourceWithAPIError")
 		let future = spine.save(foo)
-		assertFutureFailure(future, withErrorDomain: SpineServerErrorDomain, errorCode: 400, expectation: expectation)
+		assertFutureFailureWithServerError(future, statusCode: 400, expectation: expectation)
 
 		waitForExpectationsWithTimeout(10) { error in
 			XCTAssertNil(error, "\(error)")
@@ -431,7 +431,7 @@ class SaveTests: SpineTests {
 		
 		let expectation = expectationWithDescription("testDeleteResourceWithNetworkError")
 		let future = spine.save(foo)
-		assertFutureFailure(future, withErrorDomain: "SimulatedNetworkError", errorCode: 999, expectation: expectation)
+		assertFutureFailureWithNetworkError(future, code: 999, expectation: expectation)
 		
 		waitForExpectationsWithTimeout(10) { error in
 			XCTAssertNil(error, "\(error)")
@@ -564,16 +564,16 @@ class SaveRelationshipsTests: SpineTests {
 	func testItShouldFailOnAPIError() {
 		HTTPClient.handler = { request, payload in
 			if(request.HTTPMethod! == "PATCH" && request.URL!.absoluteString == "http://example.com/foos/1/relationships/to-one-attribute") {
-				return (responseData: nil, statusCode: 422, error: NSError(domain: "SimulatedAPIError", code: 422, userInfo: nil))
+				return (responseData: nil, statusCode: 422, error: nil)
 			}
 			return (responseData: self.fixture.data, statusCode: 201, error: nil)
 		}
 
 		foo.toOneAttribute = nil
 
-		let expectation = expectationWithDescription("SimulatedAPIError")
+		let expectation = expectationWithDescription("")
 		let future = spine.save(foo)
-		assertFutureFailure(future, withErrorDomain: "SimulatedAPIError", errorCode: 422, expectation: expectation)
+		assertFutureFailureWithServerError(future, statusCode: 422, expectation: expectation)
 
 		waitForExpectationsWithTimeout(10) { error in
 			XCTAssertNil(error, "\(error)")

@@ -12,16 +12,8 @@ private func statusCodeIsSuccess(statusCode: Int?) -> Bool {
 	return statusCode != nil && 200 ... 299 ~= statusCode!
 }
 
-private func errorFromStatusCode(statusCode: Int, additionalErrors: [NSError]? = nil) -> NSError {
-	let userInfo: [NSObject: AnyObject]?
-	
-	if let additionalErrors = additionalErrors {
-		userInfo = ["apiErrors": additionalErrors]
-	} else {
-		userInfo = nil
-	}
-	
-	return NSError(domain: SpineServerErrorDomain, code: statusCode, userInfo: userInfo)
+private func errorFromStatusCode(statusCode: Int, additionalErrors: [APIError]? = nil) -> SpineError {
+	return SpineError.ServerError(statusCode: statusCode, apiErrors: additionalErrors)
 }
 
 // MARK: - Base operation
@@ -120,7 +112,7 @@ class FetchOperation<T: Resource>: ConcurrentOperation {
 	var mappingTargets = [Resource]()
 	
 	/// The result of the operation. You can safely force unwrap this in the completionBlock.
-	var result: Failable<JSONAPIDocument>?
+	var result: Failable<JSONAPIDocument, SpineError>?
 	
 	init(query: Query<T>, spine: Spine) {
 		self.query = query
@@ -137,7 +129,7 @@ class FetchOperation<T: Resource>: ConcurrentOperation {
 			defer { self.state = .Finished }
 			
 			guard networkError == nil else {
-				self.result = Failable.Failure(networkError!)
+				self.result = Failable.Failure(SpineError.NetworkError(networkError!))
 				return
 			}
 			
@@ -147,10 +139,14 @@ class FetchOperation<T: Resource>: ConcurrentOperation {
 					if statusCodeIsSuccess(statusCode) {
 						self.result = Failable(document)
 					} else {
-						self.result = Failable.Failure(errorFromStatusCode(statusCode!, additionalErrors: document.errors))
+						self.result = Failable.Failure(SpineError.ServerError(statusCode: statusCode!, apiErrors: document.errors))
 					}
-				} catch let error as NSError {
+				} catch is SerializerError {
+					self.result = .Failure(SpineError.SerializerError)
+				} catch let error as SpineError {
 					self.result = Failable.Failure(error)
+				} catch {
+					self.result = .Failure(SpineError.UnknownError)
 				}
 				
 			} else {
@@ -166,7 +162,7 @@ class DeleteOperation: ConcurrentOperation {
 	let resource: Resource
 	
 	/// The result of the operation. You can safely force unwrap this in the completionBlock.
-	var result: Failable<Void>?
+	var result: Failable<Void, SpineError>?
 	
 	init(resource: Resource, spine: Spine) {
 		self.resource = resource
@@ -183,7 +179,7 @@ class DeleteOperation: ConcurrentOperation {
 			defer { self.state = .Finished }
 		
 			guard networkError == nil else {
-				self.result = Failable.Failure(networkError!)
+				self.result = Failable.Failure(SpineError.NetworkError(networkError!))
 				return
 			}
 			
@@ -192,9 +188,13 @@ class DeleteOperation: ConcurrentOperation {
 			} else if let data = responseData where data.length > 0 {
 				do {
 					let document = try self.serializer.deserializeData(data, mappingTargets: nil)
-					self.result = .Failure(errorFromStatusCode(statusCode!, additionalErrors: document.errors))
-				} catch let error as NSError {
-					self.result = .Failure(error)
+					self.result = .Failure(SpineError.ServerError(statusCode: statusCode!, apiErrors: document.errors))
+				} catch is SerializerError {
+					self.result = .Failure(SpineError.SerializerError)
+				} catch let error as SpineError {
+					self.result = Failable.Failure(error)
+				} catch {
+					self.result = .Failure(SpineError.UnknownError)
 				}
 			} else {
 				self.result = .Failure(errorFromStatusCode(statusCode!))
@@ -209,7 +209,7 @@ class SaveOperation: ConcurrentOperation {
 	let resource: Resource
 	
 	/// The result of the operation. You can safely force unwrap this in the completionBlock.
-	var result: Failable<Void>?
+	var result: Failable<Void, SpineError>?
 	
 	/// Whether the resource is a new resource, or an existing resource.
 	private let isNewResource: Bool
@@ -253,19 +253,19 @@ class SaveOperation: ConcurrentOperation {
 		
 		do {
 			payload = try serializer.serializeResources([resource], options: options)
-		} catch let error as NSError {
-			self.result = Failable.Failure(error)
+		} catch let error {
+			self.result = .Failure(error as! SpineError)
 			self.state = .Finished
 			return
 		}
-		
+
 		Spine.logInfo(.Spine, "Saving resource \(resource) using URL: \(URL)")
 		
 		networkClient.request(method, URL: URL, payload: payload) { statusCode, responseData, networkError in
 			defer { self.state = .Finished }
 			
 			guard networkError == nil else {
-				self.result = Failable.Failure(networkError!)
+				self.result = Failable.Failure(SpineError.NetworkError(networkError!))
 				return
 			}
 			
@@ -274,8 +274,12 @@ class SaveOperation: ConcurrentOperation {
 					do {
 						let document = try self.serializer.deserializeData(data, mappingTargets: nil)
 						self.result = .Failure(errorFromStatusCode(statusCode!, additionalErrors: document.errors))
-					} catch let error as NSError {
-						self.result = .Failure(error)
+					} catch is SerializerError {
+						self.result = .Failure(SpineError.SerializerError)
+					} catch let error as SpineError {
+						self.result = Failable.Failure(error)
+					} catch {
+						self.result = .Failure(SpineError.UnknownError)
 					}
 				} else {
 					self.result = .Failure(errorFromStatusCode(statusCode!))
@@ -285,8 +289,12 @@ class SaveOperation: ConcurrentOperation {
 					do {
 						try self.serializer.deserializeData(data, mappingTargets: [self.resource])
 						self.result = .Success()
-					} catch let error as NSError {
+					} catch is SerializerError {
+						self.result = .Failure(SpineError.SerializerError)
+					} catch let error as SpineError {
 						self.result = .Failure(error)
+					} catch {
+						self.result = .Failure(SpineError.UnknownError)
 					}
 				} else {
 					self.result = .Failure(errorFromStatusCode(statusCode!))
@@ -294,11 +302,25 @@ class SaveOperation: ConcurrentOperation {
 			}
 		}
 	}
+	
+	/// Serializes `resource` into NSData using `options`. Any error that occurs is rethrown as a SpineError.
+	private func serializePayload(resource: Resource, options: SerializationOptions) throws -> NSData {
+		do {
+			let payload = try serializer.serializeResources([resource], options: options)
+			return payload
+		} catch is SerializerError {
+			throw SpineError.SerializerError
+		} catch let error as SpineError {
+			throw error
+		} catch {
+			throw SpineError.UnknownError
+		}
+	}
 
 	private func updateRelationships() {
 		self.relationshipOperationQueue.addObserver(self, forKeyPath: "operations", options: NSKeyValueObservingOptions(), context: nil)
 		
-		let completionHandler: (result: Failable<Void>?) -> Void = { result in
+		let completionHandler: (result: Failable<Void, SpineError>?) -> Void = { result in
 			if let error = result?.error {
 				self.relationshipOperationQueue.cancelAllOperations()
 				self.result = Failable(error)
@@ -340,13 +362,13 @@ class SaveOperation: ConcurrentOperation {
 }
 
 private class RelationshipOperation: ConcurrentOperation {
-	var result: Failable<Void>?
+	var result: Failable<Void, SpineError>?
 	
 	func handleNetworkResponse(statusCode: Int?, responseData: NSData?, networkError: NSError?) {
 		defer { self.state = .Finished }
 		
 		guard networkError == nil else {
-			self.result = Failable.Failure(networkError!)
+			self.result = Failable.Failure(SpineError.NetworkError(networkError!))
 			return
 		}
 		
@@ -356,8 +378,10 @@ private class RelationshipOperation: ConcurrentOperation {
 			do {
 				let document = try serializer.deserializeData(data, mappingTargets: nil)
 				self.result = .Failure(errorFromStatusCode(statusCode!, additionalErrors: document.errors))
-			} catch let error as NSError {
+			} catch let error as SpineError {
 				self.result = .Failure(error)
+			} catch {
+				self.result = .Failure(SpineError.SerializerError)
 			}
 		} else {
 			self.result = .Failure(errorFromStatusCode(statusCode!))
