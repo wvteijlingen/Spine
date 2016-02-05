@@ -383,33 +383,6 @@ private class RelationshipOperation: ConcurrentOperation {
 			self.result = .Failure(errorFromStatusCode(statusCode!))
 		}
 	}
-	
-	private func toOnePayload(resource: Resource?) throws -> NSData {
-		let payloadData: AnyObject
-		
-		if let resource = resource {
-			assert(resource.id != nil, "Attempt to convert resource without id to linkage. Only resources with ids can be converted to linkage.")
-			payloadData = ["type": resource.resourceType, "id": resource.id!]
-		} else {
-			payloadData = NSNull()
-		}
-		
-		return try NSJSONSerialization.dataWithJSONObject(["data": payloadData], options: NSJSONWritingOptions(rawValue: 0))
-	}
-	
-	private func toManyPayload(resources: [Resource]) throws -> NSData {
-		let payloadData: AnyObject
-		
-		if resources.isEmpty {
-			payloadData = []
-		} else {
-			payloadData = resources.map { resource in
-				return ["type": resource.resourceType, "id": resource.id!]
-			}
-		}
-		
-		return try NSJSONSerialization.dataWithJSONObject(["data": payloadData], options: NSJSONWritingOptions(rawValue: 0))
-	}
 }
 
 /// A RelationshipReplaceOperation replaces the entire contents of a relationship.
@@ -430,10 +403,10 @@ private class RelationshipReplaceOperation: RelationshipOperation {
 		
 		switch relationship {
 		case is ToOneRelationship:
-				payload = try! toOnePayload(resource.valueForField(relationship.name) as? Resource)
+				payload = try! serializer.serializeLinkData(resource.valueForField(relationship.name) as? Resource)
 		case is ToManyRelationship:
 			let relatedResources = (resource.valueForField(relationship.name) as? ResourceCollection)?.resources ?? []
-			payload = try! toManyPayload(relatedResources)
+			payload = try! serializer.serializeLinkData(relatedResources)
 		default:
 			assertionFailure("Cannot only replace relationship contents for ToOneRelationship and ToManyRelationship")
 			return
