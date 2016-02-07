@@ -456,7 +456,7 @@ private class RelationshipMutateOperation: RelationshipOperation {
 		}
 		
 		let URL = router.URLForRelationship(relationship, ofResource: resource)
-		let payload = try! toManyPayload(relatedResources)
+		let payload = try! serializer.serializeLinkData(relatedResources)
 		Spine.logInfo(.Spine, "Mutating relationship \(relationship) using URL: \(URL)")
 		networkClient.request(httpMethod, URL: URL, payload: payload, callback: handleNetworkResponse)
 	}
