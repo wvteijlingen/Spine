@@ -314,6 +314,13 @@ class SaveOperation: ConcurrentOperation {
 	}
 
 	private func updateRelationships() {
+		let relationships = resource.fields.filter { $0 is Relationship }
+		
+		guard !relationships.isEmpty else {
+			self.updateResource()
+			return
+		}
+		
 		self.relationshipOperationQueue.addObserver(self, forKeyPath: "operations", options: NSKeyValueObservingOptions(), context: nil)
 		
 		let completionHandler: (result: Failable<Void, SpineError>?) -> Void = { result in
@@ -324,8 +331,8 @@ class SaveOperation: ConcurrentOperation {
 			}
 		}
 		
-		for field in resource.fields {
-			switch field {
+		for relationship in relationships {
+			switch relationship {
 			case let toOne as ToOneRelationship:
 				let operation = RelationshipReplaceOperation(resource: resource, relationship: toOne, spine: spine)
 				operation.completionBlock = { [unowned operation] in completionHandler(result: operation.result) }
