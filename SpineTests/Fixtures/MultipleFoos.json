@@ -16,13 +16,13 @@
 		"relationships": {
 			"to-one-attribute": {
 				"links": {
-					"self": "http://example.com/foos/1/links/toOneAttribute",
+					"self": "http://example.com/foos/1/relationships/to-one-attribute",
 					"related": "http://example.com/bars/10"
 				}
 			},
 			"to-many-attribute": {
 				"links": {
-					"self": "http://example.com/foos/1/links/toManyAttribute",
+					"self": "http://example.com/foos/1/relationships/to-many-attribute",
 					"related": "http://example.com/bars/11,12"
 				}
 			}
@@ -44,13 +44,13 @@
 		"relationships": {
 			"to-one-attribute": {
 				"links": {
-					"self": "http://example.com/foos/1/links/toOneAttribute",
+					"self": "http://example.com/foos/1/relationships/to-one-attribute",
 					"related": "http://example.com/bars/10"
 				}
 			},
 			"to-many-attribute": {
 				"links": {
-					"self": "http://example.com/foos/1/links/toManyAttribute",
+					"self": "http://example.com/foos/1/relationships/to-many-attribute",
 					"related": "http://example.com/bars/11,12"
 				}
 			}

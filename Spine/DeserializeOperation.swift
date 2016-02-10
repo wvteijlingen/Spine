@@ -23,14 +23,14 @@ class DeserializeOperation: NSOperation {
 	// Extracted objects
 	private var extractedPrimaryResources: [Resource] = []
 	private var extractedIncludedResources: [Resource] = []
-	private var extractedErrors: [NSError]?
+	private var extractedErrors: [APIError]?
 	private var extractedMeta: [String: AnyObject]?
 	private var extractedLinks: [String: NSURL]?
 	private var extractedJSONAPI: [String: AnyObject]?
 	private var resourcePool: [Resource] = []
 	
 	// Output
-	var result: Failable<JSONAPIDocument>?
+	var result: Failable<JSONAPIDocument, SerializerError>?
 	
 	
 	// MARK: Initializers
@@ -57,19 +57,19 @@ class DeserializeOperation: NSOperation {
 		guard data.dictionary != nil else {
 			let errorMessage = "The given JSON is not a dictionary (hash).";
 			Spine.logError(.Serializing, errorMessage)
-			result = Failable(NSError(domain: SpineSerializingErrorDomain, code: SpineErrorCodes.InvalidDocumentStructure, userInfo: [NSLocalizedDescriptionKey: errorMessage]))
+			result = Failable(SerializerError.InvalidDocumentStructure)
 			return
 		}
 		guard data["errors"] != nil || data["data"] != nil || data["meta"] != nil else {
 			let errorMessage = "Either 'data', 'errors', or 'meta' must be present in the top level.";
 			Spine.logError(.Serializing, errorMessage)
-			result = Failable(NSError(domain: SpineSerializingErrorDomain, code: SpineErrorCodes.InvalidDocumentStructure, userInfo: [NSLocalizedDescriptionKey: errorMessage]))
+			result = Failable(SerializerError.TopLevelEntryMissing)
 			return
 		}
 		guard (data["errors"] == nil && data["data"] != nil) || (data["errors"] != nil && data["data"] == nil) else {
 			let errorMessage = "Top level 'data' and 'errors' must not coexist in the same document.";
 			Spine.logError(.Serializing, errorMessage)
-			result = Failable(NSError(domain: SpineSerializingErrorDomain, code: SpineErrorCodes.InvalidDocumentStructure, userInfo: [NSLocalizedDescriptionKey: errorMessage]))
+			result = Failable(SerializerError.TopLevelDataAndErrorsCoexist)
 			return
 		}
 		
@@ -88,20 +88,26 @@ class DeserializeOperation: NSOperation {
 					try extractedIncludedResources.append(deserializeSingleRepresentation(representation))
 				}
 			}
-		} catch let error as NSError {
+		} catch let error as SerializerError {
 			result = Failable(error)
+			return
+		} catch {
+			result = Failable(SerializerError.UnknownError)
 			return
 		}
 		
 		// Extract errors
-		extractedErrors = self.data["errors"].array?.map { error -> NSError in
-			let code = error["code"].intValue
-			var userInfo = error.dictionaryObject
-			if let title = error["title"].string {
-				userInfo = [NSLocalizedDescriptionKey: title]
-			}
-			
-			return NSError(domain: SpineServerErrorDomain, code: code, userInfo: userInfo)
+		extractedErrors = self.data["errors"].array?.map { error -> APIError in
+			return APIError(
+				id: error["id"].string,
+				status: error["status"].string,
+				code: error["code"].string,
+				title: error["title"].string,
+				detail: error["detail"].string,
+				sourcePointer: error["source"]["pointer"].string,
+				sourceParameter: error["source"]["source"].string,
+				meta: error["meta"].dictionaryObject
+			)
 		}
 		
 		// Extract meta
@@ -146,15 +152,15 @@ class DeserializeOperation: NSOperation {
 	*/
 	private func deserializeSingleRepresentation(representation: JSON, mappingTargetIndex: Int? = nil) throws -> Resource {
 		guard representation.dictionary != nil else {
-			throw NSError(domain: SpineSerializingErrorDomain, code: SpineErrorCodes.InvalidResourceStructure, userInfo: nil)
+			throw SerializerError.InvalidResourceStructure
 		}
 		
 		guard let type: ResourceType = representation["type"].string else {
-			throw NSError(domain: SpineSerializingErrorDomain, code: SpineErrorCodes.ResourceTypeMissing, userInfo: nil)
+			throw SerializerError.ResourceTypeMissing
 		}
 		
 		guard let id = representation["id"].string else {
-			throw NSError(domain: SpineSerializingErrorDomain, code: SpineErrorCodes.ResourceIDMissing, userInfo: nil)
+			throw SerializerError.ResourceIDMissing
 		}
 		
 		// Dispense a resource
@@ -222,6 +228,7 @@ class DeserializeOperation: NSOperation {
 	This method loops over all the relationships in the passed resource, maps the relationship name
 	to the key for the serialized form and invokes `extractToOneRelationship` or `extractToManyRelationship`.
 	It then sets the extracted ResourceRelationship on the resource.
+	It also sets `relationships` dictionary on parent resource containing the links to all related resources.
 	
 	- parameter serializedData: The data from which to extract the relationships.
 	- parameter resource:       The resource into which to extract the relationships.
@@ -229,6 +236,8 @@ class DeserializeOperation: NSOperation {
 	private func extractRelationships(serializedData: JSON, intoResource resource: Resource) {
 		for field in resource.fields {
 			let key = keyFormatter.format(field)
+			resource.relationships[field.name] = extractRelationshipData(serializedData["relationships"][key])
+
 			switch field {
 			case let toOne as ToOneRelationship:
 				if let linkedResource = extractToOneRelationship(serializedData, key: key, linkedType: toOne.linkedType.resourceType, resource: resource) {
@@ -272,7 +281,6 @@ class DeserializeOperation: NSOperation {
 			if let resourceURL = linkData["links"]?["related"].URL {
 				resource!.URL = resourceURL
 			}
-			
 		}
 		
 		return resource
@@ -304,6 +312,24 @@ class DeserializeOperation: NSOperation {
 		}
 		
 		return resourceCollection
+	}
+	
+	private func extractRelationshipData(linkData: JSON) -> RelationshipData {
+		let selfURL = linkData["links"]["self"].URL
+		let relatedURL = linkData["links"]["related"].URL
+		let data: [ResourceIdentifier]?
+		
+		if let toOne = linkData["data"].dictionary {
+			data = [ResourceIdentifier(type: toOne["type"]!.stringValue, id: toOne["id"]!.stringValue)]
+		} else if let toMany = linkData["data"].array {
+			data = toMany.map { JSON -> ResourceIdentifier in
+				return ResourceIdentifier(type: JSON["type"].stringValue, id: JSON["id"].stringValue)
+			}
+		} else {
+			data = nil
+		}
+		
+		return RelationshipData(selfURL: selfURL, relatedURL: relatedURL, data: data)
 	}
 	
 	/**

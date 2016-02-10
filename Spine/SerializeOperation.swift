@@ -18,7 +18,7 @@ class SerializeOperation: NSOperation {
 	let keyFormatter: KeyFormatter
 	var options: SerializationOptions = [.IncludeID]
 	
-	var result: Failable<NSData>?
+	var result: Failable<NSData, SerializerError>?
 	
 	
 	// MARK: Initializers
@@ -47,7 +47,7 @@ class SerializeOperation: NSOperation {
 			let serialized = try NSJSONSerialization.dataWithJSONObject(["data": JSON], options: NSJSONWritingOptions(rawValue: 0))
 			result = Failable.Success(serialized)
 		} catch let error as NSError {
-			result = Failable.Failure(error)
+			result = Failable.Failure(SerializerError.JSONSerializationError(error))
 		}
 	}
 	

@@ -59,9 +59,18 @@ public class CallbackHTTPClient: NetworkClient {
 		}
 	}
 	
-	func simulateNetworkErrorWithCode(code: Int) {
+	/**
+	Simulates a network error with the given error code.
+	
+	- parameter code: The error code.
+	
+	- returns: The NSError that will be returned as the simulated network error.
+	*/
+	func simulateNetworkErrorWithCode(code: Int) -> NSError {
+		let error = NSError(domain: "SimulatedNetworkError", code: code, userInfo: nil)
 		handler = { request, payload in
-			return (responseData: nil, statusCode: nil, error: NSError(domain: "SimulatedNetworkError", code: code, userInfo: nil))
+			return (responseData: nil, statusCode: nil, error: error)
 		}
+		return error
 	}
 }

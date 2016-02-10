@@ -70,11 +70,16 @@ public class JSONAPIRouter: Router {
 	}
 	
 	public func URLForRelationship<T: Resource>(relationship: Relationship, ofResource resource: T) -> NSURL {
+		if let selfURL = resource.relationships[relationship.name]?.selfURL {
+			return selfURL
+		}
+		
 		let resourceURL = resource.URL ?? URLForResourceType(resource.resourceType).URLByAppendingPathComponent("/\(resource.id!)")
 		let key = keyFormatter.format(relationship)
-		return resourceURL.URLByAppendingPathComponent("/links/\(key)")
+		return resourceURL.URLByAppendingPathComponent("/relationships/\(key)")
 	}
 
+	
 	public func URLForQuery<T: Resource>(query: Query<T>) -> NSURL {
 		var URL: NSURL!
 		var preBuiltURL = false

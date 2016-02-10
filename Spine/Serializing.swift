@@ -29,7 +29,7 @@ public class Serializer {
 	- parameter data:           The data to deserialize.
 	- parameter mappingTargets: Optional resources onto which data will be deserialized.
 	
-	- throws: NSError that can occur in the deserialization.
+	- throws: SerializerError that can occur in the deserialization.
 	
 	- returns: A JSONAPIDocument.
 	*/
@@ -56,7 +56,7 @@ public class Serializer {
 	- parameter document: The JSONAPIDocument to serialize.
 	- parameter options:  The serialization options to use.
 	
-	- throws: NSError that can occur in the serialization.
+	- throws: SerializerError that can occur in the serialization.
 	
 	- returns: Serialized data.
 	*/
@@ -80,13 +80,84 @@ public class Serializer {
 	- parameter resources: The resources to serialize.
 	- parameter options:   The serialization options to use.
 	
-	- throws: NSError that can occur in the serialization.
+	- throws: SerializerError that can occur in the serialization.
 	
 	- returns: Serialized data.
 	*/
 	public func serializeResources(resources: [Resource], options: SerializationOptions = [.IncludeID]) throws -> NSData {
 		let document = JSONAPIDocument(data: resources, included: nil, errors: nil, meta: nil, links: nil, jsonapi: nil)
 		return try serializeDocument(document, options: options)
+	}
+	
+	/**
+	Converts the given resource to link data, and serializes it into NSData.
+	```json
+	{
+	  "data": { "type": "people", "id": "12" }
+	}
+	```
+	
+	If no resource is passed, `null` is used:
+	```json
+	{ "data": null }
+	```
+	
+	- parameter resource: The resource to serialize link data for.
+	
+	- throws: SerializerError that can occur in the serialization.
+	
+	- returns: Serialized data.
+	*/
+	public func serializeLinkData(resource: Resource?) throws -> NSData {
+		let payloadData: AnyObject
+		
+		if let resource = resource {
+			assert(resource.id != nil, "Attempt to convert resource without id to linkage. Only resources with ids can be converted to linkage.")
+			payloadData = ["type": resource.resourceType, "id": resource.id!]
+		} else {
+			payloadData = NSNull()
+		}
+		
+		do {
+			return try NSJSONSerialization.dataWithJSONObject(["data": payloadData], options: NSJSONWritingOptions(rawValue: 0))
+		} catch let error as NSError {
+			throw SerializerError.JSONSerializationError(error)
+		}
+	}
+	
+	/**
+	Converts the given resources to link data, and serializes it into NSData.
+	```json
+	{
+	  "data": [
+	    { "type": "comments", "id": "12" },
+	    { "type": "comments", "id": "13" }
+	  ]
+	}
+	```
+	
+	- parameter resources: The resource to serialize link data for.
+	
+	- throws: SerializerError that can occur in the serialization.
+	
+	- returns: Serialized data.
+	*/
+	public func serializeLinkData(resources: [Resource]) throws -> NSData {
+		let payloadData: AnyObject
+		
+		if resources.isEmpty {
+			payloadData = []
+		} else {
+			payloadData = resources.map { resource in
+				return ["type": resource.resourceType, "id": resource.id!]
+			}
+		}
+		
+		do {
+			return try NSJSONSerialization.dataWithJSONObject(["data": payloadData], options: NSJSONWritingOptions(rawValue: 0))
+		} catch let error as NSError {
+			throw SerializerError.JSONSerializationError(error)
+		}
 	}
 
 	/**
@@ -120,7 +191,7 @@ public struct JSONAPIDocument {
 	public var included: [Resource]?
 	
 	/// Errors extracted from the response.
-	public var errors: [NSError]?
+	public var errors: [APIError]?
 	
 	/// Metadata extracted from the reponse.
 	public var meta: [String: AnyObject]?
