@@ -321,9 +321,13 @@ You can also just use the Serializer to (de)serialize to and from JSON:
 
 ```swift
 let serializer = Serializer()
+
+// Register resources
 serializer.registerResource(Post)
+
+// Optional configuration
 serializer.registerValueFormatter(RomanNumeralValueFormatter())
-serializer.keyFormatter = AsIsKeyFormatter()
+serializer.keyFormatter = DasherizedKeyFormatter()
 
 // Convert NSData to a JSONAPIDocument struct
 let data = fetchData()
