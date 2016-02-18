@@ -9,10 +9,11 @@ This library was born out of a hobby project. Some things are still lacking, one
 ## Table of Contents
 - [Supported features](#supported-features)
 - [Installation](#installation)
-- [Usage](#usage)
+- [Configuration](#configuration)
 	- [Defining resource types](#defining-resource-types)
 	- [Defining resource fields](#defining-resource-fields)
 	- [Example resource class](#example-resource-class)
+- [Usage](#usage)
 	- [Fetching resources](#fetching-resources)
 	- [Saving resources](#saving-resources)
 	- [Deleting resources](#deleting-resources)
@@ -22,6 +23,7 @@ This library was born out of a hobby project. Some things are still lacking, one
 	- [Networking](#networking)
 	- [Logging](#logging)
 	- [Memory management](#memory-management)
+	- [Using the serializer separately](#using-the-serializer-separately)
 
 ## Supported features
 | Feature                        | Supported | Note                                            |
@@ -53,7 +55,7 @@ Add `github "wvteijlingen/Spine"` to your Cartfile. See the [Carthage documentat
 ### Cocoapods
 Add `pod 'Spine', :git => 'https://github.com/wvteijlingen/Spine.git'` to your Podfile. The spec is not yet registered with the Cocoapods repository, because the library is still in flux.
 
-## Usage
+## Configuration
 ### Defining resource types
 Every resource is mapped to a class that inherits from `Resource`. A subclass should override the variables `resourceType` and `fields`. The `resourceType` should contain the type of resource in plural form. The `fields` array should contain an array of fields that must be persisted. Fields that are not in this array are ignored.
 
@@ -62,21 +64,37 @@ Each class must be registered using the `Spine.registerResource` method.
 ### Defining resource fields
 You need to specify the fields that must be persisted using an array of `Field`s. These fields are used when turning JSON into resources instances and vice versa. The name of each field corresponds to a variable on your resource class. This variable must be specified as optional.
 
-By default, the key in the JSON will be the same as your field name. You can specify a different name by using serializeAs(name: String). The name or custom serialized name will be mapped to a JSON key using a `KeyFormatter`. You can configure the key formatter using the `keyFormatter` variable on a Spine instance.
+#### Field name formatters
+By default, the key in the JSON will be the same as your field name or serialized field name. You can specify a different name by using serializeAs(name: String). The name or custom serialized name will be mapped to a JSON key using a `KeyFormatter`. You can configure the key formatter using the `keyFormatter` variable on a Spine instance.
 
-#### Attribute
+Spine comes with three key formatters: `AsIsKeyFormatter`, `DasherizedKeyFormatter`, `UnderscoredKeyFormatter`.
+
+```swift
+// Formats a field name 'myField' to key 'MYFIELD'.
+public struct AllCapsKeyFormatter: KeyFormatter {
+	public func format(field: Field) -> String {
+		return field.serializedName.uppercaseString
+	}
+}
+
+spine.keyFormatter = AllCapsKeyFormatter()
+```
+
+#### Built in attribute types
+
+##### Attribute
 An attribute is a regular attribute that can be serialized by NSJSONSerialization. E.g. a String or NSNumber.
 
-#### URLAttribute
+##### URLAttribute
 An url attribute corresponds to an NSURL variable. These are represented by strings in the JSON document. You can instantiate it with a baseURL, in which case Spine will expand relative URLs from the JSON relative to the given baseURL. Absolute URLs will be left as is.
 
-#### DateAttribute
+##### DateAttribute
 A date attribute corresponds to an NSDate variable. By default, these are represented by ISO 8601 strings in the JSON document. You can instantiate it with a custom format, in which case that format will be used when serializing and deserializing that particular attribute.
 
-#### ToOneRelationship
+##### ToOneRelationship
 A to-one relationship corresponds to another resource. You must instantiate it with the type of the linked resource.
 
-#### ToManyRelationship
+##### ToManyRelationship
 A to-many relationship corresponds to a collection of other resources. You must instantiate it with the type of the linked resources. If the linked types are not homogenous, they must share a common ancestor as the linked type. To many relationships are mapped to LinkedResourceCollection objects.
 
 #### Custom attribute types
@@ -112,7 +130,7 @@ class Post: Resource {
 	var author: User?
 	var comments: LinkedResourceCollection?
 
-	override class var resourceType: String {
+	override class var resourceType: ResourceType {
 		return "posts"
 	}
 
@@ -130,6 +148,7 @@ class Post: Resource {
 spine.registerResource(Post)
 ```
 
+## Usage
 ### Fetching resources
 Resources can be fetched using find methods:
 ```swift
@@ -186,6 +205,8 @@ You can use the `Spine.load` methods to make sure resources are loaded. If it is
 The `Spine.reload` method works similarly, except that it always reloads a resource. This can be used to make sure a resource contains the latest data from the server.
 
 ### Pagination
+You can fetch next and previous pages of collections by using: `Spine.loadNextPageOfCollection` and `Spine.loadPreviousPageOfCollection`.
+
 JSON:API is agnostic about pagination strategies. Because of this, Spine by default only supports two pagination strategies:
 - Page based pagination using the `page[number]` and `page[size]` parameters
 - Offset based pagination using the `page[offset]` and `page[limit]` parameters
@@ -294,3 +315,24 @@ Spine suffers from the same memory management issues as Core Data, namely retain
 
 1. Declare one end of the relationship as `weak` or `unowned`.
 2. Use a Resource's `unload` method to break cycles when you are done with the resource.
+
+## Using the serializer separately
+You can also just use the Serializer to (de)serialize to and from JSON:
+
+```swift
+let serializer = Serializer()
+serializer.registerResource(Post)
+serializer.registerValueFormatter(RomanNumeralValueFormatter())
+serializer.keyFormatter = AsIsKeyFormatter()
+
+// Convert NSData to a JSONAPIDocument struct
+let data = fetchData()
+let document = try! serializer.deserializeData(data)
+
+// Convert resources to NSData
+let data = try! serializer.serializeResources([post])
+
+// Convert resources to link data
+let data = try! serializer.serializeLinkData(post)
+let data = try! serializer.serializeLinkData([firstPost, secondPost])
+```
