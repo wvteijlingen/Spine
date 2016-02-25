@@ -97,6 +97,18 @@ public class ResourceCollection: NSObject, NSCoding {
 			appendResource(resource)
 		}
 	}
+
+	/// Remove `resource` from the collection.
+	public func removeResource(resource: Resource) {
+		resources = resources.filter { $0 !== resource }
+	}
+	
+	/// Remove `resources` from the collection.
+	public func removeResources(resources: [Resource]) {
+		for resource in resources {
+			removeResource(resource)
+		}
+	}
 }
 
 extension ResourceCollection: SequenceType {
