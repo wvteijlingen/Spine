@@ -45,6 +45,7 @@ extension NetworkClient {
 The HTTPClient implements the NetworkClient protocol to work over an HTTP connection.
 */
 public class HTTPClient: NetworkClient {
+	public var delegate: HTTPClientDelegate?
 	let urlSession: NSURLSession
 	var headers: [String: String] = [:]
 	
@@ -89,6 +90,8 @@ public class HTTPClient: NetworkClient {
 	}
 
 	public func request(method: String, URL: NSURL, payload: NSData?, callback: NetworkClientCallback) {
+		delegate?.httpClient(self, willPerformRequestWithMethod: method, URL: URL, payload: payload)
+		
 		let request = buildRequest(method, URL: URL, payload: payload)
 		
 		Spine.logInfo(.Networking, "\(method): \(URL)")
@@ -101,18 +104,22 @@ public class HTTPClient: NetworkClient {
 		
 		let task = urlSession.dataTaskWithRequest(request) { data, response, networkError in
 			let response = (response as? NSHTTPURLResponse)
+			let success: Bool
 			
 			if let error = networkError {
 				// Network error
 				Spine.logError(.Networking, "\(request.URL!) - \(error.localizedDescription)")
+				success = false
 				
 			} else if let statusCode = response?.statusCode where 200 ... 299 ~= statusCode {
 				// Success
 				Spine.logInfo(.Networking, "\(statusCode): \(request.URL!) – (\(data!.length) bytes)")
+				success = true
 				
 			} else {
 				// API Error
 				Spine.logWarning(.Networking, "\(response!.statusCode): \(request.URL!) – (\(data!.length) bytes)")
+				success = false
 			}
 			
 			if Spine.shouldLog(.Debug, domain: .Networking) {
@@ -121,9 +128,33 @@ public class HTTPClient: NetworkClient {
 				}
 			}
 			
+			self.delegate?.httpClient(self, didPerformRequestWithMethod: method, URL: URL, success: success)
 			callback(statusCode: response?.statusCode, data: data, error: networkError)
 		}
 		
 		task.resume()
 	}
+}
+
+public protocol HTTPClientDelegate {
+ /**
+	Called before the HTTPClient will perform an HTTP request.
+	
+	- parameter client:  The client that will perform the request.
+	- parameter method:  The HTTP method of the request.
+	- parameter URL:     The URL of the request.
+	- parameter payload: The optional payload of the request.
+	*/
+	func httpClient(client: HTTPClient, willPerformRequestWithMethod method: String, URL: NSURL, payload: NSData?)
+	
+ /**
+	Called after the HTTPClient performed an HTTP request. This method is called after the request finished,
+	but before the request has been processed by the NetworkClientCallback that was initially passed.
+	
+	- parameter client:  The client that performed the request.
+	- parameter method:  The HTTP method of the request.
+	- parameter URL:     The URL of the request.
+	- parameter success: Whether the reques was successful. Network and error responses are consided unsuccessful.
+	*/
+	func httpClient(client: HTTPClient, didPerformRequestWithMethod method: String, URL: NSURL, success: Bool)
 }
