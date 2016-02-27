@@ -288,7 +288,7 @@ var spine = Spine(baseURL: NSURL(string:"http://example.com")!, networkClient: c
 ```
 
 ### Logging
-Spine comes with a very rudimentary logging system. Each logging domain can be configured with a certain log level:
+Spine comes with a rudimentary logging system. Each logging domain can be configured with a certain log level:
 
 ```swift
 Spine.setLogLevel(.Debug, forDomain: .Spine)
@@ -296,7 +296,7 @@ Spine.setLogLevel(.Info, forDomain: .Networking)
 Spine.setLogLevel(.Warning, forDomain: .Serializing)
 ```
 
-These levels are global, meaning they apply to all instances of Spine.
+These levels are global, meaning they apply to all Spine instances.
 
 #### Log domains
 * Spine: The main Spine component.
@@ -309,6 +309,10 @@ These levels are global, meaning they apply to all instances of Spine.
 * Warning
 * Error
 * None
+
+#### Custom loggers
+The default `ConsoleLogger` logs to the console using the Swift built in `print` command. You can assign a custom logger that implements the `Logger` protocol to the
+static `Spine.logger` variable.
 
 ### Memory management
 Spine suffers from the same memory management issues as Core Data, namely retain cycles for recursive relationships. These cycles can be broken in two ways:
