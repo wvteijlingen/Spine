@@ -17,37 +17,31 @@ public enum LogLevel: Int {
 	
 	var description: String {
 		switch self {
-		case .Debug:   return "❔ Debug  "
-		case .Info:    return "❕ Info   "
-		case .Warning: return "❗️ Warning"
-		case .Error:   return "❌ Error  "
-		case .None:    return "None      "
+		case .Debug:   return "Debug   "
+		case .Info:    return "Info    "
+		case .Warning: return "Warning "
+		case .Error:   return "Error   "
+		case .None:    return "None    "
 		}
 	}
 }
 
 /**
 Logging domains
-
-- Spine:       The main Spine component
-- Networking:  The networking component, requests, responses etc
-- Serializing: The (de)serializing component
+- Spine:       The main Spine component.
+- Networking:  The networking component, requests, responses etc.
+- Serializing: The (de)serializing component.
 */
 public enum LogDomain {
 	case Spine, Networking, Serializing
 }
 
-/// Configured log levels
-internal var logLevels: [LogDomain: LogLevel] = [
-	.Spine: .None,
-	.Networking: .None,
-	.Serializing: .None
-]
+private var logLevels: [LogDomain: LogLevel] = [.Spine: .None, .Networking: .None, .Serializing: .None]
 
-/**
-Extension regarding logging.
-*/
+/// Extension regarding logging.
 extension Spine {
+	public static var logger: Logger = ConsoleLogger()
+	
 	public class func setLogLevel(level: LogLevel, forDomain domain: LogDomain) {
 		logLevels[domain] = level
 	}
@@ -55,26 +49,40 @@ extension Spine {
 	class func shouldLog(level: LogLevel, domain: LogDomain) -> Bool {
 		return (level.rawValue >= logLevels[domain]?.rawValue)
 	}
-	
-	class func log<T>(object: T, level: LogLevel, domain: LogDomain) {
-		if shouldLog(level, domain: domain) {
-			print("\(level.description) - \(object)")
+
+	class func logDebug<T>(domain: LogDomain, _ object: T) {
+		if shouldLog(.Debug, domain: domain) {
+			logger.log(object, level: .Debug)
 		}
 	}
 	
-	class func logDebug<T>(domain: LogDomain, _ object: T) {
-		log(object, level: .Debug, domain: domain)
-	}
-	
 	class func logInfo<T>(domain: LogDomain, _ object: T) {
-		log(object, level: .Info, domain: domain)
+		if shouldLog(.Info, domain: domain) {
+			logger.log(object, level: .Info)
+		}
 	}
 	
 	class func logWarning<T>(domain: LogDomain, _ object: T) {
-		log(object, level: .Warning, domain: domain)
+		if shouldLog(.Warning, domain: domain) {
+			logger.log(object, level: .Warning)
+		}
 	}
 	
 	class func logError<T>(domain: LogDomain, _ object: T) {
-		log(object, level: .Error, domain: domain)
+		if shouldLog(.Error, domain: domain) {
+			logger.log(object, level: .Error)
+		}
+	}
+}
+
+public protocol Logger {
+	/// Logs the textual representations of `object`.
+	func log<T>(object: T, level: LogLevel)
+}
+
+/// Logger that logs to the console using the Swift built in `print` function.
+struct ConsoleLogger: Logger {
+	func log<T>(object: T, level: LogLevel) {
+		print("\(level.description) - \(object)")
 	}
 }
