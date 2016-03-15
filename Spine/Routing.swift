@@ -153,7 +153,7 @@ public class JSONAPIRouter: Router {
 				let field = T.fieldNamed(descriptor.key!)
 				let key = self.keyFormatter.format(field!)
 				if descriptor.ascending {
-					return "\(key)"
+					return key
 				} else {
 					return "-\(key)"
 				}
