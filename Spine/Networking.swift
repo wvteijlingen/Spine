@@ -47,12 +47,24 @@ The HTTPClient implements the NetworkClient protocol to work over an HTTP connec
 public class HTTPClient: NetworkClient {
 	public var delegate: HTTPClientDelegate?
 	let urlSession: NSURLSession
-	var headers: [String: String] = [:]
+	var headers: [String: String] = ["Content-Type": "application/vnd.api+json"]
 	
-	public init() {
-		let configuration = NSURLSessionConfiguration.defaultSessionConfiguration()
-		configuration.HTTPAdditionalHeaders = ["Content-Type": "application/vnd.api+json"]
-		urlSession = NSURLSession(configuration: configuration)
+	/**
+	Initializes an HTTPClient with the given NSURLSession.
+	
+	- parameter session: The NSURLSession to use.
+	*/
+	public init(session: NSURLSession) {
+		urlSession = session
+	}
+	
+	/**
+	Initializes a HTTPClient with an NSURLSession that uses the
+	`NSURLSessionConfiguration.defaultSessionConfiguration()` configuration.
+	*/
+	public convenience init() {
+		let sessionConfiguration = NSURLSessionConfiguration.defaultSessionConfiguration()
+		self.init(session: NSURLSession(configuration: sessionConfiguration))
 	}
 	
 	/**
