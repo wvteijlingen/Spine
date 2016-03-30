@@ -13,9 +13,9 @@ The ValueFormatter protocol declares methods and properties that a value formatt
 A value formatter transforms values between the serialized and deserialized form.
 */
 public protocol ValueFormatter {
-	typealias FormattedType
-	typealias UnformattedType
-	typealias AttributeType
+	associatedtype FormattedType
+	associatedtype UnformattedType
+	associatedtype AttributeType
 	
 	/**
 	Returns the deserialized form of the given value for the given attribute.
