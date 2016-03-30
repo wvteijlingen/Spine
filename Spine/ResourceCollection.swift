@@ -87,7 +87,6 @@ public class ResourceCollection: NSObject, NSCoding {
 	
 	/// Append `resource` to the collection.
 	public func appendResource(resource: Resource) {
-		assert(resource.id != nil, "Cannot appendResource resource that hasn't been persisted yet.")
 		resources.append(resource)
 	}
 	
