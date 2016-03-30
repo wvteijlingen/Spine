@@ -34,8 +34,8 @@ class ResourceCollectionTests: XCTestCase {
 		let resources = [Foo(id: "5"), Bar(id: "6")]
 		let collection = ResourceCollection(resources: resources)
 		
-		XCTAssert(collection["foos", "5"] === resources[0], "Expected resource to be equal.")
-		XCTAssert(collection["bars", "6"] === resources[1], "Expected resource to be equal.")
+		XCTAssert(collection.resourceWithType("foos", id: "5")! === resources[0], "Expected resource to be equal.")
+		XCTAssert(collection.resourceWithType("bars", id: "6")! === resources[1], "Expected resource to be equal.")
 	}
 	
 	func testCount() {

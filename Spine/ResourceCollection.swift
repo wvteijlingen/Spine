@@ -72,15 +72,15 @@ public class ResourceCollection: NSObject, NSCoding {
 		return resources[index]
 	}
 	
-	/// Returns a resource identified by the given type and id,
-	/// or nil if no resource was found.
-	public subscript (type: String, id: String) -> Resource? {
-		return resources.filter { $0.id == id && $0.resourceType == type }.first
-	}
-	
 	/// Returns how many resources are loaded.
 	public var count: Int {
 		return resources.count
+	}
+	
+	/// Returns a resource identified by the given type and id,
+	/// or nil if no resource was found.
+	public func resourceWithType(type: ResourceType, id: String) -> Resource? {
+		return resources.filter { $0.id == id && $0.resourceType == type }.first
 	}
 	
 	// MARK: Mutators
