@@ -27,7 +27,7 @@ class RoutingTests: XCTestCase {
 		query.addDescendingOrder("floatAttribute")
 		
 		let URL = spine.router.URLForQuery(query)
-		let expectedURL = NSURL(string: "http://example.com/foos?filter[id]=1,2&include=to-one-attribute,to-many-attribute&filter[string-attribute]=stringValue&fields[foos]=string-attribute,integer-attribute&sort=+integer-attribute,-float-attribute")!
+		let expectedURL = NSURL(string: "http://example.com/foos?filter[id]=1,2&include=to-one-attribute,to-many-attribute&filter[string-attribute]=stringValue&fields[foos]=string-attribute,integer-attribute&sort=integer-attribute,-float-attribute")!
 		
 		XCTAssertEqual(URL, expectedURL, "URL not as expected.")
 	}
