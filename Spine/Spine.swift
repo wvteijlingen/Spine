@@ -11,7 +11,7 @@ import BrightFutures
 
 public typealias Metadata = [String: AnyObject]
 public typealias JSONAPIData = [String: AnyObject]
-public typealias IdGeneratorFunction = (Resource) -> String
+public typealias IdGeneratorFunction = (Resource) -> String?
 
 /// The main class
 public class Spine {
