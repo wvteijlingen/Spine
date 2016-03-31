@@ -393,6 +393,30 @@ class SaveTests: SpineTests {
 		}
 	}
 
+	func testClientGeneratedId() {
+		HTTPClient.handler = { request, payload in
+			XCTAssertEqual(request.HTTPMethod!, "POST", "HTTP method not as expected.")
+			XCTAssertEqual(request.URL!, NSURL(string:"http://example.com/foos")!, "Request URL not as expected.")
+			let json = JSON(data: payload!)
+			XCTAssertEqual(json["data"]["id"].stringValue, "some id")
+			return (responseData: self.fixture.data, statusCode: 201, error: nil)
+		}
+
+		foo = Foo()
+
+		spine.idGenerator = { r in
+			return "some id"
+		}
+
+		let future = spine.save(foo)
+		let expectation = expectationWithDescription("")
+		assertFutureSuccess(future, expectation: expectation)
+
+		waitForExpectationsWithTimeout(10) { error in
+			XCTAssertNil(error, "\(error)")
+		}
+	}
+
 	func testItShouldPATCHWhenUpdatingAResource() {
 		var resourcePatched = false
 		
@@ -413,7 +437,35 @@ class SaveTests: SpineTests {
 			XCTAssertTrue(resourcePatched)
 		}
 	}
-	
+
+	func testNoClientGeneratedIdWhenUpdating() {
+		var resourcePatched = false
+
+		HTTPClient.handler = { request, payload in
+			XCTAssertEqual(request.HTTPMethod!, "PATCH", "HTTP method not as expected.")
+			if(request.URL! == NSURL(string: "http://example.com/foos/1")!) {
+				resourcePatched = true
+				let json = JSON(data: payload!)
+				XCTAssertEqual(json["data"]["id"].stringValue, self.foo.id)
+			}
+			return (responseData: self.fixture.data, statusCode: 201, error: nil)
+		}
+
+		spine.idGenerator = { r in
+			XCTFail("Id generator function must not be called when updating a resource")
+			return "some id"
+		}
+
+		let future = spine.save(foo)
+		let expectation = expectationWithDescription("")
+		assertFutureSuccess(future, expectation: expectation)
+
+		waitForExpectationsWithTimeout(10) { error in
+			XCTAssertNil(error, "\(error)")
+			XCTAssertTrue(resourcePatched)
+		}
+	}
+
 	func testItShouldFailOnAPIError() {
 		HTTPClient.respondWith(400)
 		

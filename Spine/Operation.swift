@@ -242,7 +242,12 @@ class SaveOperation: ConcurrentOperation {
 		if isNewResource {
 			URL = router.URLForResourceType(resource.resourceType)
 			method = "POST"
-			options = [.IncludeToOne, .IncludeToMany]
+			if let clientGeneratedId = spine.idGenerator?(resource) {
+				options = [.IncludeToOne, .IncludeToMany, .IncludeID]
+				resource.id = clientGeneratedId
+			} else {
+				options = [.IncludeToOne, .IncludeToMany]
+			}
 		} else {
 			URL = router.URLForQuery(Query(resource: resource))
 			method = "PATCH"
