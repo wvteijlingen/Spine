@@ -25,6 +25,7 @@ public class Spine {
 	/// The serializer to use for serializing and deserializing of JSON representations.
 	public let serializer: Serializer = Serializer()
 
+	/// A function that generates an id when saving a resource.
 	public var idGenerator: IdGeneratorFunction?
 
 	/// The key formatter to use for formatting field names to keys.
