@@ -60,19 +60,25 @@ class DeserializeOperation: NSOperation {
 			result = Failable(SerializerError.InvalidDocumentStructure)
 			return
 		}
-		guard data["errors"] != nil || data["data"] != nil || data["meta"] != nil else {
-			let errorMessage = "Either 'data', 'errors', or 'meta' must be present in the top level.";
-			Spine.logError(.Serializing, errorMessage)
-			result = Failable(SerializerError.TopLevelEntryMissing)
-			return
-		}
-		guard (data["errors"] == nil && data["data"] != nil) || (data["errors"] != nil && data["data"] == nil) else {
-			let errorMessage = "Top level 'data' and 'errors' must not coexist in the same document.";
-			Spine.logError(.Serializing, errorMessage)
-			result = Failable(SerializerError.TopLevelDataAndErrorsCoexist)
-			return
-		}
-		
+        
+        let hasData = data["data"].error == nil
+        let hasErrors = data["errors"].error == nil
+        let hasMeta = data["meta"].error == nil
+        
+        guard hasData || hasErrors || hasMeta else {
+            let errorMessage = "Either 'data', 'errors', or 'meta' must be present in the top level.";
+            Spine.logError(.Serializing, errorMessage)
+            result = Failable(SerializerError.TopLevelEntryMissing)
+            return
+        }
+        
+        guard hasErrors && !hasData || !hasErrors && hasData else {
+            let errorMessage = "Top level 'data' and 'errors' must not coexist in the same document.";
+            Spine.logError(.Serializing, errorMessage)
+            result = Failable(SerializerError.TopLevelDataAndErrorsCoexist)
+            return
+        }
+        
 		// Extract resources
 		do {
 			if let data = self.data["data"].array {
