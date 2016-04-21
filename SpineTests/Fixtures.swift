@@ -11,14 +11,14 @@ import XCTest
 import SwiftyJSON
 
 class Foo: Resource {
-	dynamic var stringAttribute: String?
-	dynamic var integerAttribute: NSNumber?
-	dynamic var floatAttribute: NSNumber?
-	dynamic var booleanAttribute: NSNumber?
-	dynamic var nilAttribute: AnyObject?
-	dynamic var dateAttribute: NSDate?
-	dynamic var toOneAttribute: Bar?
-	dynamic var toManyAttribute: LinkedResourceCollection?
+	var stringAttribute: String?
+	var integerAttribute: NSNumber?
+	var floatAttribute: NSNumber?
+	var booleanAttribute: NSNumber?
+	var nilAttribute: AnyObject?
+	var dateAttribute: NSDate?
+	var toOneAttribute: Bar?
+	var toManyAttribute: LinkedResourceCollection?
 	
 	override class var resourceType: String {
 		return "foos"

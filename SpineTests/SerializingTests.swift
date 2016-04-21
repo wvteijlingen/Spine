@@ -249,7 +249,7 @@ class DeserializingTests: SerializerTests {
 		}
 	}
 	
-	func testDeserializeInvalidDocument() {
+	func testDeserializeWithInvalidDocumentStructure() {
 		let data = NSData()
 		
 		do {
@@ -258,7 +258,43 @@ class DeserializingTests: SerializerTests {
 		} catch SerializerError.InvalidDocumentStructure {
 			// All is well
 		} catch {
+			XCTFail("Expected error domain to be SerializerError.InvalidDocumentStructure.")
+		}
+	}
+	
+	func testDeserializeWithoutTopLevelEntry() {
+		let data = try! NSJSONSerialization.dataWithJSONObject([:], options: [])
+		
+		do {
+			try serializer.deserializeData(data)
+			XCTFail("Expected deserialization to fail.")
+		} catch SerializerError.TopLevelEntryMissing {
+			// All is well
+		} catch {
 			XCTFail("Expected error domain to be SerializerError.TopLevelEntryMissing.")
+		}
+	}
+	
+	func testDeserializeWithCoexistingDataAndErrors() {
+		let data = try! NSJSONSerialization.dataWithJSONObject(["data": [], "errors": []], options: [])
+		
+		do {
+			try serializer.deserializeData(data)
+			XCTFail("Expected deserialization to fail.")
+		} catch SerializerError.TopLevelDataAndErrorsCoexist {
+			// All is well
+		} catch {
+			XCTFail("Expected error domain to be SerializerError.TopLevelDataAndErrorsCoexist.")
+		}
+	}
+	
+	func testDeserializeWithNullData() {
+		let data = try! NSJSONSerialization.dataWithJSONObject(["data": NSNull()], options: [])
+		
+		do {
+			try serializer.deserializeData(data)
+		} catch {
+			XCTFail("Expected deserialization to succeed.")
 		}
 	}
 	
