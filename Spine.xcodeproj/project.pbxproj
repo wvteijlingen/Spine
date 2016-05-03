@@ -66,10 +66,10 @@
 /* Begin PBXFileReference section */
 		D307FBED1A97756700EE0FAC /* SingleFooIncludingBars.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = SingleFooIncludingBars.json; sourceTree = "<group>"; };
 		D312E2F719BB83A8004BB3E0 /* SerializingTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SerializingTests.swift; sourceTree = "<group>"; };
-		D32EA6DC1BCBD5930076CFA5 /* Result.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Result.framework; path = ../Carthage/Build/iOS/Result.framework; sourceTree = "<group>"; };
+		D32EA6DC1BCBD5930076CFA5 /* Result.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Result.framework; path = Carthage/Build/iOS/Result.framework; sourceTree = "<group>"; };
 		D331836B19B2302500936FBB /* Query.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Query.swift; sourceTree = "<group>"; };
-		D3411E771A4B5C2C00D27F54 /* BrightFutures.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = BrightFutures.framework; path = ../Carthage/Build/iOS/BrightFutures.framework; sourceTree = "<group>"; };
-		D3411E7A1A4B5D2200D27F54 /* SwiftyJSON.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftyJSON.framework; path = ../Carthage/Build/iOS/SwiftyJSON.framework; sourceTree = "<group>"; };
+		D3411E771A4B5C2C00D27F54 /* BrightFutures.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = BrightFutures.framework; path = Carthage/Build/iOS/BrightFutures.framework; sourceTree = "<group>"; };
+		D3411E7A1A4B5D2200D27F54 /* SwiftyJSON.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftyJSON.framework; path = Carthage/Build/iOS/SwiftyJSON.framework; sourceTree = "<group>"; };
 		D341907619D30BA4007B38D6 /* Routing.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Routing.swift; sourceTree = "<group>"; };
 		D3452C2E1AD18E6900CD413B /* Operation.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Operation.swift; sourceTree = "<group>"; };
 		D3452C301AD19B0900CD413B /* Logging.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Logging.swift; sourceTree = "<group>"; };
@@ -88,7 +88,7 @@
 		D373F78819B2249900275AFC /* Spine.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Spine.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		D373F78C19B2249900275AFC /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		D373F78D19B2249900275AFC /* Spine.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Spine.h; sourceTree = "<group>"; };
-		D373F79319B2249900275AFC /* SpineTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SpineTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		D373F79319B2249900275AFC /* Spine-iOSTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Spine-iOSTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		D373F79619B2249900275AFC /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		D373F79719B2249900275AFC /* SpineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpineTests.swift; sourceTree = "<group>"; };
 		D373F7A119B224BB00275AFC /* Serializing.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Serializing.swift; sourceTree = "<group>"; };
@@ -129,6 +129,24 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		245B5DD41CD92E3200E44FBE /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				245B5DD51CD92E3900E44FBE /* iOS */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		245B5DD51CD92E3900E44FBE /* iOS */ = {
+			isa = PBXGroup;
+			children = (
+				D32EA6DC1BCBD5930076CFA5 /* Result.framework */,
+				D3411E771A4B5C2C00D27F54 /* BrightFutures.framework */,
+				D3411E7A1A4B5D2200D27F54 /* SwiftyJSON.framework */,
+			);
+			name = iOS;
+			sourceTree = "<group>";
+		};
 		D3502C2B1A93A7F700F91266 /* Fixtures */ = {
 			isa = PBXGroup;
 			children = (
@@ -169,6 +187,7 @@
 		D373F77E19B2249900275AFC = {
 			isa = PBXGroup;
 			children = (
+				245B5DD41CD92E3200E44FBE /* Frameworks */,
 				D373F78A19B2249900275AFC /* Spine */,
 				D373F79419B2249900275AFC /* SpineTests */,
 				D373F78919B2249900275AFC /* Products */,
@@ -179,7 +198,7 @@
 			isa = PBXGroup;
 			children = (
 				D373F78819B2249900275AFC /* Spine.framework */,
-				D373F79319B2249900275AFC /* SpineTests.xctest */,
+				D373F79319B2249900275AFC /* Spine-iOSTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -205,9 +224,6 @@
 		D373F78B19B2249900275AFC /* Supporting Files */ = {
 			isa = PBXGroup;
 			children = (
-				D32EA6DC1BCBD5930076CFA5 /* Result.framework */,
-				D3411E771A4B5C2C00D27F54 /* BrightFutures.framework */,
-				D3411E7A1A4B5D2200D27F54 /* SwiftyJSON.framework */,
 				D373F78C19B2249900275AFC /* Info.plist */,
 			);
 			name = "Supporting Files";
@@ -260,9 +276,9 @@
 /* End PBXHeadersBuildPhase section */
 
 /* Begin PBXNativeTarget section */
-		D373F78719B2249900275AFC /* Spine */ = {
+		D373F78719B2249900275AFC /* Spine-iOS */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = D373F79B19B2249900275AFC /* Build configuration list for PBXNativeTarget "Spine" */;
+			buildConfigurationList = D373F79B19B2249900275AFC /* Build configuration list for PBXNativeTarget "Spine-iOS" */;
 			buildPhases = (
 				D373F78319B2249900275AFC /* Sources */,
 				D373F78419B2249900275AFC /* Frameworks */,
@@ -273,14 +289,14 @@
 			);
 			dependencies = (
 			);
-			name = Spine;
+			name = "Spine-iOS";
 			productName = Spine;
 			productReference = D373F78819B2249900275AFC /* Spine.framework */;
 			productType = "com.apple.product-type.framework";
 		};
-		D373F79219B2249900275AFC /* SpineTests */ = {
+		D373F79219B2249900275AFC /* Spine-iOSTests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = D373F79E19B2249900275AFC /* Build configuration list for PBXNativeTarget "SpineTests" */;
+			buildConfigurationList = D373F79E19B2249900275AFC /* Build configuration list for PBXNativeTarget "Spine-iOSTests" */;
 			buildPhases = (
 				D373F78F19B2249900275AFC /* Sources */,
 				D373F79019B2249900275AFC /* Frameworks */,
@@ -291,9 +307,9 @@
 			);
 			dependencies = (
 			);
-			name = SpineTests;
+			name = "Spine-iOSTests";
 			productName = SpineTests;
-			productReference = D373F79319B2249900275AFC /* SpineTests.xctest */;
+			productReference = D373F79319B2249900275AFC /* Spine-iOSTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
 /* End PBXNativeTarget section */
@@ -327,8 +343,8 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				D373F78719B2249900275AFC /* Spine */,
-				D373F79219B2249900275AFC /* SpineTests */,
+				D373F78719B2249900275AFC /* Spine-iOS */,
+				D373F79219B2249900275AFC /* Spine-iOSTests */,
 			);
 		};
 /* End PBXProject section */
@@ -536,7 +552,7 @@
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.wardvanteijlingen.$(PRODUCT_NAME:rfc1034identifier)";
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = Spine;
 				SKIP_INSTALL = YES;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
@@ -558,7 +574,7 @@
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.wardvanteijlingen.$(PRODUCT_NAME:rfc1034identifier)";
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = Spine;
 				SKIP_INSTALL = YES;
 			};
 			name = Release;
@@ -609,7 +625,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		D373F79B19B2249900275AFC /* Build configuration list for PBXNativeTarget "Spine" */ = {
+		D373F79B19B2249900275AFC /* Build configuration list for PBXNativeTarget "Spine-iOS" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				D373F79C19B2249900275AFC /* Debug */,
@@ -618,7 +634,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		D373F79E19B2249900275AFC /* Build configuration list for PBXNativeTarget "SpineTests" */ = {
+		D373F79E19B2249900275AFC /* Build configuration list for PBXNativeTarget "Spine-iOSTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				D373F79F19B2249900275AFC /* Debug */,
