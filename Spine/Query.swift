@@ -135,18 +135,14 @@ public struct Query<T: Resource> {
 	// MARK: Filtering
 	
 	private mutating func addPredicateWithField(fieldName: String, value: AnyObject, type: NSPredicateOperatorType) {
-		if let field = T.fields.filter({ $0.name == fieldName }).first {
-			let predicate = NSComparisonPredicate(
-				leftExpression: NSExpression(forKeyPath: field.name),
-				rightExpression: NSExpression(forConstantValue: value),
-				modifier: .DirectPredicateModifier,
-				type: type,
-				options: [])
-			
-			addPredicate(predicate)
-		} else {
-			assertionFailure("Resource of type \(T.resourceType) does not contain a field named \(fieldName)")
-		}
+        let predicate = NSComparisonPredicate(
+            leftExpression: NSExpression(forKeyPath: fieldName),
+            rightExpression: NSExpression(forConstantValue: value),
+            modifier: .DirectPredicateModifier,
+            type: type,
+            options: [])
+        
+        addPredicate(predicate)
 	}
 	
 	/**
