@@ -1,7 +1,11 @@
 language: objective-c
 osx_image: xcode7.3
-xcode_project: Spine.xcodeproj
-xcode_scheme: Spine
-xcode_sdk: iphonesimulator9.3
+
+env:
+  - PLATFORM="ios" SCHEME="Spine-iOS" SDK="iphonesimulator9.3"
+  - PLATFORM="tvos" SCHEME="Spine-tvOS" SDK="appletvsimulator9.2"
+
 before_script:
-  - carthage bootstrap --platform ios
+  - carthage bootstrap --platform $PLATFORM
+script:
+  - xctool -project Spine.xcodeproj -scheme $SCHEME -sdk $SDK build test
