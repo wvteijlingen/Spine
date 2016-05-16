@@ -134,8 +134,13 @@ public class JSONAPIRouter: Router {
 		// Filters
 		for filter in query.filters {
 			let fieldName = filter.leftExpression.keyPath
-			let item = queryItemForFilter(T.fieldNamed(fieldName)!, value: filter.rightExpression.constantValue, operatorType: filter.predicateOperatorType)
-			setQueryItem(item, forQueryItems: &queryItems)
+            var item: NSURLQueryItem?
+            if let field = T.fieldNamed(fieldName) {
+                item = queryItemForFilter(field, value: filter.rightExpression.constantValue, operatorType: filter.predicateOperatorType)
+            } else {
+                item = queryItemForFilterName(fieldName, value: filter.rightExpression.constantValue, operatorType: filter.predicateOperatorType)
+            }
+			setQueryItem(item!, forQueryItems: &queryItems)
 		}
 		
 		// Fields
@@ -180,8 +185,6 @@ public class JSONAPIRouter: Router {
 	
 	/**
 	Returns an NSURLQueryItem that represents a filter in a URL.
-	By default this method only supports 'equal to' predicates. You can override
-	this method to add support for other filtering strategies.
 	
 	- parameter field:        The field that is filtered.
 	- parameter value:        The value on which is filtered.
@@ -191,10 +194,27 @@ public class JSONAPIRouter: Router {
 	*/
 	
 	public func queryItemForFilter(field: Field, value: AnyObject, operatorType: NSPredicateOperatorType) -> NSURLQueryItem {
-		assert(operatorType == .EqualToPredicateOperatorType, "The built in router only supports Query filter expressions of type 'equalTo'")
 		let key = keyFormatter.format(field)
-		return NSURLQueryItem(name: "filter[\(key)]", value: "\(value)")
-	}
+		return queryItemForFilterName(key, value: value, operatorType: operatorType)
+    }
+    
+    /**
+     Returns an NSURLQueryItem that represents a filter in a URL.
+     By default this method only supports 'equal to' predicates. You can override
+     this method to add support for other filtering strategies.
+     
+     - parameter fieldName:    The name of the field that is filtered.
+     - parameter value:        The value on which is filtered.
+     - parameter operatorType: The NSPredicateOperatorType for the filter.
+     
+     - returns: An NSURLQueryItem representing the filter.
+     */
+    
+    public func queryItemForFilterName
+        (fieldName: String, value: AnyObject, operatorType: NSPredicateOperatorType) -> NSURLQueryItem {
+        assert(operatorType == .EqualToPredicateOperatorType, "The built in router only supports Query filter expressions of type 'equalTo'")
+        return NSURLQueryItem(name: "filter[\(fieldName)]", value: "\(value)")
+    }
 
 	/**
 	Returns an array of NSURLQueryItems that represent the given pagination configuration.

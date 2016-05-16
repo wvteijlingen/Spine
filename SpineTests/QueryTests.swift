@@ -176,6 +176,20 @@ class QueryFilterTests: XCTestCase {
 		
 		XCTAssertEqual(query.filters, [predicate], "Filters not as expected")
 	}
+    
+    func testFilterOnANonAttribute() {
+        var query = Query(resourceType: Foo.self)
+        query.filterOn("notAnAttribute", equalTo: "value")
+        
+        let predicate = NSComparisonPredicate(
+            leftExpression: NSExpression(forKeyPath: "notAnAttribute"),
+            rightExpression: NSExpression(forConstantValue: "value"),
+            modifier: .DirectPredicateModifier,
+            type: .EqualToPredicateOperatorType,
+            options: NSComparisonPredicateOptions())
+        
+        XCTAssertEqual(query.filters, [predicate], "Filters not as expected")
+    }
 	
 }
 
