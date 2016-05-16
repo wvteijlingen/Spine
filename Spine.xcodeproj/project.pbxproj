@@ -277,10 +277,10 @@
 		D373F77E19B2249900275AFC = {
 			isa = PBXGroup;
 			children = (
-				245B5DD41CD92E3200E44FBE /* Frameworks */,
 				D373F78A19B2249900275AFC /* Spine */,
 				D373F79419B2249900275AFC /* SpineTests */,
 				D373F78919B2249900275AFC /* Products */,
+				245B5DD41CD92E3200E44FBE /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
