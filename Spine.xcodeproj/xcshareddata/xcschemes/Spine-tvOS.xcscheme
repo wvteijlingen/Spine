@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Scheme
-   LastUpgradeVersion = "0720"
+   LastUpgradeVersion = "0730"
    version = "1.3">
    <BuildAction
       parallelizeBuildables = "YES"
@@ -14,9 +14,9 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "D373F78719B2249900275AFC"
+               BlueprintIdentifier = "2413110B1CD8F40000527E10"
                BuildableName = "Spine.framework"
-               BlueprintName = "Spine"
+               BlueprintName = "Spine-tvOS"
                ReferencedContainer = "container:Spine.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -32,9 +32,9 @@
             skipped = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "D373F79219B2249900275AFC"
-               BuildableName = "SpineTests.xctest"
-               BlueprintName = "SpineTests"
+               BlueprintIdentifier = "241311141CD8F40000527E10"
+               BuildableName = "Spine-tvOSTests.xctest"
+               BlueprintName = "Spine-tvOSTests"
                ReferencedContainer = "container:Spine.xcodeproj">
             </BuildableReference>
          </TestableReference>
@@ -42,9 +42,9 @@
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "D373F78719B2249900275AFC"
+            BlueprintIdentifier = "2413110B1CD8F40000527E10"
             BuildableName = "Spine.framework"
-            BlueprintName = "Spine"
+            BlueprintName = "Spine-tvOS"
             ReferencedContainer = "container:Spine.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
@@ -64,9 +64,9 @@
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "D373F78719B2249900275AFC"
+            BlueprintIdentifier = "2413110B1CD8F40000527E10"
             BuildableName = "Spine.framework"
-            BlueprintName = "Spine"
+            BlueprintName = "Spine-tvOS"
             ReferencedContainer = "container:Spine.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
@@ -82,9 +82,9 @@
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "D373F78719B2249900275AFC"
+            BlueprintIdentifier = "2413110B1CD8F40000527E10"
             BuildableName = "Spine.framework"
-            BlueprintName = "Spine"
+            BlueprintName = "Spine-tvOS"
             ReferencedContainer = "container:Spine.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
