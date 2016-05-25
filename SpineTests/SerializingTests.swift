@@ -92,6 +92,13 @@ class SerializingTests: SerializerTests {
 		
 		XCTAssertNotNil(json["data"]["relationships"]["to-many-attribute"].error, "Expected serialized to-many to be absent.")
 	}
+    
+    func testSerializeResourceOmittingNulls() {
+        let options: SerializationOptions = [.OmitNullValues]
+        let serializedData = try! serializer.serializeResources([foo], options: options)
+        let json = JSON(data: serializedData)
+        XCTAssertNotNil(json["data"]["attributes"]["nil-attribute"].error, "Expected serialized nil to be absent.")
+    }
 }
 
 class DeserializingTests: SerializerTests {
