@@ -49,11 +49,32 @@ class SerializingTests: SerializerTests {
 		
 		XCTAssertEqual(json["data"]["id"].stringValue, foo.id!, "Serialized id is not equal.")
 		XCTAssertEqual(json["data"]["type"].stringValue, foo.resourceType, "Serialized type is not equal.")
+		XCTAssertEqual(json["data"]["attributes"]["string-attribute"].stringValue, foo.stringAttribute!, "Serialized string is not equal.")
 		XCTAssertEqual(json["data"]["attributes"]["integer-attribute"].intValue, foo.integerAttribute!, "Serialized integer is not equal.")
 		XCTAssertEqual(json["data"]["attributes"]["float-attribute"].floatValue, foo.floatAttribute!, "Serialized float is not equal.")
 		XCTAssertTrue(json["data"]["attributes"]["boolean-attribute"].boolValue, "Serialized boolean is not equal.")
 		XCTAssertNotNil(json["data"]["attributes"]["nil-attribute"].null, "Serialized nil is not equal.")
 		XCTAssertEqual(json["data"]["attributes"]["date-attribute"].stringValue, ISO8601FormattedDate(foo.dateAttribute!), "Serialized date is not equal.")
+	}
+	
+	func testSerializeDirtyFieldsOnly() {
+		// Mark everything as clean
+		for field in foo.fields {
+			foo.markField(field.name, asDirty: false)
+		}
+		
+		foo.stringAttribute = "Dirty value"
+		
+		let json = serializedJSONWithOptions([.IncludeID, .DirtyFieldsOnly])
+		
+		XCTAssertEqual(json["data"]["id"].stringValue, foo.id!, "Serialized id is not equal.")
+		XCTAssertEqual(json["data"]["type"].stringValue, foo.resourceType, "Serialized type is not equal.")
+		XCTAssertEqual(json["data"]["attributes"]["string-attribute"].stringValue, foo.stringAttribute!, "Serialized string is not equal.")
+		XCTAssertNotNil(json["data"]["attributes"]["integer-attribute"].error, "Expected non dirty integer to be absent.")
+		XCTAssertNotNil(json["data"]["attributes"]["float-attribute"].error, "Expected non dirty float to be absent.")
+		XCTAssertNotNil(json["data"]["attributes"]["boolean-attribute"].error, "Expected non dirty boolean to be absent.")
+		XCTAssertNotNil(json["data"]["attributes"]["nil-attribute"].error, "Expected non dirty nil to be absent.")
+		XCTAssertNotNil(json["data"]["attributes"]["date-attribute"].error, "Expected non dirty date to be absent.")
 	}
 	
 	func testSerializeSingleResourceToOneRelationships() {
@@ -93,12 +114,12 @@ class SerializingTests: SerializerTests {
 		XCTAssertNotNil(json["data"]["relationships"]["to-many-attribute"].error, "Expected serialized to-many to be absent.")
 	}
     
-    func testSerializeResourceOmittingNulls() {
-        let options: SerializationOptions = [.OmitNullValues]
-        let serializedData = try! serializer.serializeResources([foo], options: options)
-        let json = JSON(data: serializedData)
-        XCTAssertNotNil(json["data"]["attributes"]["nil-attribute"].error, "Expected serialized nil to be absent.")
-    }
+	func testSerializeResourceOmittingNulls() {
+		let options: SerializationOptions = [.OmitNullValues]
+		let serializedData = try! serializer.serializeResources([foo], options: options)
+		let json = JSON(data: serializedData)
+		XCTAssertNotNil(json["data"]["attributes"]["nil-attribute"].error, "Expected serialized nil to be absent.")
+	}
 }
 
 class DeserializingTests: SerializerTests {

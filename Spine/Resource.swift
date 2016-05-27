@@ -11,12 +11,16 @@ import Foundation
 public typealias ResourceType = String
 
 /// A ResourceIdentifier uniquely identifies a resource that exists on the server.
-public struct ResourceIdentifier: Equatable {
+public struct ResourceIdentifier: Equatable, Hashable {
 	/// The resource type.
 	var type: ResourceType
 	
 	/// The resource ID.
 	var id: String
+	
+	public var hashValue: Int {
+		return "\(type):\(id)".hashValue
+	}
 
 	/// Constructs a new ResourceIdentifier instance with given `type` and `id`.
 	init(type: ResourceType, id: String) {
@@ -103,6 +107,8 @@ public class Resource: NSObject, NSCoding {
 	/// Raw relationship data keyed by relationship name.
 	var relationships: [String: RelationshipData] = [:]
 	
+	var originalValues: [String: AnyObject] = [:]
+	
 	public required override init() {
 		super.init()
 	}
@@ -136,13 +142,38 @@ public class Resource: NSObject, NSCoding {
 	}
 
   /// Returns the value for the field named `field`.
-	public func valueForField(field: String) -> AnyObject? {
+	func valueForField(field: String) -> AnyObject? {
 		return valueForKey(field)
 	}
 
 	/// Sets the value for the field named `field` to `value`.
-	public func setValue(value: AnyObject?, forField field: String) {
+	func setValue(value: AnyObject?, forField field: String) {
 		setValue(value, forKey: field)
+		originalValues[field] = value ?? NSNull()
+	}
+	
+	func isDirty(field: String) -> Bool {
+		guard let originalValue = originalValues[field] else {
+			return true
+		}
+		
+		if let collection = valueForField(field) as? LinkedResourceCollection {
+			return collection.isDirty
+		}
+
+		if originalValue is NSNull && valueForField(field) == nil {
+			return false
+		} else {
+			return originalValue !== valueForField(field)
+		}
+	}
+	
+	func markField(field: String, asDirty dirty: Bool) {
+		if dirty {
+			originalValues[field] = nil
+		} else {
+			originalValues[field] = valueForField(field) ?? NSNull()
+		}
 	}
 
 	/// Set the values for all fields to nil and sets `isLoaded` to false.

@@ -136,6 +136,10 @@ public class LinkedResourceCollection: ResourceCollection {
 	/// Resources removed from this linked collection, but not yet persisted.
 	public internal(set) var removedResources: [Resource] = []
 	
+	var isDirty: Bool {
+		return !addedResources.isEmpty || !removedResources.isEmpty
+	}
+	
 	public init(resourcesURL: NSURL?, linkURL: NSURL?, linkage: [ResourceIdentifier]?) {
 		super.init(resources: [], resourcesURL: resourcesURL)
 		self.linkURL = linkURL

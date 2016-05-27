@@ -943,6 +943,7 @@
 				2413111F1CD8F40000527E10 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		241311201CD8F40000527E10 /* Build configuration list for PBXNativeTarget "Spine-tvOSTests" */ = {
 			isa = XCConfigurationList;
@@ -951,6 +952,7 @@
 				241311221CD8F40000527E10 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		D373F78219B2249900275AFC /* Build configuration list for PBXProject "Spine" */ = {
 			isa = XCConfigurationList;

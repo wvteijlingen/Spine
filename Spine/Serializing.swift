@@ -60,7 +60,7 @@ public class Serializer {
 	
 	- returns: Serialized data.
 	*/
-	public func serializeDocument(document: JSONAPIDocument, options: SerializationOptions = [.IncludeID]) throws -> NSData {
+	public func serializeDocument(document: JSONAPIDocument, options: SerializationOptions = [.IncludeID, .DirtyFieldsOnly]) throws -> NSData {
 		let serializeOperation = SerializeOperation(document: document, valueFormatters: valueFormatters, keyFormatter: keyFormatter)
 		serializeOperation.options = options
 		
@@ -84,7 +84,7 @@ public class Serializer {
 	
 	- returns: Serialized data.
 	*/
-	public func serializeResources(resources: [Resource], options: SerializationOptions = [.IncludeID]) throws -> NSData {
+	public func serializeResources(resources: [Resource], options: SerializationOptions = [.IncludeID, .DirtyFieldsOnly]) throws -> NSData {
 		let document = JSONAPIDocument(data: resources, included: nil, errors: nil, meta: nil, links: nil, jsonapi: nil)
 		return try serializeDocument(document, options: options)
 	}

@@ -91,11 +91,13 @@ class SerializeOperation: NSOperation {
 		var attributes = [String: AnyObject]();
 		
 		for case let field as Attribute in resource.fields where field.isReadOnly == false {
-			let key = keyFormatter.format(field)
+			if options.contains(.DirtyFieldsOnly) && !resource.isDirty(field.name) {
+				continue
+			}
 			
+			let key = keyFormatter.format(field)
 			Spine.logDebug(.Serializing, "Serializing attribute \(field) as '\(key)'")
 			
-			//TODO: Dirty checking
 			if let unformattedValue: AnyObject = resource.valueForField(field.name) {
 				addAttribute(&attributes, key: key, value: self.valueFormatters.format(unformattedValue, forAttribute: field))
 			} else if(!options.contains(.OmitNullValues)){
