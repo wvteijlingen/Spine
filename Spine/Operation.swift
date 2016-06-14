@@ -16,6 +16,19 @@ private func errorFromStatusCode(statusCode: Int, additionalErrors: [APIError]? 
 	return SpineError.ServerError(statusCode: statusCode, apiErrors: additionalErrors)
 }
 
+///  Promotes an ErrorType to a higher level SpineError.
+///  Errors that cannot be represented as a SpineError will be returned as SpineError.UnknownError
+private func promoteToSpineError(error: ErrorType) -> SpineError {
+	switch error {
+	case let error as SpineError:
+		return error
+	case is SerializerError:
+		return .SerializerError
+	default:
+		return .UnknownError
+	}
+}
+
 // MARK: - Base operation
 
 /**
@@ -129,7 +142,7 @@ class FetchOperation<T: Resource>: ConcurrentOperation {
 			defer { self.state = .Finished }
 			
 			guard networkError == nil else {
-				self.result = Failable.Failure(SpineError.NetworkError(networkError!))
+				self.result = .Failure(SpineError.NetworkError(networkError!))
 				return
 			}
 			
@@ -139,18 +152,14 @@ class FetchOperation<T: Resource>: ConcurrentOperation {
 					if statusCodeIsSuccess(statusCode) {
 						self.result = Failable(document)
 					} else {
-						self.result = Failable.Failure(SpineError.ServerError(statusCode: statusCode!, apiErrors: document.errors))
+						self.result = .Failure(SpineError.ServerError(statusCode: statusCode!, apiErrors: document.errors))
 					}
-				} catch is SerializerError {
-					self.result = .Failure(SpineError.SerializerError)
-				} catch let error as SpineError {
-					self.result = Failable.Failure(error)
-				} catch {
-					self.result = .Failure(SpineError.UnknownError)
+				} catch let error {
+					self.result = .Failure(promoteToSpineError(error))
 				}
 				
 			} else {
-				self.result = Failable.Failure(errorFromStatusCode(statusCode!))
+				self.result = .Failure(errorFromStatusCode(statusCode!))
 			}
 		}
 	}
@@ -189,12 +198,8 @@ class DeleteOperation: ConcurrentOperation {
 				do {
 					let document = try self.serializer.deserializeData(data, mappingTargets: nil)
 					self.result = .Failure(SpineError.ServerError(statusCode: statusCode!, apiErrors: document.errors))
-				} catch is SerializerError {
-					self.result = .Failure(SpineError.SerializerError)
-				} catch let error as SpineError {
-					self.result = Failable.Failure(error)
-				} catch {
-					self.result = .Failure(SpineError.UnknownError)
+				} catch let error {
+					self.result = .Failure(promoteToSpineError(error))
 				}
 			} else {
 				self.result = .Failure(errorFromStatusCode(statusCode!))
@@ -281,14 +286,8 @@ class SaveOperation: ConcurrentOperation {
 					// Don't map onto the resources if the response is not in the success range.
 					let mappingTargets: [Resource]? = success ? [self.resource] : nil
 					document = try self.serializer.deserializeData(data, mappingTargets: mappingTargets)
-				} catch is SerializerError {
-					self.result = .Failure(SpineError.SerializerError)
-					return
-				} catch let error as SpineError {
-					self.result = Failable.Failure(error)
-					return
-				} catch {
-					self.result = .Failure(SpineError.UnknownError)
+				} catch let error {
+					self.result = .Failure(promoteToSpineError(error))
 					return
 				}
 			} else {
@@ -309,12 +308,8 @@ class SaveOperation: ConcurrentOperation {
 		do {
 			let payload = try serializer.serializeResources([resource], options: options)
 			return payload
-		} catch is SerializerError {
-			throw SpineError.SerializerError
-		} catch let error as SpineError {
-			throw error
-		} catch {
-			throw SpineError.UnknownError
+		} catch let error {
+			throw promoteToSpineError(error)
 		}
 	}
 

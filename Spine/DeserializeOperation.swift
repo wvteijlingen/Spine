@@ -355,7 +355,7 @@ class DeserializeOperation: NSOperation {
 					continue
 				}
 					
-				let targetResources = linkage.flatMap { link in
+				let targetResources = linkage.flatMap { (link: ResourceIdentifier) in
 					return self.resourcePool.filter { $0.resourceType == link.type && $0.id == link.id }
 				}
 				

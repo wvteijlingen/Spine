@@ -218,4 +218,7 @@ public struct SerializationOptions: OptionSetType {
 	
 	/// Whether to include to-one linked resources in the serialized representation.
 	public static let IncludeToOne = SerializationOptions(rawValue: 1 << 4)
+    
+    /// If set, then attributes with null values will not be serialized.
+    public static let OmitNullValues = SerializationOptions(rawValue: 1 << 5)
 }
