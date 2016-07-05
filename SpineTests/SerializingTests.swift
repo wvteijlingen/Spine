@@ -154,6 +154,35 @@ class DeserializingTests: SerializerTests {
 		}
 	}
 	
+	func testDeserializeSingleResourceWithUnregisteredType() {
+		let fixture = JSONFixtureWithName("SingleFooWithUnregisteredType")
+		
+		do {
+			let document = try serializer.deserializeData(fixture.data)
+			XCTAssertNotNil(document.data, "Expected data to be not nil.")
+			
+			if let resources = document.data {
+				XCTAssertEqual(resources.count, 1, "Expected resources count to be 1.")
+				
+				XCTAssert(resources.first is Foo, "Expected resource to be of class 'Foo'.")
+				let foo = resources.first as! Foo
+				
+				// To one link
+				XCTAssertNotNil(foo.toOneAttribute, "Expected linked resource to be not nil.")
+				
+				// To many link
+				XCTAssertNotNil(foo.toManyAttribute, "Deserialized linked resources should not be nil.")
+				if let barCollection = foo.toManyAttribute {
+					for bar in barCollection {
+						XCTAssert(bar is Bar, "Expected relationship resource to be of class 'Bar'.")
+					}
+				}
+			}
+		} catch let error as NSError {
+			XCTFail("Deserialisation failed with error: \(error).")
+		}
+	}
+	
 	func testDeserializeMultipleResources() {
 		let fixture = JSONFixtureWithName("MultipleFoos")
 		

@@ -61,6 +61,8 @@
 		240BCA7B1CD9312C00842222 /* Result.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 240BCA751CD930BE00842222 /* Result.framework */; };
 		240BCA7C1CD9312D00842222 /* BrightFutures.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 240BCA771CD930C700842222 /* BrightFutures.framework */; };
 		240BCA7D1CD9313000842222 /* SwiftyJSON.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 240BCA791CD930CD00842222 /* SwiftyJSON.framework */; };
+		24EA5DB11D2D39A700F3E867 /* SingleFooWithUnregisteredType.json in Resources */ = {isa = PBXBuildFile; fileRef = 24EA5DB01D2D39A100F3E867 /* SingleFooWithUnregisteredType.json */; };
+		24EA5DB21D2D39A800F3E867 /* SingleFooWithUnregisteredType.json in Resources */ = {isa = PBXBuildFile; fileRef = 24EA5DB01D2D39A100F3E867 /* SingleFooWithUnregisteredType.json */; };
 		D307FBEE1A97756700EE0FAC /* SingleFooIncludingBars.json in Resources */ = {isa = PBXBuildFile; fileRef = D307FBED1A97756700EE0FAC /* SingleFooIncludingBars.json */; };
 		D312E2F819BB83A8004BB3E0 /* SerializingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D312E2F719BB83A8004BB3E0 /* SerializingTests.swift */; };
 		D312E30219BB8822004BB3E0 /* Networking.swift in Sources */ = {isa = PBXBuildFile; fileRef = D37FB17E19B9D7F10073A888 /* Networking.swift */; };
@@ -123,6 +125,7 @@
 		240BCA791CD930CD00842222 /* SwiftyJSON.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftyJSON.framework; path = Carthage/Build/tvOS/SwiftyJSON.framework; sourceTree = "<group>"; };
 		2413110C1CD8F40000527E10 /* Spine.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Spine.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		241311151CD8F40000527E10 /* Spine-tvOSTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Spine-tvOSTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		24EA5DB01D2D39A100F3E867 /* SingleFooWithUnregisteredType.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = SingleFooWithUnregisteredType.json; sourceTree = "<group>"; };
 		D307FBED1A97756700EE0FAC /* SingleFooIncludingBars.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = SingleFooIncludingBars.json; sourceTree = "<group>"; };
 		D312E2F719BB83A8004BB3E0 /* SerializingTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SerializingTests.swift; sourceTree = "<group>"; };
 		D32EA6DC1BCBD5930076CFA5 /* Result.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Result.framework; path = Carthage/Build/iOS/Result.framework; sourceTree = "<group>"; };
@@ -242,6 +245,7 @@
 			children = (
 				D35DAAEA1A9627FD00E59545 /* Fixtures.swift */,
 				D3502C2C1A93A7F700F91266 /* SingleFoo.json */,
+				24EA5DB01D2D39A100F3E867 /* SingleFooWithUnregisteredType.json */,
 				D307FBED1A97756700EE0FAC /* SingleFooIncludingBars.json */,
 				D35047891A94FF70002FDF57 /* MultipleFoos.json */,
 				D3BE2B1B1AD56C840061167C /* PagedFoos-1.json */,
@@ -510,6 +514,7 @@
 				240BCA721CD9303000842222 /* PagedFoos-2.json in Resources */,
 				240BCA711CD9302E00842222 /* PagedFoos-1.json in Resources */,
 				240BCA731CD9303300842222 /* Errors.json in Resources */,
+				24EA5DB21D2D39A800F3E867 /* SingleFooWithUnregisteredType.json in Resources */,
 				240BCA701CD9302C00842222 /* MultipleFoos.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -530,6 +535,7 @@
 				D3BE2B1D1AD56C840061167C /* PagedFoos-1.json in Resources */,
 				D3502C2D1A93A7F700F91266 /* SingleFoo.json in Resources */,
 				D307FBEE1A97756700EE0FAC /* SingleFooIncludingBars.json in Resources */,
+				24EA5DB11D2D39A700F3E867 /* SingleFooWithUnregisteredType.json in Resources */,
 				D3BE2B1E1AD56C850061167C /* PagedFoos-2.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

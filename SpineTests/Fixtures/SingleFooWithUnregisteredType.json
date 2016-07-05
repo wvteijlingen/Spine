@@ -1,0 +1,36 @@
+{
+	"data": {
+		"id": "1",
+		"type": "foos",
+		"attributes": {
+			"string-attribute": "stringAttributeValue",
+			"integer-attribute": 10,
+			"float-attribute": 5.5,
+			"boolean-attribute": true,
+			"nil-attribute": null,
+			"date-attribute": "1970-01-01T01:00:00.000+01:00"
+		},
+		"links": {
+			"self": "http://example.com/foos/1"
+		},
+		"relationships": {
+			"to-one-attribute": {
+				"links": {
+					"self": "http://example.com/foos/1/relationships/to-one-attribute",
+					"related": "http://example.com/unregistered-types/10"
+				},
+				"data": { "type": "unregistered-types", "id": "10" }
+			},
+			"to-many-attribute": {
+				"links": {
+					"self": "http://example.com/foos/1/relationships/to-many-attribute",
+					"related": "http://example.com/unregistered-types/11,12"
+				},
+				"data": [
+					{"type": "unregistered-types", "id": "11" },
+					{"type": "unregistered-types", "id": "12" }
+				]
+			}
+		}
+	}
+}

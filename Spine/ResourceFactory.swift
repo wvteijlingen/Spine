@@ -33,8 +33,10 @@ struct ResourceFactory {
 	
 	- returns: An instantiated resource.
 	*/
-	func instantiate(type: ResourceType) -> Resource {
-		assert(resourceTypes[type] != nil, "Cannot instantiate resource of type \(type). You must register this type with Spine first.")
+	func instantiate(type: ResourceType) throws -> Resource {
+		if resourceTypes[type] == nil {
+			throw SerializerError.ResourceTypeUnregistered
+		}
 		return resourceTypes[type]!.init()
 	}
 	
@@ -52,7 +54,7 @@ struct ResourceFactory {
 	
 	- returns: A resource with the given type and id.
 	*/
-	func dispense(type: ResourceType, id: String, inout pool: [Resource], index: Int? = nil) -> Resource {
+	func dispense(type: ResourceType, id: String, inout pool: [Resource], index: Int? = nil) throws -> Resource {
 		var resource: Resource! = pool.filter { $0.resourceType == type && $0.id == id }.first
 		
 		if resource == nil && index != nil && !pool.isEmpty {
@@ -63,7 +65,7 @@ struct ResourceFactory {
 		}
 		
 		if resource == nil {
-			resource = instantiate(type)
+			resource = try instantiate(type)
 			resource.id = id
 			pool.append(resource)
 		}
