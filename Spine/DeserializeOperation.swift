@@ -170,7 +170,7 @@ class DeserializeOperation: NSOperation {
 		}
 		
 		// Dispense a resource
-		let resource = resourceFactory.dispense(type, id: id, pool: &resourcePool, index: mappingTargetIndex)
+		let resource = try resourceFactory.dispense(type, id: id, pool: &resourcePool, index: mappingTargetIndex)
 		
 		// Extract data
 		resource.id = id
@@ -279,9 +279,17 @@ class DeserializeOperation: NSOperation {
 			let type = linkData["data"]?["type"].string ?? linkedType
 			
 			if let id = linkData["data"]?["id"].string {
-				resource = resourceFactory.dispense(type, id: id, pool: &resourcePool)
+				do {
+					resource = try resourceFactory.dispense(type, id: id, pool: &resourcePool)
+				} catch {
+					resource = try! resourceFactory.dispense(linkedType, id: id, pool: &resourcePool)
+				}
 			} else {
-				resource = resourceFactory.instantiate(type)
+				do {
+					resource = try resourceFactory.instantiate(type)
+				} catch {
+					resource = try! resourceFactory.instantiate(linkedType)
+				}
 			}
 			
 			if let resourceURL = linkData["links"]?["related"].URL {
