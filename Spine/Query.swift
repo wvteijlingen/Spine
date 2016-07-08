@@ -136,21 +136,21 @@ public struct Query<T: Resource> {
 	
 	private mutating func addPredicateWithField(fieldName: String, value: AnyObject, type: NSPredicateOperatorType) {
 		if let field = T.fields.filter({ $0.name == fieldName }).first {
-            addPredicateWithFieldName(field.name, value: value, type: type)
+			addPredicateWithKey(field.name, value: value, type: type)
 		} else {
 			assertionFailure("Resource of type \(T.resourceType) does not contain a field named \(fieldName)")
 		}
 	}
-    
-    private mutating func addPredicateWithFieldName(fieldName: String, value: AnyObject, type: NSPredicateOperatorType) {
-        let predicate = NSComparisonPredicate(
-            leftExpression: NSExpression(forKeyPath: fieldName),
-            rightExpression: NSExpression(forConstantValue: value),
-            modifier: .DirectPredicateModifier,
-            type: type,
-            options: [])
-        
-        addPredicate(predicate)
+	
+	private mutating func addPredicateWithKey(key: String, value: AnyObject, type: NSPredicateOperatorType) {
+		let predicate = NSComparisonPredicate(
+				leftExpression: NSExpression(forKeyPath: key),
+				rightExpression: NSExpression(forConstantValue: value),
+				modifier: .DirectPredicateModifier,
+				type: type,
+				options: [])
+
+		addPredicate(predicate)
 	}
 	
 	/**
@@ -234,77 +234,77 @@ public struct Query<T: Resource> {
 		addPredicateWithField(attributeName, value: greaterThanOrEqualTo, type: .GreaterThanOrEqualToPredicateOperatorType)
 	}
     
-    /**
-     Adds a filter where the given attribute should be equal to the given value.
-     
-     - parameter attributeName: The name of the attribute to filter on.
-     - parameter equals:        The value to check for.
-     
-     - returns: The query
-     */
-    public mutating func filterOn(attributeName: String, equalTo: AnyObject) {
-        addPredicateWithFieldName(attributeName, value: equalTo, type: .EqualToPredicateOperatorType)
-    }
-    
-    /**
-     Adds a filter where the given attribute should not be equal to the given value.
-     
-     - parameter attributeName: The name of the attribute to filter on.
-     - parameter equals:        The value to check for.
-     
-     - returns: The query
-     */
-    public mutating func filterOn(attributeName: String, notEqualTo: AnyObject) {
-        addPredicateWithFieldName(attributeName, value: notEqualTo, type: .NotEqualToPredicateOperatorType)
-    }
-    
-    /**
-     Adds a filter where the given attribute should be smaller than the given value.
-     
-     - parameter attributeName: The name of the attribute to filter on.
-     - parameter smallerThen:   The value to check for.
-     
-     - returns: The query
-     */
-    public mutating func filterOn(attributeName: String, lessThan: AnyObject) {
-        addPredicateWithFieldName(attributeName, value: lessThan, type: .LessThanPredicateOperatorType)
-    }
-    
-    /**
-     Adds a filter where the given attribute should be less then or equal to the given value.
-     
-     - parameter attributeName: The name of the attribute to filter on.
-     - parameter smallerThen:   The value to check for.
-     
-     - returns: The query
-     */
-    public mutating func filterOn(attributeName: String, lessThanOrEqualTo: AnyObject) {
-        addPredicateWithFieldName(attributeName, value: lessThanOrEqualTo, type: .LessThanOrEqualToPredicateOperatorType)
-    }
-    
-    /**
-     Adds a filter where the given attribute should be greater then the given value.
-     
-     - parameter attributeName: The name of the attribute to filter on.
-     - parameter greaterThen:   The value to check for.
-     
-     - returns: The query
-     */
-    public mutating func filterOn(attributeName: String, greaterThan: AnyObject) {
-        addPredicateWithFieldName(attributeName, value: greaterThan, type: .GreaterThanPredicateOperatorType)
-    }
-    
-    /**
-     Adds a filter where the given attribute should be greater than or equal to the given value.
-     
-     - parameter attributeName: The name of the attribute to filter on.
-     - parameter greaterThen:   The value to check for.
-     
-     - returns: The query
-     */
-    public mutating func filterOn(attributeName: String, greaterThanOrEqualTo: AnyObject) {
-        addPredicateWithFieldName(attributeName, value: greaterThanOrEqualTo, type: .GreaterThanOrEqualToPredicateOperatorType)
-    }
+	/**
+	Adds a filter where the given attribute should be equal to the given value.
+	
+	- parameter attributeName: The name of the attribute to filter on.
+	- parameter equals:        The value to check for.
+	
+	- returns: The query
+	*/
+	public mutating func filterOn(attributeName: String, equalTo: AnyObject) {
+		addPredicateWithKey(attributeName, value: equalTo, type: .EqualToPredicateOperatorType)
+	}
+	
+	/**
+	Adds a filter where the given attribute should not be equal to the given value.
+	
+	- parameter attributeName: The name of the attribute to filter on.
+	- parameter equals:        The value to check for.
+	
+	- returns: The query
+	*/
+	public mutating func filterOn(attributeName: String, notEqualTo: AnyObject) {
+		addPredicateWithKey(attributeName, value: notEqualTo, type: .NotEqualToPredicateOperatorType)
+	}
+	
+	/**
+	Adds a filter where the given attribute should be smaller than the given value.
+	
+	- parameter attributeName: The name of the attribute to filter on.
+	- parameter smallerThen:   The value to check for.
+	
+	- returns: The query
+	*/
+	public mutating func filterOn(attributeName: String, lessThan: AnyObject) {
+		addPredicateWithKey(attributeName, value: lessThan, type: .LessThanPredicateOperatorType)
+	}
+	
+	/**
+	Adds a filter where the given attribute should be less then or equal to the given value.
+	
+	- parameter attributeName: The name of the attribute to filter on.
+	- parameter smallerThen:   The value to check for.
+	
+	- returns: The query
+	*/
+	public mutating func filterOn(attributeName: String, lessThanOrEqualTo: AnyObject) {
+		addPredicateWithKey(attributeName, value: lessThanOrEqualTo, type: .LessThanOrEqualToPredicateOperatorType)
+	}
+	
+	/**
+	Adds a filter where the given attribute should be greater then the given value.
+	
+	- parameter attributeName: The name of the attribute to filter on.
+	- parameter greaterThen:   The value to check for.
+	
+	- returns: The query
+	*/
+	public mutating func filterOn(attributeName: String, greaterThan: AnyObject) {
+		addPredicateWithKey(attributeName, value: greaterThan, type: .GreaterThanPredicateOperatorType)
+	}
+	
+	/**
+	Adds a filter where the given attribute should be greater than or equal to the given value.
+	
+	- parameter attributeName: The name of the attribute to filter on.
+	- parameter greaterThen:   The value to check for.
+	
+	- returns: The query
+	*/
+	public mutating func filterOn(attributeName: String, greaterThanOrEqualTo: AnyObject) {
+		addPredicateWithKey(attributeName, value: greaterThanOrEqualTo, type: .GreaterThanOrEqualToPredicateOperatorType)
+	}
 	
 	/**
 	Adds a filter where the given relationship should point to the given resource, or the given
