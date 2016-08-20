@@ -156,12 +156,8 @@
 		240BCA791CD930CD00842222 /* SwiftyJSON.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftyJSON.framework; path = Carthage/Build/tvOS/SwiftyJSON.framework; sourceTree = "<group>"; };
 		2413110C1CD8F40000527E10 /* Spine.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Spine.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		241311151CD8F40000527E10 /* Spine-tvOSTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Spine-tvOSTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
-		24E6DF2E1D682FE40072D4DC /* Spine-macOs.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Spine-macOs.h"; sourceTree = "<group>"; };
-		24E6DF301D682FE40072D4DC /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		24E6DF3A1D682FE40072D4DC /* Spine_macOsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Spine_macOsTests.swift; sourceTree = "<group>"; };
-		24E6DF3C1D682FE40072D4DC /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		24E6DF481D6830030072D4DC /* Spine.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Spine.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		24E6DF511D6830030072D4DC /* Spine-MacOSTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Spine-MacOSTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		24E6DF511D6830030072D4DC /* Spine-macOSTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Spine-macOSTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		24E6DF561D6830030072D4DC /* Spine_MacOSTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Spine_MacOSTests.swift; sourceTree = "<group>"; };
 		24E6DF581D6830030072D4DC /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		24E6DF701D6831520072D4DC /* BrightFutures.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = BrightFutures.framework; path = Carthage/Build/Mac/BrightFutures.framework; sourceTree = "<group>"; };
@@ -301,24 +297,6 @@
 			name = iOS;
 			sourceTree = "<group>";
 		};
-		24E6DF2D1D682FE40072D4DC /* Spine-macOs */ = {
-			isa = PBXGroup;
-			children = (
-				24E6DF2E1D682FE40072D4DC /* Spine-macOs.h */,
-				24E6DF301D682FE40072D4DC /* Info.plist */,
-			);
-			path = "Spine-macOs";
-			sourceTree = "<group>";
-		};
-		24E6DF391D682FE40072D4DC /* Spine-macOsTests */ = {
-			isa = PBXGroup;
-			children = (
-				24E6DF3A1D682FE40072D4DC /* Spine_macOsTests.swift */,
-				24E6DF3C1D682FE40072D4DC /* Info.plist */,
-			);
-			path = "Spine-macOsTests";
-			sourceTree = "<group>";
-		};
 		24E6DF491D6830030072D4DC /* Spine-MacOS */ = {
 			isa = PBXGroup;
 			children = (
@@ -388,8 +366,6 @@
 			children = (
 				D373F78A19B2249900275AFC /* Spine */,
 				D373F79419B2249900275AFC /* SpineTests */,
-				24E6DF2D1D682FE40072D4DC /* Spine-macOs */,
-				24E6DF391D682FE40072D4DC /* Spine-macOsTests */,
 				24E6DF491D6830030072D4DC /* Spine-MacOS */,
 				24E6DF551D6830030072D4DC /* Spine-MacOSTests */,
 				D373F78919B2249900275AFC /* Products */,
@@ -405,7 +381,7 @@
 				2413110C1CD8F40000527E10 /* Spine.framework */,
 				241311151CD8F40000527E10 /* Spine-tvOSTests.xctest */,
 				24E6DF481D6830030072D4DC /* Spine.framework */,
-				24E6DF511D6830030072D4DC /* Spine-MacOSTests.xctest */,
+				24E6DF511D6830030072D4DC /* Spine-macOSTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -534,9 +510,9 @@
 			productReference = 241311151CD8F40000527E10 /* Spine-tvOSTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
-		24E6DF471D6830030072D4DC /* Spine-MacOS */ = {
+		24E6DF471D6830030072D4DC /* Spine-macOS */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 24E6DF591D6830030072D4DC /* Build configuration list for PBXNativeTarget "Spine-MacOS" */;
+			buildConfigurationList = 24E6DF591D6830030072D4DC /* Build configuration list for PBXNativeTarget "Spine-macOS" */;
 			buildPhases = (
 				24E6DF431D6830030072D4DC /* Sources */,
 				24E6DF441D6830030072D4DC /* Frameworks */,
@@ -547,14 +523,14 @@
 			);
 			dependencies = (
 			);
-			name = "Spine-MacOS";
+			name = "Spine-macOS";
 			productName = "Spine-MacOS";
 			productReference = 24E6DF481D6830030072D4DC /* Spine.framework */;
 			productType = "com.apple.product-type.framework";
 		};
-		24E6DF501D6830030072D4DC /* Spine-MacOSTests */ = {
+		24E6DF501D6830030072D4DC /* Spine-macOSTests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 24E6DF5C1D6830030072D4DC /* Build configuration list for PBXNativeTarget "Spine-MacOSTests" */;
+			buildConfigurationList = 24E6DF5C1D6830030072D4DC /* Build configuration list for PBXNativeTarget "Spine-macOSTests" */;
 			buildPhases = (
 				24E6DF4D1D6830030072D4DC /* Sources */,
 				24E6DF4E1D6830030072D4DC /* Frameworks */,
@@ -565,9 +541,9 @@
 			dependencies = (
 				24E6DF541D6830030072D4DC /* PBXTargetDependency */,
 			);
-			name = "Spine-MacOSTests";
+			name = "Spine-macOSTests";
 			productName = "Spine-MacOSTests";
-			productReference = 24E6DF511D6830030072D4DC /* Spine-MacOSTests.xctest */;
+			productReference = 24E6DF511D6830030072D4DC /* Spine-macOSTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
 		D373F78719B2249900275AFC /* Spine-iOS */ = {
@@ -653,8 +629,8 @@
 				D373F79219B2249900275AFC /* Spine-iOSTests */,
 				2413110B1CD8F40000527E10 /* Spine-tvOS */,
 				241311141CD8F40000527E10 /* Spine-tvOSTests */,
-				24E6DF471D6830030072D4DC /* Spine-MacOS */,
-				24E6DF501D6830030072D4DC /* Spine-MacOSTests */,
+				24E6DF471D6830030072D4DC /* Spine-macOS */,
+				24E6DF501D6830030072D4DC /* Spine-macOSTests */,
 			);
 		};
 /* End PBXProject section */
@@ -900,7 +876,7 @@
 /* Begin PBXTargetDependency section */
 		24E6DF541D6830030072D4DC /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 24E6DF471D6830030072D4DC /* Spine-MacOS */;
+			target = 24E6DF471D6830030072D4DC /* Spine-macOS */;
 			targetProxy = 24E6DF531D6830030072D4DC /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
@@ -1054,10 +1030,10 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				GCC_NO_COMMON_BLOCKS = YES;
-				INFOPLIST_FILE = "Spine-MacOSTests/Info.plist";
+				INFOPLIST_FILE = SpineTests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 10.11;
-				PRODUCT_BUNDLE_IDENTIFIER = "asdf.Spine-MacOSTests";
+				PRODUCT_BUNDLE_IDENTIFIER = com.wardvanteijlingen.Spine.SpineTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
 			};
@@ -1072,10 +1048,10 @@
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				GCC_NO_COMMON_BLOCKS = YES;
-				INFOPLIST_FILE = "Spine-MacOSTests/Info.plist";
+				INFOPLIST_FILE = SpineTests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 10.11;
-				PRODUCT_BUNDLE_IDENTIFIER = "asdf.Spine-MacOSTests";
+				PRODUCT_BUNDLE_IDENTIFIER = com.wardvanteijlingen.Spine.SpineTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
 			};
@@ -1267,7 +1243,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		24E6DF591D6830030072D4DC /* Build configuration list for PBXNativeTarget "Spine-MacOS" */ = {
+		24E6DF591D6830030072D4DC /* Build configuration list for PBXNativeTarget "Spine-macOS" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				24E6DF5A1D6830030072D4DC /* Debug */,
@@ -1275,7 +1251,7 @@
 			);
 			defaultConfigurationIsVisible = 0;
 		};
-		24E6DF5C1D6830030072D4DC /* Build configuration list for PBXNativeTarget "Spine-MacOSTests" */ = {
+		24E6DF5C1D6830030072D4DC /* Build configuration list for PBXNativeTarget "Spine-macOSTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				24E6DF5D1D6830030072D4DC /* Debug */,
