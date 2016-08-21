@@ -61,6 +61,27 @@
 		240BCA7B1CD9312C00842222 /* Result.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 240BCA751CD930BE00842222 /* Result.framework */; };
 		240BCA7C1CD9312D00842222 /* BrightFutures.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 240BCA771CD930C700842222 /* BrightFutures.framework */; };
 		240BCA7D1CD9313000842222 /* SwiftyJSON.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 240BCA791CD930CD00842222 /* SwiftyJSON.framework */; };
+		24E6DF521D6830030072D4DC /* Spine.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 24E6DF481D6830030072D4DC /* Spine.framework */; };
+		24E6DF571D6830030072D4DC /* Spine_MacOSTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24E6DF561D6830030072D4DC /* Spine_MacOSTests.swift */; };
+		24E6DF5F1D6830FF0072D4DC /* Spine.swift in Sources */ = {isa = PBXBuildFile; fileRef = D373F7A319B224BB00275AFC /* Spine.swift */; };
+		24E6DF601D6830FF0072D4DC /* Query.swift in Sources */ = {isa = PBXBuildFile; fileRef = D331836B19B2302500936FBB /* Query.swift */; };
+		24E6DF611D6830FF0072D4DC /* Operation.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3452C2E1AD18E6900CD413B /* Operation.swift */; };
+		24E6DF621D6830FF0072D4DC /* Networking.swift in Sources */ = {isa = PBXBuildFile; fileRef = D37FB17E19B9D7F10073A888 /* Networking.swift */; };
+		24E6DF631D6830FF0072D4DC /* Routing.swift in Sources */ = {isa = PBXBuildFile; fileRef = D341907619D30BA4007B38D6 /* Routing.swift */; };
+		24E6DF641D6830FF0072D4DC /* Logging.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3452C301AD19B0900CD413B /* Logging.swift */; };
+		24E6DF651D6830FF0072D4DC /* Errors.swift in Sources */ = {isa = PBXBuildFile; fileRef = D35468811AD429D7000E8B6F /* Errors.swift */; };
+		24E6DF661D6830FF0072D4DC /* Resource.swift in Sources */ = {isa = PBXBuildFile; fileRef = D373F7A219B224BB00275AFC /* Resource.swift */; };
+		24E6DF671D6830FF0072D4DC /* ResourceCollection.swift in Sources */ = {isa = PBXBuildFile; fileRef = D35F9D3B1A52FCBB00E5FF97 /* ResourceCollection.swift */; };
+		24E6DF681D6830FF0072D4DC /* ResourceField.swift in Sources */ = {isa = PBXBuildFile; fileRef = D39929EA1A52F3A0008BF0A9 /* ResourceField.swift */; };
+		24E6DF691D6830FF0072D4DC /* Serializing.swift in Sources */ = {isa = PBXBuildFile; fileRef = D373F7A119B224BB00275AFC /* Serializing.swift */; };
+		24E6DF6A1D6830FF0072D4DC /* ResourceFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = D39890F41C3D571F005CFB93 /* ResourceFactory.swift */; };
+		24E6DF6B1D6830FF0072D4DC /* DeserializeOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = D35F9D401A53014500E5FF97 /* DeserializeOperation.swift */; };
+		24E6DF6C1D6830FF0072D4DC /* SerializeOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = D35F9D421A53016000E5FF97 /* SerializeOperation.swift */; };
+		24E6DF6D1D6830FF0072D4DC /* ValueFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = D35F9D471A532EC600E5FF97 /* ValueFormatter.swift */; };
+		24E6DF6E1D6830FF0072D4DC /* KeyFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3B96D611C32B7D300910F83 /* KeyFormatter.swift */; };
+		24E6DF731D6831520072D4DC /* BrightFutures.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 24E6DF701D6831520072D4DC /* BrightFutures.framework */; };
+		24E6DF741D6831520072D4DC /* Result.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 24E6DF711D6831520072D4DC /* Result.framework */; };
+		24E6DF751D6831520072D4DC /* SwiftyJSON.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 24E6DF721D6831520072D4DC /* SwiftyJSON.framework */; };
 		24EA5DB11D2D39A700F3E867 /* SingleFooWithUnregisteredType.json in Resources */ = {isa = PBXBuildFile; fileRef = 24EA5DB01D2D39A100F3E867 /* SingleFooWithUnregisteredType.json */; };
 		24EA5DB21D2D39A800F3E867 /* SingleFooWithUnregisteredType.json in Resources */ = {isa = PBXBuildFile; fileRef = 24EA5DB01D2D39A100F3E867 /* SingleFooWithUnregisteredType.json */; };
 		D307FBEE1A97756700EE0FAC /* SingleFooIncludingBars.json in Resources */ = {isa = PBXBuildFile; fileRef = D307FBED1A97756700EE0FAC /* SingleFooIncludingBars.json */; };
@@ -119,12 +140,29 @@
 		D3E1D1421AAA04B20077B1C3 /* ResourceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3E1D1411AAA04B20077B1C3 /* ResourceTests.swift */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		24E6DF531D6830030072D4DC /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = D373F77F19B2249900275AFC /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 24E6DF471D6830030072D4DC;
+			remoteInfo = "Spine-MacOS";
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
 		240BCA751CD930BE00842222 /* Result.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Result.framework; path = Carthage/Build/tvOS/Result.framework; sourceTree = "<group>"; };
 		240BCA771CD930C700842222 /* BrightFutures.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = BrightFutures.framework; path = Carthage/Build/tvOS/BrightFutures.framework; sourceTree = "<group>"; };
 		240BCA791CD930CD00842222 /* SwiftyJSON.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftyJSON.framework; path = Carthage/Build/tvOS/SwiftyJSON.framework; sourceTree = "<group>"; };
 		2413110C1CD8F40000527E10 /* Spine.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Spine.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		241311151CD8F40000527E10 /* Spine-tvOSTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Spine-tvOSTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		24E6DF481D6830030072D4DC /* Spine.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Spine.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		24E6DF511D6830030072D4DC /* Spine-macOSTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Spine-macOSTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		24E6DF561D6830030072D4DC /* Spine_MacOSTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Spine_MacOSTests.swift; sourceTree = "<group>"; };
+		24E6DF581D6830030072D4DC /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		24E6DF701D6831520072D4DC /* BrightFutures.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = BrightFutures.framework; path = Carthage/Build/Mac/BrightFutures.framework; sourceTree = "<group>"; };
+		24E6DF711D6831520072D4DC /* Result.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Result.framework; path = Carthage/Build/Mac/Result.framework; sourceTree = "<group>"; };
+		24E6DF721D6831520072D4DC /* SwiftyJSON.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftyJSON.framework; path = Carthage/Build/Mac/SwiftyJSON.framework; sourceTree = "<group>"; };
 		24EA5DB01D2D39A100F3E867 /* SingleFooWithUnregisteredType.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = SingleFooWithUnregisteredType.json; sourceTree = "<group>"; };
 		D307FBED1A97756700EE0FAC /* SingleFooIncludingBars.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = SingleFooIncludingBars.json; sourceTree = "<group>"; };
 		D312E2F719BB83A8004BB3E0 /* SerializingTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SerializingTests.swift; sourceTree = "<group>"; };
@@ -188,6 +226,24 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		24E6DF441D6830030072D4DC /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				24E6DF731D6831520072D4DC /* BrightFutures.framework in Frameworks */,
+				24E6DF741D6831520072D4DC /* Result.framework in Frameworks */,
+				24E6DF751D6831520072D4DC /* SwiftyJSON.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		24E6DF4E1D6830030072D4DC /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				24E6DF521D6830030072D4DC /* Spine.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		D373F78419B2249900275AFC /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -224,6 +280,7 @@
 		245B5DD41CD92E3200E44FBE /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				24E6DF6F1D6831280072D4DC /* macOS */,
 				245B5DD51CD92E3900E44FBE /* iOS */,
 				240BCA741CD930A000842222 /* tvOS */,
 			);
@@ -238,6 +295,32 @@
 				D3411E7A1A4B5D2200D27F54 /* SwiftyJSON.framework */,
 			);
 			name = iOS;
+			sourceTree = "<group>";
+		};
+		24E6DF491D6830030072D4DC /* Spine-MacOS */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = "Spine-MacOS";
+			sourceTree = "<group>";
+		};
+		24E6DF551D6830030072D4DC /* Spine-MacOSTests */ = {
+			isa = PBXGroup;
+			children = (
+				24E6DF561D6830030072D4DC /* Spine_MacOSTests.swift */,
+				24E6DF581D6830030072D4DC /* Info.plist */,
+			);
+			path = "Spine-MacOSTests";
+			sourceTree = "<group>";
+		};
+		24E6DF6F1D6831280072D4DC /* macOS */ = {
+			isa = PBXGroup;
+			children = (
+				24E6DF711D6831520072D4DC /* Result.framework */,
+				24E6DF701D6831520072D4DC /* BrightFutures.framework */,
+				24E6DF721D6831520072D4DC /* SwiftyJSON.framework */,
+			);
+			name = macOS;
 			sourceTree = "<group>";
 		};
 		D3502C2B1A93A7F700F91266 /* Fixtures */ = {
@@ -283,6 +366,8 @@
 			children = (
 				D373F78A19B2249900275AFC /* Spine */,
 				D373F79419B2249900275AFC /* SpineTests */,
+				24E6DF491D6830030072D4DC /* Spine-MacOS */,
+				24E6DF551D6830030072D4DC /* Spine-MacOSTests */,
 				D373F78919B2249900275AFC /* Products */,
 				245B5DD41CD92E3200E44FBE /* Frameworks */,
 			);
@@ -295,6 +380,8 @@
 				D373F79319B2249900275AFC /* Spine-iOSTests.xctest */,
 				2413110C1CD8F40000527E10 /* Spine.framework */,
 				241311151CD8F40000527E10 /* Spine-tvOSTests.xctest */,
+				24E6DF481D6830030072D4DC /* Spine.framework */,
+				24E6DF511D6830030072D4DC /* Spine-macOSTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -369,6 +456,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		24E6DF451D6830030072D4DC /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		D373F78519B2249900275AFC /* Headers */ = {
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
@@ -414,6 +508,42 @@
 			name = "Spine-tvOSTests";
 			productName = SpineTests;
 			productReference = 241311151CD8F40000527E10 /* Spine-tvOSTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		24E6DF471D6830030072D4DC /* Spine-macOS */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 24E6DF591D6830030072D4DC /* Build configuration list for PBXNativeTarget "Spine-macOS" */;
+			buildPhases = (
+				24E6DF431D6830030072D4DC /* Sources */,
+				24E6DF441D6830030072D4DC /* Frameworks */,
+				24E6DF451D6830030072D4DC /* Headers */,
+				24E6DF461D6830030072D4DC /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "Spine-macOS";
+			productName = "Spine-MacOS";
+			productReference = 24E6DF481D6830030072D4DC /* Spine.framework */;
+			productType = "com.apple.product-type.framework";
+		};
+		24E6DF501D6830030072D4DC /* Spine-macOSTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 24E6DF5C1D6830030072D4DC /* Build configuration list for PBXNativeTarget "Spine-macOSTests" */;
+			buildPhases = (
+				24E6DF4D1D6830030072D4DC /* Sources */,
+				24E6DF4E1D6830030072D4DC /* Frameworks */,
+				24E6DF4F1D6830030072D4DC /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				24E6DF541D6830030072D4DC /* PBXTargetDependency */,
+			);
+			name = "Spine-macOSTests";
+			productName = "Spine-MacOSTests";
+			productReference = 24E6DF511D6830030072D4DC /* Spine-macOSTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
 		D373F78719B2249900275AFC /* Spine-iOS */ = {
@@ -469,6 +599,12 @@
 					241311141CD8F40000527E10 = {
 						CreatedOnToolsVersion = 7.3;
 					};
+					24E6DF471D6830030072D4DC = {
+						CreatedOnToolsVersion = 7.3.1;
+					};
+					24E6DF501D6830030072D4DC = {
+						CreatedOnToolsVersion = 7.3.1;
+					};
 					D373F78719B2249900275AFC = {
 						CreatedOnToolsVersion = 6.0;
 					};
@@ -493,6 +629,8 @@
 				D373F79219B2249900275AFC /* Spine-iOSTests */,
 				2413110B1CD8F40000527E10 /* Spine-tvOS */,
 				241311141CD8F40000527E10 /* Spine-tvOSTests */,
+				24E6DF471D6830030072D4DC /* Spine-macOS */,
+				24E6DF501D6830030072D4DC /* Spine-macOSTests */,
 			);
 		};
 /* End PBXProject section */
@@ -516,6 +654,20 @@
 				240BCA731CD9303300842222 /* Errors.json in Resources */,
 				24EA5DB21D2D39A800F3E867 /* SingleFooWithUnregisteredType.json in Resources */,
 				240BCA701CD9302C00842222 /* MultipleFoos.json in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		24E6DF461D6830030072D4DC /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		24E6DF4F1D6830030072D4DC /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -633,6 +785,37 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		24E6DF431D6830030072D4DC /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				24E6DF5F1D6830FF0072D4DC /* Spine.swift in Sources */,
+				24E6DF601D6830FF0072D4DC /* Query.swift in Sources */,
+				24E6DF611D6830FF0072D4DC /* Operation.swift in Sources */,
+				24E6DF621D6830FF0072D4DC /* Networking.swift in Sources */,
+				24E6DF631D6830FF0072D4DC /* Routing.swift in Sources */,
+				24E6DF641D6830FF0072D4DC /* Logging.swift in Sources */,
+				24E6DF651D6830FF0072D4DC /* Errors.swift in Sources */,
+				24E6DF661D6830FF0072D4DC /* Resource.swift in Sources */,
+				24E6DF671D6830FF0072D4DC /* ResourceCollection.swift in Sources */,
+				24E6DF681D6830FF0072D4DC /* ResourceField.swift in Sources */,
+				24E6DF691D6830FF0072D4DC /* Serializing.swift in Sources */,
+				24E6DF6A1D6830FF0072D4DC /* ResourceFactory.swift in Sources */,
+				24E6DF6B1D6830FF0072D4DC /* DeserializeOperation.swift in Sources */,
+				24E6DF6C1D6830FF0072D4DC /* SerializeOperation.swift in Sources */,
+				24E6DF6D1D6830FF0072D4DC /* ValueFormatter.swift in Sources */,
+				24E6DF6E1D6830FF0072D4DC /* KeyFormatter.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		24E6DF4D1D6830030072D4DC /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				24E6DF571D6830030072D4DC /* Spine_MacOSTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		D373F78319B2249900275AFC /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -689,6 +872,14 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		24E6DF541D6830030072D4DC /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 24E6DF471D6830030072D4DC /* Spine-macOS */;
+			targetProxy = 24E6DF531D6830030072D4DC /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		2413111E1CD8F40000527E10 /* Debug */ = {
@@ -771,6 +962,98 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = appletvos;
 				TVOS_DEPLOYMENT_TARGET = 9.2;
+			};
+			name = Release;
+		};
+		24E6DF5A1D6830030072D4DC /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ANALYZER_NONNULL = YES;
+				CODE_SIGN_IDENTITY = "Mac Developer";
+				COMBINE_HIDPI_IMAGES = YES;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEFINES_MODULE = YES;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/Carthage/Build/Mac",
+				);
+				FRAMEWORK_VERSION = A;
+				GCC_NO_COMMON_BLOCKS = YES;
+				INFOPLIST_FILE = Spine/Info.plist;
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 10.11;
+				PRODUCT_BUNDLE_IDENTIFIER = com.wardvanteijlingen.Spine;
+				PRODUCT_NAME = Spine;
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+			};
+			name = Debug;
+		};
+		24E6DF5B1D6830030072D4DC /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ANALYZER_NONNULL = YES;
+				CODE_SIGN_IDENTITY = "Mac Developer";
+				COMBINE_HIDPI_IMAGES = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEFINES_MODULE = YES;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/Carthage/Build/Mac",
+				);
+				FRAMEWORK_VERSION = A;
+				GCC_NO_COMMON_BLOCKS = YES;
+				INFOPLIST_FILE = Spine/Info.plist;
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 10.11;
+				PRODUCT_BUNDLE_IDENTIFIER = com.wardvanteijlingen.Spine;
+				PRODUCT_NAME = Spine;
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+			};
+			name = Release;
+		};
+		24E6DF5D1D6830030072D4DC /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ANALYZER_NONNULL = YES;
+				CODE_SIGN_IDENTITY = "-";
+				COMBINE_HIDPI_IMAGES = YES;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				GCC_NO_COMMON_BLOCKS = YES;
+				INFOPLIST_FILE = SpineTests/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 10.11;
+				PRODUCT_BUNDLE_IDENTIFIER = com.wardvanteijlingen.Spine.SpineTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		24E6DF5E1D6830030072D4DC /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ANALYZER_NONNULL = YES;
+				CODE_SIGN_IDENTITY = "-";
+				COMBINE_HIDPI_IMAGES = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				GCC_NO_COMMON_BLOCKS = YES;
+				INFOPLIST_FILE = SpineTests/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 10.11;
+				PRODUCT_BUNDLE_IDENTIFIER = com.wardvanteijlingen.Spine.SpineTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
 			};
 			name = Release;
 		};
@@ -949,6 +1232,7 @@
 				2413111F1CD8F40000527E10 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		241311201CD8F40000527E10 /* Build configuration list for PBXNativeTarget "Spine-tvOSTests" */ = {
 			isa = XCConfigurationList;
@@ -957,6 +1241,25 @@
 				241311221CD8F40000527E10 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		24E6DF591D6830030072D4DC /* Build configuration list for PBXNativeTarget "Spine-macOS" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				24E6DF5A1D6830030072D4DC /* Debug */,
+				24E6DF5B1D6830030072D4DC /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		24E6DF5C1D6830030072D4DC /* Build configuration list for PBXNativeTarget "Spine-macOSTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				24E6DF5D1D6830030072D4DC /* Debug */,
+				24E6DF5E1D6830030072D4DC /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		D373F78219B2249900275AFC /* Build configuration list for PBXProject "Spine" */ = {
 			isa = XCConfigurationList;
