@@ -60,36 +60,36 @@ class DeserializeOperation: NSOperation {
 			result = Failable(SerializerError.InvalidDocumentStructure)
 			return
 		}
-        
-        let hasData = data["data"].error == nil
-        let hasErrors = data["errors"].error == nil
-        let hasMeta = data["meta"].error == nil
-        
-        guard hasData || hasErrors || hasMeta else {
-            let errorMessage = "Either 'data', 'errors', or 'meta' must be present in the top level.";
-            Spine.logError(.Serializing, errorMessage)
-            result = Failable(SerializerError.TopLevelEntryMissing)
-            return
-        }
-        
-        guard hasErrors && !hasData || !hasErrors && hasData else {
-            let errorMessage = "Top level 'data' and 'errors' must not coexist in the same document.";
-            Spine.logError(.Serializing, errorMessage)
-            result = Failable(SerializerError.TopLevelDataAndErrorsCoexist)
-            return
-        }
-        
+
+		let hasData = data["data"].error == nil
+		let hasErrors = data["errors"].error == nil
+		let hasMeta = data["meta"].error == nil
+
+		guard hasData || hasErrors || hasMeta else {
+			let errorMessage = "Either 'data', 'errors', or 'meta' must be present in the top level.";
+			Spine.logError(.Serializing, errorMessage)
+			result = Failable(SerializerError.TopLevelEntryMissing)
+			return
+		}
+
+		guard hasErrors && !hasData || !hasErrors && hasData else {
+			let errorMessage = "Top level 'data' and 'errors' must not coexist in the same document.";
+			Spine.logError(.Serializing, errorMessage)
+			result = Failable(SerializerError.TopLevelDataAndErrorsCoexist)
+			return
+		}
+
 		// Extract resources
 		do {
 			if let data = self.data["data"].array {
-        var resources: [Resource] = []
+				var resources: [Resource] = []
 				for (index, representation) in data.enumerate() {
 					try resources.append(deserializeSingleRepresentation(representation, mappingTargetIndex: index))
 				}
-        extractedPrimaryResources = resources
+				extractedPrimaryResources = resources
 			} else if let _ = self.data["data"].dictionary {
-        let resource = try deserializeSingleRepresentation(self.data["data"], mappingTargetIndex: resourcePool.startIndex)
-        extractedPrimaryResources = [resource]
+				let resource = try deserializeSingleRepresentation(self.data["data"], mappingTargetIndex: resourcePool.startIndex)
+				extractedPrimaryResources = [resource]
 			}
 
 			if let data = self.data["included"].array {
@@ -139,7 +139,7 @@ class DeserializeOperation: NSOperation {
 		
 		// Create a result
 		var responseDocument = JSONAPIDocument(data: nil, included: nil, errors: extractedErrors, meta: extractedMeta, links: extractedLinks, jsonapi: extractedJSONAPI)
-    responseDocument.data = extractedPrimaryResources
+		responseDocument.data = extractedPrimaryResources
 		if !extractedIncludedResources.isEmpty {
 			responseDocument.included = extractedIncludedResources
 		}
