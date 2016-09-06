@@ -31,7 +31,7 @@ struct ResourceFactory {
 	/// - returns: An instantiated resource.
 	func instantiate(_ type: ResourceType) throws -> Resource {
 		if resourceTypes[type] == nil {
-			throw SerializerError.resourceTypeUnregistered
+			throw SerializerError.resourceTypeUnregistered(type)
 		}
 		return resourceTypes[type]!.init()
 	}
