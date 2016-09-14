@@ -223,6 +223,24 @@ class DeserializingTests: SerializerTests {
 			XCTFail("Deserialisation failed with error: \(error).")
 		}
 	}
+
+  func testDeserializeEmptyResources() {
+    let fixture = JSONFixtureWithName("EmptyFoos")
+
+    do {
+      let document = try serializer.deserializeData(fixture.data, mappingTargets: nil)
+
+      guard let foos = document.data else {
+        XCTFail("Expected data to be not nil.")
+        return
+      }
+
+      XCTAssert(foos.isEmpty, "Expected an empty array.")
+
+    } catch let error as NSError {
+      XCTFail("Deserialisation failed with error: \(error).")
+    }
+  }
 	
 	func testDeserializeCompoundDocument() {
 		let fixture = JSONFixtureWithName("SingleFooIncludingBars")

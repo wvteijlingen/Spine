@@ -138,6 +138,8 @@
 		D3BE2B1E1AD56C850061167C /* PagedFoos-2.json in Resources */ = {isa = PBXBuildFile; fileRef = D3BE2B1C1AD56C840061167C /* PagedFoos-2.json */; };
 		D3DFBB6519B9DC64009785BE /* Networking.swift in Sources */ = {isa = PBXBuildFile; fileRef = D37FB17E19B9D7F10073A888 /* Networking.swift */; };
 		D3E1D1421AAA04B20077B1C3 /* ResourceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3E1D1411AAA04B20077B1C3 /* ResourceTests.swift */; };
+		FC3F73E21D74E25900BF2AAC /* EmptyFoos.json in Resources */ = {isa = PBXBuildFile; fileRef = FC3F73E01D74E10400BF2AAC /* EmptyFoos.json */; };
+		FC3F73E31D74E26600BF2AAC /* EmptyFoos.json in Resources */ = {isa = PBXBuildFile; fileRef = FC3F73E01D74E10400BF2AAC /* EmptyFoos.json */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -203,6 +205,7 @@
 		D3BE2B1B1AD56C840061167C /* PagedFoos-1.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = "PagedFoos-1.json"; sourceTree = "<group>"; };
 		D3BE2B1C1AD56C840061167C /* PagedFoos-2.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = "PagedFoos-2.json"; sourceTree = "<group>"; };
 		D3E1D1411AAA04B20077B1C3 /* ResourceTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ResourceTests.swift; sourceTree = "<group>"; };
+		FC3F73E01D74E10400BF2AAC /* EmptyFoos.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = EmptyFoos.json; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -331,6 +334,7 @@
 				24EA5DB01D2D39A100F3E867 /* SingleFooWithUnregisteredType.json */,
 				D307FBED1A97756700EE0FAC /* SingleFooIncludingBars.json */,
 				D35047891A94FF70002FDF57 /* MultipleFoos.json */,
+				FC3F73E01D74E10400BF2AAC /* EmptyFoos.json */,
 				D3BE2B1B1AD56C840061167C /* PagedFoos-1.json */,
 				D3BE2B1C1AD56C840061167C /* PagedFoos-2.json */,
 				D3960DF01A9B5FBC009948B0 /* Errors.json */,
@@ -651,6 +655,7 @@
 				240BCA6E1CD9302700842222 /* SingleFoo.json in Resources */,
 				240BCA721CD9303000842222 /* PagedFoos-2.json in Resources */,
 				240BCA711CD9302E00842222 /* PagedFoos-1.json in Resources */,
+				FC3F73E31D74E26600BF2AAC /* EmptyFoos.json in Resources */,
 				240BCA731CD9303300842222 /* Errors.json in Resources */,
 				24EA5DB21D2D39A800F3E867 /* SingleFooWithUnregisteredType.json in Resources */,
 				240BCA701CD9302C00842222 /* MultipleFoos.json in Resources */,
@@ -686,6 +691,7 @@
 				D350478A1A94FF70002FDF57 /* MultipleFoos.json in Resources */,
 				D3BE2B1D1AD56C840061167C /* PagedFoos-1.json in Resources */,
 				D3502C2D1A93A7F700F91266 /* SingleFoo.json in Resources */,
+				FC3F73E21D74E25900BF2AAC /* EmptyFoos.json in Resources */,
 				D307FBEE1A97756700EE0FAC /* SingleFooIncludingBars.json in Resources */,
 				24EA5DB11D2D39A700F3E867 /* SingleFooWithUnregisteredType.json in Resources */,
 				D3BE2B1E1AD56C850061167C /* PagedFoos-2.json in Resources */,
