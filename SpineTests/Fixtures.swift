@@ -32,8 +32,8 @@ class Foo: Resource {
 			"booleanAttribute": Attribute(),
 			"nilAttribute": Attribute(),
 			"dateAttribute": DateAttribute(),
-			"toOneAttribute": ToOneRelationship(Bar),
-			"toManyAttribute": ToManyRelationship(Bar)
+			"toOneAttribute": ToOneRelationship(Bar.self),
+			"toManyAttribute": ToManyRelationship(Bar.self)
 			])
 	}
 	

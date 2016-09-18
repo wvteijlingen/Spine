@@ -22,7 +22,7 @@ public protocol NetworkClient {
 	- parameter URL:      The URL to which to make the request.
 	- parameter callback: The callback to execute when the request finishes.
 	*/
-	func request(_ method: String, URL: URL, callback: NetworkClientCallback)
+	func request(_ method: String, URL: URL, callback: @escaping NetworkClientCallback)
 	
 	/**
 	Performs a network request to the given URL with the given method.
@@ -32,11 +32,11 @@ public protocol NetworkClient {
 	- parameter payload:  The payload the send as part of the request.
 	- parameter callback: The callback to execute when the request finishes.
 	*/
-	func request(_ method: String, URL: URL, payload: Data?, callback: NetworkClientCallback)
+	func request(_ method: String, URL: URL, payload: Data?, callback: @escaping NetworkClientCallback)
 }
 
 extension NetworkClient {
-	public func request(_ method: String, URL: Foundation.URL, callback: NetworkClientCallback) {
+	public func request(_ method: String, URL: Foundation.URL, callback: @escaping NetworkClientCallback) {
 		return request(method, URL: URL, payload: nil, callback: callback)
 	}
 }
@@ -86,8 +86,8 @@ open class HTTPClient: NetworkClient {
 		headers.removeValue(forKey: header)
 	}
 	
-	open func buildRequest(_ method: String, URL: Foundation.URL, payload: Data?) -> NSMutableURLRequest {
-		let request = NSMutableURLRequest(url: URL)
+	open func buildRequest(_ method: String, URL: Foundation.URL, payload: Data?) -> URLRequest {
+		var request = URLRequest(url: URL)
 		request.httpMethod = method
 		
 		for (key, value) in headers {
@@ -135,13 +135,13 @@ open class HTTPClient: NetworkClient {
 			}
 			
 			if Spine.shouldLog(.debug, domain: .networking) {
-				if let data = data, let stringRepresentation = NSString(data: data, encoding: String.Encoding.utf8) {
+				if let data = data, let stringRepresentation = NSString(data: data, encoding: String.Encoding.utf8.rawValue) {
 					Spine.logDebug(.networking, stringRepresentation)
 				}
 			}
 			
 			self.delegate?.httpClient(self, didPerformRequestWithMethod: method, URL: URL, success: success)
-			callback(statusCode: response?.statusCode, data: data, error: networkError)
+			callback(response?.statusCode, data, networkError as NSError?)
 		}) 
 		
 		task.resume()

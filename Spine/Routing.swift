@@ -132,14 +132,14 @@ open class JSONAPIRouter: Router {
 		}
 		
 		// Filters
-		for filter in query.filters {
+		for filter in query.filters where filter.rightExpression.constantValue != nil {
 			let fieldName = filter.leftExpression.keyPath
-            var item: URLQueryItem?
-            if let field = T.fieldNamed(fieldName) {
-                item = queryItemForFilter(field, value: filter.rightExpression.constantValue, operatorType: filter.predicateOperatorType)
-            } else {
-                item = queryItemForFilterName(fieldName, value: filter.rightExpression.constantValue as AnyObject, operatorType: filter.predicateOperatorType)
-            }
+				var item: URLQueryItem?
+				if let field = T.fieldNamed(fieldName) {
+						item = queryItemForFilter(field, value: filter.rightExpression.constantValue!, operatorType: filter.predicateOperatorType)
+				} else {
+						item = queryItemForFilterName(fieldName, value: filter.rightExpression.constantValue!, operatorType: filter.predicateOperatorType)
+				}
 			setQueryItem(item!, forQueryItems: &queryItems)
 		}
 		
@@ -193,7 +193,7 @@ open class JSONAPIRouter: Router {
 	- returns: An NSURLQueryItem representing the filter.
 	*/
 	
-	open func queryItemForFilter(_ field: Field, value: AnyObject, operatorType: NSComparisonPredicate.Operator) -> URLQueryItem {
+	open func queryItemForFilter(_ field: Field, value: Any, operatorType: NSComparisonPredicate.Operator) -> URLQueryItem {
 		let key = keyFormatter.format(field)
 		return queryItemForFilterName(key, value: value, operatorType: operatorType)
     }
@@ -210,8 +210,7 @@ open class JSONAPIRouter: Router {
      - returns: An NSURLQueryItem representing the filter.
      */
     
-    open func queryItemForFilterName
-        (_ fieldName: String, value: AnyObject, operatorType: NSComparisonPredicate.Operator) -> URLQueryItem {
+    open func queryItemForFilterName(_ fieldName: String, value: Any, operatorType: NSComparisonPredicate.Operator) -> URLQueryItem {
         assert(operatorType == .equalTo, "The built in router only supports Query filter expressions of type 'equalTo'")
         return URLQueryItem(name: "filter[\(fieldName)]", value: "\(value)")
     }

@@ -199,14 +199,16 @@ class QuerySparseFieldsetsTests: XCTestCase {
 		var query = Query(resourceType: Foo.self)
 		query.restrictFieldsTo("stringAttribute", "integerAttribute")
 		
-		XCTAssertEqual(query.fields, [Foo.resourceType: ["stringAttribute", "integerAttribute"]], "Fields not as expected")
+		XCTAssertNotNil(query.fields[Foo.resourceType])
+		XCTAssertEqual(query.fields[Foo.resourceType]!, ["stringAttribute", "integerAttribute"], "Fields not as expected")
 	}
 	
 	func testRestrictPropertiesOfResourceTypeTo() {
 		var query = Query(resourceType: Foo.self)
 		query.restrictFieldsOfResourceType("bars", to: "stringAttribute", "integerAttribute")
 		
-		XCTAssertEqual(query.fields, ["bars": ["stringAttribute", "integerAttribute"]], "Fields not as expected")
+		XCTAssertNotNil(query.fields["bars"])
+		XCTAssertEqual(query.fields["bars"]!, ["stringAttribute", "integerAttribute"], "Fields not as expected")
 	}
 }
 

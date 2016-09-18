@@ -17,9 +17,9 @@ public struct APIError: Error, Equatable {
 	public var detail: String?
 	public var sourcePointer: String?
 	public var sourceParameter: String?
-	public var meta: [String: AnyObject]?
+	public var meta: [String: Any]?
 	
-	init(id: String?, status: String?, code: String?, title: String?, detail: String?, sourcePointer: String?, sourceParameter: String?, meta: [String: AnyObject]?) {
+	init(id: String?, status: String?, code: String?, title: String?, detail: String?, sourcePointer: String?, sourceParameter: String?, meta: [String: Any]?) {
 		self.id = id
 		self.status = status
 		self.code = code

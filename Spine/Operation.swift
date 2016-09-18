@@ -227,6 +227,11 @@ class SaveOperation: ConcurrentOperation {
 		super.init()
 		self.spine = spine
 		self.relationshipOperationQueue.maxConcurrentOperationCount = 1
+		self.relationshipOperationQueue.addObserver(self, forKeyPath: "operations", options: NSKeyValueObservingOptions(), context: nil)
+	}
+	
+	deinit {
+		self.relationshipOperationQueue.removeObserver(self, forKeyPath: "operations")
 	}
 	
 	override func execute() {
@@ -315,8 +320,6 @@ class SaveOperation: ConcurrentOperation {
 			self.updateResource()
 			return
 		}
-		
-		self.relationshipOperationQueue.addObserver(self, forKeyPath: "operations", options: NSKeyValueObservingOptions(), context: nil)
 		
 		let completionHandler: (_ result: Failable<Void, SpineError>?) -> Void = { result in
 			if let error = result?.error {

@@ -109,7 +109,7 @@ open class Serializer {
 	- returns: Serialized data.
 	*/
 	open func serializeLinkData(_ resource: Resource?) throws -> Data {
-		let payloadData: AnyObject
+		let payloadData: Any
 		
 		if let resource = resource {
 			assert(resource.id != nil, "Attempt to convert resource without id to linkage. Only resources with ids can be converted to linkage.")
@@ -143,7 +143,7 @@ open class Serializer {
 	- returns: Serialized data.
 	*/
 	open func serializeLinkData(_ resources: [Resource]) throws -> Data {
-		let payloadData: AnyObject
+		let payloadData: Any
 		
 		if resources.isEmpty {
 			payloadData = []
@@ -194,13 +194,13 @@ public struct JSONAPIDocument {
 	public var errors: [APIError]?
 	
 	/// Metadata extracted from the reponse.
-	public var meta: [String: AnyObject]?
+	public var meta: Metadata?
 	
 	/// Links extracted from the response.
 	public var links: [String: URL]?
 	
 	/// JSONAPI information extracted from the response.
-	public var jsonapi: [String: AnyObject]?
+	public var jsonapi: JSONAPIData?
 }
 
 public struct SerializationOptions: OptionSet {

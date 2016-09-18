@@ -24,9 +24,9 @@ class DeserializeOperation: Operation {
 	fileprivate var extractedPrimaryResources: [Resource]?
 	fileprivate var extractedIncludedResources: [Resource] = []
 	fileprivate var extractedErrors: [APIError]?
-	fileprivate var extractedMeta: [String: AnyObject]?
+	fileprivate var extractedMeta: [String: Any]?
 	fileprivate var extractedLinks: [String: URL]?
-	fileprivate var extractedJSONAPI: [String: AnyObject]?
+	fileprivate var extractedJSONAPI: [String: Any]?
 	fileprivate var resourcePool: [Resource] = []
 	
 	// Output
@@ -138,7 +138,7 @@ class DeserializeOperation: Operation {
 		resolveRelations()
 		
 		// Create a result
-		var responseDocument = JSONAPIDocument(data: nil, included: nil, errors: extractedErrors, meta: extractedMeta, links: extractedLinks as [String : NSURL]?, jsonapi: extractedJSONAPI)
+		var responseDocument = JSONAPIDocument(data: nil, included: nil, errors: extractedErrors, meta: extractedMeta, links: extractedLinks as [String : URL]?, jsonapi: extractedJSONAPI)
 		responseDocument.data = extractedPrimaryResources
 		if !extractedIncludedResources.isEmpty {
 			responseDocument.included = extractedIncludedResources
@@ -201,8 +201,8 @@ class DeserializeOperation: Operation {
 	fileprivate func extractAttributes(_ serializedData: JSON, intoResource resource: Resource) {
 		for case let field as Attribute in resource.fields {
 			let key = keyFormatter.format(field)
-			if let extractedValue: AnyObject = self.extractAttribute(serializedData, key: key) {
-				let formattedValue: AnyObject = self.valueFormatters.unformat(extractedValue, forAttribute: field)
+			if let extractedValue: Any = self.extractAttribute(serializedData, key: key) {
+				let formattedValue: Any = self.valueFormatters.unformat(extractedValue, forAttribute: field)
 				resource.setValue(formattedValue, forField: field.name)
 			}
 		}
@@ -216,7 +216,7 @@ class DeserializeOperation: Operation {
 	
 	- returns: The extracted value or nil if no attribute with the given key was found in the data.
 	*/
-	fileprivate func extractAttribute(_ serializedData: JSON, key: String) -> AnyObject? {
+	fileprivate func extractAttribute(_ serializedData: JSON, key: String) -> Any? {
 		let value = serializedData["attributes"][key]
 		
 		if let _ = value.null {

@@ -63,7 +63,7 @@ struct RelationshipData {
 	
 	/// Returns a dictionary with "type" and "id" keys containing the type and id.
 	func toDictionary() -> NSDictionary {
-		var dictionary = [String: AnyObject]()
+		var dictionary = [String: Any]()
 		if let selfURL = selfURL {
 			dictionary["selfURL"] = selfURL as AnyObject?
 		}
@@ -98,7 +98,7 @@ open class Resource: NSObject, NSCoding {
 	open var isLoaded: Bool = false
 	
 	/// The metadata for this resource.
-	open var meta: [String: AnyObject]?
+	open var meta: [String: Any]?
 	
 	/// Raw relationship data keyed by relationship name.
 	var relationships: [String: RelationshipData] = [:]
@@ -136,12 +136,12 @@ open class Resource: NSObject, NSCoding {
 	}
 
   /// Returns the value for the field named `field`.
-	open func valueForField(_ field: String) -> AnyObject? {
+	open func valueForField(_ field: String) -> Any? {
 		return value(forKey: field) as AnyObject?
 	}
 
 	/// Sets the value for the field named `field` to `value`.
-	open func setValue(_ value: AnyObject?, forField field: String) {
+	open func setValue(_ value: Any?, forField field: String) {
 		setValue(value, forKey: field)
 	}
 

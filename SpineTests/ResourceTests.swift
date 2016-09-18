@@ -20,8 +20,8 @@ class ResourceTests: XCTestCase {
 		foo.toOneAttribute = Bar(id: "10")
 	}
 
-    func testGetAttributeValue() {
-		let value: AnyObject? = foo.valueForField("stringAttribute")
+	func testGetAttributeValue() {
+		let value = foo.valueForField("stringAttribute")
 		
 		XCTAssertNotNil(value, "Expected value to be not nil")
 		
@@ -30,16 +30,16 @@ class ResourceTests: XCTestCase {
 		} else {
 			XCTFail("Expected value to be of type 'String'")
 		}
-    }
+	}
 	
 	func testGetNilAttributeValue() {
-		let value: AnyObject? = foo.valueForField("nilAttribute")
+		let value = foo.valueForField("nilAttribute")
 		
 		XCTAssertNil(value, "Expected value to be nil")
 	}
 	
 	func testGetRelationshipValue() {
-		let value: AnyObject? = foo.valueForField("toOneAttribute")
+		let value = foo.valueForField("toOneAttribute")
 		
 		XCTAssertNotNil(value, "Expected value to be not nil")
 		

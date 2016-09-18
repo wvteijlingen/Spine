@@ -16,8 +16,8 @@ class SerializerTests: XCTestCase {
 	override func setUp() {
 		super.setUp()
 		serializer.keyFormatter = DasherizedKeyFormatter()
-		serializer.registerResource(Foo)
-		serializer.registerResource(Bar)
+		serializer.registerResource(Foo.self)
+		serializer.registerResource(Bar.self)
 	}
 }
 
@@ -49,8 +49,8 @@ class SerializingTests: SerializerTests {
 		
 		XCTAssertEqual(json["data"]["id"].stringValue, foo.id!, "Serialized id is not equal.")
 		XCTAssertEqual(json["data"]["type"].stringValue, foo.resourceType, "Serialized type is not equal.")
-		XCTAssertEqual(json["data"]["attributes"]["integer-attribute"].intValue, foo.integerAttribute!, "Serialized integer is not equal.")
-		XCTAssertEqual(json["data"]["attributes"]["float-attribute"].floatValue, foo.floatAttribute!, "Serialized float is not equal.")
+		XCTAssertEqual(json["data"]["attributes"]["integer-attribute"].intValue, foo.integerAttribute?.intValue, "Serialized integer is not equal.")
+		XCTAssertEqual(json["data"]["attributes"]["float-attribute"].floatValue, foo.floatAttribute?.floatValue, "Serialized float is not equal.")
 		XCTAssertTrue(json["data"]["attributes"]["boolean-attribute"].boolValue, "Serialized boolean is not equal.")
 		XCTAssertNotNil(json["data"]["attributes"]["nil-attribute"].null, "Serialized nil is not equal.")
 		XCTAssertEqual(json["data"]["attributes"]["date-attribute"].stringValue, ISO8601FormattedDate(foo.dateAttribute!), "Serialized date is not equal.")
@@ -307,7 +307,7 @@ class DeserializingTests: SerializerTests {
 		let data = Data()
 		
 		do {
-			try serializer.deserializeData(data)
+			try _ = serializer.deserializeData(data)
 			XCTFail("Expected deserialization to fail.")
 		} catch SerializerError.invalidDocumentStructure {
 			// All is well
@@ -320,7 +320,7 @@ class DeserializingTests: SerializerTests {
 		let data = try! JSONSerialization.data(withJSONObject: [:], options: [])
 		
 		do {
-			try serializer.deserializeData(data)
+			try _ = serializer.deserializeData(data)
 			XCTFail("Expected deserialization to fail.")
 		} catch SerializerError.topLevelEntryMissing {
 			// All is well
@@ -333,7 +333,7 @@ class DeserializingTests: SerializerTests {
 		let data = try! JSONSerialization.data(withJSONObject: ["data": [], "errors": []], options: [])
 		
 		do {
-			try serializer.deserializeData(data)
+			try _ = serializer.deserializeData(data)
 			XCTFail("Expected deserialization to fail.")
 		} catch SerializerError.topLevelDataAndErrorsCoexist {
 			// All is well
@@ -346,7 +346,7 @@ class DeserializingTests: SerializerTests {
 		let data = try! JSONSerialization.data(withJSONObject: ["data": NSNull()], options: [])
 		
 		do {
-			try serializer.deserializeData(data)
+			try _ = serializer.deserializeData(data)
 		} catch {
 			XCTFail("Expected deserialization to succeed.")
 		}

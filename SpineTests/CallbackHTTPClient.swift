@@ -19,19 +19,19 @@ open class CallbackHTTPClient: NetworkClient {
 	init() {}
 	
 	open func request(_ method: String, URL: Foundation.URL, payload: Data?, callback: @escaping NetworkClientCallback) {
-		let request = NSMutableURLRequest(url: URL)
+		var request = URLRequest(url: URL)
 		request.httpMethod = method
 		
 		if let payload = payload {
 			request.httpBody = payload
 		}
 		
-		lastRequest = request as URLRequest
+		lastRequest = request
 		Spine.logInfo(.networking, "\(method): \(URL)")
 		
 		// Perform the request
 		queue.async {
-			let (data, statusCode, error) = self.handler(request: request, payload: payload)
+			let (data, statusCode, error) = self.handler(request, payload)
 			let startTime = DispatchTime.now() + Double(Int64(self.delay * Double(NSEC_PER_SEC))) / Double(NSEC_PER_SEC)
 			
 			DispatchQueue.main.asyncAfter(deadline: startTime) {
@@ -48,7 +48,7 @@ open class CallbackHTTPClient: NetworkClient {
 					Spine.logWarning(.networking, "\(statusCode): \(request.url!)")
 				}
 				
-				callback(statusCode: statusCode, data: data, error: error)
+				callback(statusCode, data, error)
 			}
 		}
 	}
@@ -66,7 +66,7 @@ open class CallbackHTTPClient: NetworkClient {
 	
 	- returns: The NSError that will be returned as the simulated network error.
 	*/
-	func simulateNetworkErrorWithCode(_ code: Int) -> NSError {
+	@discardableResult func simulateNetworkErrorWithCode(_ code: Int) -> NSError {
 		let error = NSError(domain: "SimulatedNetworkError", code: code, userInfo: nil)
 		handler = { request, payload in
 			return (responseData: nil, statusCode: nil, error: error)

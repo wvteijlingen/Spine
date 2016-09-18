@@ -134,7 +134,7 @@ public struct Query<T: Resource> {
 	
 	// MARK: Filtering
 	
-	fileprivate mutating func addPredicateWithField(_ fieldName: String, value: AnyObject, type: NSComparisonPredicate.Operator) {
+	fileprivate mutating func addPredicateWithField(_ fieldName: String, value: Any, type: NSComparisonPredicate.Operator) {
 		if let field = T.fields.filter({ $0.name == fieldName }).first {
 			addPredicateWithKey(field.name, value: value, type: type)
 		} else {
@@ -142,7 +142,7 @@ public struct Query<T: Resource> {
 		}
 	}
 	
-	fileprivate mutating func addPredicateWithKey(_ key: String, value: AnyObject, type: NSComparisonPredicate.Operator) {
+	fileprivate mutating func addPredicateWithKey(_ key: String, value: Any, type: NSComparisonPredicate.Operator) {
 		let predicate = NSComparisonPredicate(
 				leftExpression: NSExpression(forKeyPath: key),
 				rightExpression: NSExpression(forConstantValue: value),
@@ -170,7 +170,7 @@ public struct Query<T: Resource> {
 	
 	- returns: The query
 	*/
-	public mutating func whereAttribute(_ attributeName: String, equalTo: AnyObject) {
+	public mutating func whereAttribute(_ attributeName: String, equalTo: Any) {
 		addPredicateWithField(attributeName, value: equalTo, type: .equalTo)
 	}
 
@@ -182,7 +182,7 @@ public struct Query<T: Resource> {
 	
 	- returns: The query
 	*/
-	public mutating func whereAttribute(_ attributeName: String, notEqualTo: AnyObject) {
+	public mutating func whereAttribute(_ attributeName: String, notEqualTo: Any) {
 		addPredicateWithField(attributeName, value: notEqualTo, type: .notEqualTo)
 	}
 
@@ -194,7 +194,7 @@ public struct Query<T: Resource> {
 	
 	- returns: The query
 	*/
-	public mutating func whereAttribute(_ attributeName: String, lessThan: AnyObject) {
+	public mutating func whereAttribute(_ attributeName: String, lessThan: Any) {
 		addPredicateWithField(attributeName, value: lessThan, type: .lessThan)
 	}
 
@@ -206,7 +206,7 @@ public struct Query<T: Resource> {
 	
 	- returns: The query
 	*/
-	public mutating func whereAttribute(_ attributeName: String, lessThanOrEqualTo: AnyObject) {
+	public mutating func whereAttribute(_ attributeName: String, lessThanOrEqualTo: Any) {
 		addPredicateWithField(attributeName, value: lessThanOrEqualTo, type: .lessThanOrEqualTo)
 	}
 	
@@ -218,7 +218,7 @@ public struct Query<T: Resource> {
 	
 	- returns: The query
 	*/
-	public mutating func whereAttribute(_ attributeName: String, greaterThan: AnyObject) {
+	public mutating func whereAttribute(_ attributeName: String, greaterThan: Any) {
 		addPredicateWithField(attributeName, value: greaterThan, type: .greaterThan)
 	}
 
@@ -230,7 +230,7 @@ public struct Query<T: Resource> {
 	
 	- returns: The query
 	*/
-	public mutating func whereAttribute(_ attributeName: String, greaterThanOrEqualTo: AnyObject) {
+	public mutating func whereAttribute(_ attributeName: String, greaterThanOrEqualTo: Any) {
 		addPredicateWithField(attributeName, value: greaterThanOrEqualTo, type: .greaterThanOrEqualTo)
 	}
     
@@ -242,7 +242,7 @@ public struct Query<T: Resource> {
 	
 	- returns: The query
 	*/
-	public mutating func filterOn(_ attributeName: String, equalTo: AnyObject) {
+	public mutating func filterOn(_ attributeName: String, equalTo: Any) {
 		addPredicateWithKey(attributeName, value: equalTo, type: .equalTo)
 	}
 	
@@ -254,7 +254,7 @@ public struct Query<T: Resource> {
 	
 	- returns: The query
 	*/
-	public mutating func filterOn(_ attributeName: String, notEqualTo: AnyObject) {
+	public mutating func filterOn(_ attributeName: String, notEqualTo: Any) {
 		addPredicateWithKey(attributeName, value: notEqualTo, type: .notEqualTo)
 	}
 	
@@ -266,7 +266,7 @@ public struct Query<T: Resource> {
 	
 	- returns: The query
 	*/
-	public mutating func filterOn(_ attributeName: String, lessThan: AnyObject) {
+	public mutating func filterOn(_ attributeName: String, lessThan: Any) {
 		addPredicateWithKey(attributeName, value: lessThan, type: .lessThan)
 	}
 	
@@ -278,7 +278,7 @@ public struct Query<T: Resource> {
 	
 	- returns: The query
 	*/
-	public mutating func filterOn(_ attributeName: String, lessThanOrEqualTo: AnyObject) {
+	public mutating func filterOn(_ attributeName: String, lessThanOrEqualTo: Any) {
 		addPredicateWithKey(attributeName, value: lessThanOrEqualTo, type: .lessThanOrEqualTo)
 	}
 	
@@ -290,7 +290,7 @@ public struct Query<T: Resource> {
 	
 	- returns: The query
 	*/
-	public mutating func filterOn(_ attributeName: String, greaterThan: AnyObject) {
+	public mutating func filterOn(_ attributeName: String, greaterThan: Any) {
 		addPredicateWithKey(attributeName, value: greaterThan, type: .greaterThan)
 	}
 	
@@ -302,7 +302,7 @@ public struct Query<T: Resource> {
 	
 	- returns: The query
 	*/
-	public mutating func filterOn(_ attributeName: String, greaterThanOrEqualTo: AnyObject) {
+	public mutating func filterOn(_ attributeName: String, greaterThanOrEqualTo: Any) {
 		addPredicateWithKey(attributeName, value: greaterThanOrEqualTo, type: .greaterThanOrEqualTo)
 	}
 	
