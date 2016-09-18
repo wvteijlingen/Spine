@@ -19,25 +19,25 @@ public protocol NetworkClient {
 	Performs a network request to the given URL with the given method.
 	
 	- parameter method:   The method to use, expressed as a HTTP verb.
-	- parameter URL:      The URL to which to make the request.
+	- parameter url:      The URL to which to make the request.
 	- parameter callback: The callback to execute when the request finishes.
 	*/
-	func request(_ method: String, URL: URL, callback: @escaping NetworkClientCallback)
+	func request(_ method: String, url: URL, callback: @escaping NetworkClientCallback)
 	
 	/**
 	Performs a network request to the given URL with the given method.
 	
 	- parameter method:   The method to use, expressed as a HTTP verb.
-	- parameter URL:      The URL to which to make the request.
+	- parameter url:      The URL to which to make the request.
 	- parameter payload:  The payload the send as part of the request.
 	- parameter callback: The callback to execute when the request finishes.
 	*/
-	func request(_ method: String, URL: URL, payload: Data?, callback: @escaping NetworkClientCallback)
+	func request(_ method: String, url: URL, payload: Data?, callback: @escaping NetworkClientCallback)
 }
 
 extension NetworkClient {
-	public func request(_ method: String, URL: Foundation.URL, callback: @escaping NetworkClientCallback) {
-		return request(method, URL: URL, payload: nil, callback: callback)
+	public func request(_ method: String, url: URL, callback: @escaping NetworkClientCallback) {
+		return request(method, url: url, payload: nil, callback: callback)
 	}
 }
 
@@ -50,17 +50,17 @@ open class HTTPClient: NetworkClient {
 	var headers: [String: String] = ["Content-Type": "application/vnd.api+json"]
 	
 	/**
-	Initializes an HTTPClient with the given NSURLSession.
+	Initializes an HTTPClient with the given URLSession.
 	
-	- parameter session: The NSURLSession to use.
+	- parameter session: The URLSession to use.
 	*/
 	public init(session: URLSession) {
 		urlSession = session
 	}
 	
 	/**
-	Initializes a HTTPClient with an NSURLSession that uses the
-	`NSURLSessionConfiguration.defaultSessionConfiguration()` configuration.
+	Initializes a HTTPClient with an URLSession that uses the
+	`URLSessionConfiguration.defaultSessionConfiguration()` configuration.
 	*/
 	public convenience init() {
 		let sessionConfiguration = URLSessionConfiguration.default
@@ -86,8 +86,8 @@ open class HTTPClient: NetworkClient {
 		headers.removeValue(forKey: header)
 	}
 	
-	open func buildRequest(_ method: String, URL: Foundation.URL, payload: Data?) -> URLRequest {
-		var request = URLRequest(url: URL)
+	open func buildRequest(_ method: String, url: URL, payload: Data?) -> URLRequest {
+		var request = URLRequest(url: url)
 		request.httpMethod = method
 		
 		for (key, value) in headers {
@@ -101,12 +101,12 @@ open class HTTPClient: NetworkClient {
 		return request
 	}
 
-	open func request(_ method: String, URL: Foundation.URL, payload: Data?, callback: @escaping NetworkClientCallback) {
-		delegate?.httpClient(self, willPerformRequestWithMethod: method, URL: URL, payload: payload)
+	open func request(_ method: String, url: URL, payload: Data?, callback: @escaping NetworkClientCallback) {
+		delegate?.httpClient(self, willPerformRequestWithMethod: method, url: url, payload: payload)
 		
-		let request = buildRequest(method, URL: URL, payload: payload)
+		let request = buildRequest(method, url: url, payload: payload)
 		
-		Spine.logInfo(.networking, "\(method): \(URL)")
+		Spine.logInfo(.networking, "\(method): \(url)")
 		
 		if Spine.shouldLog(.debug, domain: .networking) {
 			if let httpBody = request.httpBody, let stringRepresentation = NSString(data: httpBody, encoding: String.Encoding.utf8.rawValue) {
@@ -140,7 +140,7 @@ open class HTTPClient: NetworkClient {
 				}
 			}
 			
-			self.delegate?.httpClient(self, didPerformRequestWithMethod: method, URL: URL, success: success)
+			self.delegate?.httpClient(self, didPerformRequestWithMethod: method, url: url, success: success)
 			callback(response?.statusCode, data, networkError as NSError?)
 		}) 
 		
@@ -154,10 +154,10 @@ public protocol HTTPClientDelegate {
 	
 	- parameter client:  The client that will perform the request.
 	- parameter method:  The HTTP method of the request.
-	- parameter URL:     The URL of the request.
+	- parameter url:     The URL of the request.
 	- parameter payload: The optional payload of the request.
 	*/
-	func httpClient(_ client: HTTPClient, willPerformRequestWithMethod method: String, URL: URL, payload: Data?)
+	func httpClient(_ client: HTTPClient, willPerformRequestWithMethod method: String, url: URL, payload: Data?)
 	
  /**
 	Called after the HTTPClient performed an HTTP request. This method is called after the request finished,
@@ -165,8 +165,8 @@ public protocol HTTPClientDelegate {
 	
 	- parameter client:  The client that performed the request.
 	- parameter method:  The HTTP method of the request.
-	- parameter URL:     The URL of the request.
+	- parameter url:     The URL of the request.
 	- parameter success: Whether the reques was successful. Network and error responses are consided unsuccessful.
 	*/
-	func httpClient(_ client: HTTPClient, didPerformRequestWithMethod method: String, URL: URL, success: Bool)
+	func httpClient(_ client: HTTPClient, didPerformRequestWithMethod method: String, url: URL, success: Bool)
 }

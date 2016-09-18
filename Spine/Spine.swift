@@ -130,8 +130,8 @@ open class Spine {
 
 	- returns: A future that resolves to a tuple containing the fetched ResourceCollection, the document meta, and the document jsonapi object.
 	*/
-	open func find<T: Resource>(_ IDs: [String], ofType type: T.Type) -> Future<(resources: ResourceCollection, meta: Metadata?, jsonapi: JSONAPIData?), SpineError> {
-		let query = Query(resourceType: type, resourceIDs: IDs)
+	open func find<T: Resource>(_ ids: [String], ofType type: T.Type) -> Future<(resources: ResourceCollection, meta: Metadata?, jsonapi: JSONAPIData?), SpineError> {
+		let query = Query(resourceType: type, resourceIDs: ids)
 		return find(query)
 	}
 
@@ -172,13 +172,13 @@ open class Spine {
 	If the response contains multiple resources, the first resource is returned.
 	If the response indicates success but doesn't contain any resources, the returned future fails.
 
-	- parameter ID:   ID of resource to fetch.
+	- parameter id:   ID of resource to fetch.
 	- parameter type: The type of resource to fetch.
 
 	- returns: A future that resolves to a tuple containing the fetched resource, the document meta, and the document jsonapi object.
 	*/
-	open func findOne<T: Resource>(_ ID: String, ofType type: T.Type) -> Future<(resource: T, meta: Metadata?, jsonapi: JSONAPIData?), SpineError> {
-		let query = Query(resourceType: type, resourceIDs: [ID])
+	open func findOne<T: Resource>(_ id: String, ofType type: T.Type) -> Future<(resource: T, meta: Metadata?, jsonapi: JSONAPIData?), SpineError> {
+		let query = Query(resourceType: type, resourceIDs: [id])
 		return findOne(query)
 	}
 
@@ -284,7 +284,7 @@ open class Spine {
 		let promise = Promise<ResourceCollection, SpineError>()
 
 		if let nextURL = collection.nextURL {
-			let query = Query(URL: nextURL)
+			let query = Query(url: nextURL)
 			let operation = FetchOperation(query: query, spine: self)
 
 			operation.completionBlock = { [unowned operation] in
@@ -323,7 +323,7 @@ open class Spine {
 		let promise = Promise<ResourceCollection, SpineError>()
 
 		if let previousURL = collection.previousURL {
-			let query = Query(URL: previousURL)
+			let query = Query(url: previousURL)
 			let operation = FetchOperation(query: query, spine: self)
 
 			operation.completionBlock = { [unowned operation] in

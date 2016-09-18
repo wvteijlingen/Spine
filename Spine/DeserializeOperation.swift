@@ -175,7 +175,7 @@ class DeserializeOperation: Operation {
 		
 		// Extract data
 		resource.id = id
-		resource.URL = representation["links"]["self"].URL
+		resource.url = representation["links"]["self"].URL
 		resource.meta = representation["meta"].dictionaryObject
 		extractAttributes(representation, intoResource: resource)
 		extractRelationships(representation, intoResource: resource)
@@ -294,7 +294,7 @@ class DeserializeOperation: Operation {
 			}
 			
 			if let resourceURL = linkData["links"]?["related"].URL {
-				resource!.URL = resourceURL
+				resource!.url = resourceURL
 			}
 		}
 		

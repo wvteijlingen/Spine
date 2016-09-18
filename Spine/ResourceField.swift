@@ -68,11 +68,11 @@ open class Attribute: Field {
 }
 
 /**
- *  An URL attribute that maps to an NSURL property.
+ *  A URL attribute that maps to an URL property.
  *  You can optionally specify a base URL to which relative
  *  URLs will be made absolute.
  */
-open class URLAttribute: Attribute {
+public class URLAttribute: Attribute {
 	let baseURL: URL?
 	
 	public init(baseURL: URL? = nil) {
@@ -85,7 +85,7 @@ open class URLAttribute: Attribute {
  *  By default, it uses ISO8601 format `yyyy-MM-dd'T'HH:mm:ss.SSSZZZZZ`.
  *  You can specify a custom format by passing it to the initializer.
  */
-open class DateAttribute: Attribute {
+public class DateAttribute: Attribute {
 	let format: String
 
 	public init(format: String = "yyyy-MM-dd'T'HH:mm:ss.SSSZZZZZ") {
@@ -97,7 +97,7 @@ open class DateAttribute: Attribute {
  *  A basic relationship field.
  *  Do not use this field type directly, instead use either `ToOneRelationship` or `ToManyRelationship`.
  */
-open class Relationship: Field {
+public class Relationship: Field {
 	let linkedType: Resource.Type
 	
 	public init(_ type: Resource.Type) {
@@ -108,9 +108,9 @@ open class Relationship: Field {
 /**
  *  A to-one relationship field.
  */
-open class ToOneRelationship: Relationship { }
+public class ToOneRelationship: Relationship { }
 
 /**
  *  A to-many relationship field.
  */
-open class ToManyRelationship: Relationship { }
+public class ToManyRelationship: Relationship { }

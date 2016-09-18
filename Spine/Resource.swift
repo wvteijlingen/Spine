@@ -92,7 +92,7 @@ open class Resource: NSObject, NSCoding {
 	open var id: String?
 	
 	/// The canonical URL of the resource.
-	open var URL: Foundation.URL?
+	open var url: URL?
 	
 	/// Whether the fields of the resource are loaded.
 	open var isLoaded: Bool = false
@@ -110,7 +110,7 @@ open class Resource: NSObject, NSCoding {
 	public required init(coder: NSCoder) {
 		super.init()
 		self.id = coder.decodeObject(forKey: "id") as? String
-		self.URL = coder.decodeObject(forKey: "URL") as? Foundation.URL
+		self.url = coder.decodeObject(forKey: "url") as? URL
 		self.isLoaded = coder.decodeBool(forKey: "isLoaded")
 		self.meta = coder.decodeObject(forKey: "meta") as? [String: AnyObject]
 		
@@ -124,7 +124,7 @@ open class Resource: NSObject, NSCoding {
 	
 	open func encode(with coder: NSCoder) {
 		coder.encode(self.id, forKey: "id")
-		coder.encode(self.URL, forKey: "URL")
+		coder.encode(self.url, forKey: "url")
 		coder.encode(self.isLoaded, forKey: "isLoaded")
 		coder.encode(self.meta, forKey: "meta")
 		
@@ -163,7 +163,7 @@ open class Resource: NSObject, NSCoding {
 
 extension Resource {
 	override open var description: String {
-		return "\(self.resourceType)(\(self.id), \(self.URL))"
+		return "\(self.resourceType)(\(self.id), \(self.url))"
 	}
 	
 	override open var debugDescription: String {

@@ -51,7 +51,7 @@ struct ValueFormatterRegistry {
 	fileprivate var unformatters: [(Any, Attribute) -> Any?] = []
 	
 	/**
-	Returns a new value formatter directory configured with the build in default value formatters.
+	Returns a new value formatter directory configured with the built in default value formatters.
 	
 	- returns: ValueFormatterRegistry
 	*/
@@ -114,7 +114,8 @@ struct ValueFormatterRegistry {
 	Returns the serialized form of the given value for the given attribute.
 	
 	The actual value formatter used is the first registered formatter that supports the given
-	value type for the given attribute type.
+	value type for the given attribute type. If no suitable value formatter is found,
+	a string representation is returned.
 	
 	- parameter value:     The value to serialize.
 	- parameter attribute: The attribute to which the value belongs.
@@ -128,6 +129,7 @@ struct ValueFormatterRegistry {
 			}
 		}
 		
+		Spine.logWarning(.serializing, "No value formatter found for attribute \(attribute).")
 		return "\(value)"
 	}
 }
@@ -136,9 +138,9 @@ struct ValueFormatterRegistry {
 // MARK: - Built in value formatters
 
 /**
-URLValueFormatter is a value formatter that transforms between NSURL and String, and vice versa.
+URLValueFormatter is a value formatter that transforms between URL and String, and vice versa.
 If a baseURL has been configured in the URLAttribute, and the given String is not an absolute URL,
-it will return an absolute NSURL, relative to the baseURL.
+it will return an absolute URL, relative to the baseURL.
 */
 private struct URLValueFormatter: ValueFormatter {
 	func unformat(_ value: String, attribute: URLAttribute) -> URL {

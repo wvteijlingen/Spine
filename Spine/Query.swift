@@ -28,7 +28,7 @@ public struct Query<T: Resource> {
 	var resourceIDs: [String]?
 	
 	/// The optional base URL
-	internal var URL: Foundation.URL?
+	internal var url: URL?
 	
 	/// Related resources that must be included in a compound document.
 	public internal(set) var includes: [String] = []
@@ -70,7 +70,7 @@ public struct Query<T: Resource> {
 	public init(resource: T) {
 		assert(resource.id != nil, "Cannot instantiate query for resource, id is nil.")
 		self.resourceType = resource.resourceType
-		self.URL = resource.URL as URL?
+		self.url = resource.url as URL?
 		self.resourceIDs = [resource.id!]
 	}
 	
@@ -83,24 +83,24 @@ public struct Query<T: Resource> {
 	*/
 	public init(resourceType: T.Type, resourceCollection: ResourceCollection) {
 		self.resourceType = T.resourceType
-		self.URL = resourceCollection.resourcesURL as URL?
+		self.url = resourceCollection.resourcesURL as URL?
 	}
 	
 	/**
 	Inits a new query that fetches resource of type `resourceType`, by using the given URL.
 	
 	- parameter resourceType: The type of resource to query.
-	- parameter URL:          The URL used to fetch the resources.
+	- parameter path:         The URL path used to fetch the resources.
 	
 	- returns: Query
 	*/
 	public init(resourceType: T.Type, path: String) {
 		self.resourceType = T.resourceType
-		self.URL = Foundation.URL(string: path)
+		self.url = URL(string: path)
 	}
 	
-	internal init(URL: Foundation.URL) {
-		self.URL = URL
+	internal init(url: URL) {
+		self.url = url
 	}
 	
 	

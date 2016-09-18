@@ -60,8 +60,8 @@ class SerializeOperation: Operation {
 		var serializedData: [String: Any] = [:]
 		
 		// Serialize ID
-		if let ID = resource.id , options.contains(.IncludeID) {
-			serializedData["id"] = ID as AnyObject?
+		if let id = resource.id , options.contains(.IncludeID) {
+			serializedData["id"] = id as AnyObject?
 		}
 		
 		// Serialize type

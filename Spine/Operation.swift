@@ -134,11 +134,11 @@ class FetchOperation<T: Resource>: ConcurrentOperation {
 	}
 	
 	override func execute() {
-		let URL = spine.router.URLForQuery(query)
+		let url = spine.router.urlForQuery(query)
 		
-		Spine.logInfo(.spine, "Fetching document using URL: \(URL)")
+		Spine.logInfo(.spine, "Fetching document using URL: \(url)")
 		
-		networkClient.request("GET", URL: URL) { statusCode, responseData, networkError in
+		networkClient.request("GET", url: url) { statusCode, responseData, networkError in
 			defer { self.state = .Finished }
 			
 			guard networkError == nil else {
@@ -180,11 +180,11 @@ class DeleteOperation: ConcurrentOperation {
 	}
 	
 	override func execute() {
-		let URL = spine.router.URLForQuery(Query(resource: resource))
+		let URL = spine.router.urlForQuery(Query(resource: resource))
 		
 		Spine.logInfo(.spine, "Deleting resource \(resource) using URL: \(URL)")
 		
-		networkClient.request("DELETE", URL: URL) { statusCode, responseData, networkError in
+		networkClient.request("DELETE", url: URL) { statusCode, responseData, networkError in
 			defer { self.state = .Finished }
 		
 			guard networkError == nil else {
@@ -245,16 +245,16 @@ class SaveOperation: ConcurrentOperation {
 	}
 
 	fileprivate func updateResource() {
-		let URL: Foundation.URL
+		let url: URL
 		let method: String
 		let options: SerializationOptions
 		
 		if isNewResource {
-			URL = router.URLForResourceType(resource.resourceType)
+			url = router.urlForResourceType(resource.resourceType)
 			method = "POST"
 			options = [.IncludeToOne, .IncludeToMany]
 		} else {
-			URL = router.URLForQuery(Query(resource: resource))
+			url = router.urlForQuery(Query(resource: resource))
 			method = "PATCH"
 			options = [.IncludeID]
 		}
@@ -269,9 +269,9 @@ class SaveOperation: ConcurrentOperation {
 			return
 		}
 
-		Spine.logInfo(.spine, "Saving resource \(resource) using URL: \(URL)")
+		Spine.logInfo(.spine, "Saving resource \(resource) using URL: \(url)")
 		
-		networkClient.request(method, URL: URL, payload: payload) { statusCode, responseData, networkError in
+		networkClient.request(method, url: url, payload: payload) { statusCode, responseData, networkError in
 			defer { self.state = .Finished }
 			
 			if let error = networkError {
@@ -403,7 +403,7 @@ private class RelationshipReplaceOperation: RelationshipOperation {
 	}
 	
 	override func execute() {
-		let URL = router.URLForRelationship(relationship, ofResource: resource)
+		let url = router.urlForRelationship(relationship, ofResource: resource)
 		let payload: Data
 		
 		switch relationship {
@@ -417,8 +417,8 @@ private class RelationshipReplaceOperation: RelationshipOperation {
 			return
 		}
 
-		Spine.logInfo(.spine, "Replacing relationship \(relationship) using URL: \(URL)")
-		networkClient.request("PATCH", URL: URL, payload: payload, callback: handleNetworkResponse)
+		Spine.logInfo(.spine, "Replacing relationship \(relationship) using URL: \(url)")
+		networkClient.request("PATCH", url: url, payload: payload, callback: handleNetworkResponse)
 	}
 }
 
@@ -460,9 +460,9 @@ private class RelationshipMutateOperation: RelationshipOperation {
 			return
 		}
 		
-		let URL = router.URLForRelationship(relationship, ofResource: resource)
+		let url = router.urlForRelationship(relationship, ofResource: resource)
 		let payload = try! serializer.serializeLinkData(relatedResources)
-		Spine.logInfo(.spine, "Mutating relationship \(relationship) using URL: \(URL)")
-		networkClient.request(httpMethod, URL: URL, payload: payload, callback: handleNetworkResponse)
+		Spine.logInfo(.spine, "Mutating relationship \(relationship) using URL: \(url)")
+		networkClient.request(httpMethod, url: url, payload: payload, callback: handleNetworkResponse)
 	}
 }

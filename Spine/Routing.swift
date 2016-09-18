@@ -18,32 +18,32 @@ public protocol Router: class {
 	var keyFormatter: KeyFormatter! { get set }
 	
 	/**
-	Returns an NSURL that points to the collection of resources with a given type.
+	Returns an URL that points to the collection of resources with a given type.
 	
 	- parameter type: The type of resources.
 	
-	- returns: The NSURL.
+	- returns: The URL.
 	*/
-	func URLForResourceType(_ type: ResourceType) -> URL
+	func urlForResourceType(_ type: ResourceType) -> URL
 	
 	/**
-	Returns an NSURL that points to a relationship of a resource.
+	Returns an URL that points to a relationship of a resource.
 	
 	- parameter relationship: The relationship to get the URL for.
 	- parameter resource:     The resource that contains the relationship.
 	
-	- returns: The NSURL.
+	- returns: The URL.
 	*/
-	func URLForRelationship<T: Resource>(_ relationship: Relationship, ofResource resource: T) -> URL
+	func urlForRelationship<T: Resource>(_ relationship: Relationship, ofResource resource: T) -> URL
 	
 	/**
-	Returns an NSURL that represents the given query.
+	Returns an URL that represents the given query.
 	
-	- parameter query: The query to turn into an NSURL.
+	- parameter query: The query to turn into an URL.
 	
-	- returns: The NSURL.
+	- returns: The URL.
 	*/
-	func URLForQuery<T: Resource>(_ query: Query<T>) -> URL
+	func urlForQuery<T: Resource>(_ query: Query<T>) -> URL
 }
 
 /**
@@ -65,45 +65,45 @@ open class JSONAPIRouter: Router {
 
 	public init() { }
 	
-	open func URLForResourceType(_ type: ResourceType) -> URL {
+	open func urlForResourceType(_ type: ResourceType) -> URL {
 		return baseURL.appendingPathComponent(type)
 	}
 	
-	open func URLForRelationship<T: Resource>(_ relationship: Relationship, ofResource resource: T) -> URL {
+	open func urlForRelationship<T: Resource>(_ relationship: Relationship, ofResource resource: T) -> URL {
 		if let selfURL = resource.relationships[relationship.name]?.selfURL {
 			return selfURL as URL
 		}
 		
-		let resourceURL = resource.URL ?? URLForResourceType(resource.resourceType).appendingPathComponent("/\(resource.id!)")
+		let resourceURL = resource.url ?? urlForResourceType(resource.resourceType).appendingPathComponent("/\(resource.id!)")
 		let key = keyFormatter.format(relationship)
 		return resourceURL.appendingPathComponent("/relationships/\(key)")
 	}
 
 	
-	open func URLForQuery<T: Resource>(_ query: Query<T>) -> URL {
-		var URL: Foundation.URL!
+	open func urlForQuery<T: Resource>(_ query: Query<T>) -> URL {
+		var url: URL!
 		var preBuiltURL = false
 		
 		// Base URL
-		if let URLString = query.URL?.absoluteString {
-			URL = Foundation.URL(string: URLString, relativeTo: baseURL)
+		if let urlString = query.url?.absoluteString {
+			url = URL(string: urlString, relativeTo: baseURL)
 			preBuiltURL = true
 		} else if let type = query.resourceType {
-			URL = URLForResourceType(type)
+			url = urlForResourceType(type)
 		} else {
 			assertionFailure("Cannot build URL for query. Query does not have a URL, nor a resource type.")
 		}
 		
-		var URLComponents = Foundation.URLComponents(url: URL, resolvingAgainstBaseURL: true)!
-		var queryItems: [URLQueryItem] = URLComponents.queryItems ?? []
+		var urlComponents = URLComponents(url: url, resolvingAgainstBaseURL: true)!
+		var queryItems: [URLQueryItem] = urlComponents.queryItems ?? []
 		
 		// Resource IDs
 		if !preBuiltURL {
-			if let IDs = query.resourceIDs {
-				if IDs.count == 1 {
-					URLComponents.path = (URLComponents.path as NSString).appendingPathComponent(IDs.first!)
+			if let ids = query.resourceIDs {
+				if ids.count == 1 {
+					urlComponents.path = (urlComponents.path as NSString).appendingPathComponent(ids.first!)
 				} else {
-					let item = URLQueryItem(name: "filter[id]", value: IDs.joined(separator: ","))
+					let item = URLQueryItem(name: "filter[id]", value: ids.joined(separator: ","))
 					setQueryItem(item, forQueryItems: &queryItems)
 				}
 			}
@@ -177,20 +177,20 @@ open class JSONAPIRouter: Router {
 
 		// Compose URL
 		if !queryItems.isEmpty {
-			URLComponents.queryItems = queryItems
+			urlComponents.queryItems = queryItems
 		}
 		
-		return URLComponents.url!
+		return urlComponents.url!
 	}
 	
 	/**
-	Returns an NSURLQueryItem that represents a filter in a URL.
+	Returns an URLQueryItem that represents a filter in a URL.
 	
 	- parameter field:        The field that is filtered.
 	- parameter value:        The value on which is filtered.
 	- parameter operatorType: The NSPredicateOperatorType for the filter.
 	
-	- returns: An NSURLQueryItem representing the filter.
+	- returns: A URLQueryItem representing the filter.
 	*/
 	
 	open func queryItemForFilter(_ field: Field, value: Any, operatorType: NSComparisonPredicate.Operator) -> URLQueryItem {
@@ -199,7 +199,7 @@ open class JSONAPIRouter: Router {
     }
     
     /**
-     Returns an NSURLQueryItem that represents a filter in a URL.
+     Returns an URLQueryItem that represents a filter in a URL.
      By default this method only supports 'equal to' predicates. You can override
      this method to add support for other filtering strategies.
      
@@ -207,7 +207,7 @@ open class JSONAPIRouter: Router {
      - parameter value:        The value on which is filtered.
      - parameter operatorType: The NSPredicateOperatorType for the filter.
      
-     - returns: An NSURLQueryItem representing the filter.
+     - returns: A URLQueryItem representing the filter.
      */
     
     open func queryItemForFilterName(_ fieldName: String, value: Any, operatorType: NSComparisonPredicate.Operator) -> URLQueryItem {
@@ -216,13 +216,13 @@ open class JSONAPIRouter: Router {
     }
 
 	/**
-	Returns an array of NSURLQueryItems that represent the given pagination configuration.
+	Returns an array of URLQueryItems that represent the given pagination configuration.
 	By default this method only supports the PageBasedPagination and OffsetBasedPagination configurations.
 	You can override this method to add support for other pagination strategies.
 	
 	- parameter pagination: The QueryPagination configuration.
 	
-	- returns: Array of NSURLQueryItems.
+	- returns: Array of URLQueryItems.
 	*/
 	open func queryItemsForPagination(_ pagination: Pagination) -> [URLQueryItem] {
 		var queryItems = [URLQueryItem]()
