@@ -18,8 +18,8 @@ open class CallbackHTTPClient: NetworkClient {
 	
 	init() {}
 	
-	open func request(_ method: String, URL: Foundation.URL, payload: Data?, callback: @escaping NetworkClientCallback) {
-		var request = URLRequest(url: URL)
+	open func request(_ method: String, url: URL, payload: Data?, callback: @escaping NetworkClientCallback) {
+		var request = URLRequest(url: url)
 		request.httpMethod = method
 		
 		if let payload = payload {
@@ -27,7 +27,7 @@ open class CallbackHTTPClient: NetworkClient {
 		}
 		
 		lastRequest = request
-		Spine.logInfo(.networking, "\(method): \(URL)")
+		Spine.logInfo(.networking, "\(method): \(url)")
 		
 		// Perform the request
 		queue.async {

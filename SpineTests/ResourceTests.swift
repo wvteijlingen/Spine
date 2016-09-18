@@ -56,7 +56,7 @@ class ResourceTests: XCTestCase {
 	}
 	
 	func testEncoding() {
-		foo.URL = URL(string: "http://example.com/api/foos/1")
+		foo.url = URL(string: "http://example.com/api/foos/1")
 		foo.isLoaded = true
 		
 		let encodedData = NSKeyedArchiver.archivedData(withRootObject: foo)
@@ -67,7 +67,7 @@ class ResourceTests: XCTestCase {
 		
 		if let decodedFoo = decodedFoo as? Foo {
 			XCTAssertEqual(decodedFoo.id!, foo.id!, "Expected id to be equal")
-			XCTAssertEqual(decodedFoo.URL!, foo.URL!, "Expected URL to be equal")
+			XCTAssertEqual(decodedFoo.url!, foo.url!, "Expected URL to be equal")
 			XCTAssertEqual(decodedFoo.isLoaded, foo.isLoaded, "Expected isLoaded to be equal")
 		} else {
 			XCTFail("Fail")
