@@ -142,10 +142,6 @@ open class LinkedResourceCollection: ResourceCollection {
 		self.linkage = linkage
 	}
 	
-	public convenience init(resourcesURL: URL?, linkURL: URL?, homogenousType: ResourceType, IDs: [String]) {
-		self.init(resourcesURL: resourcesURL, linkURL: linkURL, linkage: IDs.map { ResourceIdentifier(type: homogenousType, id: $0) })
-	}
-	
 	public required init?(coder: NSCoder) {
 		super.init(coder: coder)
 		linkURL = coder.decodeObject(forKey: "linkURL") as? URL
