@@ -8,44 +8,44 @@
 
 import Foundation
 
-public class CallbackHTTPClient: NetworkClient {
-	typealias HandlerFunction = (request: NSURLRequest, payload: NSData?) -> (responseData: NSData?, statusCode: Int?, error: NSError?)
+open class CallbackHTTPClient: NetworkClient {
+	typealias HandlerFunction = (_ request: URLRequest, _ payload: Data?) -> (responseData: Data?, statusCode: Int?, error: NSError?)
 	
 	var handler: HandlerFunction!
-	var delay: NSTimeInterval = 0
-	internal private(set) var lastRequest: NSURLRequest?
-	let queue = dispatch_queue_create("com.wardvanteijlingen.spine.callbackHTTPClient", nil)
+	var delay: TimeInterval = 0
+	internal fileprivate(set) var lastRequest: URLRequest?
+	let queue = DispatchQueue(label: "com.wardvanteijlingen.spine.callbackHTTPClient", attributes: [])
 	
 	init() {}
 	
-	public func request(method: String, URL: NSURL, payload: NSData?, callback: NetworkClientCallback) {
-		let request = NSMutableURLRequest(URL: URL)
-		request.HTTPMethod = method
+	open func request(_ method: String, URL: Foundation.URL, payload: Data?, callback: @escaping NetworkClientCallback) {
+		let request = NSMutableURLRequest(url: URL)
+		request.httpMethod = method
 		
 		if let payload = payload {
-			request.HTTPBody = payload
+			request.httpBody = payload
 		}
 		
-		lastRequest = request
-		Spine.logInfo(.Networking, "\(method): \(URL)")
+		lastRequest = request as URLRequest
+		Spine.logInfo(.networking, "\(method): \(URL)")
 		
 		// Perform the request
-		dispatch_async(queue) {
+		queue.async {
 			let (data, statusCode, error) = self.handler(request: request, payload: payload)
-			let startTime = dispatch_time(DISPATCH_TIME_NOW, Int64(self.delay * Double(NSEC_PER_SEC)))
+			let startTime = DispatchTime.now() + Double(Int64(self.delay * Double(NSEC_PER_SEC))) / Double(NSEC_PER_SEC)
 			
-			dispatch_after(startTime, dispatch_get_main_queue()) {
+			DispatchQueue.main.asyncAfter(deadline: startTime) {
 				// Framework error
 				if let error = error {
-					Spine.logError(.Networking, "\(request.URL!) - \(error.localizedDescription)")
+					Spine.logError(.networking, "\(request.url!) - \(error.localizedDescription)")
 					
 					// Success
-				} else if let statusCode = statusCode where 200 ... 299 ~= statusCode {
-					Spine.logInfo(.Networking, "\(statusCode): \(request.URL!)")
+				} else if let statusCode = statusCode , 200 ... 299 ~= statusCode {
+					Spine.logInfo(.networking, "\(statusCode): \(request.url!)")
 					
 					// API Error
 				} else {
-					Spine.logWarning(.Networking, "\(statusCode): \(request.URL!)")
+					Spine.logWarning(.networking, "\(statusCode): \(request.url!)")
 				}
 				
 				callback(statusCode: statusCode, data: data, error: error)
@@ -53,7 +53,7 @@ public class CallbackHTTPClient: NetworkClient {
 		}
 	}
 	
-	func respondWith(status: Int, data: NSData? = NSData()) {
+	func respondWith(_ status: Int, data: Data? = Data()) {
 		handler = { request, payload in
 			return (responseData: data, statusCode: status, error: nil)
 		}
@@ -66,7 +66,7 @@ public class CallbackHTTPClient: NetworkClient {
 	
 	- returns: The NSError that will be returned as the simulated network error.
 	*/
-	func simulateNetworkErrorWithCode(code: Int) -> NSError {
+	func simulateNetworkErrorWithCode(_ code: Int) -> NSError {
 		let error = NSError(domain: "SimulatedNetworkError", code: code, userInfo: nil)
 		handler = { request, payload in
 			return (responseData: nil, statusCode: nil, error: error)

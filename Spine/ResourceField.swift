@@ -8,7 +8,7 @@
 
 import Foundation
 
-public func fieldsFromDictionary(dictionary: [String: Field]) -> [Field] {
+public func fieldsFromDictionary(_ dictionary: [String: Field]) -> [Field] {
 	return dictionary.map { (name, field) in
 		field.name = name
 		return field
@@ -19,15 +19,15 @@ public func fieldsFromDictionary(dictionary: [String: Field]) -> [Field] {
  *  Base field.
  *  Do not use this field type directly, instead use a specific subclass.
  */
-public class Field {
+open class Field {
 	/// The name of the field as it appears in the model class.
 	/// This is declared as an implicit optional to support the `fieldsFromDictionary` function,
 	/// however it should *never* be nil.
-	public internal(set) var name: String! = nil
+	open internal(set) var name: String! = nil
 	
 	/// The name of the field that will be used for formatting to the JSON key.
 	/// This can be nil, in which case the regular name will be used.
-	public internal(set) var serializedName: String {
+	open internal(set) var serializedName: String {
 		get {
 			return _serializedName ?? name
 		}
@@ -35,11 +35,11 @@ public class Field {
 			_serializedName = newValue
 		}
 	}
-	private var _serializedName: String?
+	fileprivate var _serializedName: String?
 	
 	var isReadOnly: Bool = false
 
-	private init() {}
+	fileprivate init() {}
 	
 	/**
 	Sets the serialized name.
@@ -47,12 +47,12 @@ public class Field {
 	- parameter name: The serialized name to use.
 	- returns: The field.
 	*/
-	public func serializeAs(name: String) -> Self {
+	open func serializeAs(_ name: String) -> Self {
 		serializedName = name
 		return self
 	}
 	
-	public func readOnly() -> Self {
+	open func readOnly() -> Self {
 		isReadOnly = true
 		return self
 	}
@@ -63,7 +63,7 @@ public class Field {
 /**
  *  A basic attribute field.
  */
-public class Attribute: Field {
+open class Attribute: Field {
 	override public init() {}
 }
 
@@ -72,10 +72,10 @@ public class Attribute: Field {
  *  You can optionally specify a base URL to which relative
  *  URLs will be made absolute.
  */
-public class URLAttribute: Attribute {
-	let baseURL: NSURL?
+open class URLAttribute: Attribute {
+	let baseURL: URL?
 	
-	public init(baseURL: NSURL? = nil) {
+	public init(baseURL: URL? = nil) {
 		self.baseURL = baseURL
 	}
 }
@@ -85,7 +85,7 @@ public class URLAttribute: Attribute {
  *  By default, it uses ISO8601 format `yyyy-MM-dd'T'HH:mm:ss.SSSZZZZZ`.
  *  You can specify a custom format by passing it to the initializer.
  */
-public class DateAttribute: Attribute {
+open class DateAttribute: Attribute {
 	let format: String
 
 	public init(format: String = "yyyy-MM-dd'T'HH:mm:ss.SSSZZZZZ") {
@@ -97,7 +97,7 @@ public class DateAttribute: Attribute {
  *  A basic relationship field.
  *  Do not use this field type directly, instead use either `ToOneRelationship` or `ToManyRelationship`.
  */
-public class Relationship: Field {
+open class Relationship: Field {
 	let linkedType: Resource.Type
 	
 	public init(_ type: Resource.Type) {
@@ -108,9 +108,9 @@ public class Relationship: Field {
 /**
  *  A to-one relationship field.
  */
-public class ToOneRelationship: Relationship { }
+open class ToOneRelationship: Relationship { }
 
 /**
  *  A to-many relationship field.
  */
-public class ToManyRelationship: Relationship { }
+open class ToManyRelationship: Relationship { }

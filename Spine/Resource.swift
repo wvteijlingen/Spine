@@ -43,11 +43,11 @@ public func ==(lhs: ResourceIdentifier, rhs: ResourceIdentifier) -> Bool {
 
 /// A RelationshipData struct holds data about a relationship.
 struct RelationshipData {
-	var selfURL: NSURL?
-	var relatedURL: NSURL?
+	var selfURL: URL?
+	var relatedURL: URL?
 	var data: [ResourceIdentifier]?
 	
-	init(selfURL: NSURL?, relatedURL: NSURL?, data: [ResourceIdentifier]?) {
+	init(selfURL: URL?, relatedURL: URL?, data: [ResourceIdentifier]?) {
 		self.selfURL = selfURL
 		self.relatedURL = relatedURL
 		self.data = data
@@ -56,8 +56,8 @@ struct RelationshipData {
 	/// Constructs a new ResourceIdentifier instance from the given dictionary.
 	/// The dictionary must contain values for the "type" and "id" keys.
 	init(dictionary: NSDictionary) {
-		selfURL = dictionary["selfURL"] as? NSURL
-		relatedURL = dictionary["relatedURL"] as? NSURL
+		selfURL = dictionary["selfURL"] as? URL
+		relatedURL = dictionary["relatedURL"] as? URL
 		data = (dictionary["data"] as? [NSDictionary])?.map(ResourceIdentifier.init)
 	}
 	
@@ -65,40 +65,40 @@ struct RelationshipData {
 	func toDictionary() -> NSDictionary {
 		var dictionary = [String: AnyObject]()
 		if let selfURL = selfURL {
-			dictionary["selfURL"] = selfURL
+			dictionary["selfURL"] = selfURL as AnyObject?
 		}
 		if let relatedURL = relatedURL {
-			dictionary["relatedURL"] = relatedURL
+			dictionary["relatedURL"] = relatedURL as AnyObject?
 		}
 		if let data = data {
 			dictionary["data"] = data.map { $0.toDictionary() }
 		}
-		return dictionary
+		return dictionary as NSDictionary
 	}
 }
 
 /// A base recource class that provides some defaults for resources.
 /// You can create custom resource classes by subclassing from Resource.
-public class Resource: NSObject, NSCoding {
+open class Resource: NSObject, NSCoding {
 	/// The resource type in plural form.
-	public class var resourceType: ResourceType {
+	open class var resourceType: ResourceType {
 		fatalError("Override resourceType in a subclass.")
 	}
 
 	/// All fields that must be persisted in the API.
-	public class var fields: [Field] { return [] }
+	open class var fields: [Field] { return [] }
 	
 	/// The ID of this resource.
-	public var id: String?
+	open var id: String?
 	
 	/// The canonical URL of the resource.
-	public var URL: NSURL?
+	open var URL: Foundation.URL?
 	
 	/// Whether the fields of the resource are loaded.
-	public var isLoaded: Bool = false
+	open var isLoaded: Bool = false
 	
 	/// The metadata for this resource.
-	public var meta: [String: AnyObject]?
+	open var meta: [String: AnyObject]?
 	
 	/// Raw relationship data keyed by relationship name.
 	var relationships: [String: RelationshipData] = [:]
@@ -109,12 +109,12 @@ public class Resource: NSObject, NSCoding {
 	
 	public required init(coder: NSCoder) {
 		super.init()
-		self.id = coder.decodeObjectForKey("id") as? String
-		self.URL = coder.decodeObjectForKey("URL") as? NSURL
-		self.isLoaded = coder.decodeBoolForKey("isLoaded")
-		self.meta = coder.decodeObjectForKey("meta") as? [String: AnyObject]
+		self.id = coder.decodeObject(forKey: "id") as? String
+		self.URL = coder.decodeObject(forKey: "URL") as? Foundation.URL
+		self.isLoaded = coder.decodeBool(forKey: "isLoaded")
+		self.meta = coder.decodeObject(forKey: "meta") as? [String: AnyObject]
 		
-		if let relationshipsData = coder.decodeObjectForKey("relationships") as? [String: NSDictionary] {
+		if let relationshipsData = coder.decodeObject(forKey: "relationships") as? [String: NSDictionary] {
 			var relationships = [String: RelationshipData]()
 			for (key, value) in relationshipsData {
 				relationships[key] = RelationshipData.init(dictionary: value)
@@ -122,31 +122,31 @@ public class Resource: NSObject, NSCoding {
 		}
 	}
 	
-	public func encodeWithCoder(coder: NSCoder) {
-		coder.encodeObject(self.id, forKey: "id")
-		coder.encodeObject(self.URL, forKey: "URL")
-		coder.encodeBool(self.isLoaded, forKey: "isLoaded")
-		coder.encodeObject(self.meta, forKey: "meta")
+	open func encode(with coder: NSCoder) {
+		coder.encode(self.id, forKey: "id")
+		coder.encode(self.URL, forKey: "URL")
+		coder.encode(self.isLoaded, forKey: "isLoaded")
+		coder.encode(self.meta, forKey: "meta")
 		
 		var relationshipsData = [String: NSDictionary]()
 		for (key, value) in self.relationships {
 			relationshipsData[key] = value.toDictionary()
 		}
-		coder.encodeObject(relationshipsData, forKey: "relationships")
+		coder.encode(relationshipsData, forKey: "relationships")
 	}
 
   /// Returns the value for the field named `field`.
-	public func valueForField(field: String) -> AnyObject? {
-		return valueForKey(field)
+	open func valueForField(_ field: String) -> AnyObject? {
+		return value(forKey: field) as AnyObject?
 	}
 
 	/// Sets the value for the field named `field` to `value`.
-	public func setValue(value: AnyObject?, forField field: String) {
+	open func setValue(_ value: AnyObject?, forField field: String) {
 		setValue(value, forKey: field)
 	}
 
 	/// Set the values for all fields to nil and sets `isLoaded` to false.
-	public func unload() {
+	open func unload() {
 		for field in self.fields {
 			self.setValue(nil, forField: field.name)
 		}
@@ -155,26 +155,26 @@ public class Resource: NSObject, NSCoding {
 	}
 	
 	/// Returns the field named `name`, or nil if no such field exists.
-	class func fieldNamed(name: String) -> Field? {
+	class func fieldNamed(_ name: String) -> Field? {
 		return fields.filter { $0.name == name }.first
 	}
 
 }
 
 extension Resource {
-	override public var description: String {
+	override open var description: String {
 		return "\(self.resourceType)(\(self.id), \(self.URL))"
 	}
 	
-	override public var debugDescription: String {
+	override open var debugDescription: String {
 		return description
 	}
 }
 
 /// Instance counterparts of class functions
 extension Resource {
-	final var resourceType: ResourceType { return self.dynamicType.resourceType }
-	final var fields: [Field] { return self.dynamicType.fields }
+	final var resourceType: ResourceType { return type(of: self).resourceType }
+	final var fields: [Field] { return type(of: self).fields }
 }
 
 public func == <T: Resource> (left: T, right: T) -> Bool {

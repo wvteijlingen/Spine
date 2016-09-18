@@ -36,7 +36,7 @@ class QueryInitializationTests: XCTestCase {
 		let URLString = "http://example.com/foos"
 		let query = Query(resourceType: Foo.self, path: URLString)
 		
-		XCTAssertEqual(query.URL!, NSURL(string: URLString)!, "URL not as expected")
+		XCTAssertEqual(query.URL! as URL, URL(string: URLString)!, "URL not as expected")
 		XCTAssertEqual(query.resourceType, Foo.resourceType, "Resource type not as expected")
 	}
 }
@@ -67,9 +67,9 @@ class QueryFilterTests: XCTestCase {
 		let predicate = NSComparisonPredicate(
 			leftExpression: NSExpression(forKeyPath: "property"),
 			rightExpression: NSExpression(forConstantValue: "value"),
-			modifier: .DirectPredicateModifier,
-			type: .EqualToPredicateOperatorType,
-			options: NSComparisonPredicateOptions())
+			modifier: .direct,
+			type: .equalTo,
+			options: NSComparisonPredicate.Options())
 		
 		query.addPredicate(predicate)
 		
@@ -83,9 +83,9 @@ class QueryFilterTests: XCTestCase {
 		let predicate = NSComparisonPredicate(
 			leftExpression: NSExpression(forKeyPath: "stringAttribute"),
 			rightExpression: NSExpression(forConstantValue: "value"),
-			modifier: .DirectPredicateModifier,
-			type: .EqualToPredicateOperatorType,
-			options: NSComparisonPredicateOptions())
+			modifier: .direct,
+			type: .equalTo,
+			options: NSComparisonPredicate.Options())
 		
 		XCTAssertEqual(query.filters, [predicate], "Filters not as expected")
 	}
@@ -97,9 +97,9 @@ class QueryFilterTests: XCTestCase {
 		let predicate = NSComparisonPredicate(
 			leftExpression: NSExpression(forKeyPath: "stringAttribute"),
 			rightExpression: NSExpression(forConstantValue: "value"),
-			modifier: .DirectPredicateModifier,
-			type: .NotEqualToPredicateOperatorType,
-			options: NSComparisonPredicateOptions())
+			modifier: .direct,
+			type: .notEqualTo,
+			options: NSComparisonPredicate.Options())
 		
 		XCTAssertEqual(query.filters, [predicate], "Filters not as expected")
 	}
@@ -111,9 +111,9 @@ class QueryFilterTests: XCTestCase {
 		let predicate = NSComparisonPredicate(
 			leftExpression: NSExpression(forKeyPath: "integerAttribute"),
 			rightExpression: NSExpression(forConstantValue: "10"),
-			modifier: .DirectPredicateModifier,
-			type: .LessThanPredicateOperatorType,
-			options: NSComparisonPredicateOptions())
+			modifier: .direct,
+			type: .lessThan,
+			options: NSComparisonPredicate.Options())
 		
 		XCTAssertEqual(query.filters, [predicate], "Filters not as expected")
 	}
@@ -125,9 +125,9 @@ class QueryFilterTests: XCTestCase {
 		let predicate = NSComparisonPredicate(
 			leftExpression: NSExpression(forKeyPath: "integerAttribute"),
 			rightExpression: NSExpression(forConstantValue: "10"),
-			modifier: .DirectPredicateModifier,
-			type: .LessThanOrEqualToPredicateOperatorType,
-			options: NSComparisonPredicateOptions())
+			modifier: .direct,
+			type: .lessThanOrEqualTo,
+			options: NSComparisonPredicate.Options())
 		
 		XCTAssertEqual(query.filters, [predicate], "Filters not as expected")
 	}
@@ -139,9 +139,9 @@ class QueryFilterTests: XCTestCase {
 		let predicate = NSComparisonPredicate(
 			leftExpression: NSExpression(forKeyPath: "integerAttribute"),
 			rightExpression: NSExpression(forConstantValue: "10"),
-			modifier: .DirectPredicateModifier,
-			type: .GreaterThanPredicateOperatorType,
-			options: NSComparisonPredicateOptions())
+			modifier: .direct,
+			type: .greaterThan,
+			options: NSComparisonPredicate.Options())
 		
 		XCTAssertEqual(query.filters, [predicate], "Filters not as expected")
 	}
@@ -153,9 +153,9 @@ class QueryFilterTests: XCTestCase {
 		let predicate = NSComparisonPredicate(
 			leftExpression: NSExpression(forKeyPath: "integerAttribute"),
 			rightExpression: NSExpression(forConstantValue: "10"),
-			modifier: .DirectPredicateModifier,
-			type: .GreaterThanOrEqualToPredicateOperatorType,
-			options: NSComparisonPredicateOptions())
+			modifier: .direct,
+			type: .greaterThanOrEqualTo,
+			options: NSComparisonPredicate.Options())
 		
 		XCTAssertEqual(query.filters, [predicate], "Filters not as expected")
 	}
@@ -170,9 +170,9 @@ class QueryFilterTests: XCTestCase {
 		let predicate = NSComparisonPredicate(
 			leftExpression: NSExpression(forKeyPath: "toOneAttribute"),
 			rightExpression: NSExpression(forConstantValue: bar.id!),
-			modifier: .DirectPredicateModifier,
-			type: .EqualToPredicateOperatorType,
-			options: NSComparisonPredicateOptions())
+			modifier: .direct,
+			type: .equalTo,
+			options: NSComparisonPredicate.Options())
 		
 		XCTAssertEqual(query.filters, [predicate], "Filters not as expected")
 	}
@@ -184,9 +184,9 @@ class QueryFilterTests: XCTestCase {
         let predicate = NSComparisonPredicate(
             leftExpression: NSExpression(forKeyPath: "notAnAttribute"),
             rightExpression: NSExpression(forConstantValue: "value"),
-            modifier: .DirectPredicateModifier,
-            type: .EqualToPredicateOperatorType,
-            options: NSComparisonPredicateOptions())
+            modifier: .direct,
+            type: .equalTo,
+            options: NSComparisonPredicate.Options())
         
         XCTAssertEqual(query.filters, [predicate], "Filters not as expected")
     }

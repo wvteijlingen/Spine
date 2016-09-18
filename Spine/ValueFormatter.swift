@@ -25,7 +25,7 @@ public protocol ValueFormatter {
 	
 	- returns: The deserialized form of `value`.
 	*/
-	func unformat(value: FormattedType, attribute: AttributeType) -> AnyObject
+	func unformat(_ value: FormattedType, attribute: AttributeType) -> AnyObject
 	
 	/**
 	Returns the serialized form of the given value for the given attribute.
@@ -35,7 +35,7 @@ public protocol ValueFormatter {
 	
 	- returns: The serialized form of `value`.
 	*/
-	func format(value: UnformattedType, attribute: AttributeType) -> AnyObject
+	func format(_ value: UnformattedType, attribute: AttributeType) -> AnyObject
 }
 
 /**
@@ -44,10 +44,10 @@ to transform values between the serialized and deserialized form.
 */
 struct ValueFormatterRegistry {
 	/// Registered serializer functions.
-	private var formatters: [(AnyObject, Attribute) -> AnyObject?] = []
+	fileprivate var formatters: [(AnyObject, Attribute) -> AnyObject?] = []
 	
 	/// Registered deserializer functions.
-	private var unformatters: [(AnyObject, Attribute) -> AnyObject?] = []
+	fileprivate var unformatters: [(AnyObject, Attribute) -> AnyObject?] = []
 	
 	/**
 	Returns a new value formatter directory configured with the build in default value formatters.
@@ -66,7 +66,7 @@ struct ValueFormatterRegistry {
 	
 	- parameter formatter: The value formatter to register.
 	*/
-	mutating func registerFormatter<T: ValueFormatter>(formatter: T) {
+	mutating func registerFormatter<T: ValueFormatter>(_ formatter: T) {
 		formatters.append { (value: AnyObject, attribute: Attribute) -> AnyObject? in
 			if let typedAttribute = attribute as? T.AttributeType {
 				if let typedValue = value as? T.UnformattedType {
@@ -99,7 +99,7 @@ struct ValueFormatterRegistry {
 	
 	- returns: The deserialized form of `value`.
 	*/
-	func unformat(value: AnyObject, forAttribute attribute: Attribute) -> AnyObject {
+	func unformat(_ value: AnyObject, forAttribute attribute: Attribute) -> AnyObject {
 		for unformatter in unformatters {
 			if let unformatted: AnyObject = unformatter(value, attribute) {
 				return unformatted
@@ -120,7 +120,7 @@ struct ValueFormatterRegistry {
 	
 	- returns: The serialized form of `value`.
 	*/
-	func format(value: AnyObject, forAttribute attribute: Attribute) -> AnyObject {
+	func format(_ value: AnyObject, forAttribute attribute: Attribute) -> AnyObject {
 		for formatter in formatters {
 			if let formatted: AnyObject = formatter(value, attribute) {
 				return formatted
@@ -140,12 +140,12 @@ If a baseURL has been configured in the URLAttribute, and the given String is no
 it will return an absolute NSURL, relative to the baseURL.
 */
 private struct URLValueFormatter: ValueFormatter {
-	func unformat(value: String, attribute: URLAttribute) -> AnyObject {
-		return NSURL(string: value, relativeToURL: attribute.baseURL)!
+	func unformat(_ value: String, attribute: URLAttribute) -> AnyObject {
+		return URL(string: value, relativeTo: attribute.baseURL as URL?)! as AnyObject
 	}
 	
-	func format(value: NSURL, attribute: URLAttribute) -> AnyObject {
-		return value.absoluteString
+	func format(_ value: URL, attribute: URLAttribute) -> AnyObject {
+		return value.absoluteString as AnyObject
 	}
 }
 
@@ -154,21 +154,21 @@ DateValueFormatter is a value formatter that transforms between NSDate and Strin
 It uses the date format configured in the DateAttribute.
 */
 private struct DateValueFormatter: ValueFormatter {
-	func formatter(attribute: DateAttribute) -> NSDateFormatter {
-		let formatter = NSDateFormatter()
+	func formatter(_ attribute: DateAttribute) -> DateFormatter {
+		let formatter = DateFormatter()
 		formatter.dateFormat = attribute.format
 		return formatter
 	}
 	
-	func unformat(value: String, attribute: DateAttribute) -> AnyObject {
-		guard let date = formatter(attribute).dateFromString(value) else {
-			Spine.logWarning(.Serializing, "Could not deserialize date string \(value) with format \(attribute.format). Deserializing to nil instead.")
+	func unformat(_ value: String, attribute: DateAttribute) -> AnyObject {
+		guard let date = formatter(attribute).date(from: value) else {
+			Spine.logWarning(.serializing, "Could not deserialize date string \(value) with format \(attribute.format). Deserializing to nil instead.")
 			return NSNull()
 		}
-		return date
+		return date as AnyObject
 	}
 	
-	func format(value: NSDate, attribute: DateAttribute) -> AnyObject {
-		return formatter(attribute).stringFromDate(value)
+	func format(_ value: Date, attribute: DateAttribute) -> AnyObject {
+		return formatter(attribute).string(from: value) as AnyObject
 	}
 }

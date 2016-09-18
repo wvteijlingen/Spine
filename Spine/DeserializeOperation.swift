@@ -12,22 +12,22 @@ import SwiftyJSON
 /**
 A DeserializeOperation deserializes JSON data in the form of NSData to a JSONAPIDocument.
 */
-class DeserializeOperation: NSOperation {
+class DeserializeOperation: Operation {
 	
 	// Input
-	private let data: JSON
-	private let valueFormatters: ValueFormatterRegistry
-	private let resourceFactory: ResourceFactory
-	private let keyFormatter: KeyFormatter
+	fileprivate let data: JSON
+	fileprivate let valueFormatters: ValueFormatterRegistry
+	fileprivate let resourceFactory: ResourceFactory
+	fileprivate let keyFormatter: KeyFormatter
 	
 	// Extracted objects
-	private var extractedPrimaryResources: [Resource]?
-	private var extractedIncludedResources: [Resource] = []
-	private var extractedErrors: [APIError]?
-	private var extractedMeta: [String: AnyObject]?
-	private var extractedLinks: [String: NSURL]?
-	private var extractedJSONAPI: [String: AnyObject]?
-	private var resourcePool: [Resource] = []
+	fileprivate var extractedPrimaryResources: [Resource]?
+	fileprivate var extractedIncludedResources: [Resource] = []
+	fileprivate var extractedErrors: [APIError]?
+	fileprivate var extractedMeta: [String: AnyObject]?
+	fileprivate var extractedLinks: [String: URL]?
+	fileprivate var extractedJSONAPI: [String: AnyObject]?
+	fileprivate var resourcePool: [Resource] = []
 	
 	// Output
 	var result: Failable<JSONAPIDocument, SerializerError>?
@@ -35,7 +35,7 @@ class DeserializeOperation: NSOperation {
 	
 	// MARK: Initializers
 	
-	init(data: NSData, resourceFactory: ResourceFactory, valueFormatters: ValueFormatterRegistry, keyFormatter: KeyFormatter) {
+	init(data: Data, resourceFactory: ResourceFactory, valueFormatters: ValueFormatterRegistry, keyFormatter: KeyFormatter) {
 		self.data = JSON(data: data)
 		self.resourceFactory = resourceFactory
 		self.valueFormatters = valueFormatters
@@ -45,7 +45,7 @@ class DeserializeOperation: NSOperation {
 	
 	// MARK: Mapping targets
 	
-	func addMappingTargets(targets: [Resource]) {		
+	func addMappingTargets(_ targets: [Resource]) {		
 		resourcePool += targets
 	}
 	
@@ -56,8 +56,8 @@ class DeserializeOperation: NSOperation {
 		// Validate document
 		guard data.dictionary != nil else {
 			let errorMessage = "The given JSON is not a dictionary (hash).";
-			Spine.logError(.Serializing, errorMessage)
-			result = Failable(SerializerError.InvalidDocumentStructure)
+			Spine.logError(.serializing, errorMessage)
+			result = Failable(SerializerError.invalidDocumentStructure)
 			return
 		}
 
@@ -67,15 +67,15 @@ class DeserializeOperation: NSOperation {
 
 		guard hasData || hasErrors || hasMeta else {
 			let errorMessage = "Either 'data', 'errors', or 'meta' must be present in the top level.";
-			Spine.logError(.Serializing, errorMessage)
-			result = Failable(SerializerError.TopLevelEntryMissing)
+			Spine.logError(.serializing, errorMessage)
+			result = Failable(SerializerError.topLevelEntryMissing)
 			return
 		}
 
 		guard hasErrors && !hasData || !hasErrors && hasData else {
 			let errorMessage = "Top level 'data' and 'errors' must not coexist in the same document.";
-			Spine.logError(.Serializing, errorMessage)
-			result = Failable(SerializerError.TopLevelDataAndErrorsCoexist)
+			Spine.logError(.serializing, errorMessage)
+			result = Failable(SerializerError.topLevelDataAndErrorsCoexist)
 			return
 		}
 
@@ -83,7 +83,7 @@ class DeserializeOperation: NSOperation {
 		do {
 			if let data = self.data["data"].array {
 				var resources: [Resource] = []
-				for (index, representation) in data.enumerate() {
+				for (index, representation) in data.enumerated() {
 					try resources.append(deserializeSingleRepresentation(representation, mappingTargetIndex: index))
 				}
 				extractedPrimaryResources = resources
@@ -101,7 +101,7 @@ class DeserializeOperation: NSOperation {
 			result = Failable(error)
 			return
 		} catch {
-			result = Failable(SerializerError.UnknownError)
+			result = Failable(SerializerError.unknownError)
 			return
 		}
 		
@@ -127,7 +127,7 @@ class DeserializeOperation: NSOperation {
 			extractedLinks = [:]
 			
 			for (key, value) in links {
-				extractedLinks![key] = NSURL(string: value.stringValue)!
+				extractedLinks![key] = URL(string: value.stringValue)!
 			}
 		}
 		
@@ -138,7 +138,7 @@ class DeserializeOperation: NSOperation {
 		resolveRelations()
 		
 		// Create a result
-		var responseDocument = JSONAPIDocument(data: nil, included: nil, errors: extractedErrors, meta: extractedMeta, links: extractedLinks, jsonapi: extractedJSONAPI)
+		var responseDocument = JSONAPIDocument(data: nil, included: nil, errors: extractedErrors, meta: extractedMeta, links: extractedLinks as [String : NSURL]?, jsonapi: extractedJSONAPI)
 		responseDocument.data = extractedPrimaryResources
 		if !extractedIncludedResources.isEmpty {
 			responseDocument.included = extractedIncludedResources
@@ -157,17 +157,17 @@ class DeserializeOperation: NSOperation {
 	
 	- returns: A Resource object with values mapped from the representation.
 	*/
-	private func deserializeSingleRepresentation(representation: JSON, mappingTargetIndex: Int? = nil) throws -> Resource {
+	fileprivate func deserializeSingleRepresentation(_ representation: JSON, mappingTargetIndex: Int? = nil) throws -> Resource {
 		guard representation.dictionary != nil else {
-			throw SerializerError.InvalidResourceStructure
+			throw SerializerError.invalidResourceStructure
 		}
 		
 		guard let type: ResourceType = representation["type"].string else {
-			throw SerializerError.ResourceTypeMissing
+			throw SerializerError.resourceTypeMissing
 		}
 		
 		guard let id = representation["id"].string else {
-			throw SerializerError.ResourceIDMissing
+			throw SerializerError.resourceIDMissing
 		}
 		
 		// Dispense a resource
@@ -198,7 +198,7 @@ class DeserializeOperation: NSOperation {
 	- parameter serializedData: The data from which to extract the attributes.
 	- parameter resource:       The resource into which to extract the attributes.
 	*/
-	private func extractAttributes(serializedData: JSON, intoResource resource: Resource) {
+	fileprivate func extractAttributes(_ serializedData: JSON, intoResource resource: Resource) {
 		for case let field as Attribute in resource.fields {
 			let key = keyFormatter.format(field)
 			if let extractedValue: AnyObject = self.extractAttribute(serializedData, key: key) {
@@ -216,7 +216,7 @@ class DeserializeOperation: NSOperation {
 	
 	- returns: The extracted value or nil if no attribute with the given key was found in the data.
 	*/
-	private func extractAttribute(serializedData: JSON, key: String) -> AnyObject? {
+	fileprivate func extractAttribute(_ serializedData: JSON, key: String) -> AnyObject? {
 		let value = serializedData["attributes"][key]
 		
 		if let _ = value.null {
@@ -240,7 +240,7 @@ class DeserializeOperation: NSOperation {
 	- parameter serializedData: The data from which to extract the relationships.
 	- parameter resource:       The resource into which to extract the relationships.
 	*/
-	private func extractRelationships(serializedData: JSON, intoResource resource: Resource) {
+	fileprivate func extractRelationships(_ serializedData: JSON, intoResource resource: Resource) {
 		for field in resource.fields {
 			let key = keyFormatter.format(field)
 			resource.relationships[field.name] = extractRelationshipData(serializedData["relationships"][key])
@@ -273,7 +273,7 @@ class DeserializeOperation: NSOperation {
 	
 	- returns: The extracted relationship or nil if no relationship with the given key was found in the data.
 	*/
-	private func extractToOneRelationship(serializedData: JSON, key: String, linkedType: ResourceType) -> Resource? {
+	fileprivate func extractToOneRelationship(_ serializedData: JSON, key: String, linkedType: ResourceType) -> Resource? {
 		var resource: Resource? = nil
 		
 		if let linkData = serializedData["relationships"][key].dictionary {
@@ -311,12 +311,12 @@ class DeserializeOperation: NSOperation {
 	
 	- returns: The extracted relationship or nil if no relationship with the given key was found in the data.
 	*/
-	private func extractToManyRelationship(serializedData: JSON, key: String) -> LinkedResourceCollection? {
+	fileprivate func extractToManyRelationship(_ serializedData: JSON, key: String) -> LinkedResourceCollection? {
 		var resourceCollection: LinkedResourceCollection? = nil
 
 		if let linkData = serializedData["relationships"][key].dictionary {
-			let resourcesURL: NSURL? = linkData["links"]?["related"].URL
-			let linkURL: NSURL? = linkData["links"]?["self"].URL
+			let resourcesURL: URL? = linkData["links"]?["related"].URL
+			let linkURL: URL? = linkData["links"]?["self"].URL
 			
 			if let linkage = linkData["data"]?.array {
 				let mappedLinkage = linkage.map { ResourceIdentifier(type: $0["type"].stringValue, id: $0["id"].stringValue) }
@@ -329,7 +329,7 @@ class DeserializeOperation: NSOperation {
 		return resourceCollection
 	}
 	
-	private func extractRelationshipData(linkData: JSON) -> RelationshipData {
+	fileprivate func extractRelationshipData(_ linkData: JSON) -> RelationshipData {
 		let selfURL = linkData["links"]["self"].URL
 		let relatedURL = linkData["links"]["related"].URL
 		let data: [ResourceIdentifier]?
@@ -350,17 +350,17 @@ class DeserializeOperation: NSOperation {
 	/**
 	Resolves the relations of the fetched resources.
 	*/
-	private func resolveRelations() {
+	fileprivate func resolveRelations() {
 		for resource in resourcePool {
 			for case let field as ToManyRelationship in resource.fields {
 				
 				guard let linkedResourceCollection = resource.valueForField(field.name) as? LinkedResourceCollection else {
-					Spine.logInfo(.Serializing, "Cannot resolve relationship '\(field.name)' of \(resource.resourceType):\(resource.id!) because the JSON did not include the relationship.")
+					Spine.logInfo(.serializing, "Cannot resolve relationship '\(field.name)' of \(resource.resourceType):\(resource.id!) because the JSON did not include the relationship.")
 					continue
 				}
 				
 				guard let linkage = linkedResourceCollection.linkage else {
-					Spine.logInfo(.Serializing, "Cannot resolve relationship '\(field.name)' of \(resource.resourceType):\(resource.id!) because the JSON did not include linkage.")
+					Spine.logInfo(.serializing, "Cannot resolve relationship '\(field.name)' of \(resource.resourceType):\(resource.id!) because the JSON did not include linkage.")
 					continue
 				}
 					

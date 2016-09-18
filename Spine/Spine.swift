@@ -13,19 +13,19 @@ public typealias Metadata = [String: AnyObject]
 public typealias JSONAPIData = [String: AnyObject]
 
 /// The main class
-public class Spine {
+open class Spine {
 
 	/// The router that builds the URLs for requests.
 	let router: Router
 
 	/// The HTTPClient that performs the HTTP requests.
-	public let networkClient: NetworkClient
+	open let networkClient: NetworkClient
 
 	/// The serializer to use for serializing and deserializing of JSON representations.
-	public let serializer: Serializer = Serializer()
+	open let serializer: Serializer = Serializer()
 
 	/// The key formatter to use for formatting field names to keys.
-	public var keyFormatter: KeyFormatter = DasherizedKeyFormatter() {
+	open var keyFormatter: KeyFormatter = DasherizedKeyFormatter() {
 		didSet {
 			router.keyFormatter = keyFormatter
 			serializer.keyFormatter = keyFormatter
@@ -33,7 +33,7 @@ public class Spine {
 	}
 
 	/// The operation queue on which all operations are queued.
-	let operationQueue = NSOperationQueue()
+	let operationQueue = OperationQueue()
 
 
 	// MARK: Initializers
@@ -53,7 +53,7 @@ public class Spine {
 	/**
 	Creates a new Spine instance using the default Router and HTTPClient classes.
 	*/
-	public convenience init(baseURL: NSURL) {
+	public convenience init(baseURL: URL) {
 		let router = JSONAPIRouter()
 		router.baseURL = baseURL
 		self.init(router: router, networkClient: HTTPClient())
@@ -71,7 +71,7 @@ public class Spine {
 	Creates a new Spine instance using a specific network client and the default Router class.
 	Use this initializer to specify a custom network client.
 	*/
-	public convenience init(baseURL: NSURL, networkClient: NetworkClient) {
+	public convenience init(baseURL: URL, networkClient: NetworkClient) {
 		let router = JSONAPIRouter()
 		router.baseURL = baseURL
 		self.init(router: router, networkClient: networkClient)
@@ -86,7 +86,7 @@ public class Spine {
 
 	- parameter operation: The operation to enqueue.
 	*/
-	func addOperation(operation: ConcurrentOperation) {
+	func addOperation(_ operation: ConcurrentOperation) {
 		operation.spine = self
 		operationQueue.addOperation(operation)
 	}
@@ -101,7 +101,7 @@ public class Spine {
 
 	- returns: A future that resolves to a tuple containing the fetched ResourceCollection, the document meta, and the document jsonapi object.
 	*/
-	public func find<T: Resource>(query: Query<T>) -> Future<(resources: ResourceCollection, meta: Metadata?, jsonapi: JSONAPIData?), SpineError> {
+	open func find<T: Resource>(_ query: Query<T>) -> Future<(resources: ResourceCollection, meta: Metadata?, jsonapi: JSONAPIData?), SpineError> {
 		let promise = Promise<(resources: ResourceCollection, meta: Metadata?, jsonapi: JSONAPIData?), SpineError>()
 
 		let operation = FetchOperation(query: query, spine: self)
@@ -109,10 +109,10 @@ public class Spine {
 		operation.completionBlock = { [unowned operation] in
 
 			switch operation.result! {
-			case .Success(let document):
+			case .success(let document):
 				let response = (ResourceCollection(document: document), document.meta, document.jsonapi)
 				promise.success(response)
-			case .Failure(let error):
+			case .failure(let error):
 				promise.failure(error)
 			}
 		}
@@ -130,7 +130,7 @@ public class Spine {
 
 	- returns: A future that resolves to a tuple containing the fetched ResourceCollection, the document meta, and the document jsonapi object.
 	*/
-	public func find<T: Resource>(IDs: [String], ofType type: T.Type) -> Future<(resources: ResourceCollection, meta: Metadata?, jsonapi: JSONAPIData?), SpineError> {
+	open func find<T: Resource>(_ IDs: [String], ofType type: T.Type) -> Future<(resources: ResourceCollection, meta: Metadata?, jsonapi: JSONAPIData?), SpineError> {
 		let query = Query(resourceType: type, resourceIDs: IDs)
 		return find(query)
 	}
@@ -144,20 +144,20 @@ public class Spine {
 
 	- returns: A future that resolves to a tuple containing the fetched resource, the document meta, and the document jsonapi object.
 	*/
-	public func findOne<T: Resource>(query: Query<T>) -> Future<(resource: T, meta: Metadata?, jsonapi: JSONAPIData?), SpineError> {
+	open func findOne<T: Resource>(_ query: Query<T>) -> Future<(resource: T, meta: Metadata?, jsonapi: JSONAPIData?), SpineError> {
 		let promise = Promise<(resource: T, meta: Metadata?, jsonapi: JSONAPIData?), SpineError>()
 
 		let operation = FetchOperation(query: query, spine: self)
 
 		operation.completionBlock = { [unowned operation] in
 			switch operation.result! {
-			case .Success(let document) where document.data?.count == 0 || document.data == nil:
-				promise.failure(SpineError.ResourceNotFound)
-			case .Success(let document):
+			case .success(let document) where document.data?.count == 0 || document.data == nil:
+				promise.failure(SpineError.resourceNotFound)
+			case .success(let document):
 				let firstResource = document.data!.first as! T
 				let response = (resource: firstResource, meta: document.meta, jsonapi: document.jsonapi)
 				promise.success(response)
-			case .Failure(let error):
+			case .failure(let error):
 				promise.failure(error)
 			}
 		}
@@ -177,7 +177,7 @@ public class Spine {
 
 	- returns: A future that resolves to a tuple containing the fetched resource, the document meta, and the document jsonapi object.
 	*/
-	public func findOne<T: Resource>(ID: String, ofType type: T.Type) -> Future<(resource: T, meta: Metadata?, jsonapi: JSONAPIData?), SpineError> {
+	open func findOne<T: Resource>(_ ID: String, ofType type: T.Type) -> Future<(resource: T, meta: Metadata?, jsonapi: JSONAPIData?), SpineError> {
 		let query = Query(resourceType: type, resourceIDs: [ID])
 		return findOne(query)
 	}
@@ -190,7 +190,7 @@ public class Spine {
 
 	- returns: A future that resolves to a tuple containing the fetched ResourceCollection, the document meta, and the document jsonapi object.
 	*/
-	public func findAll<T: Resource>(type: T.Type) -> Future<(resources: ResourceCollection, meta: Metadata?, jsonapi: JSONAPIData?), SpineError> {
+	open func findAll<T: Resource>(_ type: T.Type) -> Future<(resources: ResourceCollection, meta: Metadata?, jsonapi: JSONAPIData?), SpineError> {
 		let query = Query(resourceType: type)
 		return find(query)
 	}
@@ -214,7 +214,7 @@ public class Spine {
 
 	- returns: A future that resolves to the loaded resource.
 	*/
-	public func load<T: Resource>(resource: T, queryCallback: ((Query<T>) -> Query<T>)? = nil) -> Future<T, SpineError> {
+	open func load<T: Resource>(_ resource: T, queryCallback: ((Query<T>) -> Query<T>)? = nil) -> Future<T, SpineError> {
 		var query = Query(resource: resource)
 		if let callback = queryCallback {
 			query = callback(query)
@@ -238,7 +238,7 @@ public class Spine {
 
 	- returns: A future that resolves to the reloaded resource.
 	*/
-	public func reload<T: Resource>(resource: T, queryCallback: ((Query<T>) -> Query<T>)? = nil) -> Future<T, SpineError> {
+	open func reload<T: Resource>(_ resource: T, queryCallback: ((Query<T>) -> Query<T>)? = nil) -> Future<T, SpineError> {
 		var query = Query(resource: resource)
 		if let callback = queryCallback {
 			query = callback(query)
@@ -246,7 +246,7 @@ public class Spine {
 		return loadResourceByExecutingQuery(resource, query: query, skipIfLoaded: false)
 	}
 
-	func loadResourceByExecutingQuery<T: Resource>(resource: T, query: Query<T>, skipIfLoaded: Bool = true) -> Future<T, SpineError> {
+	func loadResourceByExecutingQuery<T: Resource>(_ resource: T, query: Query<T>, skipIfLoaded: Bool = true) -> Future<T, SpineError> {
 		let promise = Promise<T, SpineError>()
 
 		if skipIfLoaded && resource.isLoaded {
@@ -280,7 +280,7 @@ public class Spine {
 
 	- returns: A future that resolves to the ResourceCollection including the newly loaded resources.
 	*/
-	public func loadNextPageOfCollection(collection: ResourceCollection) -> Future<ResourceCollection, SpineError> {
+	open func loadNextPageOfCollection(_ collection: ResourceCollection) -> Future<ResourceCollection, SpineError> {
 		let promise = Promise<ResourceCollection, SpineError>()
 
 		if let nextURL = collection.nextURL {
@@ -289,7 +289,7 @@ public class Spine {
 
 			operation.completionBlock = { [unowned operation] in
 				switch operation.result! {
-				case .Success(let document):
+				case .success(let document):
 					let nextCollection = ResourceCollection(document: document)
 					collection.resources += nextCollection.resources
 					collection.resourcesURL = nextCollection.resourcesURL
@@ -297,7 +297,7 @@ public class Spine {
 					collection.previousURL = nextCollection.previousURL
 
 					promise.success(collection)
-				case .Failure(let error):
+				case .failure(let error):
 					promise.failure(error)
 				}
 			}
@@ -305,7 +305,7 @@ public class Spine {
 			addOperation(operation)
 
 		} else {
-			promise.failure(SpineError.NextPageNotAvailable)
+			promise.failure(SpineError.nextPageNotAvailable)
 		}
 
 		return promise.future
@@ -319,7 +319,7 @@ public class Spine {
 
 	- returns: A future that resolves to the ResourceCollection including the newly loaded resources.
 	*/
-	public func loadPreviousPageOfCollection(collection: ResourceCollection) -> Future<ResourceCollection, SpineError> {
+	open func loadPreviousPageOfCollection(_ collection: ResourceCollection) -> Future<ResourceCollection, SpineError> {
 		let promise = Promise<ResourceCollection, SpineError>()
 
 		if let previousURL = collection.previousURL {
@@ -328,7 +328,7 @@ public class Spine {
 
 			operation.completionBlock = { [unowned operation] in
 				switch operation.result! {
-				case .Success(let document):
+				case .success(let document):
 					let previousCollection = ResourceCollection(document: document)
 					collection.resources = previousCollection.resources + collection.resources
 					collection.resourcesURL = previousCollection.resourcesURL
@@ -336,7 +336,7 @@ public class Spine {
 					collection.previousURL = previousCollection.previousURL
 
 					promise.success(collection)
-				case .Failure(let error):
+				case .failure(let error):
 					promise.failure(error)
 				}
 			}
@@ -344,7 +344,7 @@ public class Spine {
 			addOperation(operation)
 
 		} else {
-			promise.failure(SpineError.PreviousPageNotAvailable)
+			promise.failure(SpineError.previousPageNotAvailable)
 		}
 
 		return promise.future
@@ -360,7 +360,7 @@ public class Spine {
 
 	- returns: A future that resolves to the saved resource.
 	*/
-	public func save<T: Resource>(resource: T) -> Future<T, SpineError> {
+	open func save<T: Resource>(_ resource: T) -> Future<T, SpineError> {
 		let promise = Promise<T, SpineError>()
 		let operation = SaveOperation(resource: resource, spine: self)
 
@@ -384,7 +384,7 @@ public class Spine {
 
 	- returns: A future
 	*/
-	public func delete<T: Resource>(resource: T) -> Future<Void, SpineError> {
+	open func delete<T: Resource>(_ resource: T) -> Future<Void, SpineError> {
 		let promise = Promise<Void, SpineError>()
 		let operation = DeleteOperation(resource: resource, spine: self)
 
@@ -411,7 +411,7 @@ public extension Spine {
 
 	- parameter resourceClass: The resource class to register.
 	*/
-	func registerResource(resourceClass: Resource.Type) {
+	func registerResource(_ resourceClass: Resource.Type) {
 		serializer.registerResource(resourceClass)
 	}
 
@@ -420,7 +420,7 @@ public extension Spine {
 
 	- parameter transformer: The Transformer to register.
 	*/
-	func registerValueFormatter<T: ValueFormatter>(formatter: T) {
+	func registerValueFormatter<T: ValueFormatter>(_ formatter: T) {
 		serializer.registerValueFormatter(formatter)
 	}
 }
@@ -434,21 +434,21 @@ Represents the result of a failable operation.
 - Success: The operation succeeded with the given result.
 - Failure: The operation failed with the given error.
 */
-enum Failable<T, E: ErrorType> {
-	case Success(T)
-	case Failure(E)
+enum Failable<T, E: Error> {
+	case success(T)
+	case failure(E)
 
 	init(_ value: T) {
-		self = .Success(value)
+		self = .success(value)
 	}
 
 	init(_ error: E) {
-		self = .Failure(error)
+		self = .failure(error)
 	}
 
 	var error: E? {
 		switch self {
-		case .Failure(let error):
+		case .failure(let error):
 			return error
 		default:
 			return nil

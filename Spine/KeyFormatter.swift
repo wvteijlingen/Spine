@@ -13,7 +13,7 @@ The KeyFormatter protocol declares methods and properties that a key formatter m
 A key formatter transforms field names as they appear in Resources to keys as they appear in a JSONAPI document.
 */
 public protocol KeyFormatter {
-	func format(field: Field) -> String
+	func format(_ field: Field) -> String
 }
 
 /**
@@ -21,7 +21,7 @@ AsIsKeyFormatter does not format anything, i.e. it returns the field name as it.
 keys in a JSONAPI document one to one.
 */
 public struct AsIsKeyFormatter: KeyFormatter {
-	public func format(field: Field) -> String {
+	public func format(_ field: Field) -> String {
 		return field.serializedName
 	}
 	
@@ -34,14 +34,14 @@ DasherizedKeyFormatter formats field names as dasherized keys. Eg. someFieldName
 public struct DasherizedKeyFormatter: KeyFormatter {
 	let regex: NSRegularExpression
 	
-	public func format(field: Field) -> String {
+	public func format(_ field: Field) -> String {
 		let name = field.serializedName
-		let dashed = regex.stringByReplacingMatchesInString(name, options: NSMatchingOptions(), range: NSMakeRange(0, name.characters.count), withTemplate: "-$1$2")
-		return dashed.lowercaseString.stringByTrimmingCharactersInSet(NSCharacterSet(charactersInString: "-"))
+		let dashed = regex.stringByReplacingMatches(in: name, options: NSRegularExpression.MatchingOptions(), range: NSMakeRange(0, name.characters.count), withTemplate: "-$1$2")
+		return dashed.lowercased().trimmingCharacters(in: CharacterSet(charactersIn: "-"))
 	}
 	
 	public init() {
-		regex = try! NSRegularExpression(pattern: "(?<=[a-z])([A-Z])|([A-Z])(?=[a-z])", options: NSRegularExpressionOptions())
+		regex = try! NSRegularExpression(pattern: "(?<=[a-z])([A-Z])|([A-Z])(?=[a-z])", options: NSRegularExpression.Options())
 	}
 }
 
@@ -51,13 +51,13 @@ UnderscoredKeyFormatter formats field names as underscored keys. Eg. someFieldNa
 public struct UnderscoredKeyFormatter: KeyFormatter {
 	let regex: NSRegularExpression
 	
-	public func format(field: Field) -> String {
+	public func format(_ field: Field) -> String {
 		let name = field.serializedName
-		let underscored = regex.stringByReplacingMatchesInString(name, options: NSMatchingOptions(), range: NSMakeRange(0, name.characters.count), withTemplate: "_$1$2")
-		return underscored.lowercaseString.stringByTrimmingCharactersInSet(NSCharacterSet(charactersInString: "_"))
+		let underscored = regex.stringByReplacingMatches(in: name, options: NSRegularExpression.MatchingOptions(), range: NSMakeRange(0, name.characters.count), withTemplate: "_$1$2")
+		return underscored.lowercased().trimmingCharacters(in: CharacterSet(charactersIn: "_"))
 	}
 	
 	public init() {
-		regex = try! NSRegularExpression(pattern: "(?<=[a-z])([A-Z])|([A-Z])(?=[a-z])", options: NSRegularExpressionOptions())
+		regex = try! NSRegularExpression(pattern: "(?<=[a-z])([A-Z])|([A-Z])(?=[a-z])", options: NSRegularExpression.Options())
 	}
 }

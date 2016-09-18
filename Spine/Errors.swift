@@ -9,7 +9,7 @@
 import Foundation
 
 /// An error returned from the server.
-public struct APIError: ErrorType, Equatable {
+public struct APIError: Error, Equatable {
 	public var id: String?
 	public var status: String?
 	public var code: String?
@@ -36,77 +36,77 @@ public func ==(lhs: APIError, rhs: APIError) -> Bool {
 }
 
 /// An error that occured in Spine.
-public enum SpineError: ErrorType, Equatable {
-	case UnknownError
+public enum SpineError: Error, Equatable {
+	case unknownError
 	
 	/// The next page of a collection is not available.
-	case NextPageNotAvailable
+	case nextPageNotAvailable
 	
 	/// The previous page of a collection is not available.
-	case PreviousPageNotAvailable
+	case previousPageNotAvailable
 	
 	/// The requested resource is not found.
-	case ResourceNotFound
+	case resourceNotFound
 	
 	/// An error occured during (de)serializing.
-	case SerializerError
+	case serializerError
 	
 	/// A error response was received from the API.
-	case ServerError(statusCode: Int, apiErrors: [APIError]?)
+	case serverError(statusCode: Int, apiErrors: [APIError]?)
 	
 	/// A network error occured.
-	case NetworkError(NSError)
+	case networkError(NSError)
 }
 
-public enum SerializerError: ErrorType, Equatable {
-	case UnknownError
+public enum SerializerError: Error, Equatable {
+	case unknownError
 	
 	/// The given JSON is not a dictionary (hash).
-	case InvalidDocumentStructure
+	case invalidDocumentStructure
 	
 	/// None of 'data', 'errors', or 'meta' is present in the top level.
-	case TopLevelEntryMissing
+	case topLevelEntryMissing
 	
 	/// Top level 'data' and 'errors' coexist in the same document.
-	case TopLevelDataAndErrorsCoexist
+	case topLevelDataAndErrorsCoexist
 	
 	/// The given JSON is not a dictionary (hash).
-	case InvalidResourceStructure
+	case invalidResourceStructure
 	
 	/// 'Type' field is missing from resource JSON.
-	case ResourceTypeMissing
+	case resourceTypeMissing
 	
 	/// The given resource type has not been registered to Spine.
-	case ResourceTypeUnregistered
+	case resourceTypeUnregistered
 	
 	/// 'ID' field is missing from resource JSON.
-	case ResourceIDMissing
+	case resourceIDMissing
 	
 	/// Error occurred in NSJSONSerialization
-	case JSONSerializationError(NSError)
+	case jsonSerializationError(NSError)
 }
 
 
 public func ==(lhs: SpineError, rhs: SpineError) -> Bool {
 	switch (lhs, rhs) {
-	case (.UnknownError, .UnknownError):
+	case (.unknownError, .unknownError):
 		return true
-	case (.NextPageNotAvailable, .NextPageNotAvailable):
+	case (.nextPageNotAvailable, .nextPageNotAvailable):
 		return true
-	case (.PreviousPageNotAvailable, .PreviousPageNotAvailable):
+	case (.previousPageNotAvailable, .previousPageNotAvailable):
 		return true
-	case (.ResourceNotFound, .ResourceNotFound):
+	case (.resourceNotFound, .resourceNotFound):
 		return true
-	case (.SerializerError, .SerializerError):
+	case (.serializerError, .serializerError):
 		return true
-	case (let .ServerError(lhsStatusCode, lhsApiErrors), let .ServerError(rhsStatusCode, rhsApiErrors)):
+	case (let .serverError(lhsStatusCode, lhsApiErrors), let .serverError(rhsStatusCode, rhsApiErrors)):
 		if lhsStatusCode != rhsStatusCode { return false }
 		if lhsApiErrors == nil && rhsApiErrors == nil { return true }
-		if let lhsErrors = lhsApiErrors, rhsErrors = rhsApiErrors {
+		if let lhsErrors = lhsApiErrors, let rhsErrors = rhsApiErrors {
 			return lhsErrors == rhsErrors
 		}
 		return false
-	case (let .NetworkError(lhsError), let .NetworkError(rhsError)):
+	case (let .networkError(lhsError), let .networkError(rhsError)):
 		return lhsError == rhsError
 	default:
 		return false
@@ -115,21 +115,21 @@ public func ==(lhs: SpineError, rhs: SpineError) -> Bool {
 
 public func ==(lhs: SerializerError, rhs: SerializerError) -> Bool {
 	switch (lhs, rhs) {
-	case (.UnknownError, .UnknownError):
+	case (.unknownError, .unknownError):
 		return true
-	case (.InvalidDocumentStructure, .InvalidDocumentStructure):
+	case (.invalidDocumentStructure, .invalidDocumentStructure):
 		return true
-	case (.TopLevelEntryMissing, .TopLevelEntryMissing):
+	case (.topLevelEntryMissing, .topLevelEntryMissing):
 		return true
-	case (.TopLevelDataAndErrorsCoexist, .TopLevelDataAndErrorsCoexist):
+	case (.topLevelDataAndErrorsCoexist, .topLevelDataAndErrorsCoexist):
 		return true
-	case (.InvalidResourceStructure, .InvalidResourceStructure):
+	case (.invalidResourceStructure, .invalidResourceStructure):
 		return true
-	case (.ResourceTypeMissing, .ResourceTypeMissing):
+	case (.resourceTypeMissing, .resourceTypeMissing):
 		return true
-	case (.ResourceIDMissing, .ResourceIDMissing):
+	case (.resourceIDMissing, .resourceIDMissing):
 		return true
-	case (let .JSONSerializationError(lhsError), let .JSONSerializationError(rhsError)):
+	case (let .jsonSerializationError(lhsError), let .jsonSerializationError(rhsError)):
 		return lhsError == rhsError
 	default:
 		return false

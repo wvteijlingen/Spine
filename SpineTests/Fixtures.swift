@@ -16,7 +16,7 @@ class Foo: Resource {
 	var floatAttribute: NSNumber?
 	var booleanAttribute: NSNumber?
 	var nilAttribute: AnyObject?
-	var dateAttribute: NSDate?
+	var dateAttribute: Date?
 	var toOneAttribute: Bar?
 	var toManyAttribute: LinkedResourceCollection?
 	

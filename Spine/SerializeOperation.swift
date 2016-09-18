@@ -12,13 +12,13 @@ import SwiftyJSON
 /**
 A SerializeOperation serializes a JSONAPIDocument to JSON data in the form of NSData.
 */
-class SerializeOperation: NSOperation {
-	private let resources: [Resource]
+class SerializeOperation: Operation {
+	fileprivate let resources: [Resource]
 	let valueFormatters: ValueFormatterRegistry
 	let keyFormatter: KeyFormatter
 	var options: SerializationOptions = [.IncludeID]
 	
-	var result: Failable<NSData, SerializerError>?
+	var result: Failable<Data, SerializerError>?
 	
 	
 	// MARK: Initializers
@@ -36,7 +36,7 @@ class SerializeOperation: NSOperation {
 		let JSON: AnyObject
 		
 		if resources.count == 1 {
-			JSON = serializeResource(resources.first!)
+			JSON = serializeResource(resources.first!) as AnyObject
 		} else  {
 			JSON = resources.map { resource in
 				self.serializeResource(resource)
@@ -44,28 +44,28 @@ class SerializeOperation: NSOperation {
 		}
 		
 		do {
-			let serialized = try NSJSONSerialization.dataWithJSONObject(["data": JSON], options: NSJSONWritingOptions(rawValue: 0))
-			result = Failable.Success(serialized)
+			let serialized = try JSONSerialization.data(withJSONObject: ["data": JSON], options: JSONSerialization.WritingOptions(rawValue: 0))
+			result = Failable.success(serialized)
 		} catch let error as NSError {
-			result = Failable.Failure(SerializerError.JSONSerializationError(error))
+			result = Failable.failure(SerializerError.jsonSerializationError(error))
 		}
 	}
 	
 	
 	// MARK: Serializing
 	
-	private func serializeResource(resource: Resource) -> [String: AnyObject] {
-		Spine.logDebug(.Serializing, "Serializing resource \(resource) of type '\(resource.resourceType)' with id '\(resource.id)'")
+	fileprivate func serializeResource(_ resource: Resource) -> [String: AnyObject] {
+		Spine.logDebug(.serializing, "Serializing resource \(resource) of type '\(resource.resourceType)' with id '\(resource.id)'")
 		
 		var serializedData: [String: AnyObject] = [:]
 		
 		// Serialize ID
-		if let ID = resource.id where options.contains(.IncludeID) {
-			serializedData["id"] = ID
+		if let ID = resource.id , options.contains(.IncludeID) {
+			serializedData["id"] = ID as AnyObject?
 		}
 		
 		// Serialize type
-		serializedData["type"] = resource.resourceType
+		serializedData["type"] = resource.resourceType as AnyObject?
 		
 		// Serialize fields
 		addAttributes(&serializedData, resource: resource)
@@ -87,13 +87,13 @@ class SerializeOperation: NSOperation {
 	- parameter serializedData: The data to add the attributes to.
 	- parameter resource:       The resource whose attributes to add.
 	*/
-	private func addAttributes(inout serializedData: [String: AnyObject], resource: Resource) {
+	fileprivate func addAttributes(_ serializedData: inout [String: AnyObject], resource: Resource) {
 		var attributes = [String: AnyObject]();
 		
 		for case let field as Attribute in resource.fields where field.isReadOnly == false {
 			let key = keyFormatter.format(field)
 			
-			Spine.logDebug(.Serializing, "Serializing attribute \(field) as '\(key)'")
+			Spine.logDebug(.serializing, "Serializing attribute \(field) as '\(key)'")
 			
 			//TODO: Dirty checking
 			if let unformattedValue: AnyObject = resource.valueForField(field.name) {
@@ -103,7 +103,7 @@ class SerializeOperation: NSOperation {
 			}
 		}
 		
-		serializedData["attributes"] = attributes
+		serializedData["attributes"] = attributes as AnyObject?
 	}
 	
 	/**
@@ -113,7 +113,7 @@ class SerializeOperation: NSOperation {
 	- parameter key:            The key to add to the serialized data.
 	- parameter value:          The value to add to the serialized data.
 	*/
-	private func addAttribute(inout serializedData: [String: AnyObject], key: String, value: AnyObject) {
+	fileprivate func addAttribute(_ serializedData: inout [String: AnyObject], key: String, value: AnyObject) {
 		serializedData[key] = value
 	}
 	
@@ -131,11 +131,11 @@ class SerializeOperation: NSOperation {
 	- parameter serializedData: The data to add the relationships to.
 	- parameter resource:       The resource whose relationships to add.
 	*/
-	private func addRelationships(inout serializedData: [String: AnyObject], resource: Resource) {
+	fileprivate func addRelationships(_ serializedData: inout [String: AnyObject], resource: Resource) {
 		for case let field as Relationship in resource.fields where field.isReadOnly == false {
 			let key = keyFormatter.format(field)
 			
-			Spine.logDebug(.Serializing, "Serializing relationship \(field) as '\(key)'")
+			Spine.logDebug(.serializing, "Serializing relationship \(field) as '\(key)'")
 			
 			switch field {
 			case let toOne as ToOneRelationship:
@@ -158,7 +158,7 @@ class SerializeOperation: NSOperation {
 	- parameter key:             The key to add to the serialized data.
 	- parameter relatedResource: The related resource to add to the serialized data.
 	*/
-	private func addToOneRelationship(inout serializedData: [String: AnyObject], key: String, type: ResourceType, linkedResource: Resource?) {
+	fileprivate func addToOneRelationship(_ serializedData: inout [String: AnyObject], key: String, type: ResourceType, linkedResource: Resource?) {
 		let serializedRelationship = [
 			"data": [
 				"type": type,
@@ -171,7 +171,7 @@ class SerializeOperation: NSOperation {
 		} else {
 			var relationships = serializedData["relationships"] as! [String: AnyObject]
 			relationships[key] = serializedRelationship
-			serializedData["relationships"] = relationships
+			serializedData["relationships"] = relationships as AnyObject?
 		}
 	}
 	
@@ -182,7 +182,7 @@ class SerializeOperation: NSOperation {
 	- parameter key:              The key to add to the serialized data.
 	- parameter relatedResources: The related resources to add to the serialized data.
 	*/
-	private func addToManyRelationship(inout serializedData: [String: AnyObject], key: String, type: ResourceType, linkedResources: ResourceCollection?) {
+	fileprivate func addToManyRelationship(_ serializedData: inout [String: AnyObject], key: String, type: ResourceType, linkedResources: ResourceCollection?) {
 		var resourceIdentifiers: [ResourceIdentifier] = []
 		
 		if let resources = linkedResources?.resources {
@@ -199,8 +199,8 @@ class SerializeOperation: NSOperation {
 			serializedData["relationships"] = [key: serializedRelationship]
 		} else {
 			var relationships = serializedData["relationships"] as! [String: AnyObject]
-			relationships[key] = serializedRelationship
-			serializedData["relationships"] = relationships
+			relationships[key] = serializedRelationship as AnyObject?
+			serializedData["relationships"] = relationships as AnyObject?
 		}
 	}
 }
