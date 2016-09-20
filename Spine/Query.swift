@@ -356,16 +356,16 @@ public struct Query<T: Resource> {
 	
 	- returns: The query
 	*/
-	public mutating func restrictFieldsOfResourceType(type: String, to fieldNames: String...) {
+	public mutating func restrictFieldsOfResourceType(type: Resource.Type, to fieldNames: String...) {
 		
 		for fieldName in fieldNames {
-			assert(T.fieldNamed(fieldName) != nil, "Cannot restrict to field \(fieldName) of resource \(T.resourceType). No such field has been configured.")
+			assert(type.fieldNamed(fieldName) != nil, "Cannot restrict to field \(fieldName) of resource \(type.resourceType). No such field has been configured.")
 		}
 		
-		if var fields = fields[type] {
+		if var fields = fields[type.resourceType] {
 			fields += fieldNames
 		} else {
-			fields[type] = fieldNames
+			fields[type.resourceType] = fieldNames
 		}
 	}
 	

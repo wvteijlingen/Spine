@@ -57,7 +57,10 @@ class Bar: Resource {
 	}
 	
 	override class var fields: [Field] {
-		return []
+		return fieldsFromDictionary([
+			"barStringAttribute": Attribute(),
+			"barIntegerAttribute": Attribute()
+		])
 	}
 	
 	required init() {
