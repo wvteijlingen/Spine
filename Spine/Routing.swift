@@ -76,7 +76,8 @@ public class JSONAPIRouter: Router {
 		
 		let resourceURL = resource.URL ?? URLForResourceType(resource.resourceType).URLByAppendingPathComponent("/\(resource.id!)")
 		let key = keyFormatter.format(relationship)
-		return resourceURL.URLByAppendingPathComponent("/relationships/\(key)")
+		let urlString = resourceURL.URLByAppendingPathComponent("/relationships/\(key)").absoluteString
+		return NSURL(string: urlString, relativeToURL: baseURL)
 	}
 
 	
