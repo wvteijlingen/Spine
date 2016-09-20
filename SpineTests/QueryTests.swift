@@ -205,10 +205,10 @@ class QuerySparseFieldsetsTests: XCTestCase {
 	
 	func testRestrictPropertiesOfResourceTypeTo() {
 		var query = Query(resourceType: Foo.self)
-		query.restrictFieldsOfResourceType("bars", to: "stringAttribute", "integerAttribute")
+		query.restrictFieldsOfResourceType(Bar.self, to: "barStringAttribute", "barIntegerAttribute")
 		
 		XCTAssertNotNil(query.fields["bars"])
-		XCTAssertEqual(query.fields["bars"]!, ["stringAttribute", "integerAttribute"], "Fields not as expected")
+		XCTAssertEqual(query.fields["bars"]!, ["barStringAttribute", "barIntegerAttribute"], "Fields not as expected")
 	}
 }
 

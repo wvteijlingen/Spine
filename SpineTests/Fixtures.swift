@@ -52,12 +52,18 @@ class Foo: Resource {
 }
 
 class Bar: Resource {
+	var barStringAttribute: String?
+	var barIntegerAttribute: NSNumber?
+	
 	override class var resourceType: String {
 		return "bars"
 	}
 	
 	override class var fields: [Field] {
-		return []
+		return fieldsFromDictionary([
+			"barStringAttribute": Attribute(),
+			"barIntegerAttribute": Attribute()
+		])
 	}
 	
 	required init() {
