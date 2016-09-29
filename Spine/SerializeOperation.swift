@@ -21,16 +21,13 @@ class SerializeOperation: Operation {
 	var result: Failable<Data, SerializerError>?
 	
 	
-	// MARK: Initializers
+	// MARK: -
 	
 	init(document: JSONAPIDocument, valueFormatters: ValueFormatterRegistry, keyFormatter: KeyFormatter) {
 		self.resources = document.data ?? []
 		self.valueFormatters = valueFormatters
 		self.keyFormatter = keyFormatter
 	}
-	
-	
-	// MARK: NSOperation
 	
 	override func main() {
 		let serializedData: Any
@@ -39,7 +36,7 @@ class SerializeOperation: Operation {
 			serializedData = serializeResource(resources.first!)
 		} else  {
 			serializedData = resources.map { resource in
-				self.serializeResource(resource)
+				serializeResource(resource)
 			}
 		}
 		
@@ -68,8 +65,8 @@ class SerializeOperation: Operation {
 		serializedData["type"] = resource.resourceType as AnyObject?
 		
 		// Serialize fields
-		addAttributes(&serializedData, resource: resource)
-		addRelationships(&serializedData, resource: resource)
+		addAttributes(from: resource, to: &serializedData )
+		addRelationships(from: resource, to: &serializedData)
 		
 		return serializedData
 	}
@@ -87,7 +84,7 @@ class SerializeOperation: Operation {
 	- parameter serializedData: The data to add the attributes to.
 	- parameter resource:       The resource whose attributes to add.
 	*/
-	fileprivate func addAttributes(_ serializedData: inout [String: Any], resource: Resource) {
+	fileprivate func addAttributes(from resource: Resource, to serializedData: inout [String: Any]) {
 		var attributes = [String: Any]();
 		
 		for case let field as Attribute in resource.fields where field.isReadOnly == false {
@@ -96,8 +93,8 @@ class SerializeOperation: Operation {
 			Spine.logDebug(.serializing, "Serializing attribute \(field) as '\(key)'")
 			
 			//TODO: Dirty checking
-			if let unformattedValue = resource.valueForField(field.name) {
-				addAttribute(&attributes, key: key, value: self.valueFormatters.format(unformattedValue, forAttribute: field))
+			if let unformattedValue = resource.value(forField: field.name) {
+				addAttribute(&attributes, key: key, value: valueFormatters.formatValue(unformattedValue, forAttribute: field))
 			} else if(!options.contains(.OmitNullValues)){
 				addAttribute(&attributes, key: key, value: NSNull())
 			}
@@ -131,7 +128,7 @@ class SerializeOperation: Operation {
 	- parameter serializedData: The data to add the relationships to.
 	- parameter resource:       The resource whose relationships to add.
 	*/
-	fileprivate func addRelationships(_ serializedData: inout [String: Any], resource: Resource) {
+	fileprivate func addRelationships(from resource: Resource, to serializedData: inout [String: Any]) {
 		for case let field as Relationship in resource.fields where field.isReadOnly == false {
 			let key = keyFormatter.format(field)
 			
@@ -140,11 +137,11 @@ class SerializeOperation: Operation {
 			switch field {
 			case let toOne as ToOneRelationship:
 				if options.contains(.IncludeToOne) {
-					addToOneRelationship(&serializedData, key: key, type: toOne.linkedType.resourceType, linkedResource: resource.valueForField(field.name) as? Resource)
+					addToOneRelationship(resource.value(forField: field.name) as? Resource, to: &serializedData, key: key, type: toOne.linkedType.resourceType)
 				}
 			case let toMany as ToManyRelationship:
 				if options.contains(.IncludeToMany) {
-					addToManyRelationship(&serializedData, key: key, type: toMany.linkedType.resourceType, linkedResources: resource.valueForField(field.name) as? ResourceCollection)
+					addToManyRelationship(resource.value(forField: field.name) as? ResourceCollection, to: &serializedData, key: key, type: toMany.linkedType.resourceType)
 				}
 			default: ()
 			}
@@ -158,7 +155,7 @@ class SerializeOperation: Operation {
 	- parameter key:             The key to add to the serialized data.
 	- parameter relatedResource: The related resource to add to the serialized data.
 	*/
-	fileprivate func addToOneRelationship(_ serializedData: inout [String: Any], key: String, type: ResourceType, linkedResource: Resource?) {
+	fileprivate func addToOneRelationship(_ linkedResource: Resource?, to serializedData: inout [String: Any], key: String, type: ResourceType) {
 		let serializedId: Any
 		if let resourceId = linkedResource?.id {
 			serializedId = resourceId
@@ -189,7 +186,7 @@ class SerializeOperation: Operation {
 	- parameter key:              The key to add to the serialized data.
 	- parameter relatedResources: The related resources to add to the serialized data.
 	*/
-	fileprivate func addToManyRelationship(_ serializedData: inout [String: Any], key: String, type: ResourceType, linkedResources: ResourceCollection?) {
+	fileprivate func addToManyRelationship(_ linkedResources: ResourceCollection?, to serializedData: inout [String: Any], key: String, type: ResourceType) {
 		var resourceIdentifiers: [ResourceIdentifier] = []
 		
 		if let resources = linkedResources?.resources {

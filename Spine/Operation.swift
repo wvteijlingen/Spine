@@ -98,7 +98,7 @@ class ConcurrentOperation: Operation {
 	override init() {}
 	
 	final override func start() {
-		if self.isCancelled {
+		if isCancelled {
 			state = .Finished
 		} else {
 			state = .Executing
@@ -138,7 +138,7 @@ class FetchOperation<T: Resource>: ConcurrentOperation {
 		
 		Spine.logInfo(.spine, "Fetching document using URL: \(url)")
 		
-		networkClient.request("GET", url: url) { statusCode, responseData, networkError in
+		networkClient.request(method: "GET", url: url) { statusCode, responseData, networkError in
 			defer { self.state = .Finished }
 			
 			guard networkError == nil else {
@@ -184,7 +184,7 @@ class DeleteOperation: ConcurrentOperation {
 		
 		Spine.logInfo(.spine, "Deleting resource \(resource) using URL: \(URL)")
 		
-		networkClient.request("DELETE", url: URL) { statusCode, responseData, networkError in
+		networkClient.request(method: "DELETE", url: URL) { statusCode, responseData, networkError in
 			defer { self.state = .Finished }
 		
 			guard networkError == nil else {
@@ -237,10 +237,10 @@ class SaveOperation: ConcurrentOperation {
 	override func execute() {
 		// First update relationships if this is an existing resource. Otherwise the local relationships
 		// are overwritten with data that is returned from saving the resource.
-		if self.isNewResource {
-			self.updateResource()
+		if isNewResource {
+			updateResource()
 		} else {
-			self.updateRelationships()
+			updateRelationships()
 		}
 	}
 
@@ -264,14 +264,14 @@ class SaveOperation: ConcurrentOperation {
 		do {
 			payload = try serializer.serializeResources([resource], options: options)
 		} catch let error {
-			self.result = .failure(error as! SpineError)
-			self.state = .Finished
+			result = .failure(error as! SpineError)
+			state = .Finished
 			return
 		}
 
 		Spine.logInfo(.spine, "Saving resource \(resource) using URL: \(url)")
 		
-		networkClient.request(method, url: url, payload: payload) { statusCode, responseData, networkError in
+		networkClient.request(method: method, url: url, payload: payload) { statusCode, responseData, networkError in
 			defer { self.state = .Finished }
 			
 			if let error = networkError {
@@ -317,7 +317,7 @@ class SaveOperation: ConcurrentOperation {
 		let relationships = resource.fields.filter { $0 is Relationship }
 		
 		guard !relationships.isEmpty else {
-			self.updateResource()
+			updateResource()
 			return
 		}
 		
@@ -357,7 +357,7 @@ class SaveOperation: ConcurrentOperation {
 		
 		if queue.operationCount == 0 {
 			// At this point, we know all relationships are updated
-			self.updateResource()
+			updateResource()
 		}
 	}
 }
@@ -408,9 +408,9 @@ private class RelationshipReplaceOperation: RelationshipOperation {
 		
 		switch relationship {
 		case is ToOneRelationship:
-				payload = try! serializer.serializeLinkData(resource.valueForField(relationship.name) as? Resource)
+			payload = try! serializer.serializeLinkData(resource.value(forField: relationship.name) as? Resource)
 		case is ToManyRelationship:
-			let relatedResources = (resource.valueForField(relationship.name) as? ResourceCollection)?.resources ?? []
+			let relatedResources = (resource.value(forField: relationship.name) as? ResourceCollection)?.resources ?? []
 			payload = try! serializer.serializeLinkData(relatedResources)
 		default:
 			assertionFailure("Cannot only replace relationship contents for ToOneRelationship and ToManyRelationship")
@@ -418,7 +418,7 @@ private class RelationshipReplaceOperation: RelationshipOperation {
 		}
 
 		Spine.logInfo(.spine, "Replacing relationship \(relationship) using URL: \(url)")
-		networkClient.request("PATCH", url: url, payload: payload, callback: handleNetworkResponse)
+		networkClient.request(method: "PATCH", url: url, payload: payload, callback: handleNetworkResponse)
 	}
 }
 
@@ -441,7 +441,7 @@ private class RelationshipMutateOperation: RelationshipOperation {
 	}
 
 	override func execute() {
-		let resourceCollection = resource.valueForField(relationship.name) as! LinkedResourceCollection
+		let resourceCollection = resource.value(forField: relationship.name) as! LinkedResourceCollection
 		let httpMethod: String
 		let relatedResources: [Resource]
 		
@@ -455,14 +455,14 @@ private class RelationshipMutateOperation: RelationshipOperation {
 		}
 		
 		guard !relatedResources.isEmpty else {
-			self.result = Failable()
-			self.state = .Finished
+			result = Failable()
+			state = .Finished
 			return
 		}
 		
 		let url = router.urlForRelationship(relationship, ofResource: resource)
 		let payload = try! serializer.serializeLinkData(relatedResources)
 		Spine.logInfo(.spine, "Mutating relationship \(relationship) using URL: \(url)")
-		networkClient.request(httpMethod, url: url, payload: payload, callback: handleNetworkResponse)
+		networkClient.request(method: httpMethod, url: url, payload: payload, callback: handleNetworkResponse)
 	}
 }

@@ -335,7 +335,7 @@ public struct Query<T: Resource> {
 		assert(resourceType != nil, "Cannot restrict fields for query without resource type, use `restrictFieldsOfResourceType` or set a resource type.")
 		
 		for fieldName in fieldNames {
-			assert(T.fieldNamed(fieldName) != nil, "Cannot restrict to field \(fieldName) of resource \(T.resourceType). No such field has been configured.")
+			assert(T.field(named: fieldName) != nil, "Cannot restrict to field \(fieldName) of resource \(T.resourceType). No such field has been configured.")
 		}
 		
 		if var fields = fields[resourceType!] {
@@ -359,7 +359,7 @@ public struct Query<T: Resource> {
 	public mutating func restrictFieldsOfResourceType(_ type: Resource.Type, to fieldNames: String...) {
 		
 		for fieldName in fieldNames {
-			assert(type.fieldNamed(fieldName) != nil, "Cannot restrict to field \(fieldName) of resource \(type.resourceType). No such field has been configured.")
+			assert(type.field(named: fieldName) != nil, "Cannot restrict to field \(fieldName) of resource \(type.resourceType). No such field has been configured.")
 		}
 		
 		if var fields = fields[type.resourceType] {
@@ -380,7 +380,7 @@ public struct Query<T: Resource> {
 	- returns: The query
 	*/
 	public mutating func addAscendingOrder(_ fieldName: String) {
-		if let _ = T.fieldNamed(fieldName) {
+		if let _ = T.field(named: fieldName) {
 			sortDescriptors.append(NSSortDescriptor(key: fieldName, ascending: true))
 		} else {
 			assertionFailure("Cannot add order on field \(fieldName) of resource \(T.resourceType). No such field has been configured.")
@@ -395,7 +395,7 @@ public struct Query<T: Resource> {
 	- returns: The query
 	*/
 	public mutating func addDescendingOrder(_ fieldName: String) {
-		if let _ = T.fieldNamed(fieldName) {
+		if let _ = T.field(named: fieldName) {
 			sortDescriptors.append(NSSortDescriptor(key: fieldName, ascending: false))
 		} else {
 			assertionFailure("Cannot add order on field \(fieldName) of resource \(T.resourceType). No such field has been configured.")

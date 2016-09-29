@@ -33,7 +33,7 @@ class DeserializeOperation: Operation {
 	var result: Failable<JSONAPIDocument, SerializerError>?
 	
 	
-	// MARK: Initializers
+	// MARK: -
 	
 	init(data: Data, resourceFactory: ResourceFactory, valueFormatters: ValueFormatterRegistry, keyFormatter: KeyFormatter) {
 		self.data = JSON(data: data)
@@ -41,16 +41,11 @@ class DeserializeOperation: Operation {
 		self.valueFormatters = valueFormatters
 		self.keyFormatter = keyFormatter
 	}
-	
-	
-	// MARK: Mapping targets
+
 	
 	func addMappingTargets(_ targets: [Resource]) {		
 		resourcePool += targets
 	}
-	
-	
-	// MARK: NSOperation
 	
 	override func main() {
 		// Validate document
@@ -81,18 +76,18 @@ class DeserializeOperation: Operation {
 
 		// Extract resources
 		do {
-			if let data = self.data["data"].array {
+			if let data = data["data"].array {
 				var resources: [Resource] = []
 				for (index, representation) in data.enumerated() {
 					try resources.append(deserializeSingleRepresentation(representation, mappingTargetIndex: index))
 				}
 				extractedPrimaryResources = resources
-			} else if let _ = self.data["data"].dictionary {
-				let resource = try deserializeSingleRepresentation(self.data["data"], mappingTargetIndex: resourcePool.startIndex)
+			} else if let _ = data["data"].dictionary {
+				let resource = try deserializeSingleRepresentation(data["data"], mappingTargetIndex: resourcePool.startIndex)
 				extractedPrimaryResources = [resource]
 			}
 
-			if let data = self.data["included"].array {
+			if let data = data["included"].array {
 				for representation in data {
 					try extractedIncludedResources.append(deserializeSingleRepresentation(representation))
 				}
@@ -106,7 +101,7 @@ class DeserializeOperation: Operation {
 		}
 		
 		// Extract errors
-		extractedErrors = self.data["errors"].array?.map { error -> APIError in
+		extractedErrors = data["errors"].array?.map { error -> APIError in
 			return APIError(
 				id: error["id"].string,
 				status: error["status"].string,
@@ -120,10 +115,10 @@ class DeserializeOperation: Operation {
 		}
 		
 		// Extract meta
-		extractedMeta = self.data["meta"].dictionaryObject
+		extractedMeta = data["meta"].dictionaryObject
 		
 		// Extract links
-		if let links = self.data["links"].dictionary {
+		if let links = data["links"].dictionary {
 			extractedLinks = [:]
 			
 			for (key, value) in links {
@@ -132,10 +127,10 @@ class DeserializeOperation: Operation {
 		}
 		
 		// Extract jsonapi
-		extractedJSONAPI = self.data["jsonapi"].dictionaryObject
+		extractedJSONAPI = data["jsonapi"].dictionaryObject
 		
 		// Resolve relations in the store
-		resolveRelations()
+		resolveRelationships()
 		
 		// Create a result
 		var responseDocument = JSONAPIDocument(data: nil, included: nil, errors: extractedErrors, meta: extractedMeta, links: extractedLinks as [String : URL]?, jsonapi: extractedJSONAPI)
@@ -177,8 +172,8 @@ class DeserializeOperation: Operation {
 		resource.id = id
 		resource.url = representation["links"]["self"].URL
 		resource.meta = representation["meta"].dictionaryObject
-		extractAttributes(representation, intoResource: resource)
-		extractRelationships(representation, intoResource: resource)
+		extractAttributes(from: representation, intoResource: resource)
+		extractRelationships(from: representation, intoResource: resource)
 		
 		resource.isLoaded = true
 		
@@ -198,11 +193,11 @@ class DeserializeOperation: Operation {
 	- parameter serializedData: The data from which to extract the attributes.
 	- parameter resource:       The resource into which to extract the attributes.
 	*/
-	fileprivate func extractAttributes(_ serializedData: JSON, intoResource resource: Resource) {
+	fileprivate func extractAttributes(from serializedData: JSON, intoResource resource: Resource) {
 		for case let field as Attribute in resource.fields {
 			let key = keyFormatter.format(field)
-			if let extractedValue: Any = self.extractAttribute(serializedData, key: key) {
-				let formattedValue: Any = self.valueFormatters.unformat(extractedValue, forAttribute: field)
+			if let extractedValue = extractAttribute(key, from: serializedData) {
+				let formattedValue = valueFormatters.unformatValue(extractedValue, forAttribute: field)
 				resource.setValue(formattedValue, forField: field.name)
 			}
 		}
@@ -216,7 +211,7 @@ class DeserializeOperation: Operation {
 	
 	- returns: The extracted value or nil if no attribute with the given key was found in the data.
 	*/
-	fileprivate func extractAttribute(_ serializedData: JSON, key: String) -> Any? {
+	fileprivate func extractAttribute(_ key: String, from serializedData: JSON) -> Any? {
 		let value = serializedData["attributes"][key]
 		
 		if let _ = value.null {
@@ -240,21 +235,21 @@ class DeserializeOperation: Operation {
 	- parameter serializedData: The data from which to extract the relationships.
 	- parameter resource:       The resource into which to extract the relationships.
 	*/
-	fileprivate func extractRelationships(_ serializedData: JSON, intoResource resource: Resource) {
+	fileprivate func extractRelationships(from serializedData: JSON, intoResource resource: Resource) {
 		for field in resource.fields {
 			let key = keyFormatter.format(field)
 			resource.relationships[field.name] = extractRelationshipData(serializedData["relationships"][key])
 
 			switch field {
 			case let toOne as ToOneRelationship:
-				if let linkedResource = extractToOneRelationship(serializedData, key: key, linkedType: toOne.linkedType.resourceType) {
-					if resource.valueForField(toOne.name) == nil || (resource.valueForField(toOne.name) as? Resource)?.isLoaded == false {
+				if let linkedResource = extractToOneRelationship(key, from: serializedData, linkedType: toOne.linkedType.resourceType) {
+					if resource.value(forField: toOne.name) == nil || (resource.value(forField: toOne.name) as? Resource)?.isLoaded == false {
 						resource.setValue(linkedResource, forField: toOne.name)
 					}
 				}
 			case let toMany as ToManyRelationship:
-				if let linkedResourceCollection = extractToManyRelationship(serializedData, key: key) {
-					if linkedResourceCollection.linkage != nil || resource.valueForField(toMany.name) == nil {
+				if let linkedResourceCollection = extractToManyRelationship(key, from: serializedData) {
+					if linkedResourceCollection.linkage != nil || resource.value(forField: toMany.name) == nil {
 						resource.setValue(linkedResourceCollection, forField: toMany.name)
 					}
 				}
@@ -273,7 +268,7 @@ class DeserializeOperation: Operation {
 	
 	- returns: The extracted relationship or nil if no relationship with the given key was found in the data.
 	*/
-	fileprivate func extractToOneRelationship(_ serializedData: JSON, key: String, linkedType: ResourceType) -> Resource? {
+	fileprivate func extractToOneRelationship(_ key: String, from serializedData: JSON, linkedType: ResourceType) -> Resource? {
 		var resource: Resource? = nil
 		
 		if let linkData = serializedData["relationships"][key].dictionary {
@@ -311,7 +306,7 @@ class DeserializeOperation: Operation {
 	
 	- returns: The extracted relationship or nil if no relationship with the given key was found in the data.
 	*/
-	fileprivate func extractToManyRelationship(_ serializedData: JSON, key: String) -> LinkedResourceCollection? {
+	fileprivate func extractToManyRelationship(_ key: String, from serializedData: JSON) -> LinkedResourceCollection? {
 		var resourceCollection: LinkedResourceCollection? = nil
 
 		if let linkData = serializedData["relationships"][key].dictionary {
@@ -350,11 +345,11 @@ class DeserializeOperation: Operation {
 	/**
 	Resolves the relations of the fetched resources.
 	*/
-	fileprivate func resolveRelations() {
+	fileprivate func resolveRelationships() {
 		for resource in resourcePool {
 			for case let field as ToManyRelationship in resource.fields {
 				
-				guard let linkedResourceCollection = resource.valueForField(field.name) as? LinkedResourceCollection else {
+				guard let linkedResourceCollection = resource.value(forField: field.name) as? LinkedResourceCollection else {
 					Spine.logInfo(.serializing, "Cannot resolve relationship '\(field.name)' of \(resource.resourceType):\(resource.id!) because the JSON did not include the relationship.")
 					continue
 				}
@@ -365,7 +360,7 @@ class DeserializeOperation: Operation {
 				}
 					
 				let targetResources = linkage.flatMap { (link: ResourceIdentifier) in
-					return self.resourcePool.filter { $0.resourceType == link.type && $0.id == link.id }
+					return resourcePool.filter { $0.resourceType == link.type && $0.id == link.id }
 				}
 				
 				if !targetResources.isEmpty {

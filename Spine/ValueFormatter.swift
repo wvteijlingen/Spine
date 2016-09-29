@@ -26,7 +26,7 @@ public protocol ValueFormatter {
 	
 	- returns: The deserialized form of `value`.
 	*/
-	func unformat(_ value: FormattedType, attribute: AttributeType) -> UnformattedType
+	func unformatValue(_ value: FormattedType, forAttribute: AttributeType) -> UnformattedType
 	
 	/**
 	Returns the serialized form of the given value for the given attribute.
@@ -36,7 +36,7 @@ public protocol ValueFormatter {
 	
 	- returns: The serialized form of `value`.
 	*/
-	func format(_ value: UnformattedType, attribute: AttributeType) -> FormattedType
+	func formatValue(_ value: UnformattedType, forAttribute: AttributeType) -> FormattedType
 }
 
 /**
@@ -71,7 +71,7 @@ struct ValueFormatterRegistry {
 		formatters.append { (value: Any, attribute: Attribute) -> Any? in
 			if let typedAttribute = attribute as? T.AttributeType {
 				if let typedValue = value as? T.UnformattedType {
-					return formatter.format(typedValue, attribute: typedAttribute)
+					return formatter.formatValue(typedValue, forAttribute: typedAttribute)
 				}
 			}
 			
@@ -81,7 +81,7 @@ struct ValueFormatterRegistry {
 		unformatters.append { (value: Any, attribute: Attribute) -> Any? in
 			if let typedAttribute = attribute as? T.AttributeType {
 				if let typedValue = value as? T.FormattedType {
-					return formatter.unformat(typedValue, attribute: typedAttribute)
+					return formatter.unformatValue(typedValue, forAttribute: typedAttribute)
 				}
 			}
 			
@@ -100,7 +100,7 @@ struct ValueFormatterRegistry {
 	
 	- returns: The deserialized form of `value`.
 	*/
-	func unformat(_ value: Any, forAttribute attribute: Attribute) -> Any {
+	func unformatValue(_ value: Any, forAttribute attribute: Attribute) -> Any {
 		for unformatter in unformatters {
 			if let unformatted = unformatter(value, attribute) {
 				return unformatted
@@ -122,7 +122,7 @@ struct ValueFormatterRegistry {
 	
 	- returns: The serialized form of `value`.
 	*/
-	func format(_ value: Any, forAttribute attribute: Attribute) -> Any {
+	func formatValue(_ value: Any, forAttribute attribute: Attribute) -> Any {
 		for formatter in formatters {
 			if let formatted = formatter(value, attribute) {
 				return formatted
@@ -143,11 +143,11 @@ If a baseURL has been configured in the URLAttribute, and the given String is no
 it will return an absolute URL, relative to the baseURL.
 */
 private struct URLValueFormatter: ValueFormatter {
-	func unformat(_ value: String, attribute: URLAttribute) -> URL {
+	func unformatValue(_ value: String, forAttribute attribute: URLAttribute) -> URL {
 		return URL(string: value, relativeTo: attribute.baseURL as URL?)!
 	}
 	
-	func format(_ value: URL, attribute: URLAttribute) -> String {
+	func formatValue(_ value: URL, forAttribute attribute: URLAttribute) -> String {
 		return value.absoluteString
 	}
 }
@@ -163,7 +163,7 @@ private struct DateValueFormatter: ValueFormatter {
 		return formatter
 	}
 	
-	func unformat(_ value: String, attribute: DateAttribute) -> Date {
+	func unformatValue(_ value: String, forAttribute attribute: DateAttribute) -> Date {
 		guard let date = formatter(attribute).date(from: value) else {
 			Spine.logWarning(.serializing, "Could not deserialize date string \(value) with format \(attribute.format).")
 			return Date(timeIntervalSince1970: 0)
@@ -171,7 +171,7 @@ private struct DateValueFormatter: ValueFormatter {
 		return date
 	}
 	
-	func format(_ value: Date, attribute: DateAttribute) -> String {
+	func formatValue(_ value: Date, forAttribute attribute: DateAttribute) -> String {
 		return formatter(attribute).string(from: value)
 	}
 }

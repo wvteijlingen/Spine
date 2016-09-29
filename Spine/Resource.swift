@@ -123,20 +123,20 @@ open class Resource: NSObject, NSCoding {
 	}
 	
 	open func encode(with coder: NSCoder) {
-		coder.encode(self.id, forKey: "id")
-		coder.encode(self.url, forKey: "url")
-		coder.encode(self.isLoaded, forKey: "isLoaded")
-		coder.encode(self.meta, forKey: "meta")
+		coder.encode(id, forKey: "id")
+		coder.encode(url, forKey: "url")
+		coder.encode(isLoaded, forKey: "isLoaded")
+		coder.encode(meta, forKey: "meta")
 		
 		var relationshipsData = [String: NSDictionary]()
-		for (key, value) in self.relationships {
+		for (key, value) in relationships {
 			relationshipsData[key] = value.toDictionary()
 		}
 		coder.encode(relationshipsData, forKey: "relationships")
 	}
 
   /// Returns the value for the field named `field`.
-	open func valueForField(_ field: String) -> Any? {
+	open func value(forField field: String) -> Any? {
 		return value(forKey: field) as AnyObject?
 	}
 
@@ -147,15 +147,15 @@ open class Resource: NSObject, NSCoding {
 
 	/// Set the values for all fields to nil and sets `isLoaded` to false.
 	open func unload() {
-		for field in self.fields {
-			self.setValue(nil, forField: field.name)
+		for field in fields {
+			setValue(nil, forField: field.name)
 		}
 		
 		isLoaded = false
 	}
 	
 	/// Returns the field named `name`, or nil if no such field exists.
-	class func fieldNamed(_ name: String) -> Field? {
+	class func field(named name: String) -> Field? {
 		return fields.filter { $0.name == name }.first
 	}
 
@@ -163,7 +163,7 @@ open class Resource: NSObject, NSCoding {
 
 extension Resource {
 	override open var description: String {
-		return "\(self.resourceType)(\(self.id), \(self.url))"
+		return "\(resourceType)(\(id), \(url))"
 	}
 	
 	override open var debugDescription: String {

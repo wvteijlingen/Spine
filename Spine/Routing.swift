@@ -104,7 +104,7 @@ open class JSONAPIRouter: Router {
 					urlComponents.path = (urlComponents.path as NSString).appendingPathComponent(ids.first!)
 				} else {
 					let item = URLQueryItem(name: "filter[id]", value: ids.joined(separator: ","))
-					setQueryItem(item, forQueryItems: &queryItems)
+					appendQueryItem(item, to: &queryItems)
 				}
 			}
 		}
@@ -118,7 +118,7 @@ open class JSONAPIRouter: Router {
 				
 				var relatedResourceType: Resource.Type = T.self
 				for part in include.components(separatedBy: ".") {
-					if let relationship = relatedResourceType.fieldNamed(part) as? Relationship {
+					if let relationship = relatedResourceType.field(named: part) as? Relationship {
 						keys.append(keyFormatter.format(relationship))
 						relatedResourceType = relationship.linkedType
 					}
@@ -128,34 +128,34 @@ open class JSONAPIRouter: Router {
 			}
 			
 			let item = URLQueryItem(name: "include", value: resolvedIncludes.joined(separator: ","))
-			setQueryItem(item, forQueryItems: &queryItems)
+			appendQueryItem(item, to: &queryItems)
 		}
 		
 		// Filters
-		for filter in query.filters where filter.rightExpression.constantValue != nil {
+		for filter in query.filters {
 			let fieldName = filter.leftExpression.keyPath
-				var item: URLQueryItem?
-				if let field = T.fieldNamed(fieldName) {
-						item = queryItemForFilter(field, value: filter.rightExpression.constantValue!, operatorType: filter.predicateOperatorType)
-				} else {
-						item = queryItemForFilterName(fieldName, value: filter.rightExpression.constantValue!, operatorType: filter.predicateOperatorType)
-				}
-			setQueryItem(item!, forQueryItems: &queryItems)
+			var item: URLQueryItem?
+			if let field = T.field(named: fieldName) {
+				item = queryItemForFilter(on: keyFormatter.format(field), value: filter.rightExpression.constantValue, operatorType: filter.predicateOperatorType)
+			} else {
+				item = queryItemForFilter(on: fieldName, value: filter.rightExpression.constantValue, operatorType: filter.predicateOperatorType)
+			}
+			appendQueryItem(item!, to: &queryItems)
 		}
 		
 		// Fields
 		for (resourceType, fields) in query.fields {
 			let keys = fields.map { fieldName in
-				return keyFormatter.format(T.fieldNamed(fieldName)!)
+				return keyFormatter.format(T.field(named: fieldName)!)
 			}
 			let item = URLQueryItem(name: "fields[\(resourceType)]", value: keys.joined(separator: ","))
-			setQueryItem(item, forQueryItems: &queryItems)
+			appendQueryItem(item, to: &queryItems)
 		}
 		
 		// Sorting
 		if !query.sortDescriptors.isEmpty {
 			let descriptorStrings = query.sortDescriptors.map { descriptor -> String in
-				let field = T.fieldNamed(descriptor.key!)
+				let field = T.field(named: descriptor.key!)
 				let key = self.keyFormatter.format(field!)
 				if descriptor.ascending {
 					return key
@@ -165,13 +165,13 @@ open class JSONAPIRouter: Router {
 			}
 			
 			let item = URLQueryItem(name: "sort", value: descriptorStrings.joined(separator: ","))
-			setQueryItem(item, forQueryItems: &queryItems)
+			appendQueryItem(item, to: &queryItems)
 		}
 		
 		// Pagination
 		if let pagination = query.pagination {
 			for item in queryItemsForPagination(pagination) {
-				setQueryItem(item, forQueryItems: &queryItems)
+				appendQueryItem(item, to: &queryItems)
 			}
 		}
 
@@ -182,38 +182,23 @@ open class JSONAPIRouter: Router {
 		
 		return urlComponents.url!
 	}
-	
+
 	/**
 	Returns an URLQueryItem that represents a filter in a URL.
-	
-	- parameter field:        The field that is filtered.
+	By default this method only supports 'equal to' predicates. You can override this method to add support for other filtering strategies.
+	It uses the String(describing:) method to convert `value` to a string. If `value` is nil, a string "null" will be used.
+
+	- parameter key:          The key that is filtered.
 	- parameter value:        The value on which is filtered.
 	- parameter operatorType: The NSPredicateOperatorType for the filter.
-	
+
 	- returns: A URLQueryItem representing the filter.
 	*/
-	
-	open func queryItemForFilter(_ field: Field, value: Any, operatorType: NSComparisonPredicate.Operator) -> URLQueryItem {
-		let key = keyFormatter.format(field)
-		return queryItemForFilterName(key, value: value, operatorType: operatorType)
-    }
-    
-    /**
-     Returns an URLQueryItem that represents a filter in a URL.
-     By default this method only supports 'equal to' predicates. You can override
-     this method to add support for other filtering strategies.
-     
-     - parameter fieldName:    The name of the field that is filtered.
-     - parameter value:        The value on which is filtered.
-     - parameter operatorType: The NSPredicateOperatorType for the filter.
-     
-     - returns: A URLQueryItem representing the filter.
-     */
-    
-    open func queryItemForFilterName(_ fieldName: String, value: Any, operatorType: NSComparisonPredicate.Operator) -> URLQueryItem {
-        assert(operatorType == .equalTo, "The built in router only supports Query filter expressions of type 'equalTo'")
-        return URLQueryItem(name: "filter[\(fieldName)]", value: "\(value)")
-    }
+	open func queryItemForFilter(on key: String, value: Any?, operatorType: NSComparisonPredicate.Operator) -> URLQueryItem {
+		assert(operatorType == .equalTo, "The built in router only supports Query filter expressions of type 'equalTo'")
+		let stringValue = value ?? "null"
+		return URLQueryItem(name: "filter[\(key)]", value: String(describing: stringValue))
+	}
 
 	/**
 	Returns an array of URLQueryItems that represent the given pagination configuration.
@@ -231,12 +216,9 @@ open class JSONAPIRouter: Router {
 		case let pagination as PageBasedPagination:
 			queryItems.append(URLQueryItem(name: "page[number]", value: String(pagination.pageNumber)))
 			queryItems.append(URLQueryItem(name: "page[size]", value: String(pagination.pageSize)))
-			
 		case let pagination as OffsetBasedPagination:
 			queryItems.append(URLQueryItem(name: "page[offset]", value: String(pagination.offset)))
 			queryItems.append(URLQueryItem(name: "page[limit]", value: String(pagination.limit)))
-			
-			
 		default:
 			assertionFailure("The built in router only supports PageBasedPagination and OffsetBasedPagination")
 		}
@@ -244,7 +226,7 @@ open class JSONAPIRouter: Router {
 		return queryItems
 	}
 	
-	fileprivate func setQueryItem(_ queryItem: URLQueryItem, forQueryItems queryItems: inout [URLQueryItem]) {
+	fileprivate func appendQueryItem(_ queryItem: URLQueryItem, to queryItems: inout [URLQueryItem]) {
 		queryItems = queryItems.filter { return $0.name != queryItem.name }
 		queryItems.append(queryItem)
 	}

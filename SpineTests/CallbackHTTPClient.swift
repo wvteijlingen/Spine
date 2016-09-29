@@ -18,7 +18,7 @@ open class CallbackHTTPClient: NetworkClient {
 	
 	init() {}
 	
-	open func request(_ method: String, url: URL, payload: Data?, callback: @escaping NetworkClientCallback) {
+	open func request(method: String, url: URL, payload: Data?, callback: @escaping NetworkClientCallback) {
 		var request = URLRequest(url: url)
 		request.httpMethod = method
 		

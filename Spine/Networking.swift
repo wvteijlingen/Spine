@@ -22,7 +22,7 @@ public protocol NetworkClient {
 	- parameter url:      The URL to which to make the request.
 	- parameter callback: The callback to execute when the request finishes.
 	*/
-	func request(_ method: String, url: URL, callback: @escaping NetworkClientCallback)
+	func request(method: String, url: URL, callback: @escaping NetworkClientCallback)
 	
 	/**
 	Performs a network request to the given URL with the given method.
@@ -32,12 +32,12 @@ public protocol NetworkClient {
 	- parameter payload:  The payload the send as part of the request.
 	- parameter callback: The callback to execute when the request finishes.
 	*/
-	func request(_ method: String, url: URL, payload: Data?, callback: @escaping NetworkClientCallback)
+	func request(method: String, url: URL, payload: Data?, callback: @escaping NetworkClientCallback)
 }
 
 extension NetworkClient {
-	public func request(_ method: String, url: URL, callback: @escaping NetworkClientCallback) {
-		return request(method, url: url, payload: nil, callback: callback)
+	public func request(method: String, url: URL, callback: @escaping NetworkClientCallback) {
+		return request(method: method, url: url, payload: nil, callback: callback)
 	}
 }
 
@@ -101,7 +101,7 @@ open class HTTPClient: NetworkClient {
 		return request
 	}
 
-	open func request(_ method: String, url: URL, payload: Data?, callback: @escaping NetworkClientCallback) {
+	open func request(method: String, url: URL, payload: Data?, callback: @escaping NetworkClientCallback) {
 		delegate?.httpClient(self, willPerformRequestWithMethod: method, url: url, payload: payload)
 		
 		let request = buildRequest(method, url: url, payload: payload)
