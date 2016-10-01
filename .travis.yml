@@ -9,4 +9,4 @@ env:
 before_script:
   - carthage bootstrap --platform $PLATFORM
 script:
-  - xcodebuild -project Spine.xcodeproj -scheme $SCHEME -destination $DESTINATION build test
+  - xcodebuild -project Spine.xcodeproj -scheme $SCHEME -destination "$DESTINATION" build test
