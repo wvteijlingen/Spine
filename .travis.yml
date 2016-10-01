@@ -2,11 +2,11 @@ language: objective-c
 osx_image: xcode8
 
 env:
-  - PLATFORM="ios" SCHEME="Spine-iOS" SDK="iphonesimulator10.0"
-  - PLATFORM="tvos" SCHEME="Spine-tvOS" SDK="appletvsimulator10.0"
-  - PLATFORM="mac" SCHEME="Spine-tvOS" SDK="macosx10.12"
+  - PLATFORM="ios" SCHEME="Spine-iOS" DESTINATION="platform=iOS Simulator,name=iPhone 7,OS=10.0"
+  - PLATFORM="tvos" SCHEME="Spine-tvOS" DESTINATION="platform=tvOS Simulator,name=Apple TV 1080p,OS=10.0"
+  - PLATFORM="mac" SCHEME="Spine-tvOS" DESTINATION="platform=macOS,arch=x86_64"
 
 before_script:
   - carthage bootstrap --platform $PLATFORM
 script:
-  - xctool -project Spine.xcodeproj -scheme $SCHEME -sdk $SDK build test
+  - xcodebuild -project Spine.xcodeproj -scheme $SCHEME -destination $DESTINATION build test
