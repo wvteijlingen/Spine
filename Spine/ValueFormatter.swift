@@ -14,8 +14,13 @@ The ValueFormatter protocol declares methods and properties that a value formatt
 A value formatter transforms values between the serialized and deserialized form.
 */
 public protocol ValueFormatter {
+	/// The type as it appears in serialized form (JSON).
 	associatedtype FormattedType
+	
+	/// The type as it appears in deserialized form (Swift).
 	associatedtype UnformattedType
+	
+	/// The attribute type for which this formatter formats values.
 	associatedtype AttributeType
 	
 	/**
@@ -59,6 +64,7 @@ struct ValueFormatterRegistry {
 		var directory = ValueFormatterRegistry()
 		directory.registerFormatter(URLValueFormatter())
 		directory.registerFormatter(DateValueFormatter())
+		directory.registerFormatter(BooleanValueFormatter())
 		return directory
 	}
 	
@@ -173,5 +179,15 @@ private struct DateValueFormatter: ValueFormatter {
 	
 	func formatValue(_ value: Date, forAttribute attribute: DateAttribute) -> String {
 		return formatter(attribute).string(from: value)
+	}
+}
+
+private struct BooleanValueFormatter: ValueFormatter {
+	func unformatValue(_ value: Bool, forAttribute: BooleanAttribute) -> NSNumber {
+		return NSNumber(booleanLiteral: value)
+	}
+	
+	func formatValue(_ value: NSNumber, forAttribute: BooleanAttribute) -> Bool {
+		return value.boolValue
 	}
 }

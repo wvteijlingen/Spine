@@ -94,6 +94,11 @@ public class DateAttribute: Attribute {
 }
 
 /**
+*  A boolean attribute that maps to an NSNumber property.
+*/
+public class BooleanAttribute: Attribute {}
+
+/**
  *  A basic relationship field.
  *  Do not use this field type directly, instead use either `ToOneRelationship` or `ToManyRelationship`.
  */

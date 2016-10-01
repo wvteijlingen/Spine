@@ -29,12 +29,12 @@ class Foo: Resource {
 			"stringAttribute": Attribute(),
 			"integerAttribute": Attribute(),
 			"floatAttribute": Attribute(),
-			"booleanAttribute": Attribute(),
+			"booleanAttribute": BooleanAttribute(),
 			"nilAttribute": Attribute(),
 			"dateAttribute": DateAttribute(),
 			"toOneAttribute": ToOneRelationship(Bar.self),
 			"toManyAttribute": ToManyRelationship(Bar.self)
-			])
+		])
 	}
 	
 	required init() {
