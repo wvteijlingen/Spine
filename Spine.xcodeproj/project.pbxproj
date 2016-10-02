@@ -164,6 +164,11 @@
 		D3960DF11A9B5FBC009948B0 /* Errors.json in Resources */ = {isa = PBXBuildFile; fileRef = D3960DF01A9B5FBC009948B0 /* Errors.json */; };
 		D39890F51C3D571F005CFB93 /* ResourceFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = D39890F41C3D571F005CFB93 /* ResourceFactory.swift */; };
 		D39890F71C3D5978005CFB93 /* ResourceFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = D39890F41C3D571F005CFB93 /* ResourceFactory.swift */; };
+		D398E1291DA1538E00FBC6FD /* Spine.h in Headers */ = {isa = PBXBuildFile; fileRef = D373F78D19B2249900275AFC /* Spine.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		D398E12A1DA153D500FBC6FD /* Spine.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 24E6DF481D6830030072D4DC /* Spine.framework */; };
+		D398E1321DA1548C00FBC6FD /* Result.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = 24E6DF711D6831520072D4DC /* Result.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		D398E1331DA1548C00FBC6FD /* BrightFutures.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = 24E6DF701D6831520072D4DC /* BrightFutures.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		D398E1341DA1548C00FBC6FD /* SwiftyJSON.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = 24E6DF721D6831520072D4DC /* SwiftyJSON.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		D39929EB1A52F3A0008BF0A9 /* ResourceField.swift in Sources */ = {isa = PBXBuildFile; fileRef = D39929EA1A52F3A0008BF0A9 /* ResourceField.swift */; };
 		D39CD5381AA0FA8F00049432 /* CallbackHTTPClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = D39CD5371AA0FA8F00049432 /* CallbackHTTPClient.swift */; };
 		D3B96D621C32B7D300910F83 /* KeyFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3B96D611C32B7D300910F83 /* KeyFormatter.swift */; };
@@ -175,6 +180,21 @@
 		FC3F73E21D74E25900BF2AAC /* EmptyFoos.json in Resources */ = {isa = PBXBuildFile; fileRef = FC3F73E01D74E10400BF2AAC /* EmptyFoos.json */; };
 		FC3F73E31D74E26600BF2AAC /* EmptyFoos.json in Resources */ = {isa = PBXBuildFile; fileRef = FC3F73E01D74E10400BF2AAC /* EmptyFoos.json */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		D398E1301DA1547E00FBC6FD /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				D398E1321DA1548C00FBC6FD /* Result.framework in CopyFiles */,
+				D398E1331DA1548C00FBC6FD /* BrightFutures.framework in CopyFiles */,
+				D398E1341DA1548C00FBC6FD /* SwiftyJSON.framework in CopyFiles */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		240BCA751CD930BE00842222 /* Result.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Result.framework; path = Carthage/Build/tvOS/Result.framework; sourceTree = "<group>"; };
@@ -267,6 +287,7 @@
 			files = (
 				D302A6741DA13C1400420C48 /* Result.framework in Frameworks */,
 				D302A6751DA13C1400420C48 /* BrightFutures.framework in Frameworks */,
+				D398E12A1DA153D500FBC6FD /* Spine.framework in Frameworks */,
 				D302A6761DA13C1400420C48 /* SwiftyJSON.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -470,6 +491,7 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D398E1291DA1538E00FBC6FD /* Spine.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -545,6 +567,7 @@
 				24E6DF4D1D6830030072D4DC /* Sources */,
 				24E6DF4E1D6830030072D4DC /* Frameworks */,
 				24E6DF4F1D6830030072D4DC /* Resources */,
+				D398E1301DA1547E00FBC6FD /* CopyFiles */,
 			);
 			buildRules = (
 			);
@@ -1148,7 +1171,6 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
 				MTL_ENABLE_DEBUG_INFO = YES;
 				ONLY_ACTIVE_ARCH = YES;
-				SDKROOT = iphoneos;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 3.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -1192,7 +1214,6 @@
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
-				SDKROOT = iphoneos;
 				SWIFT_OPTIMIZATION_LEVEL = "-Owholemodule";
 				SWIFT_VERSION = 3.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -1221,6 +1242,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.wardvanteijlingen.$(PRODUCT_NAME:rfc1034identifier)";
 				PRODUCT_NAME = Spine;
+				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
@@ -1244,6 +1266,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.wardvanteijlingen.$(PRODUCT_NAME:rfc1034identifier)";
 				PRODUCT_NAME = Spine;
+				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
 			};
 			name = Release;
@@ -1264,6 +1287,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.wardvanteijlingen.$(PRODUCT_NAME:rfc1034identifier)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
 			};
 			name = Debug;
 		};
@@ -1279,6 +1303,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.wardvanteijlingen.$(PRODUCT_NAME:rfc1034identifier)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
 			};
 			name = Release;
 		};
