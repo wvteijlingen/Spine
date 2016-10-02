@@ -6,7 +6,6 @@
 //  Copyright (c) 2015 Ward van Teijlingen. All rights reserved.
 //
 
-import UIKit
 import XCTest
 
 class ResourceCollectionTests: XCTestCase {

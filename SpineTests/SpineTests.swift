@@ -6,7 +6,6 @@
 //  Copyright (c) 2014 Ward van Teijlingen. All rights reserved.
 //
 
-import UIKit
 import XCTest
 import SwiftyJSON
 import BrightFutures
