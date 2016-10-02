@@ -78,20 +78,20 @@ open class JSONAPIRouter: Router {
 		let key = keyFormatter.format(relationship)
 		return resourceURL.appendingPathComponent("/relationships/\(key)")
 	}
-
 	
 	open func urlForQuery<T: Resource>(_ query: Query<T>) -> URL {
-		var url: URL!
-		var preBuiltURL = false
+		let url: URL
+		let preBuiltURL: Bool
 		
 		// Base URL
 		if let urlString = query.url?.absoluteString {
-			url = URL(string: urlString, relativeTo: baseURL)
+			url = URL(string: urlString, relativeTo: baseURL)!
 			preBuiltURL = true
 		} else if let type = query.resourceType {
 			url = urlForResourceType(type)
+			preBuiltURL = false
 		} else {
-			assertionFailure("Cannot build URL for query. Query does not have a URL, nor a resource type.")
+			preconditionFailure("Cannot build URL for query. Query does not have a URL, nor a resource type.")
 		}
 		
 		var urlComponents = URLComponents(url: url, resolvingAgainstBaseURL: true)!
