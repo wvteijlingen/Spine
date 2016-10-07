@@ -152,6 +152,16 @@ public class Resource: NSObject, NSCoding {
 		originalValues[field] = value ?? NSNull()
 	}
 	
+    func isDirty() -> Bool {
+        var dirty = false
+        for field in fields {
+            if isDirty(field.name) {
+                dirty = true
+            }
+        }
+        return dirty
+    }
+
 	func isDirty(field: String) -> Bool {
 		guard let originalValue = originalValues[field] else {
 			return true
@@ -167,7 +177,7 @@ public class Resource: NSObject, NSCoding {
 			return originalValue !== valueForField(field)
 		}
 	}
-	
+    
 	func markField(field: String, asDirty dirty: Bool) {
 		if dirty {
 			originalValues[field] = nil

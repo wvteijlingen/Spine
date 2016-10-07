@@ -240,6 +240,12 @@ class SaveOperation: ConcurrentOperation {
 	}
 
 	private func updateResource() {
+        if !isNewResource && !resource.isDirty() {
+            self.result = .Success()
+            self.state = .Finished
+            return
+        }
+        
 		let URL: NSURL
 		let method: String
 		let options: SerializationOptions

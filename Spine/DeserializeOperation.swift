@@ -203,7 +203,9 @@ class DeserializeOperation: NSOperation {
 			if let extractedValue: AnyObject = self.extractAttribute(serializedData, key: key) {
 				let formattedValue: AnyObject = self.valueFormatters.unformat(extractedValue, forAttribute: field)
 				resource.setValue(formattedValue, forField: field.name)
-			}
+            } else {
+                resource.setValue(nil, forField: field.name)
+            }
 		}
 	}
 	

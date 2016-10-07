@@ -404,6 +404,8 @@ class SaveTests: SpineTests {
 			return (responseData: self.fixture.data, statusCode: 201, error: nil)
 		}
 
+        foo.stringAttribute = "one attribute changed to mark resource dirty"
+
 		let future = spine.save(foo)
 		let expectation = expectationWithDescription("")
 		assertFutureSuccess(future, expectation: expectation)
@@ -414,6 +416,56 @@ class SaveTests: SpineTests {
 		}
 	}
 	
+    func testItShouldNotPATCHWhenUpdatingAResourcNotDirty() {
+        HTTPClient.handler = { request, payload in
+            if(request.URL! == NSURL(string: "http://example.com/foos/1")!) {
+                XCTFail("No request expected as resource has no changes")
+            }
+            return (responseData: self.fixture.data, statusCode: 201, error: nil)
+        }
+        
+        let future = spine.save(foo)
+        let expectation = expectationWithDescription("")
+        assertFutureSuccess(future, expectation: expectation)
+        
+        waitForExpectationsWithTimeout(10) { error in
+            XCTAssertNil(error, "\(error)")
+        }
+    }
+
+    func testItShouldPatchOnlyDirtyFields() {
+        var resourcePatched = false
+        
+        HTTPClient.handler = { request, payload in
+            XCTAssertEqual(request.HTTPMethod!, "PATCH", "HTTP method not as expected.")
+            if(request.URL! == NSURL(string: "http://example.com/foos/1")!) {
+                resourcePatched = true
+                
+                let json = JSON(data: payload!)
+                XCTAssertEqual(json["data"]["id"].stringValue, self.foo.id!, "Serialized id is not equal.")
+                XCTAssertEqual(json["data"]["type"].stringValue, self.foo.resourceType, "Serialized type is not equal.")
+                XCTAssertEqual(json["data"]["attributes"]["string-attribute"].stringValue, self.foo.stringAttribute!, "Serialized string is not equal.")
+                XCTAssertNotNil(json["data"]["attributes"]["integer-attribute"].error, "Expected non dirty integer to be absent.")
+                XCTAssertNotNil(json["data"]["attributes"]["float-attribute"].error, "Expected non dirty float to be absent.")
+                XCTAssertNotNil(json["data"]["attributes"]["boolean-attribute"].error, "Expected non dirty boolean to be absent.")
+                XCTAssertNotNil(json["data"]["attributes"]["nil-attribute"].error, "Expected non dirty nil to be absent.")
+                XCTAssertNotNil(json["data"]["attributes"]["date-attribute"].error, "Expected non dirty date to be absent.")
+            }
+            return (responseData: self.fixture.data, statusCode: 201, error: nil)
+        }
+        
+        foo.stringAttribute = "AttributeShouldBeDirtyNow"
+        
+        let future = spine.save(foo)
+        let expectation = expectationWithDescription("")
+        assertFutureSuccess(future, expectation: expectation)
+        
+        waitForExpectationsWithTimeout(10) { error in
+            XCTAssertNil(error, "\(error)")
+            XCTAssertTrue(resourcePatched)
+        }
+    }
+
 	func testItShouldFailOnAPIError() {
 		HTTPClient.respondWith(400)
 		
@@ -579,39 +631,6 @@ class SaveRelationshipsTests: SpineTests {
 			XCTAssertNil(error, "\(error)")
 		}
 	}
-    
-    func testItShouldPatchOnlyDirtyFields() {
-        var resourcePatched = false
-        
-        HTTPClient.handler = { request, payload in
-            XCTAssertEqual(request.HTTPMethod!, "PATCH", "HTTP method not as expected.")
-            if(request.URL! == NSURL(string: "http://example.com/foos/1")!) {
-                resourcePatched = true
-
-                let json = JSON(data: payload!)
-                XCTAssertEqual(json["data"]["id"].stringValue, self.foo.id!, "Serialized id is not equal.")
-                XCTAssertEqual(json["data"]["type"].stringValue, self.foo.resourceType, "Serialized type is not equal.")
-                XCTAssertEqual(json["data"]["attributes"]["string-attribute"].stringValue, self.foo.stringAttribute!, "Serialized string is not equal.")
-                XCTAssertNotNil(json["data"]["attributes"]["integer-attribute"].error, "Expected non dirty integer to be absent.")
-                XCTAssertNotNil(json["data"]["attributes"]["float-attribute"].error, "Expected non dirty float to be absent.")
-                XCTAssertNotNil(json["data"]["attributes"]["boolean-attribute"].error, "Expected non dirty boolean to be absent.")
-//                XCTAssertNotNil(json["data"]["attributes"]["nil-attribute"].error, "Expected non dirty nil to be absent.")
-                XCTAssertNotNil(json["data"]["attributes"]["date-attribute"].error, "Expected non dirty date to be absent.")
-            }
-            return (responseData: self.fixture.data, statusCode: 201, error: nil)
-        }
-        
-        foo.stringAttribute = "AttributeShouldBeDirtyNow"
-
-        let future = spine.save(foo)
-        let expectation = expectationWithDescription("")
-        assertFutureSuccess(future, expectation: expectation)
-        
-        waitForExpectationsWithTimeout(10) { error in
-            XCTAssertNil(error, "\(error)")
-            XCTAssertTrue(resourcePatched)
-        }
-    }
 }
 
 class PaginatingTests: SpineTests {
