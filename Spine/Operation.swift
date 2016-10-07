@@ -251,7 +251,7 @@ class SaveOperation: ConcurrentOperation {
 		} else {
 			URL = router.URLForQuery(Query(resource: resource))
 			method = "PATCH"
-			options = [.IncludeID]
+			options = [.IncludeID, .DirtyFieldsOnly]
 		}
 		
 		let payload: NSData
