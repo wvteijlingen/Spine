@@ -36,7 +36,7 @@ public struct Query<T: Resource> {
 	/// Comparison predicates used to filter resources.
 	public internal(set) var filters: [NSComparisonPredicate] = []
 	
-	/// Fields that will be returned, per resource type. If no fields are specified, all fields are returned.
+	/// Serialized names of fields that will be returned, per resource type. If no fields are specified, all fields are returned.
 	public internal(set) var fields: [ResourceType: [String]] = [:]
 	
 	/// Sort descriptors to sort resources.
@@ -335,13 +335,7 @@ public struct Query<T: Resource> {
 		assert(resourceType != nil, "Cannot restrict fields for query without resource type, use `restrictFieldsOfResourceType` or set a resource type.")
 		
 		for fieldName in fieldNames {
-			assert(T.field(named: fieldName) != nil, "Cannot restrict to field \(fieldName) of resource \(T.resourceType). No such field has been configured.")
-		}
-		
-		if var fields = fields[resourceType!] {
-			fields += fieldNames
-		} else {
-			fields[resourceType!] = fieldNames
+			restrictFieldsOfResourceType(T.self, to: fieldName)
 		}
 	}
 	
@@ -357,15 +351,17 @@ public struct Query<T: Resource> {
 	- returns: The query
 	*/
 	public mutating func restrictFieldsOfResourceType(_ type: Resource.Type, to fieldNames: String...) {
-		
 		for fieldName in fieldNames {
-			assert(type.field(named: fieldName) != nil, "Cannot restrict to field \(fieldName) of resource \(type.resourceType). No such field has been configured.")
-		}
-		
-		if var fields = fields[type.resourceType] {
-			fields += fieldNames
-		} else {
-			fields[type.resourceType] = fieldNames
+			guard let field = type.field(named: fieldName) else {
+				assertionFailure("Cannot restrict to field \(fieldName) of resource \(type.resourceType). No such field has been configured.")
+				return
+			}
+			
+			if fields[type.resourceType] != nil {
+				fields[type.resourceType]!.append(field.serializedName)
+			} else {
+				fields[type.resourceType] = [field.serializedName]
+			}
 		}
 	}
 	

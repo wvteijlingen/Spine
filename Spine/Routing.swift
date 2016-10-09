@@ -147,7 +147,7 @@ open class JSONAPIRouter: Router {
 		// Fields
 		for (resourceType, fields) in query.fields {
 			let keys = fields.map { fieldName in
-				return keyFormatter.format(T.field(named: fieldName)!)
+				return keyFormatter.format(fieldName)
 			}
 			let item = URLQueryItem(name: "fields[\(resourceType)]", value: keys.joined(separator: ","))
 			appendQueryItem(item, to: &queryItems)

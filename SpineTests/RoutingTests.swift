@@ -22,11 +22,12 @@ class RoutingTests: XCTestCase {
 		query.include("toOneAttribute", "toManyAttribute")
 		query.whereAttribute("stringAttribute", equalTo: "stringValue")
 		query.restrictFieldsTo("stringAttribute", "integerAttribute")
+		query.restrictFieldsOfResourceType(Bar.self, to: "barStringAttribute")
 		query.addAscendingOrder("integerAttribute")
 		query.addDescendingOrder("floatAttribute")
 		
 		let url = spine.router.urlForQuery(query)
-		let expectedURL = URL(string: "http://example.com/foos?filter[id]=1,2&include=to-one-attribute,to-many-attribute&filter[string-attribute]=stringValue&fields[foos]=string-attribute,integer-attribute&sort=integer-attribute,-float-attribute")!
+		let expectedURL = URL(string: "http://example.com/foos?filter[id]=1,2&include=to-one-attribute,to-many-attribute&filter[string-attribute]=stringValue&fields[foos]=string-attribute,integer-attribute&fields[bars]=bar-string-attribute&sort=integer-attribute,-float-attribute")!
 		
 		XCTAssertEqual(url, expectedURL, "URL not as expected.")
 	}
