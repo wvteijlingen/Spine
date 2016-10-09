@@ -28,7 +28,7 @@ public struct Query<T: Resource> {
 	var resourceIDs: [String]?
 	
 	/// The optional base URL
-	internal var URL: NSURL?
+	internal var url: URL?
 	
 	/// Related resources that must be included in a compound document.
 	public internal(set) var includes: [String] = []
@@ -70,7 +70,7 @@ public struct Query<T: Resource> {
 	public init(resource: T) {
 		assert(resource.id != nil, "Cannot instantiate query for resource, id is nil.")
 		self.resourceType = resource.resourceType
-		self.URL = resource.URL
+		self.url = resource.url as URL?
 		self.resourceIDs = [resource.id!]
 	}
 	
@@ -83,24 +83,24 @@ public struct Query<T: Resource> {
 	*/
 	public init(resourceType: T.Type, resourceCollection: ResourceCollection) {
 		self.resourceType = T.resourceType
-		self.URL = resourceCollection.resourcesURL
+		self.url = resourceCollection.resourcesURL as URL?
 	}
 	
 	/**
 	Inits a new query that fetches resource of type `resourceType`, by using the given URL.
 	
 	- parameter resourceType: The type of resource to query.
-	- parameter URL:          The URL used to fetch the resources.
+	- parameter path:         The URL path used to fetch the resources.
 	
 	- returns: Query
 	*/
 	public init(resourceType: T.Type, path: String) {
 		self.resourceType = T.resourceType
-		self.URL = NSURL(string: path)
+		self.url = URL(string: path)
 	}
 	
-	internal init(URL: NSURL) {
-		self.URL = URL
+	internal init(url: URL) {
+		self.url = url
 	}
 	
 	
@@ -114,7 +114,7 @@ public struct Query<T: Resource> {
 	
 	- returns: The query.
 	*/
-	public mutating func include(relationshipNames: String...) {
+	public mutating func include(_ relationshipNames: String...) {
 		for relationshipName in relationshipNames {
 			includes.append(relationshipName)
 		}
@@ -127,14 +127,14 @@ public struct Query<T: Resource> {
 	
 	- returns: The query
 	*/
-	public mutating func removeInclude(relationshipNames: String...) {
+	public mutating func removeInclude(_ relationshipNames: String...) {
 		includes = includes.filter { !relationshipNames.contains($0) }
 	}
 	
 	
 	// MARK: Filtering
 	
-	private mutating func addPredicateWithField(fieldName: String, value: AnyObject, type: NSPredicateOperatorType) {
+	fileprivate mutating func addPredicateWithField(_ fieldName: String, value: Any, type: NSComparisonPredicate.Operator) {
 		if let field = T.fields.filter({ $0.name == fieldName }).first {
 			addPredicateWithKey(field.name, value: value, type: type)
 		} else {
@@ -142,11 +142,11 @@ public struct Query<T: Resource> {
 		}
 	}
 	
-	private mutating func addPredicateWithKey(key: String, value: AnyObject, type: NSPredicateOperatorType) {
+	fileprivate mutating func addPredicateWithKey(_ key: String, value: Any, type: NSComparisonPredicate.Operator) {
 		let predicate = NSComparisonPredicate(
 				leftExpression: NSExpression(forKeyPath: key),
 				rightExpression: NSExpression(forConstantValue: value),
-				modifier: .DirectPredicateModifier,
+				modifier: .direct,
 				type: type,
 				options: [])
 
@@ -158,7 +158,7 @@ public struct Query<T: Resource> {
 	
 	- parameter predicate: The predicate to add.
 	*/
-	public mutating func addPredicate(predicate: NSComparisonPredicate) {
+	public mutating func addPredicate(_ predicate: NSComparisonPredicate) {
 		filters.append(predicate)
 	}
 	
@@ -170,8 +170,8 @@ public struct Query<T: Resource> {
 	
 	- returns: The query
 	*/
-	public mutating func whereAttribute(attributeName: String, equalTo: AnyObject) {
-		addPredicateWithField(attributeName, value: equalTo, type: .EqualToPredicateOperatorType)
+	public mutating func whereAttribute(_ attributeName: String, equalTo: Any) {
+		addPredicateWithField(attributeName, value: equalTo, type: .equalTo)
 	}
 
 	/**
@@ -182,8 +182,8 @@ public struct Query<T: Resource> {
 	
 	- returns: The query
 	*/
-	public mutating func whereAttribute(attributeName: String, notEqualTo: AnyObject) {
-		addPredicateWithField(attributeName, value: notEqualTo, type: .NotEqualToPredicateOperatorType)
+	public mutating func whereAttribute(_ attributeName: String, notEqualTo: Any) {
+		addPredicateWithField(attributeName, value: notEqualTo, type: .notEqualTo)
 	}
 
 	/**
@@ -194,8 +194,8 @@ public struct Query<T: Resource> {
 	
 	- returns: The query
 	*/
-	public mutating func whereAttribute(attributeName: String, lessThan: AnyObject) {
-		addPredicateWithField(attributeName, value: lessThan, type: .LessThanPredicateOperatorType)
+	public mutating func whereAttribute(_ attributeName: String, lessThan: Any) {
+		addPredicateWithField(attributeName, value: lessThan, type: .lessThan)
 	}
 
 	/**
@@ -206,8 +206,8 @@ public struct Query<T: Resource> {
 	
 	- returns: The query
 	*/
-	public mutating func whereAttribute(attributeName: String, lessThanOrEqualTo: AnyObject) {
-		addPredicateWithField(attributeName, value: lessThanOrEqualTo, type: .LessThanOrEqualToPredicateOperatorType)
+	public mutating func whereAttribute(_ attributeName: String, lessThanOrEqualTo: Any) {
+		addPredicateWithField(attributeName, value: lessThanOrEqualTo, type: .lessThanOrEqualTo)
 	}
 	
 	/**
@@ -218,8 +218,8 @@ public struct Query<T: Resource> {
 	
 	- returns: The query
 	*/
-	public mutating func whereAttribute(attributeName: String, greaterThan: AnyObject) {
-		addPredicateWithField(attributeName, value: greaterThan, type: .GreaterThanPredicateOperatorType)
+	public mutating func whereAttribute(_ attributeName: String, greaterThan: Any) {
+		addPredicateWithField(attributeName, value: greaterThan, type: .greaterThan)
 	}
 
 	/**
@@ -230,8 +230,8 @@ public struct Query<T: Resource> {
 	
 	- returns: The query
 	*/
-	public mutating func whereAttribute(attributeName: String, greaterThanOrEqualTo: AnyObject) {
-		addPredicateWithField(attributeName, value: greaterThanOrEqualTo, type: .GreaterThanOrEqualToPredicateOperatorType)
+	public mutating func whereAttribute(_ attributeName: String, greaterThanOrEqualTo: Any) {
+		addPredicateWithField(attributeName, value: greaterThanOrEqualTo, type: .greaterThanOrEqualTo)
 	}
     
 	/**
@@ -242,8 +242,8 @@ public struct Query<T: Resource> {
 	
 	- returns: The query
 	*/
-	public mutating func filterOn(attributeName: String, equalTo: AnyObject) {
-		addPredicateWithKey(attributeName, value: equalTo, type: .EqualToPredicateOperatorType)
+	public mutating func filterOn(_ attributeName: String, equalTo: Any) {
+		addPredicateWithKey(attributeName, value: equalTo, type: .equalTo)
 	}
 	
 	/**
@@ -254,8 +254,8 @@ public struct Query<T: Resource> {
 	
 	- returns: The query
 	*/
-	public mutating func filterOn(attributeName: String, notEqualTo: AnyObject) {
-		addPredicateWithKey(attributeName, value: notEqualTo, type: .NotEqualToPredicateOperatorType)
+	public mutating func filterOn(_ attributeName: String, notEqualTo: Any) {
+		addPredicateWithKey(attributeName, value: notEqualTo, type: .notEqualTo)
 	}
 	
 	/**
@@ -266,8 +266,8 @@ public struct Query<T: Resource> {
 	
 	- returns: The query
 	*/
-	public mutating func filterOn(attributeName: String, lessThan: AnyObject) {
-		addPredicateWithKey(attributeName, value: lessThan, type: .LessThanPredicateOperatorType)
+	public mutating func filterOn(_ attributeName: String, lessThan: Any) {
+		addPredicateWithKey(attributeName, value: lessThan, type: .lessThan)
 	}
 	
 	/**
@@ -278,8 +278,8 @@ public struct Query<T: Resource> {
 	
 	- returns: The query
 	*/
-	public mutating func filterOn(attributeName: String, lessThanOrEqualTo: AnyObject) {
-		addPredicateWithKey(attributeName, value: lessThanOrEqualTo, type: .LessThanOrEqualToPredicateOperatorType)
+	public mutating func filterOn(_ attributeName: String, lessThanOrEqualTo: Any) {
+		addPredicateWithKey(attributeName, value: lessThanOrEqualTo, type: .lessThanOrEqualTo)
 	}
 	
 	/**
@@ -290,8 +290,8 @@ public struct Query<T: Resource> {
 	
 	- returns: The query
 	*/
-	public mutating func filterOn(attributeName: String, greaterThan: AnyObject) {
-		addPredicateWithKey(attributeName, value: greaterThan, type: .GreaterThanPredicateOperatorType)
+	public mutating func filterOn(_ attributeName: String, greaterThan: Any) {
+		addPredicateWithKey(attributeName, value: greaterThan, type: .greaterThan)
 	}
 	
 	/**
@@ -302,8 +302,8 @@ public struct Query<T: Resource> {
 	
 	- returns: The query
 	*/
-	public mutating func filterOn(attributeName: String, greaterThanOrEqualTo: AnyObject) {
-		addPredicateWithKey(attributeName, value: greaterThanOrEqualTo, type: .GreaterThanOrEqualToPredicateOperatorType)
+	public mutating func filterOn(_ attributeName: String, greaterThanOrEqualTo: Any) {
+		addPredicateWithKey(attributeName, value: greaterThanOrEqualTo, type: .greaterThanOrEqualTo)
 	}
 	
 	/**
@@ -315,9 +315,9 @@ public struct Query<T: Resource> {
 	
 	- returns: The query
 	*/
-	public mutating func whereRelationship(relationshipName: String, isOrContains resource: Resource) {
+	public mutating func whereRelationship(_ relationshipName: String, isOrContains resource: Resource) {
 		assert(resource.id != nil, "Attempt to add a where filter on a relationship, but the target resource does not have an id.")
-		addPredicateWithField(relationshipName, value: resource.id!, type: .EqualToPredicateOperatorType)
+		addPredicateWithField(relationshipName, value: resource.id! as AnyObject, type: .equalTo)
 	}
 	
 	
@@ -331,11 +331,11 @@ public struct Query<T: Resource> {
 	
 	- returns: The query
 	*/
-	public mutating func restrictFieldsTo(fieldNames: String...) {
+	public mutating func restrictFieldsTo(_ fieldNames: String...) {
 		assert(resourceType != nil, "Cannot restrict fields for query without resource type, use `restrictFieldsOfResourceType` or set a resource type.")
 		
 		for fieldName in fieldNames {
-			assert(T.fieldNamed(fieldName) != nil, "Cannot restrict to field \(fieldName) of resource \(T.resourceType). No such field has been configured.")
+			assert(T.field(named: fieldName) != nil, "Cannot restrict to field \(fieldName) of resource \(T.resourceType). No such field has been configured.")
 		}
 		
 		if var fields = fields[resourceType!] {
@@ -356,10 +356,10 @@ public struct Query<T: Resource> {
 	
 	- returns: The query
 	*/
-	public mutating func restrictFieldsOfResourceType(type: Resource.Type, to fieldNames: String...) {
+	public mutating func restrictFieldsOfResourceType(_ type: Resource.Type, to fieldNames: String...) {
 		
 		for fieldName in fieldNames {
-			assert(type.fieldNamed(fieldName) != nil, "Cannot restrict to field \(fieldName) of resource \(type.resourceType). No such field has been configured.")
+			assert(type.field(named: fieldName) != nil, "Cannot restrict to field \(fieldName) of resource \(type.resourceType). No such field has been configured.")
 		}
 		
 		if var fields = fields[type.resourceType] {
@@ -379,8 +379,8 @@ public struct Query<T: Resource> {
 	
 	- returns: The query
 	*/
-	public mutating func addAscendingOrder(fieldName: String) {
-		if let _ = T.fieldNamed(fieldName) {
+	public mutating func addAscendingOrder(_ fieldName: String) {
+		if let _ = T.field(named: fieldName) {
 			sortDescriptors.append(NSSortDescriptor(key: fieldName, ascending: true))
 		} else {
 			assertionFailure("Cannot add order on field \(fieldName) of resource \(T.resourceType). No such field has been configured.")
@@ -394,8 +394,8 @@ public struct Query<T: Resource> {
 	
 	- returns: The query
 	*/
-	public mutating func addDescendingOrder(fieldName: String) {
-		if let _ = T.fieldNamed(fieldName) {
+	public mutating func addDescendingOrder(_ fieldName: String) {
+		if let _ = T.field(named: fieldName) {
 			sortDescriptors.append(NSSortDescriptor(key: fieldName, ascending: false))
 		} else {
 			assertionFailure("Cannot add order on field \(fieldName) of resource \(T.resourceType). No such field has been configured.")
@@ -412,7 +412,7 @@ public struct Query<T: Resource> {
 	
 	- returns: The query
 	*/
-	public mutating func paginate(pagination: Pagination?) {
+	public mutating func paginate(_ pagination: Pagination?) {
 		self.pagination = pagination
 	}
 }

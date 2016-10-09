@@ -13,7 +13,7 @@ A ResourceFactory creates resources from given factory funtions.
 */
 struct ResourceFactory {
 	
-	private var resourceTypes: [ResourceType: Resource.Type] = [:]
+	fileprivate var resourceTypes: [ResourceType: Resource.Type] = [:]
 	
 	/**
 	Registers a given factory function that creates resource with a given type.
@@ -22,7 +22,7 @@ struct ResourceFactory {
 	- parameter type:    The resource type for which to register a factory function.
 	- parameter factory: The factory function that returns a resource.
 	*/
-	mutating func registerResource(resourceClass: Resource.Type) {
+	mutating func registerResource(_ resourceClass: Resource.Type) {
 		resourceTypes[resourceClass.resourceType] = resourceClass
 	}
 	
@@ -33,9 +33,9 @@ struct ResourceFactory {
 	
 	- returns: An instantiated resource.
 	*/
-	func instantiate(type: ResourceType) throws -> Resource {
+	func instantiate(_ type: ResourceType) throws -> Resource {
 		if resourceTypes[type] == nil {
-			throw SerializerError.ResourceTypeUnregistered
+			throw SerializerError.resourceTypeUnregistered
 		}
 		return resourceTypes[type]!.init()
 	}
@@ -54,7 +54,7 @@ struct ResourceFactory {
 	
 	- returns: A resource with the given type and id.
 	*/
-	func dispense(type: ResourceType, id: String, inout pool: [Resource], index: Int? = nil) throws -> Resource {
+	func dispense(_ type: ResourceType, id: String, pool: inout [Resource], index: Int? = nil) throws -> Resource {
 		var resource: Resource! = pool.filter { $0.resourceType == type && $0.id == id }.first
 		
 		if resource == nil && index != nil && !pool.isEmpty {

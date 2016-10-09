@@ -8,13 +8,19 @@
 
 import Foundation
 
+
 /**
 The ValueFormatter protocol declares methods and properties that a value formatter must implement.
 A value formatter transforms values between the serialized and deserialized form.
 */
 public protocol ValueFormatter {
+	/// The type as it appears in serialized form (JSON).
 	associatedtype FormattedType
+	
+	/// The type as it appears in deserialized form (Swift).
 	associatedtype UnformattedType
+	
+	/// The attribute type for which this formatter formats values.
 	associatedtype AttributeType
 	
 	/**
@@ -25,7 +31,7 @@ public protocol ValueFormatter {
 	
 	- returns: The deserialized form of `value`.
 	*/
-	func unformat(value: FormattedType, attribute: AttributeType) -> AnyObject
+	func unformatValue(_ value: FormattedType, forAttribute: AttributeType) -> UnformattedType
 	
 	/**
 	Returns the serialized form of the given value for the given attribute.
@@ -35,7 +41,7 @@ public protocol ValueFormatter {
 	
 	- returns: The serialized form of `value`.
 	*/
-	func format(value: UnformattedType, attribute: AttributeType) -> AnyObject
+	func formatValue(_ value: UnformattedType, forAttribute: AttributeType) -> FormattedType
 }
 
 /**
@@ -44,13 +50,13 @@ to transform values between the serialized and deserialized form.
 */
 struct ValueFormatterRegistry {
 	/// Registered serializer functions.
-	private var formatters: [(AnyObject, Attribute) -> AnyObject?] = []
+	fileprivate var formatters: [(Any, Attribute) -> Any?] = []
 	
 	/// Registered deserializer functions.
-	private var unformatters: [(AnyObject, Attribute) -> AnyObject?] = []
+	fileprivate var unformatters: [(Any, Attribute) -> Any?] = []
 	
 	/**
-	Returns a new value formatter directory configured with the build in default value formatters.
+	Returns a new value formatter directory configured with the built in default value formatters.
 	
 	- returns: ValueFormatterRegistry
 	*/
@@ -58,6 +64,7 @@ struct ValueFormatterRegistry {
 		var directory = ValueFormatterRegistry()
 		directory.registerFormatter(URLValueFormatter())
 		directory.registerFormatter(DateValueFormatter())
+		directory.registerFormatter(BooleanValueFormatter())
 		return directory
 	}
 	
@@ -66,21 +73,21 @@ struct ValueFormatterRegistry {
 	
 	- parameter formatter: The value formatter to register.
 	*/
-	mutating func registerFormatter<T: ValueFormatter>(formatter: T) {
-		formatters.append { (value: AnyObject, attribute: Attribute) -> AnyObject? in
+	mutating func registerFormatter<T: ValueFormatter>(_ formatter: T) {
+		formatters.append { (value: Any, attribute: Attribute) -> Any? in
 			if let typedAttribute = attribute as? T.AttributeType {
 				if let typedValue = value as? T.UnformattedType {
-					return formatter.format(typedValue, attribute: typedAttribute)
+					return formatter.formatValue(typedValue, forAttribute: typedAttribute)
 				}
 			}
 			
 			return nil
 		}
 		
-		unformatters.append { (value: AnyObject, attribute: Attribute) -> AnyObject? in
+		unformatters.append { (value: Any, attribute: Attribute) -> Any? in
 			if let typedAttribute = attribute as? T.AttributeType {
 				if let typedValue = value as? T.FormattedType {
-					return formatter.unformat(typedValue, attribute: typedAttribute)
+					return formatter.unformatValue(typedValue, forAttribute: typedAttribute)
 				}
 			}
 			
@@ -99,9 +106,9 @@ struct ValueFormatterRegistry {
 	
 	- returns: The deserialized form of `value`.
 	*/
-	func unformat(value: AnyObject, forAttribute attribute: Attribute) -> AnyObject {
+	func unformatValue(_ value: Any, forAttribute attribute: Attribute) -> Any {
 		for unformatter in unformatters {
-			if let unformatted: AnyObject = unformatter(value, attribute) {
+			if let unformatted = unformatter(value, attribute) {
 				return unformatted
 			}
 		}
@@ -113,21 +120,23 @@ struct ValueFormatterRegistry {
 	Returns the serialized form of the given value for the given attribute.
 	
 	The actual value formatter used is the first registered formatter that supports the given
-	value type for the given attribute type.
+	value type for the given attribute type. If no suitable value formatter is found,
+	a string representation is returned.
 	
 	- parameter value:     The value to serialize.
 	- parameter attribute: The attribute to which the value belongs.
 	
 	- returns: The serialized form of `value`.
 	*/
-	func format(value: AnyObject, forAttribute attribute: Attribute) -> AnyObject {
+	func formatValue(_ value: Any, forAttribute attribute: Attribute) -> Any {
 		for formatter in formatters {
-			if let formatted: AnyObject = formatter(value, attribute) {
+			if let formatted = formatter(value, attribute) {
 				return formatted
 			}
 		}
 		
-		return value
+		Spine.logWarning(.serializing, "No value formatter found for attribute \(attribute).")
+		return "\(value)"
 	}
 }
 
@@ -135,16 +144,16 @@ struct ValueFormatterRegistry {
 // MARK: - Built in value formatters
 
 /**
-URLValueFormatter is a value formatter that transforms between NSURL and String, and vice versa.
+URLValueFormatter is a value formatter that transforms between URL and String, and vice versa.
 If a baseURL has been configured in the URLAttribute, and the given String is not an absolute URL,
-it will return an absolute NSURL, relative to the baseURL.
+it will return an absolute URL, relative to the baseURL.
 */
 private struct URLValueFormatter: ValueFormatter {
-	func unformat(value: String, attribute: URLAttribute) -> AnyObject {
-		return NSURL(string: value, relativeToURL: attribute.baseURL)!
+	func unformatValue(_ value: String, forAttribute attribute: URLAttribute) -> URL {
+		return URL(string: value, relativeTo: attribute.baseURL as URL?)!
 	}
 	
-	func format(value: NSURL, attribute: URLAttribute) -> AnyObject {
+	func formatValue(_ value: URL, forAttribute attribute: URLAttribute) -> String {
 		return value.absoluteString
 	}
 }
@@ -154,21 +163,31 @@ DateValueFormatter is a value formatter that transforms between NSDate and Strin
 It uses the date format configured in the DateAttribute.
 */
 private struct DateValueFormatter: ValueFormatter {
-	func formatter(attribute: DateAttribute) -> NSDateFormatter {
-		let formatter = NSDateFormatter()
+	func formatter(_ attribute: DateAttribute) -> DateFormatter {
+		let formatter = DateFormatter()
 		formatter.dateFormat = attribute.format
 		return formatter
 	}
 	
-	func unformat(value: String, attribute: DateAttribute) -> AnyObject {
-		guard let date = formatter(attribute).dateFromString(value) else {
-			Spine.logWarning(.Serializing, "Could not deserialize date string \(value) with format \(attribute.format). Deserializing to nil instead.")
-			return NSNull()
+	func unformatValue(_ value: String, forAttribute attribute: DateAttribute) -> Date {
+		guard let date = formatter(attribute).date(from: value) else {
+			Spine.logWarning(.serializing, "Could not deserialize date string \(value) with format \(attribute.format).")
+			return Date(timeIntervalSince1970: 0)
 		}
 		return date
 	}
 	
-	func format(value: NSDate, attribute: DateAttribute) -> AnyObject {
-		return formatter(attribute).stringFromDate(value)
+	func formatValue(_ value: Date, forAttribute attribute: DateAttribute) -> String {
+		return formatter(attribute).string(from: value)
+	}
+}
+
+private struct BooleanValueFormatter: ValueFormatter {
+	func unformatValue(_ value: Bool, forAttribute: BooleanAttribute) -> NSNumber {
+		return NSNumber(booleanLiteral: value)
+	}
+	
+	func formatValue(_ value: NSNumber, forAttribute: BooleanAttribute) -> Bool {
+		return value.boolValue
 	}
 }

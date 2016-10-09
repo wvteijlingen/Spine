@@ -11,15 +11,15 @@ import Foundation
 /**
 Serializer (de)serializes according to the JSON:API specification.
 */
-public class Serializer {
+open class Serializer {
 	/// The resource factory used for dispensing resources.
-	private var resourceFactory = ResourceFactory()
+	fileprivate var resourceFactory = ResourceFactory()
 	
 	/// The transformers used for transforming to and from the serialized representation.
-	private var valueFormatters = ValueFormatterRegistry.defaultRegistry()
+	fileprivate var valueFormatters = ValueFormatterRegistry.defaultRegistry()
 	
 	/// The key formatter used for formatting field names to keys.
-	public var keyFormatter: KeyFormatter = AsIsKeyFormatter()
+	open var keyFormatter: KeyFormatter = AsIsKeyFormatter()
 	
 	public init() {}
 	
@@ -33,7 +33,7 @@ public class Serializer {
 	
 	- returns: A JSONAPIDocument.
 	*/
-	public func deserializeData(data: NSData, mappingTargets: [Resource]? = nil) throws -> JSONAPIDocument {
+	open func deserializeData(_ data: Data, mappingTargets: [Resource]? = nil) throws -> JSONAPIDocument {
 		let deserializeOperation = DeserializeOperation(data: data, resourceFactory: resourceFactory, valueFormatters: valueFormatters, keyFormatter: keyFormatter)
 		
 		if let mappingTargets = mappingTargets {
@@ -43,9 +43,9 @@ public class Serializer {
 		deserializeOperation.start()
 		
 		switch deserializeOperation.result! {
-		case .Failure(let error):
+		case .failure(let error):
 			throw error
-		case .Success(let document):
+		case .success(let document):
 			return document
 		}
 	}
@@ -60,16 +60,16 @@ public class Serializer {
 	
 	- returns: Serialized data.
 	*/
-	public func serializeDocument(document: JSONAPIDocument, options: SerializationOptions = [.IncludeID]) throws -> NSData {
+	open func serializeDocument(_ document: JSONAPIDocument, options: SerializationOptions = [.IncludeID]) throws -> Data {
 		let serializeOperation = SerializeOperation(document: document, valueFormatters: valueFormatters, keyFormatter: keyFormatter)
 		serializeOperation.options = options
 		
 		serializeOperation.start()
 		
 		switch serializeOperation.result! {
-		case .Failure(let error):
+		case .failure(let error):
 			throw error
-		case .Success(let data):
+		case .success(let data):
 			return data
 		}
 	}
@@ -84,7 +84,7 @@ public class Serializer {
 	
 	- returns: Serialized data.
 	*/
-	public func serializeResources(resources: [Resource], options: SerializationOptions = [.IncludeID]) throws -> NSData {
+	open func serializeResources(_ resources: [Resource], options: SerializationOptions = [.IncludeID]) throws -> Data {
 		let document = JSONAPIDocument(data: resources, included: nil, errors: nil, meta: nil, links: nil, jsonapi: nil)
 		return try serializeDocument(document, options: options)
 	}
@@ -108,8 +108,8 @@ public class Serializer {
 	
 	- returns: Serialized data.
 	*/
-	public func serializeLinkData(resource: Resource?) throws -> NSData {
-		let payloadData: AnyObject
+	open func serializeLinkData(_ resource: Resource?) throws -> Data {
+		let payloadData: Any
 		
 		if let resource = resource {
 			assert(resource.id != nil, "Attempt to convert resource without id to linkage. Only resources with ids can be converted to linkage.")
@@ -119,9 +119,9 @@ public class Serializer {
 		}
 		
 		do {
-			return try NSJSONSerialization.dataWithJSONObject(["data": payloadData], options: NSJSONWritingOptions(rawValue: 0))
+			return try JSONSerialization.data(withJSONObject: ["data": payloadData], options: JSONSerialization.WritingOptions(rawValue: 0))
 		} catch let error as NSError {
-			throw SerializerError.JSONSerializationError(error)
+			throw SerializerError.jsonSerializationError(error)
 		}
 	}
 	
@@ -142,8 +142,8 @@ public class Serializer {
 	
 	- returns: Serialized data.
 	*/
-	public func serializeLinkData(resources: [Resource]) throws -> NSData {
-		let payloadData: AnyObject
+	open func serializeLinkData(_ resources: [Resource]) throws -> Data {
+		let payloadData: Any
 		
 		if resources.isEmpty {
 			payloadData = []
@@ -154,9 +154,9 @@ public class Serializer {
 		}
 		
 		do {
-			return try NSJSONSerialization.dataWithJSONObject(["data": payloadData], options: NSJSONWritingOptions(rawValue: 0))
+			return try JSONSerialization.data(withJSONObject: ["data": payloadData], options: JSONSerialization.WritingOptions(rawValue: 0))
 		} catch let error as NSError {
-			throw SerializerError.JSONSerializationError(error)
+			throw SerializerError.jsonSerializationError(error)
 		}
 	}
 
@@ -165,7 +165,7 @@ public class Serializer {
 	
 	- parameter resourceClass: The resource class to register.
 	*/
-	public func registerResource(resourceClass: Resource.Type) {
+	open func registerResource(_ resourceClass: Resource.Type) {
 		resourceFactory.registerResource(resourceClass)
 	}
 	
@@ -174,7 +174,7 @@ public class Serializer {
 	
 	- parameter transformer: The Transformer to register.
 	*/
-	public func registerValueFormatter<T: ValueFormatter>(formatter: T) {
+	open func registerValueFormatter<T: ValueFormatter>(_ formatter: T) {
 		valueFormatters.registerFormatter(formatter)
 	}
 }
@@ -194,16 +194,16 @@ public struct JSONAPIDocument {
 	public var errors: [APIError]?
 	
 	/// Metadata extracted from the reponse.
-	public var meta: [String: AnyObject]?
+	public var meta: Metadata?
 	
 	/// Links extracted from the response.
-	public var links: [String: NSURL]?
+	public var links: [String: URL]?
 	
 	/// JSONAPI information extracted from the response.
-	public var jsonapi: [String: AnyObject]?
+	public var jsonapi: JSONAPIData?
 }
 
-public struct SerializationOptions: OptionSetType {
+public struct SerializationOptions: OptionSet {
 	public let rawValue: Int
 	public init(rawValue: Int) { self.rawValue = rawValue }
 	

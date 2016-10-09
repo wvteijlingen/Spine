@@ -6,18 +6,17 @@
 //  Copyright (c) 2015 Ward van Teijlingen. All rights reserved.
 //
 
-import UIKit
 import XCTest
 
 class ResourceCollectionTests: XCTestCase {
 
 	func testInitWithResourcesURLAndResources() {
-		let URL = NSURL(string: "http://example.com/foos")!
+		let url = URL(string: "http://example.com/foos")!
 		let resources = [Foo(), Bar()]
-		let collection = ResourceCollection(resources: resources, resourcesURL: URL)
+		let collection = ResourceCollection(resources: resources, resourcesURL: url)
 		
 		XCTAssertNotNil(collection.resourcesURL, "Expected URL to be not nil.")
-		XCTAssertEqual(collection.resourcesURL!, URL, "Expected URL to be equal.")
+		XCTAssertEqual(collection.resourcesURL!, url, "Expected URL to be equal.")
 		XCTAssertTrue(collection.isLoaded, "Expected isLoaded to be true.")
 		XCTAssertTrue(collection.resources == resources, "Expected resources to be true.")
 	}
@@ -58,8 +57,8 @@ class ResourceCollectionTests: XCTestCase {
 class LinkedResourceCollectionTests: XCTestCase {
 	
 	func testInitWithResourcesURLAndURLAndLinkage() {
-		let resourcesURL = NSURL(string: "http://example.com/foos")!
-		let linkURL = NSURL(string: "http://example.com/bars/1/link/foos")!
+		let resourcesURL = URL(string: "http://example.com/foos")!
+		let linkURL = URL(string: "http://example.com/bars/1/link/foos")!
 		let linkage = [ResourceIdentifier(type: "foos", id: "1"), ResourceIdentifier(type: "bars", id: "2")]
 		let collection = LinkedResourceCollection(resourcesURL: resourcesURL, linkURL: linkURL, linkage: linkage)
 		
@@ -75,9 +74,9 @@ class LinkedResourceCollectionTests: XCTestCase {
 	}
 	
 	func testInitWithResourcesURLAndURLAndHomogenousTypeAndLinkage() {
-		let resourcesURL = NSURL(string: "http://example.com/foos")!
-		let linkURL = NSURL(string: "http://example.com/bars/1/link/foos")!
-		let collection = LinkedResourceCollection(resourcesURL: resourcesURL, linkURL: linkURL, homogenousType: "foos", IDs: ["1", "2"])
+		let resourcesURL = URL(string: "http://example.com/foos")!
+		let linkURL = URL(string: "http://example.com/bars/1/link/foos")!
+		let collection = LinkedResourceCollection(resourcesURL: resourcesURL, linkURL: linkURL, linkage: ["1", "2"].map { ResourceIdentifier(type: "foos", id: $0) })
 		
 		XCTAssertNotNil(collection.resourcesURL, "Expected resources URL to be not nil.")
 		XCTAssertEqual(collection.resourcesURL!, resourcesURL, "Expected resources URL to be equal.")

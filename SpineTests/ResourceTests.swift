@@ -6,7 +6,6 @@
 //  Copyright (c) 2015 Ward van Teijlingen. All rights reserved.
 //
 
-import UIKit
 import XCTest
 
 class ResourceTests: XCTestCase {
@@ -20,8 +19,8 @@ class ResourceTests: XCTestCase {
 		foo.toOneAttribute = Bar(id: "10")
 	}
 
-    func testGetAttributeValue() {
-		let value: AnyObject? = foo.valueForField("stringAttribute")
+	func testGetAttributeValue() {
+		let value = foo.value(forField: "stringAttribute")
 		
 		XCTAssertNotNil(value, "Expected value to be not nil")
 		
@@ -30,16 +29,16 @@ class ResourceTests: XCTestCase {
 		} else {
 			XCTFail("Expected value to be of type 'String'")
 		}
-    }
+	}
 	
 	func testGetNilAttributeValue() {
-		let value: AnyObject? = foo.valueForField("nilAttribute")
+		let value = foo.value(forField: "nilAttribute")
 		
 		XCTAssertNil(value, "Expected value to be nil")
 	}
 	
 	func testGetRelationshipValue() {
-		let value: AnyObject? = foo.valueForField("toOneAttribute")
+		let value = foo.value(forField: "toOneAttribute")
 		
 		XCTAssertNotNil(value, "Expected value to be not nil")
 		
@@ -56,18 +55,18 @@ class ResourceTests: XCTestCase {
 	}
 	
 	func testEncoding() {
-		foo.URL = NSURL(string: "http://example.com/api/foos/1")
+		foo.url = URL(string: "http://example.com/api/foos/1")
 		foo.isLoaded = true
 		
-		let encodedData = NSKeyedArchiver.archivedDataWithRootObject(foo)
-		let decodedFoo: AnyObject? = NSKeyedUnarchiver.unarchiveObjectWithData(encodedData)
+		let encodedData = NSKeyedArchiver.archivedData(withRootObject: foo)
+		let decodedFoo: AnyObject? = NSKeyedUnarchiver.unarchiveObject(with: encodedData) as AnyObject?
 		
 		XCTAssertNotNil(decodedFoo, "Expected decoded object to be not nil")
 		XCTAssert(decodedFoo is Foo, "Expected decoded object to be of type 'Foo'")
 		
 		if let decodedFoo = decodedFoo as? Foo {
 			XCTAssertEqual(decodedFoo.id!, foo.id!, "Expected id to be equal")
-			XCTAssertEqual(decodedFoo.URL!, foo.URL!, "Expected URL to be equal")
+			XCTAssertEqual(decodedFoo.url!, foo.url!, "Expected URL to be equal")
 			XCTAssertEqual(decodedFoo.isLoaded, foo.isLoaded, "Expected isLoaded to be equal")
 		} else {
 			XCTFail("Fail")

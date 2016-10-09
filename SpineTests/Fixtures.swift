@@ -16,7 +16,7 @@ class Foo: Resource {
 	var floatAttribute: NSNumber?
 	var booleanAttribute: NSNumber?
 	var nilAttribute: AnyObject?
-	var dateAttribute: NSDate?
+	var dateAttribute: Date?
 	var toOneAttribute: Bar?
 	var toManyAttribute: LinkedResourceCollection?
 	
@@ -29,12 +29,12 @@ class Foo: Resource {
 			"stringAttribute": Attribute(),
 			"integerAttribute": Attribute(),
 			"floatAttribute": Attribute(),
-			"booleanAttribute": Attribute(),
+			"booleanAttribute": BooleanAttribute(),
 			"nilAttribute": Attribute(),
 			"dateAttribute": DateAttribute(),
-			"toOneAttribute": ToOneRelationship(Bar),
-			"toManyAttribute": ToManyRelationship(Bar)
-			])
+			"toOneAttribute": ToOneRelationship(Bar.self),
+			"toManyAttribute": ToManyRelationship(Bar.self)
+		])
 	}
 	
 	required init() {
@@ -52,6 +52,9 @@ class Foo: Resource {
 }
 
 class Bar: Resource {
+	var barStringAttribute: String?
+	var barIntegerAttribute: NSNumber?
+	
 	override class var resourceType: String {
 		return "bars"
 	}
