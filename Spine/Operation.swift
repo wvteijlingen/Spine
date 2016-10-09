@@ -52,13 +52,13 @@ The `Spine` instance variable references the Spine against which to operate.
 */
 class ConcurrentOperation: Operation {
 	enum State: String {
-		case Ready = "isReady"
-		case Executing = "isExecuting"
-		case Finished = "isFinished"
+		case ready = "isReady"
+		case executing = "isExecuting"
+		case finished = "isFinished"
 	}
 	
 	/// The current state of the operation
-	var state: State = .Ready {
+	var state: State = .ready {
 		willSet {
 			willChangeValue(forKey: newValue.rawValue)
 			willChangeValue(forKey: state.rawValue)
@@ -69,13 +69,13 @@ class ConcurrentOperation: Operation {
 		}
 	}
 	override var isReady: Bool {
-		return super.isReady && state == .Ready
+		return super.isReady && state == .ready
 	}
 	override var isExecuting: Bool {
-		return state == .Executing
+		return state == .executing
 	}
 	override var isFinished: Bool {
-		return state == .Finished
+		return state == .finished
 	}
 	override var isAsynchronous: Bool {
 		return true
@@ -99,9 +99,9 @@ class ConcurrentOperation: Operation {
 	
 	final override func start() {
 		if isCancelled {
-			state = .Finished
+			state = .finished
 		} else {
-			state = .Executing
+			state = .executing
 			main()
 		}
 	}
@@ -139,7 +139,7 @@ class FetchOperation<T: Resource>: ConcurrentOperation {
 		Spine.logInfo(.spine, "Fetching document using URL: \(url)")
 		
 		networkClient.request(method: "GET", url: url) { statusCode, responseData, networkError in
-			defer { self.state = .Finished }
+			defer { self.state = .finished }
 			
 			guard networkError == nil else {
 				self.result = .failure(SpineError.networkError(networkError!))
@@ -185,7 +185,7 @@ class DeleteOperation: ConcurrentOperation {
 		Spine.logInfo(.spine, "Deleting resource \(resource) using URL: \(URL)")
 		
 		networkClient.request(method: "DELETE", url: URL) { statusCode, responseData, networkError in
-			defer { self.state = .Finished }
+			defer { self.state = .finished }
 		
 			guard networkError == nil else {
 				self.result = Failable.failure(SpineError.networkError(networkError!))
@@ -265,14 +265,14 @@ class SaveOperation: ConcurrentOperation {
 			payload = try serializer.serializeResources([resource], options: options)
 		} catch let error {
 			result = .failure(error as! SpineError)
-			state = .Finished
+			state = .finished
 			return
 		}
 
 		Spine.logInfo(.spine, "Saving resource \(resource) using URL: \(url)")
 		
 		networkClient.request(method: method, url: url, payload: payload) { statusCode, responseData, networkError in
-			defer { self.state = .Finished }
+			defer { self.state = .finished }
 			
 			if let error = networkError {
 				self.result = Failable.failure(SpineError.networkError(error))
@@ -325,7 +325,7 @@ class SaveOperation: ConcurrentOperation {
 			if let error = result?.error {
 				self.relationshipOperationQueue.cancelAllOperations()
 				self.result = Failable(error)
-				self.state = .Finished
+				self.state = .finished
 			}
 		}
 		
@@ -366,7 +366,7 @@ private class RelationshipOperation: ConcurrentOperation {
 	var result: Failable<Void, SpineError>?
 	
 	func handleNetworkResponse(_ statusCode: Int?, responseData: Data?, networkError: NSError?) {
-		defer { self.state = .Finished }
+		defer { self.state = .finished }
 		
 		guard networkError == nil else {
 			self.result = Failable.failure(SpineError.networkError(networkError!))
@@ -456,7 +456,7 @@ private class RelationshipMutateOperation: RelationshipOperation {
 		
 		guard !relatedResources.isEmpty else {
 			result = Failable()
-			state = .Finished
+			state = .finished
 			return
 		}
 		
