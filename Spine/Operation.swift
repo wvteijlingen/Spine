@@ -315,7 +315,7 @@ class SaveOperation: ConcurrentOperation {
 	}
 
 	private func updateRelationships() {
-		let relationships = resource.fields.filter { $0 is Relationship }
+		let relationships = resource.fields.filter { $0 is Relationship && resource.isDirty($0.name) }
 		
 		guard !relationships.isEmpty else {
 			self.updateResource()
