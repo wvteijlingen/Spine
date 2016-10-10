@@ -240,7 +240,7 @@ class SaveOperation: ConcurrentOperation {
 	}
 
 	private func updateResource() {
-        if !isNewResource && !resource.isDirty() {
+        if !isNewResource && !resource.isDirty {
             self.result = .Success()
             self.state = .Finished
             return
