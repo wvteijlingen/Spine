@@ -200,16 +200,39 @@ class DeserializeOperation: NSOperation {
 	private func extractAttributes(serializedData: JSON, intoResource resource: Resource) {
 		for case let field as Attribute in resource.fields {
 			let key = keyFormatter.format(field)
-			if let extractedValue: AnyObject = self.extractAttribute(serializedData, key: key) {
-				let formattedValue: AnyObject = self.valueFormatters.unformat(extractedValue, forAttribute: field)
-				resource.setValue(formattedValue, forField: field.name)
-            } else {
-                resource.setValue(nil, forField: field.name)
+            if valuePresentForKey(serializedData, key: key) {
+                if let extractedValue: AnyObject = self.extractAttribute(serializedData, key: key) {
+                    let formattedValue: AnyObject = self.valueFormatters.unformat(extractedValue, forAttribute: field)
+                    resource.setValue(formattedValue, forField: field.name)
+                } else {
+                    resource.setValue(nil, forField: field.name)
+                }
             }
 		}
 	}
 	
-	/**
+    /**
+     Checks if there is a value for the given key in the passed serialized data.
+     
+     - parameter serializedData: The data from which to extract the attribute.
+     - parameter key:            The key for which to extract the value from the data.
+     
+     - returns: true if there is a value for the given key
+     */
+    private func valuePresentForKey(serializedData: JSON, key: String) -> Bool {
+        let value = serializedData["attributes"][key]
+
+        if let error = value.error {
+            if error.code == ErrorNotExist {
+                return false
+            }
+            // all other errors will be handled if no value is present
+            return false
+        }
+        return true
+    }
+
+    /**
 	Extracts the value for the given key from the passed serialized data.
 	
 	- parameter serializedData: The data from which to extract the attribute.

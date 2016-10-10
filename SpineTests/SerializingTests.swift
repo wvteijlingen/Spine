@@ -351,4 +351,24 @@ class DeserializingTests: SerializerTests {
 			XCTFail("Deserialisation failed with error: \(error).")
 		}
 	}
+    
+    func testDeserializingAttributesNotSetInJSONWillNotChangeCurrentValues() {
+        let foo: Foo = Foo(id: "1")
+        foo.stringAttribute = "stringAttribute"
+        foo.integerAttribute = 10
+        foo.floatAttribute = 5.5
+        foo.booleanAttribute = true
+        foo.nilAttribute = "ShoudBeNilAfterDeserialization"
+
+        let fixture = JSONFixtureWithName("SingleFooNotAllAttributesSet")
+        
+        do {
+            try serializer.deserializeData(fixture.data, mappingTargets: [foo])
+            XCTAssertEqual(foo.stringAttribute, "stringAttribute", "Expected stringAttribute to be unchanged as attribut is not present in fixture")
+            XCTAssertEqual(foo.integerAttribute, 10, "Expected integerAttribute to be unchanged as attribut is not present in fixture")
+            XCTAssertNil(foo.nilAttribute, "Expected nilAttribute to be nil")
+        } catch let error as NSError {
+            XCTFail("Deserialisation failed with error: \(error).")
+        }
+    }
 }
