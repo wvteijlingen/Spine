@@ -34,9 +34,9 @@ This library was born out of a hobby project. Some things are still lacking, one
 | Deleting resources             | Yes       |                                                 |
 | Top level metadata             | Yes       |                                                 |
 | Top level errors               | Yes       |                                                 |
-| Top level links                | Partially | Only pagination links are supported             |
+| Top level links                | Yes       |                                                 |
 | Top level JSON API Object      | Yes       |                                                 |
-| Client generated ID's          | No        |                                                 |
+| Client generated ID's          | Yes       |                                                 |
 | Resource metadata              | Yes       |                                                 |
 | Custom resource links          | No        |                                                 |
 | Relationships                  | Yes       |                                                 |
