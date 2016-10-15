@@ -11,7 +11,7 @@ import Foundation
 /**
 Serializer (de)serializes according to the JSON:API specification.
 */
-open class Serializer {
+public class Serializer {
 	/// The resource factory used for dispensing resources.
 	fileprivate var resourceFactory = ResourceFactory()
 	
@@ -19,7 +19,7 @@ open class Serializer {
 	fileprivate var valueFormatters = ValueFormatterRegistry.defaultRegistry()
 	
 	/// The key formatter used for formatting field names to keys.
-	open var keyFormatter: KeyFormatter = AsIsKeyFormatter()
+	public var keyFormatter: KeyFormatter = AsIsKeyFormatter()
 	
 	public init() {}
 	
@@ -33,7 +33,7 @@ open class Serializer {
 	
 	- returns: A JSONAPIDocument.
 	*/
-	open func deserializeData(_ data: Data, mappingTargets: [Resource]? = nil) throws -> JSONAPIDocument {
+	public func deserializeData(_ data: Data, mappingTargets: [Resource]? = nil) throws -> JSONAPIDocument {
 		let deserializeOperation = DeserializeOperation(data: data, resourceFactory: resourceFactory, valueFormatters: valueFormatters, keyFormatter: keyFormatter)
 		
 		if let mappingTargets = mappingTargets {
@@ -60,7 +60,7 @@ open class Serializer {
 	
 	- returns: Serialized data.
 	*/
-	open func serializeDocument(_ document: JSONAPIDocument, options: SerializationOptions = [.IncludeID]) throws -> Data {
+	public func serializeDocument(_ document: JSONAPIDocument, options: SerializationOptions = [.IncludeID]) throws -> Data {
 		let serializeOperation = SerializeOperation(document: document, valueFormatters: valueFormatters, keyFormatter: keyFormatter)
 		serializeOperation.options = options
 		
@@ -84,7 +84,7 @@ open class Serializer {
 	
 	- returns: Serialized data.
 	*/
-	open func serializeResources(_ resources: [Resource], options: SerializationOptions = [.IncludeID]) throws -> Data {
+	public func serializeResources(_ resources: [Resource], options: SerializationOptions = [.IncludeID]) throws -> Data {
 		let document = JSONAPIDocument(data: resources, included: nil, errors: nil, meta: nil, links: nil, jsonapi: nil)
 		return try serializeDocument(document, options: options)
 	}
@@ -108,7 +108,7 @@ open class Serializer {
 	
 	- returns: Serialized data.
 	*/
-	open func serializeLinkData(_ resource: Resource?) throws -> Data {
+	public func serializeLinkData(_ resource: Resource?) throws -> Data {
 		let payloadData: Any
 		
 		if let resource = resource {
@@ -142,7 +142,7 @@ open class Serializer {
 	
 	- returns: Serialized data.
 	*/
-	open func serializeLinkData(_ resources: [Resource]) throws -> Data {
+	public func serializeLinkData(_ resources: [Resource]) throws -> Data {
 		let payloadData: Any
 		
 		if resources.isEmpty {
@@ -165,7 +165,7 @@ open class Serializer {
 	
 	- parameter resourceClass: The resource class to register.
 	*/
-	open func registerResource(_ resourceClass: Resource.Type) {
+	public func registerResource(_ resourceClass: Resource.Type) {
 		resourceFactory.registerResource(resourceClass)
 	}
 	
@@ -174,7 +174,7 @@ open class Serializer {
 	
 	- parameter transformer: The Transformer to register.
 	*/
-	open func registerValueFormatter<T: ValueFormatter>(_ formatter: T) {
+	public func registerValueFormatter<T: ValueFormatter>(_ formatter: T) {
 		valueFormatters.registerFormatter(formatter)
 	}
 }
@@ -219,6 +219,6 @@ public struct SerializationOptions: OptionSet {
 	/// Whether to include to-one linked resources in the serialized representation.
 	public static let IncludeToOne = SerializationOptions(rawValue: 1 << 4)
     
-    /// If set, then attributes with null values will not be serialized.
-    public static let OmitNullValues = SerializationOptions(rawValue: 1 << 5)
+	/// If set, then attributes with null values will not be serialized.
+	public static let OmitNullValues = SerializationOptions(rawValue: 1 << 5)
 }

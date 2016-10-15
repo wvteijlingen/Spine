@@ -23,11 +23,11 @@ open class Field {
 	/// The name of the field as it appears in the model class.
 	/// This is declared as an implicit optional to support the `fieldsFromDictionary` function,
 	/// however it should *never* be nil.
-	open internal(set) var name: String! = nil
+	public internal(set) var name: String! = nil
 	
 	/// The name of the field that will be used for formatting to the JSON key.
 	/// This can be nil, in which case the regular name will be used.
-	open internal(set) var serializedName: String {
+	public internal(set) var serializedName: String {
 		get {
 			return _serializedName ?? name
 		}
@@ -47,12 +47,12 @@ open class Field {
 	- parameter name: The serialized name to use.
 	- returns: The field.
 	*/
-	open func serializeAs(_ name: String) -> Self {
+	public func serializeAs(_ name: String) -> Self {
 		serializedName = name
 		return self
 	}
 	
-	open func readOnly() -> Self {
+	public func readOnly() -> Self {
 		isReadOnly = true
 		return self
 	}

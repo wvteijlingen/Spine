@@ -89,16 +89,16 @@ open class Resource: NSObject, NSCoding {
 	open class var fields: [Field] { return [] }
 	
 	/// The ID of this resource.
-	open var id: String?
+	public var id: String?
 	
 	/// The canonical URL of the resource.
-	open var url: URL?
+	public var url: URL?
 	
 	/// Whether the fields of the resource are loaded.
-	open var isLoaded: Bool = false
+	public var isLoaded: Bool = false
 	
 	/// The metadata for this resource.
-	open var meta: [String: Any]?
+	public var meta: [String: Any]?
 	
 	/// Raw relationship data keyed by relationship name.
 	var relationships: [String: RelationshipData] = [:]
@@ -136,17 +136,17 @@ open class Resource: NSObject, NSCoding {
 	}
 
   /// Returns the value for the field named `field`.
-	open func value(forField field: String) -> Any? {
+	func value(forField field: String) -> Any? {
 		return value(forKey: field) as AnyObject?
 	}
 
 	/// Sets the value for the field named `field` to `value`.
-	open func setValue(_ value: Any?, forField field: String) {
+	func setValue(_ value: Any?, forField field: String) {
 		setValue(value, forKey: field)
 	}
 
 	/// Set the values for all fields to nil and sets `isLoaded` to false.
-	open func unload() {
+	public func unload() {
 		for field in fields {
 			setValue(nil, forField: field.name)
 		}
@@ -158,7 +158,6 @@ open class Resource: NSObject, NSCoding {
 	class func field(named name: String) -> Field? {
 		return fields.filter { $0.name == name }.first
 	}
-
 }
 
 extension Resource {
