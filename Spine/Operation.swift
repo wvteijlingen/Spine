@@ -8,26 +8,25 @@
 
 import Foundation
 
-private func statusCodeIsSuccess(_ statusCode: Int?) -> Bool {
+fileprivate func statusCodeIsSuccess(_ statusCode: Int?) -> Bool {
 	return statusCode != nil && 200 ... 299 ~= statusCode!
 }
 
-private func errorFromStatusCode(_ statusCode: Int, additionalErrors: [APIError]? = nil) -> SpineError {
-	return SpineError.serverError(statusCode: statusCode, apiErrors: additionalErrors)
-}
-
-///  Promotes an ErrorType to a higher level SpineError.
-///  Errors that cannot be represented as a SpineError will be returned as SpineError.UnknownError
-private func promoteToSpineError(_ error: Error) -> SpineError {
-	switch error {
-	case let error as SpineError:
-		return error
-	case is SerializerError:
-		return .serializerError
-	default:
-		return .unknownError
+fileprivate extension Error {
+	///  Promotes an ErrorType to a higher level SpineError.
+	///  Errors that cannot be represented as a SpineError will be returned as SpineError.UnknownError
+	var asSpineError: SpineError {
+		switch self {
+		case is SpineError:
+			return self as! SpineError
+		case is SerializerError:
+			return .serializerError
+		default:
+			return .unknownError
+		}
 	}
 }
+
 
 // MARK: - Base operation
 
@@ -142,7 +141,7 @@ class FetchOperation<T: Resource>: ConcurrentOperation {
 			defer { self.state = .finished }
 			
 			guard networkError == nil else {
-				self.result = .failure(SpineError.networkError(networkError!))
+				self.result = .failure(.networkError(networkError!))
 				return
 			}
 			
@@ -150,16 +149,16 @@ class FetchOperation<T: Resource>: ConcurrentOperation {
 				do {
 					let document = try self.serializer.deserializeData(data, mappingTargets: self.mappingTargets)
 					if statusCodeIsSuccess(statusCode) {
-						self.result = Failable(document)
+						self.result = .success(document)
 					} else {
-						self.result = .failure(SpineError.serverError(statusCode: statusCode!, apiErrors: document.errors))
+						self.result = .failure(.serverError(statusCode: statusCode!, apiErrors: document.errors))
 					}
 				} catch let error {
-					self.result = .failure(promoteToSpineError(error))
+					self.result = .failure(error.asSpineError)
 				}
 				
 			} else {
-				self.result = .failure(errorFromStatusCode(statusCode!))
+				self.result = .failure(.serverError(statusCode: statusCode!, apiErrors: nil))
 			}
 		}
 	}
@@ -188,21 +187,21 @@ class DeleteOperation: ConcurrentOperation {
 			defer { self.state = .finished }
 		
 			guard networkError == nil else {
-				self.result = Failable.failure(SpineError.networkError(networkError!))
+				self.result = .failure(.networkError(networkError!))
 				return
 			}
 			
 			if statusCodeIsSuccess(statusCode) {
-				self.result = Failable.success()
+				self.result = .success()
 			} else if let data = responseData , data.count > 0 {
 				do {
 					let document = try self.serializer.deserializeData(data, mappingTargets: nil)
-					self.result = .failure(SpineError.serverError(statusCode: statusCode!, apiErrors: document.errors))
+					self.result = .failure(.serverError(statusCode: statusCode!, apiErrors: document.errors))
 				} catch let error {
-					self.result = .failure(promoteToSpineError(error))
+					self.result = .failure(error.asSpineError)
 				}
 			} else {
-				self.result = .failure(errorFromStatusCode(statusCode!))
+				self.result = .failure(.serverError(statusCode: statusCode!, apiErrors: nil))
 			}
 		}
 	}
@@ -227,7 +226,7 @@ class SaveOperation: ConcurrentOperation {
 		super.init()
 		self.spine = spine
 		self.relationshipOperationQueue.maxConcurrentOperationCount = 1
-		self.relationshipOperationQueue.addObserver(self, forKeyPath: "operations", options: NSKeyValueObservingOptions(), context: nil)
+		self.relationshipOperationQueue.addObserver(self, forKeyPath: "operations", context: nil)
 	}
 	
 	deinit {
@@ -269,7 +268,7 @@ class SaveOperation: ConcurrentOperation {
 		do {
 			payload = try serializer.serializeResources([resource], options: options)
 		} catch let error {
-			result = .failure(error as! SpineError)
+			result = .failure(error.asSpineError)
 			state = .finished
 			return
 		}
@@ -280,7 +279,7 @@ class SaveOperation: ConcurrentOperation {
 			defer { self.state = .finished }
 			
 			if let error = networkError {
-				self.result = Failable.failure(SpineError.networkError(error))
+				self.result = .failure(.networkError(error))
 				return
 			}
 			
@@ -292,7 +291,7 @@ class SaveOperation: ConcurrentOperation {
 					let mappingTargets: [Resource]? = success ? [self.resource] : nil
 					document = try self.serializer.deserializeData(data, mappingTargets: mappingTargets)
 				} catch let error {
-					self.result = .failure(promoteToSpineError(error))
+					self.result = .failure(error.asSpineError)
 					return
 				}
 			} else {
@@ -302,8 +301,7 @@ class SaveOperation: ConcurrentOperation {
 			if success {
 				self.result = .success()
 			} else {
-				let error = errorFromStatusCode(statusCode!, additionalErrors: document?.errors)
-				self.result = .failure(error)
+				self.result = .failure(.serverError(statusCode: statusCode!, apiErrors: document?.errors))
 			}
 		}
 	}
@@ -314,7 +312,7 @@ class SaveOperation: ConcurrentOperation {
 			let payload = try serializer.serializeResources([resource], options: options)
 			return payload
 		} catch let error {
-			throw promoteToSpineError(error)
+			throw error.asSpineError
 		}
 	}
 
@@ -329,7 +327,7 @@ class SaveOperation: ConcurrentOperation {
 		let completionHandler: (_ result: Failable<Void, SpineError>?) -> Void = { result in
 			if let error = result?.error {
 				self.relationshipOperationQueue.cancelAllOperations()
-				self.result = Failable(error)
+				self.result = .failure(error)
 				self.state = .finished
 			}
 		}
@@ -374,23 +372,23 @@ private class RelationshipOperation: ConcurrentOperation {
 		defer { self.state = .finished }
 		
 		guard networkError == nil else {
-			self.result = Failable.failure(SpineError.networkError(networkError!))
+			self.result = .failure(.networkError(networkError!))
 			return
 		}
 		
 		if statusCodeIsSuccess(statusCode) {
-			self.result = Failable.success()
+			self.result = .success()
 		} else if let data = responseData , data.count > 0 {
 			do {
 				let document = try serializer.deserializeData(data, mappingTargets: nil)
-				self.result = .failure(errorFromStatusCode(statusCode!, additionalErrors: document.errors))
+				self.result = .failure(.serverError(statusCode: statusCode!, apiErrors: document.errors))
 			} catch let error as SpineError {
 				self.result = .failure(error)
 			} catch {
-				self.result = .failure(SpineError.serializerError)
+				self.result = .failure(.serializerError)
 			}
 		} else {
-			self.result = .failure(errorFromStatusCode(statusCode!))
+			self.result = .failure(.serverError(statusCode: statusCode!, apiErrors: nil))
 		}
 	}
 }
@@ -460,7 +458,7 @@ private class RelationshipMutateOperation: RelationshipOperation {
 		}
 		
 		guard !relatedResources.isEmpty else {
-			result = Failable()
+			result = .success()
 			state = .finished
 			return
 		}
