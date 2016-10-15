@@ -108,6 +108,16 @@ public class Resource: NSObject, NSCoding {
 	var relationships: [String: RelationshipData] = [:]
 	
 	var originalValues: [String: AnyObject] = [:]
+    
+    var isDirty: Bool {
+        var dirty = false
+        for field in fields {
+            if isDirty(field.name) {
+                dirty = true
+            }
+        }
+        return dirty
+    }
 	
 	public required override init() {
 		super.init()
@@ -167,7 +177,7 @@ public class Resource: NSObject, NSCoding {
 			return originalValue !== valueForField(field)
 		}
 	}
-	
+    
 	func markField(field: String, asDirty dirty: Bool) {
 		if dirty {
 			originalValues[field] = nil

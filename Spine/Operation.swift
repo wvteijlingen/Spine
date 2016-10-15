@@ -240,6 +240,12 @@ class SaveOperation: ConcurrentOperation {
 	}
 
 	private func updateResource() {
+        if !isNewResource && !resource.isDirty {
+            self.result = .Success()
+            self.state = .Finished
+            return
+        }
+        
 		let URL: NSURL
 		let method: String
 		let options: SerializationOptions
@@ -251,7 +257,7 @@ class SaveOperation: ConcurrentOperation {
 		} else {
 			URL = router.URLForQuery(Query(resource: resource))
 			method = "PATCH"
-			options = [.IncludeID]
+			options = [.IncludeID, .DirtyFieldsOnly]
 		}
 		
 		let payload: NSData
@@ -309,7 +315,7 @@ class SaveOperation: ConcurrentOperation {
 	}
 
 	private func updateRelationships() {
-		let relationships = resource.fields.filter { $0 is Relationship }
+		let relationships = resource.fields.filter { $0 is Relationship && resource.isDirty($0.name) }
 		
 		guard !relationships.isEmpty else {
 			self.updateResource()

@@ -404,6 +404,8 @@ class SaveTests: SpineTests {
 			return (responseData: self.fixture.data, statusCode: 201, error: nil)
 		}
 
+        foo.stringAttribute = "one attribute changed to mark resource dirty"
+
 		let future = spine.save(foo)
 		let expectation = expectationWithDescription("")
 		assertFutureSuccess(future, expectation: expectation)
@@ -414,10 +416,61 @@ class SaveTests: SpineTests {
 		}
 	}
 	
+    func testItShouldNotPATCHWhenUpdatingAResourcNotDirty() {
+        HTTPClient.handler = { request, payload in
+            if(request.URL! == NSURL(string: "http://example.com/foos/1")!) {
+                XCTFail("No request expected as resource has no changes")
+            }
+            return (responseData: self.fixture.data, statusCode: 201, error: nil)
+        }
+        
+        let future = spine.save(foo)
+        let expectation = expectationWithDescription("")
+        assertFutureSuccess(future, expectation: expectation)
+        
+        waitForExpectationsWithTimeout(10) { error in
+            XCTAssertNil(error, "\(error)")
+        }
+    }
+
+    func testItShouldPatchOnlyDirtyFields() {
+        var resourcePatched = false
+        
+        HTTPClient.handler = { request, payload in
+            XCTAssertEqual(request.HTTPMethod!, "PATCH", "HTTP method not as expected.")
+            if(request.URL! == NSURL(string: "http://example.com/foos/1")!) {
+                resourcePatched = true
+                
+                let json = JSON(data: payload!)
+                XCTAssertEqual(json["data"]["id"].stringValue, self.foo.id!, "Serialized id is not equal.")
+                XCTAssertEqual(json["data"]["type"].stringValue, self.foo.resourceType, "Serialized type is not equal.")
+                XCTAssertEqual(json["data"]["attributes"]["string-attribute"].stringValue, self.foo.stringAttribute!, "Serialized string is not equal.")
+                XCTAssertNotNil(json["data"]["attributes"]["integer-attribute"].error, "Expected non dirty integer to be absent.")
+                XCTAssertNotNil(json["data"]["attributes"]["float-attribute"].error, "Expected non dirty float to be absent.")
+                XCTAssertNotNil(json["data"]["attributes"]["boolean-attribute"].error, "Expected non dirty boolean to be absent.")
+                XCTAssertNotNil(json["data"]["attributes"]["nil-attribute"].error, "Expected non dirty nil to be absent.")
+                XCTAssertNotNil(json["data"]["attributes"]["date-attribute"].error, "Expected non dirty date to be absent.")
+            }
+            return (responseData: self.fixture.data, statusCode: 201, error: nil)
+        }
+        
+        foo.stringAttribute = "AttributeShouldBeDirtyNow"
+        
+        let future = spine.save(foo)
+        let expectation = expectationWithDescription("")
+        assertFutureSuccess(future, expectation: expectation)
+        
+        waitForExpectationsWithTimeout(10) { error in
+            XCTAssertNil(error, "\(error)")
+            XCTAssertTrue(resourcePatched)
+        }
+    }
+
 	func testItShouldFailOnAPIError() {
 		HTTPClient.respondWith(400)
 		
 		let expectation = expectationWithDescription("testCreateResourceWithAPIError")
+        foo.stringAttribute = "markDirty"
 		let future = spine.save(foo)
 		assertFutureFailureWithServerError(future, statusCode: 400, expectation: expectation)
 
@@ -430,6 +483,7 @@ class SaveTests: SpineTests {
 		HTTPClient.simulateNetworkErrorWithCode(999)
 		
 		let expectation = expectationWithDescription("testDeleteResourceWithNetworkError")
+        foo.stringAttribute = "markDirty"
 		let future = spine.save(foo)
 		assertFutureFailureWithNetworkError(future, code: 999, expectation: expectation)
 		
@@ -457,54 +511,57 @@ class SaveRelationshipsTests: SpineTests {
 		}
 	}
 
-	func testItShouldPATCHToOneRelationships() {
-		var relationshipUpdated = false
-
-		HTTPClient.handler = { request, payload in
-			if(request.HTTPMethod! == "PATCH" && request.URL!.absoluteString == "http://example.com/foos/1/relationships/to-one-attribute") {
-				let json = JSON(data: payload!)
-				if json["data"]["type"].string == "bars" && json["data"]["id"].string == "10" {
-					relationshipUpdated = true
-				}
-			}
-			return (responseData: self.fixture.data, statusCode: 201, error: nil)
-		}
-
-		let future = spine.save(foo)
-		let expectation = expectationWithDescription("")
-		assertFutureSuccess(future, expectation: expectation)
-
-		waitForExpectationsWithTimeout(10) { error in
-			XCTAssertNil(error, "\(error)")
-			XCTAssertTrue(relationshipUpdated)
-		}
-	}
-	
-	func testItShouldPATCHToOneRelationshipsWithNull() {
-		var relationshipUpdated = false
-		
-		HTTPClient.handler = { request, payload in
-			if(request.HTTPMethod! == "PATCH" && request.URL!.absoluteString == "http://example.com/foos/1/relationships/to-one-attribute") {
-				let json = JSON(data: payload!)
-				if json["data"].type == .Null {
-					relationshipUpdated = true
-				}
-			}
-			return (responseData: self.fixture.data, statusCode: 201, error: nil)
-		}
-		
-		foo.toOneAttribute = nil
-		
-		let future = spine.save(foo)
-		let expectation = expectationWithDescription("")
-		assertFutureSuccess(future, expectation: expectation)
-		
-		waitForExpectationsWithTimeout(10) { error in
-			XCTAssertNil(error, "\(error)")
-			XCTAssertTrue(relationshipUpdated)
-		}
-	}
-
+    func testItShouldPATCHToOneRelationshipsIfDirty() {
+        var relationshipUpdated = false
+        
+        HTTPClient.handler = { request, payload in
+            if(request.HTTPMethod! == "PATCH" && request.URL!.absoluteString == "http://example.com/foos/1/relationships/to-one-attribute") {
+                let json = JSON(data: payload!)
+                if json["data"]["type"].string == "bars" && json["data"]["id"].string == "13" {
+                    relationshipUpdated = true
+                }
+            }
+            return (responseData: self.fixture.data, statusCode: 201, error: nil)
+        }
+        
+        let bar = Bar(id: "13")
+        foo.toOneAttribute = bar
+        
+        let future = spine.save(foo)
+        let expectation = expectationWithDescription("")
+        assertFutureSuccess(future, expectation: expectation)
+        
+        waitForExpectationsWithTimeout(10) { error in
+            XCTAssertNil(error, "\(error)")
+            XCTAssertTrue(relationshipUpdated)
+        }
+    }
+    
+    func testItShouldPATCHToOneRelationshipsWithNull() {
+        var relationshipUpdated = false
+        
+        HTTPClient.handler = { request, payload in
+            if(request.HTTPMethod! == "PATCH" && request.URL!.absoluteString == "http://example.com/foos/1/relationships/to-one-attribute") {
+                let json = JSON(data: payload!)
+                if json["data"].type == .Null {
+                    relationshipUpdated = true
+                }
+            }
+            return (responseData: self.fixture.data, statusCode: 201, error: nil)
+        }
+        
+        foo.toOneAttribute = nil
+        
+        let future = spine.save(foo)
+        let expectation = expectationWithDescription("")
+        assertFutureSuccess(future, expectation: expectation)
+        
+        waitForExpectationsWithTimeout(10) { error in
+            XCTAssertNil(error, "\(error)")
+            XCTAssertTrue(relationshipUpdated)
+        }
+    }
+    
 	func testItShouldPOSTToManyRelationships() {
 		var relationshipUpdated = false
 
@@ -533,6 +590,23 @@ class SaveRelationshipsTests: SpineTests {
 		}
 	}
 
+    func testItShouldNotPATCHRelationshipsNotDirty() {
+        HTTPClient.handler = { request, payload in
+            if(request.URL! == NSURL(string: "http://example.com/foos/1/relationships/to-one-attribute")!) {
+                XCTFail("No request expected as resource has no changes")
+            }
+            return (responseData: self.fixture.data, statusCode: 201, error: nil)
+        }
+        
+        let future = spine.save(foo)
+        let expectation = expectationWithDescription("")
+        assertFutureSuccess(future, expectation: expectation)
+        
+        waitForExpectationsWithTimeout(10) { error in
+            XCTAssertNil(error, "\(error)")
+        }
+    }
+    
 	func testItShouldDELETEToManyRelationships() {
 		var relationshipUpdated = false
 
