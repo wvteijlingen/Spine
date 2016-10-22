@@ -8,10 +8,8 @@
 
 import Foundation
 
-/**
-The KeyFormatter protocol declares methods and properties that a key formatter must implement.
-A key formatter transforms field names as they appear in Resources to keys as they appear in a JSONAPI document.
-*/
+/// The KeyFormatter protocol declares methods and properties that a key formatter must implement.
+/// A key formatter transforms field names as they appear in Resources to keys as they appear in a JSONAPI document.
 public protocol KeyFormatter {
 	func format(_ name: String) -> String
 }
@@ -22,10 +20,8 @@ extension KeyFormatter {
 	}
 }
 
-/**
-AsIsKeyFormatter does not format anything, i.e. it returns the field name as it. Use this if your field names correspond to
-keys in a JSONAPI document one to one.
-*/
+/// AsIsKeyFormatter does not format anything, i.e. it returns the field name as it. Use this if your field names correspond to
+/// keys in a JSONAPI document one to one.
 public struct AsIsKeyFormatter: KeyFormatter {
 	public func format(_ name: String) -> String {
 		return name;
@@ -34,9 +30,7 @@ public struct AsIsKeyFormatter: KeyFormatter {
 	public init() { }
 }
 
-/**
-DasherizedKeyFormatter formats field names as dasherized keys. Eg. someFieldName -> some-field-name.
-*/
+/// DasherizedKeyFormatter formats field names as dasherized keys. Eg. someFieldName -> some-field-name.
 public struct DasherizedKeyFormatter: KeyFormatter {
 	let regex: NSRegularExpression
 	
@@ -50,9 +44,7 @@ public struct DasherizedKeyFormatter: KeyFormatter {
 	}
 }
 
-/*
-UnderscoredKeyFormatter formats field names as underscored keys. Eg. someFieldName -> some_field_name.
-*/
+/// UnderscoredKeyFormatter formats field names as underscored keys. Eg. someFieldName -> some_field_name.
 public struct UnderscoredKeyFormatter: KeyFormatter {
 	let regex: NSRegularExpression
 	

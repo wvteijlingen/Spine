@@ -34,7 +34,7 @@ class RoutingTests: XCTestCase {
     
 	func testURLForQueryWithNonAttributeFilter() {
 		var query = Query(resourceType: Foo.self, resourceIDs: ["1", "2"])
-		query.filterOn("notAnAttribute", equalTo: "stringValue")
+		query.addPredicateWithKey("notAnAttribute", value: "stringValue", type: .equalTo)
 
 		let url = spine.router.urlForQuery(query)
 		let expectedURL = URL(string: "http://example.com/foos?filter[id]=1,2&filter[notAnAttribute]=stringValue")!

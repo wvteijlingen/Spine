@@ -9,10 +9,9 @@
 import Foundation
 
 
-/**
-The ValueFormatter protocol declares methods and properties that a value formatter must implement.
-A value formatter transforms values between the serialized and deserialized form.
-*/
+
+/// The ValueFormatter protocol declares methods and properties that a value formatter must implement.
+/// A value formatter transforms values between the serialized and deserialized form.
 public protocol ValueFormatter {
 	/// The type as it appears in serialized form (JSON).
 	associatedtype FormattedType
@@ -23,31 +22,26 @@ public protocol ValueFormatter {
 	/// The attribute type for which this formatter formats values.
 	associatedtype AttributeType
 	
-	/**
-	Returns the deserialized form of the given value for the given attribute.
 	
-	- parameter value:     The value to deserialize.
-	- parameter attribute: The attribute to which the value belongs.
-	
-	- returns: The deserialized form of `value`.
-	*/
+	/// Returns the deserialized form of the given value for the given attribute.
+	///
+	/// - parameter value:        The value to deserialize.
+	/// - parameter forAttribute: The attribute to which the value belongs.
+	///
+	/// - returns: The deserialized form of `value`.
 	func unformatValue(_ value: FormattedType, forAttribute: AttributeType) -> UnformattedType
 	
-	/**
-	Returns the serialized form of the given value for the given attribute.
-	
-	- parameter value:     The value to serialize.
-	- parameter attribute: The attribute to which the value belongs.
-	
-	- returns: The serialized form of `value`.
-	*/
+	/// Returns the serialized form of the given value for the given attribute.
+	///
+	/// - parameter value:        The value to serialize.
+	/// - parameter forAttribute: The attribute to which the value belongs.
+	///
+	/// - returns: The serialized form of `value`.
 	func formatValue(_ value: UnformattedType, forAttribute: AttributeType) -> FormattedType
 }
 
-/**
-A value formatter Registry keeps a list of value formatters, and chooses between these value formatters
-to transform values between the serialized and deserialized form.
-*/
+/// A value formatter Registry keeps a list of value formatters, and chooses between these value formatters
+/// to transform values between the serialized and deserialized form.
 struct ValueFormatterRegistry {
 	/// Registered serializer functions.
 	fileprivate var formatters: [(Any, Attribute) -> Any?] = []
@@ -55,11 +49,9 @@ struct ValueFormatterRegistry {
 	/// Registered deserializer functions.
 	fileprivate var unformatters: [(Any, Attribute) -> Any?] = []
 	
-	/**
-	Returns a new value formatter directory configured with the built in default value formatters.
-	
-	- returns: ValueFormatterRegistry
-	*/
+	/// Returns a new value formatter directory configured with the built in default value formatters.
+	///
+	/// - returns: ValueFormatterRegistry
 	static func defaultRegistry() -> ValueFormatterRegistry {
 		var directory = ValueFormatterRegistry()
 		directory.registerFormatter(URLValueFormatter())
@@ -67,12 +59,10 @@ struct ValueFormatterRegistry {
 		directory.registerFormatter(BooleanValueFormatter())
 		return directory
 	}
-	
-	/**
-	Registers the given value formatter.
-	
-	- parameter formatter: The value formatter to register.
-	*/
+
+	/// Registers the given value formatter.
+	///
+	/// - parameter formatter: The value formatter to register.
 	mutating func registerFormatter<T: ValueFormatter>(_ formatter: T) {
 		formatters.append { (value: Any, attribute: Attribute) -> Any? in
 			if let typedAttribute = attribute as? T.AttributeType {
@@ -95,17 +85,15 @@ struct ValueFormatterRegistry {
 		}
 	}
 	
-	/**
-	Returns the deserialized form of the given value for the given attribute.
-	
-	The actual value formatter used is the first registered formatter that supports the given
-	value type for the given attribute type.
-	
-	- parameter value:     The value to deserialize.
-	- parameter attribute: The attribute to which the value belongs.
-	
-	- returns: The deserialized form of `value`.
-	*/
+	/// Returns the deserialized form of the given value for the given attribute.
+	///
+	/// The actual value formatter used is the first registered formatter that supports the given
+	/// value type for the given attribute type.
+	///
+	/// - parameter value:     The value to deserialize.
+	/// - parameter attribute: The attribute to which the value belongs.
+	///
+	/// - returns: The deserialized form of `value`.
 	func unformatValue(_ value: Any, forAttribute attribute: Attribute) -> Any {
 		for unformatter in unformatters {
 			if let unformatted = unformatter(value, attribute) {
@@ -116,18 +104,16 @@ struct ValueFormatterRegistry {
 		return value
 	}
 	
-	/**
-	Returns the serialized form of the given value for the given attribute.
-	
-	The actual value formatter used is the first registered formatter that supports the given
-	value type for the given attribute type. If no suitable value formatter is found,
-	a string representation is returned.
-	
-	- parameter value:     The value to serialize.
-	- parameter attribute: The attribute to which the value belongs.
-	
-	- returns: The serialized form of `value`.
-	*/
+	/// Returns the serialized form of the given value for the given attribute.
+	///
+	/// The actual value formatter used is the first registered formatter that supports the given
+	/// value type for the given attribute type. If no suitable value formatter is found,
+	/// a string representation is returned.
+	///
+	/// - parameter value:        The value to serialize.
+	/// - parameter forAttribute: The attribute to which the value belongs.
+	///
+	/// - returns: The serialized form of `value`.
 	func formatValue(_ value: Any, forAttribute attribute: Attribute) -> Any {
 		for formatter in formatters {
 			if let formatted = formatter(value, attribute) {
@@ -143,11 +129,9 @@ struct ValueFormatterRegistry {
 
 // MARK: - Built in value formatters
 
-/**
-URLValueFormatter is a value formatter that transforms between URL and String, and vice versa.
-If a baseURL has been configured in the URLAttribute, and the given String is not an absolute URL,
-it will return an absolute URL, relative to the baseURL.
-*/
+/// URLValueFormatter is a value formatter that transforms between URL and String, and vice versa.
+/// If a baseURL has been configured in the URLAttribute, and the given String is not an absolute URL,
+/// it will return an absolute URL, relative to the baseURL.
 private struct URLValueFormatter: ValueFormatter {
 	func unformatValue(_ value: String, forAttribute attribute: URLAttribute) -> URL {
 		return URL(string: value, relativeTo: attribute.baseURL as URL?)!
@@ -158,10 +142,8 @@ private struct URLValueFormatter: ValueFormatter {
 	}
 }
 
-/**
-DateValueFormatter is a value formatter that transforms between NSDate and String, and vice versa.
-It uses the date format configured in the DateAttribute.
-*/
+/// DateValueFormatter is a value formatter that transforms between NSDate and String, and vice versa.
+/// It uses the date format configured in the DateAttribute.
 private struct DateValueFormatter: ValueFormatter {
 	func formatter(_ attribute: DateAttribute) -> DateFormatter {
 		let formatter = DateFormatter()
@@ -182,6 +164,7 @@ private struct DateValueFormatter: ValueFormatter {
 	}
 }
 
+/// BooleanValueformatter is a value formatter that formats NSNumber to Bool, and vice versa.
 private struct BooleanValueFormatter: ValueFormatter {
 	func unformatValue(_ value: Bool, forAttribute: BooleanAttribute) -> NSNumber {
 		return NSNumber(booleanLiteral: value)

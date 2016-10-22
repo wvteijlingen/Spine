@@ -403,8 +403,8 @@ class SaveTests: SpineTests {
 
 		foo = Foo()
 
-		spine.idGenerator = { r in
-			return "some id"
+		spine.idGenerator = { resource in
+			"some id"
 		}
 
 		let future = spine.save(foo)

@@ -11,7 +11,7 @@ import BrightFutures
 
 /// A ResourceCollection represents a collection of resources.
 public class ResourceCollection: NSObject, NSCoding {
-	/// Whether the resources for this collection are loaded
+	/// Whether the resources for this collection are loaded.
 	public var isLoaded: Bool = false
 	
 	/// The URL of the current page in this collection.

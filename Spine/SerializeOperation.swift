@@ -9,9 +9,7 @@
 import Foundation
 import SwiftyJSON
 
-/**
-A SerializeOperation serializes a JSONAPIDocument to JSON data in the form of NSData.
-*/
+/// A SerializeOperation serializes a JSONAPIDocument to JSON data in the form of Data.
 class SerializeOperation: Operation {
 	fileprivate let resources: [Resource]
 	let valueFormatters: ValueFormatterRegistry
@@ -41,7 +39,7 @@ class SerializeOperation: Operation {
 		}
 		
 		do {
-			let serialized = try JSONSerialization.data(withJSONObject: ["data": serializedData], options: JSONSerialization.WritingOptions(rawValue: 0))
+			let serialized = try JSONSerialization.data(withJSONObject: ["data": serializedData], options: [])
 			result = Failable.success(serialized)
 		} catch let error as NSError {
 			result = Failable.failure(SerializerError.jsonSerializationError(error))
@@ -73,17 +71,11 @@ class SerializeOperation: Operation {
 
 	
 	// MARK: Attributes
-	
-	/**
-	Adds the attributes of the the given resource to the passed serialized data.
-	
-	This method loops over all the attributes in the passed resource, maps the attribute name
-	to the key for the serialized form and formats the value of the attribute. It then passes
-	the key and value to the addAttribute method.
-	
-	- parameter serializedData: The data to add the attributes to.
-	- parameter resource:       The resource whose attributes to add.
-	*/
+
+	/// Adds the attributes of the the given resource to the passed serialized data.
+	///
+	/// - parameter resource:       The resource whose attributes to add.
+	/// - parameter serializedData: The data to add the attributes to.
 	fileprivate func addAttributes(from resource: Resource, to serializedData: inout [String: Any]) {
 		var attributes = [String: Any]();
 		
@@ -92,42 +84,23 @@ class SerializeOperation: Operation {
 			
 			Spine.logDebug(.serializing, "Serializing attribute \(field) as '\(key)'")
 			
-			//TODO: Dirty checking
 			if let unformattedValue = resource.value(forField: field.name) {
-				addAttribute(&attributes, key: key, value: valueFormatters.formatValue(unformattedValue, forAttribute: field))
+				attributes[key] = valueFormatters.formatValue(unformattedValue, forAttribute: field)
 			} else if(!options.contains(.OmitNullValues)){
-				addAttribute(&attributes, key: key, value: NSNull())
+				attributes[key] = NSNull()
 			}
 		}
 		
-		serializedData["attributes"] = attributes as AnyObject?
+		serializedData["attributes"] = attributes
 	}
-	
-	/**
-	Adds the given key/value pair to the passed serialized data.
-	
-	- parameter serializedData: The data to add the key/value pair to.
-	- parameter key:            The key to add to the serialized data.
-	- parameter value:          The value to add to the serialized data.
-	*/
-	fileprivate func addAttribute(_ serializedData: inout [String: Any], key: String, value: Any) {
-		serializedData[key] = value
-	}
-	
+
 	
 	// MARK: Relationships
-	
-	/**
-	Adds the relationships of the the given resource to the passed serialized data.
-	
-	This method loops over all the relationships in the passed resource, maps the attribute name
-	to the key for the serialized form and gets the related attributes. It then passes the key and
-	related resources to either the addToOneRelationship or addToManyRelationship method.
-	
-	
-	- parameter serializedData: The data to add the relationships to.
-	- parameter resource:       The resource whose relationships to add.
-	*/
+
+	/// Adds the relationships of the the given resource to the passed serialized data.
+	///
+	/// - parameter resource:       The resource whose relationships to add.
+	/// - parameter serializedData: The data to add the relationships to.
 	fileprivate func addRelationships(from resource: Resource, to serializedData: inout [String: Any]) {
 		for case let field as Relationship in resource.fields where field.isReadOnly == false {
 			let key = keyFormatter.format(field)
@@ -148,13 +121,12 @@ class SerializeOperation: Operation {
 		}
 	}
 	
-	/**
-	Adds the given resource as a to to-one relationship to the serialized data.
-	
-	- parameter serializedData:  The data to add the related resource to.
-	- parameter key:             The key to add to the serialized data.
-	- parameter relatedResource: The related resource to add to the serialized data.
-	*/
+	/// Adds the given resource as a to to-one relationship to the serialized data.
+	///
+	/// - parameter linkedResource: The linked resource to add to the serialized data.
+	/// - parameter serializedData: The data to add the related resource to.
+	/// - parameter key:            The key to add to the serialized data.
+	/// - parameter type:           The resource type of the linked resource as defined on the parent resource.
 	fileprivate func addToOneRelationship(_ linkedResource: Resource?, to serializedData: inout [String: Any], key: String, type: ResourceType) {
 		let serializedId: Any
 		if let resourceId = linkedResource?.id {
@@ -179,13 +151,12 @@ class SerializeOperation: Operation {
 		}
 	}
 	
-	/**
-	Adds the given resources as a to to-many relationship to the serialized data.
-	
-	- parameter serializedData:   The data to add the related resources to.
-	- parameter key:              The key to add to the serialized data.
-	- parameter relatedResources: The related resources to add to the serialized data.
-	*/
+	/// Adds the given resources as a to to-many relationship to the serialized data.
+	///
+	/// - parameter linkedResources: The linked resources to add to the serialized data.
+	/// - parameter serializedData:  The data to add the related resources to.
+	/// - parameter key:             The key to add to the serialized data.
+	/// - parameter type:            The resource type of the linked resource as defined on the parent resource.
 	fileprivate func addToManyRelationship(_ linkedResources: ResourceCollection?, to serializedData: inout [String: Any], key: String, type: ResourceType) {
 		var resourceIdentifiers: [ResourceIdentifier] = []
 		

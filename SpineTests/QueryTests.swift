@@ -61,21 +61,6 @@ class QueryIncludeTests: XCTestCase {
 
 class QueryFilterTests: XCTestCase {
 
-	func testAddPredicate() {
-		var query = Query(resourceType: Foo.self)
-		
-		let predicate = NSComparisonPredicate(
-			leftExpression: NSExpression(forKeyPath: "property"),
-			rightExpression: NSExpression(forConstantValue: "value"),
-			modifier: .direct,
-			type: .equalTo,
-			options: NSComparisonPredicate.Options())
-		
-		query.addPredicate(predicate)
-		
-		XCTAssertEqual(query.filters, [predicate], "Filters not as expected")
-	}
-	
 	func testWherePropertyEqualTo() {
 		var query = Query(resourceType: Foo.self)
 		query.whereAttribute("stringAttribute", equalTo: "value")
@@ -176,21 +161,20 @@ class QueryFilterTests: XCTestCase {
 		
 		XCTAssertEqual(query.filters, [predicate], "Filters not as expected")
 	}
-    
-    func testFilterOnANonAttribute() {
-        var query = Query(resourceType: Foo.self)
-        query.filterOn("notAnAttribute", equalTo: "value")
-        
-        let predicate = NSComparisonPredicate(
-            leftExpression: NSExpression(forKeyPath: "notAnAttribute"),
-            rightExpression: NSExpression(forConstantValue: "value"),
-            modifier: .direct,
-            type: .equalTo,
-            options: NSComparisonPredicate.Options())
-        
-        XCTAssertEqual(query.filters, [predicate], "Filters not as expected")
-    }
 	
+	func testAddPredicateWithKey() {
+		var query = Query(resourceType: Foo.self)
+		query.addPredicateWithKey("notAnAttribute", value: "value", type: .equalTo)
+		
+		let predicate = NSComparisonPredicate(
+				leftExpression: NSExpression(forKeyPath: "notAnAttribute"),
+				rightExpression: NSExpression(forConstantValue: "value"),
+				modifier: .direct,
+				type: .equalTo,
+				options: NSComparisonPredicate.Options())
+		
+		XCTAssertEqual(query.filters, [predicate], "Filters not as expected")
+	}
 }
 
 class QuerySparseFieldsetsTests: XCTestCase {

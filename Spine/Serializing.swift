@@ -8,9 +8,7 @@
 
 import Foundation
 
-/**
-Serializer (de)serializes according to the JSON:API specification.
-*/
+/// Serializer (de)serializes according to the JSON:API specification.
 public class Serializer {
 	/// The resource factory used for dispensing resources.
 	fileprivate var resourceFactory = ResourceFactory()
@@ -22,17 +20,15 @@ public class Serializer {
 	public var keyFormatter: KeyFormatter = AsIsKeyFormatter()
 	
 	public init() {}
-	
-	/**
-	Deserializes the given data into a JSONAPIDocument.
-	
-	- parameter data:           The data to deserialize.
-	- parameter mappingTargets: Optional resources onto which data will be deserialized.
-	
-	- throws: SerializerError that can occur in the deserialization.
-	
-	- returns: A JSONAPIDocument.
-	*/
+
+	/// Deserializes the given data into a JSONAPIDocument.
+	///
+	/// - parameter data:           The data to deserialize.
+	/// - parameter mappingTargets: Optional resources onto which data will be deserialized.
+	///
+	/// - throws: SerializerError that can occur in the deserialization.
+	///
+	/// - returns: A JSONAPIDocument
 	public func deserializeData(_ data: Data, mappingTargets: [Resource]? = nil) throws -> JSONAPIDocument {
 		let deserializeOperation = DeserializeOperation(data: data, resourceFactory: resourceFactory, valueFormatters: valueFormatters, keyFormatter: keyFormatter)
 		
@@ -50,16 +46,14 @@ public class Serializer {
 		}
 	}
 	
-	/**
-	Serializes the given JSON:API document into NSData. Currently only the main data is serialized.
-	
-	- parameter document: The JSONAPIDocument to serialize.
-	- parameter options:  The serialization options to use.
-	
-	- throws: SerializerError that can occur in the serialization.
-	
-	- returns: Serialized data.
-	*/
+	/// Serializes the given JSON:API document into NSData. Only the main data is serialized.
+	///
+	/// - parameter document: The JSONAPIDocument to serialize.
+	/// - parameter options:  Serialization options to use.
+	///
+	/// - throws: SerializerError that can occur in the serialization.
+	///
+	/// - returns: Serialized data
 	public func serializeDocument(_ document: JSONAPIDocument, options: SerializationOptions = [.IncludeID]) throws -> Data {
 		let serializeOperation = SerializeOperation(document: document, valueFormatters: valueFormatters, keyFormatter: keyFormatter)
 		serializeOperation.options = options
@@ -73,41 +67,32 @@ public class Serializer {
 			return data
 		}
 	}
-	
-	/**
-	Serializes the given Resources into NSData.
-	
-	- parameter resources: The resources to serialize.
-	- parameter options:   The serialization options to use.
-	
-	- throws: SerializerError that can occur in the serialization.
-	
-	- returns: Serialized data.
-	*/
+
+	/// Serializes the given Resources into NSData.
+	///
+	/// - parameter resources: The resources to serialize.
+	/// - parameter options:   The serialization options to use.
+	///
+	/// - throws: SerializerError that can occur in the serialization.
+	///
+	/// - returns: Serialized data.
 	public func serializeResources(_ resources: [Resource], options: SerializationOptions = [.IncludeID]) throws -> Data {
 		let document = JSONAPIDocument(data: resources, included: nil, errors: nil, meta: nil, links: nil, jsonapi: nil)
 		return try serializeDocument(document, options: options)
 	}
+
 	
-	/**
-	Converts the given resource to link data, and serializes it into NSData.
-	```json
-	{
-	  "data": { "type": "people", "id": "12" }
-	}
-	```
-	
-	If no resource is passed, `null` is used:
-	```json
-	{ "data": null }
-	```
-	
-	- parameter resource: The resource to serialize link data for.
-	
-	- throws: SerializerError that can occur in the serialization.
-	
-	- returns: Serialized data.
-	*/
+	/// Converts the given resource to link data, and serializes it into NSData.
+	/// `{"data": { "type": "people", "id": "12" }}`
+	///
+	/// If no resource is passed, `null` is used:
+	/// `{ "data": null }`
+	///
+	/// - parameter resource: The resource to serialize link data for.
+	///
+	/// - throws: SerializerError that can occur in the serialization.
+	///
+	/// - returns: Serialized data.
 	public func serializeLinkData(_ resource: Resource?) throws -> Data {
 		let payloadData: Any
 		
@@ -125,23 +110,21 @@ public class Serializer {
 		}
 	}
 	
-	/**
-	Converts the given resources to link data, and serializes it into NSData.
-	```json
-	{
-	  "data": [
-	    { "type": "comments", "id": "12" },
-	    { "type": "comments", "id": "13" }
-	  ]
-	}
-	```
-	
-	- parameter resources: The resource to serialize link data for.
-	
-	- throws: SerializerError that can occur in the serialization.
-	
-	- returns: Serialized data.
-	*/
+	/// Converts the given resources to link data, and serializes it into NSData.
+	/// ```json
+	/// {
+  ///   "data": [
+	///     { "type": "comments", "id": "12" },
+	///     { "type": "comments", "id": "13" }
+	///   ]
+	/// }
+	/// ```
+	///
+	/// - parameter resources: The resource to serialize link data for.
+	///
+	/// - throws: SerializerError that can occur in the serialization.
+	///
+	/// - returns: Serialized data.
 	public func serializeLinkData(_ resources: [Resource]) throws -> Data {
 		let payloadData: Any
 		
@@ -160,29 +143,24 @@ public class Serializer {
 		}
 	}
 
-	/**
-	Registers a resource class.
-	
-	- parameter resourceClass: The resource class to register.
-	*/
+	/// Registers a resource class.
+	///
+	/// - parameter resourceClass: The resource class to register.
 	public func registerResource(_ resourceClass: Resource.Type) {
 		resourceFactory.registerResource(resourceClass)
 	}
 	
-	/**
-	Registers transformer `transformer`.
 	
-	- parameter transformer: The Transformer to register.
-	*/
+	///	Registers transformer `transformer`.
+	///
+	/// - parameter transformer: The Transformer to register.
 	public func registerValueFormatter<T: ValueFormatter>(_ formatter: T) {
 		valueFormatters.registerFormatter(formatter)
 	}
 }
 
-/**
-A JSONAPIDocument represents a JSON API document containing
-resources, errors, metadata, links and jsonapi data.
-*/
+/// A JSONAPIDocument represents a JSON API document containing
+/// resources, errors, metadata, links and jsonapi data.
 public struct JSONAPIDocument {
 	/// Primary resources extracted from the response.
 	public var data: [Resource]?

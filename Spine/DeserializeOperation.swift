@@ -144,14 +144,14 @@ class DeserializeOperation: Operation {
 	
 	// MARK: Deserializing
 	
-	/**
-	Maps a single resource representation into a resource object of the given type.
-	
-	- parameter representation:     The JSON representation of a single resource.
-	- parameter mappingTargetIndex: The index of the matching mapping target.
-	
-	- returns: A Resource object with values mapped from the representation.
-	*/
+	/// Maps a single resource representation into a resource object of the given type.
+	///
+	/// - parameter representation:     The JSON representation of a single resource.
+	/// - parameter mappingTargetIndex: The index of the matching mapping target.
+	///
+	/// - throws: A SerializerError when an error occurs in serializing.
+	///
+	/// - returns: A Resource object with values mapped from the representation.
 	fileprivate func deserializeSingleRepresentation(_ representation: JSON, mappingTargetIndex: Int? = nil) throws -> Resource {
 		guard representation.dictionary != nil else {
 			throw SerializerError.invalidResourceStructure
@@ -183,16 +183,10 @@ class DeserializeOperation: Operation {
 	
 	// MARK: Attributes
 	
-	/**
-	Extracts the attributes from the given data into the given resource.
-	
-	This method loops over all the attributes in the passed resource, maps the attribute name
-	to the key for the serialized form and invokes `extractAttribute`. It then formats the extracted
-	attribute and sets the formatted value on the resource.
-	
-	- parameter serializedData: The data from which to extract the attributes.
-	- parameter resource:       The resource into which to extract the attributes.
-	*/
+	/// Extracts the attributes from the given data into the given resource.
+	///
+	/// - parameter serializedData: The data from which to extract the attributes.
+	/// - parameter resource:       The resource into which to extract the attributes.
 	fileprivate func extractAttributes(from serializedData: JSON, intoResource resource: Resource) {
 		for case let field as Attribute in resource.fields {
 			let key = keyFormatter.format(field)
@@ -203,14 +197,12 @@ class DeserializeOperation: Operation {
 		}
 	}
 	
-	/**
-	Extracts the value for the given key from the passed serialized data.
-	
-	- parameter serializedData: The data from which to extract the attribute.
-	- parameter key:            The key for which to extract the value from the data.
-	
-	- returns: The extracted value or nil if no attribute with the given key was found in the data.
-	*/
+	/// Extracts the value for the given key from the passed serialized data.
+	///
+	/// - parameter key:            The data from which to extract the attribute.
+	/// - parameter serializedData: The key for which to extract the value from the data.
+	///
+	/// - returns: The extracted value or nil if no attribute with the given key was found in the data.
 	fileprivate func extractAttribute(_ key: String, from serializedData: JSON) -> Any? {
 		let value = serializedData["attributes"][key]
 		
@@ -224,17 +216,10 @@ class DeserializeOperation: Operation {
 	
 	// MARK: Relationships
 	
-	/**
-	Extracts the relationships from the given data into the given resource.
-	
-	This method loops over all the relationships in the passed resource, maps the relationship name
-	to the key for the serialized form and invokes `extractToOneRelationship` or `extractToManyRelationship`.
-	It then sets the extracted ResourceRelationship on the resource.
-	It also sets `relationships` dictionary on parent resource containing the links to all related resources.
-	
-	- parameter serializedData: The data from which to extract the relationships.
-	- parameter resource:       The resource into which to extract the relationships.
-	*/
+	/// Extracts the relationships from the given data into the given resource.
+	///
+	/// - parameter serializedData: The data from which to extract the relationships.
+	/// - parameter resource:       The resource into which to extract the relationships.
 	fileprivate func extractRelationships(from serializedData: JSON, intoResource resource: Resource) {
 		for field in resource.fields {
 			let key = keyFormatter.format(field)
@@ -257,17 +242,15 @@ class DeserializeOperation: Operation {
 			}
 		}
 	}
-	
-	/**
-	Extracts the to-one relationship for the given key from the passed serialized data.
-	
-	This method supports both the single ID form and the resource object forms.
-	
-	- parameter serializedData: The data from which to extract the relationship.
-	- parameter key:            The key for which to extract the relationship from the data.
-	
-	- returns: The extracted relationship or nil if no relationship with the given key was found in the data.
-	*/
+
+	/// Extracts the to-one relationship for the given key from the passed serialized data.
+	/// This method supports both the single ID form and the resource object forms.
+	///
+	/// - parameter key:            The key for which to extract the relationship from the data.
+	/// - parameter serializedData: The data from which to extract the relationship.
+	/// - parameter linkedType:     The type of the linked resource as it is defined on the parent resource.
+	///
+	/// - returns: The extracted relationship or nil if no relationship with the given key was found in the data.
 	fileprivate func extractToOneRelationship(_ key: String, from serializedData: JSON, linkedType: ResourceType) -> Resource? {
 		var resource: Resource? = nil
 		
@@ -295,17 +278,14 @@ class DeserializeOperation: Operation {
 		
 		return resource
 	}
-	
-	/**
-	Extracts the to-many relationship for the given key from the passed serialized data.
-	
-	This method supports both the array of IDs form and the resource object forms.
-	
-	- parameter serializedData: The data from which to extract the relationship.
-	- parameter key:            The key for which to extract the relationship from the data.
-	
-	- returns: The extracted relationship or nil if no relationship with the given key was found in the data.
-	*/
+
+	/// Extracts the to-many relationship for the given key from the passed serialized data.
+	/// This method supports both the array of IDs form and the resource object forms.
+	///
+	/// - parameter key:            The key for which to extract the relationship from the data.
+	/// - parameter serializedData: The data from which to extract the relationship.
+	///
+	/// - returns: The extracted relationship or nil if no relationship with the given key was found in the data.
 	fileprivate func extractToManyRelationship(_ key: String, from serializedData: JSON) -> LinkedResourceCollection? {
 		var resourceCollection: LinkedResourceCollection? = nil
 
@@ -324,6 +304,11 @@ class DeserializeOperation: Operation {
 		return resourceCollection
 	}
 	
+	/// Extract the relationship data from the given JSON.
+	///
+	/// - parameter linkData: The JSON from which to extract relationship data.
+	///
+	/// - returns: A RelationshipData object.
 	fileprivate func extractRelationshipData(_ linkData: JSON) -> RelationshipData {
 		let selfURL = linkData["links"]["self"].URL
 		let relatedURL = linkData["links"]["related"].URL
@@ -342,9 +327,7 @@ class DeserializeOperation: Operation {
 		return RelationshipData(selfURL: selfURL, relatedURL: relatedURL, data: data)
 	}
 	
-	/**
-	Resolves the relations of the fetched resources.
-	*/
+	/// Resolves the relations of the fetched resources.
 	fileprivate func resolveRelationships() {
 		for resource in resourcePool {
 			for case let field as ToManyRelationship in resource.fields {

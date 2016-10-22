@@ -42,9 +42,13 @@ open class Spine {
 
 	// MARK: Initializers
 
-	/**
-	Creates a new Spine instance using the given router and network client.
-	*/
+	/// Creates a new Spine instance using the given router and network client.
+	/// Use this initializer if you want to use a custom router and network client.
+	///
+	/// - parameter router:        The Router to use.
+	/// - parameter networkClient: The NetworkClient to use
+	///
+	/// - returns: The Spine instance.
 	public init(router: Router, networkClient: NetworkClient) {
 		self.router = router
 		self.networkClient = networkClient
@@ -54,27 +58,34 @@ open class Spine {
 		self.serializer.keyFormatter = keyFormatter
 	}
 
-	/**
-	Creates a new Spine instance using the default Router and HTTPClient classes.
-	*/
+	/// Creates a new Spine instance using a JSONAPIRouter and HTTPClient.
+	///
+	/// - parameter baseURL: The base URL to use for routing.
+	///
+	/// - returns: Spine
 	public convenience init(baseURL: URL) {
 		let router = JSONAPIRouter()
 		router.baseURL = baseURL
 		self.init(router: router, networkClient: HTTPClient())
 	}
-
-	/**
-	Creates a new Spine instance using a specific router and the default HTTPClient class.
-	Use this initializer to specify a custom router.
-	*/
+	
+	/// Creates a new Spine instance using a specific router and HTTPClient.
+	/// Use this initializer if you want to use a custom router.
+	///
+	/// - parameter router: The Router to use.
+	///
+	/// - returns: Spine
 	public convenience init(router: Router) {
 		self.init(router: router, networkClient: HTTPClient())
 	}
 
-	/**
-	Creates a new Spine instance using a specific network client and the default Router class.
-	Use this initializer to specify a custom network client.
-	*/
+	/// Creates a new Spine instance using a specific network client and the default Router class.
+	/// Use this initializer if you want to use a custom network client.
+	///
+	/// - parameter baseURL:       The base URL to use for routing.
+	/// - parameter networkClient: The NetworkClient to use.
+	///
+	/// - returns: Spine
 	public convenience init(baseURL: URL, networkClient: NetworkClient) {
 		let router = JSONAPIRouter()
 		router.baseURL = baseURL
@@ -83,13 +94,11 @@ open class Spine {
 
 
 	// MARK: Operations
-
-	/**
-	Adds the given operation to the operation queue.
-	This sets the spine property of the operation to this Spine instance.
-
-	- parameter operation: The operation to enqueue.
-	*/
+	
+	/// Adds the given operation to the operation queue.
+	/// This sets the spine property of the operation to this Spine instance.
+	///
+	/// - parameter operation: The operation to enqueue.
 	func addOperation(_ operation: ConcurrentOperation) {
 		operation.spine = self
 		operationQueue.addOperation(operation)
@@ -98,13 +107,11 @@ open class Spine {
 
 	// MARK: Fetching
 
-	/**
-	Fetch multiple resources using the given query.
-
-	- parameter query: The query describing which resources to fetch.
-
-	- returns: A future that resolves to a tuple containing the fetched ResourceCollection, the document meta, and the document jsonapi object.
-	*/
+	/// Fetch multiple resources using the given query.
+	///
+	/// - parameter query: The query describing which resources to fetch.
+	///
+	/// - returns: A future that resolves to a tuple containing the fetched ResourceCollection, the document meta, and the document jsonapi object.
 	open func find<T: Resource>(_ query: Query<T>) -> Future<(resources: ResourceCollection, meta: Metadata?, jsonapi: JSONAPIData?), SpineError> {
 		let promise = Promise<(resources: ResourceCollection, meta: Metadata?, jsonapi: JSONAPIData?), SpineError>()
 
@@ -126,28 +133,24 @@ open class Spine {
 		return promise.future
 	}
 
-	/**
-	Fetch multiple resources with the given IDs and type.
-
-	- parameter IDs:  Array containing IDs of resources to fetch.
-	- parameter type: The type of resource to fetch.
-
-	- returns: A future that resolves to a tuple containing the fetched ResourceCollection, the document meta, and the document jsonapi object.
-	*/
+	/// Fetch multiple resources with the given IDs and type.
+	///
+	/// - parameter ids:  Array containing IDs of resources to fetch.
+	/// - parameter type: The type of resource to fetch.
+	///
+	/// - returns: A future that resolves to a tuple containing the fetched ResourceCollection, the document meta, and the document jsonapi object.
 	open func find<T: Resource>(_ ids: [String], ofType type: T.Type) -> Future<(resources: ResourceCollection, meta: Metadata?, jsonapi: JSONAPIData?), SpineError> {
 		let query = Query(resourceType: type, resourceIDs: ids)
 		return find(query)
 	}
 
-	/**
-	Fetch one resource using the given query.
-	If the response contains multiple resources, the first resource is returned.
-	If the response indicates success but doesn't contain any resources, the returned future fails.
-
-	- parameter query: The query describing which resource to fetch.
-
-	- returns: A future that resolves to a tuple containing the fetched resource, the document meta, and the document jsonapi object.
-	*/
+	/// Fetch one resource using the given query.
+	/// If the response contains multiple resources, the first resource is returned.
+	/// If the response indicates success but doesn't contain any resources, the returned future fails.
+	///
+	/// - parameter query: The query describing which resource to fetch.
+	///
+	/// - returns: A future that resolves to a tuple containing the fetched resource, the document meta, and the document jsonapi object.
 	open func findOne<T: Resource>(_ query: Query<T>) -> Future<(resource: T, meta: Metadata?, jsonapi: JSONAPIData?), SpineError> {
 		let promise = Promise<(resource: T, meta: Metadata?, jsonapi: JSONAPIData?), SpineError>()
 
@@ -171,29 +174,25 @@ open class Spine {
 		return promise.future
 	}
 
-	/**
-	Fetch one resource with the given ID and type.
-	If the response contains multiple resources, the first resource is returned.
-	If the response indicates success but doesn't contain any resources, the returned future fails.
-
-	- parameter id:   ID of resource to fetch.
-	- parameter type: The type of resource to fetch.
-
-	- returns: A future that resolves to a tuple containing the fetched resource, the document meta, and the document jsonapi object.
-	*/
+	/// Fetch one resource with the given ID and type.
+	/// If the response contains multiple resources, the first resource is returned.
+	/// If the response indicates success but doesn't contain any resources, the returned future fails.
+	///
+	/// - parameter id:   ID of resource to fetch.
+	/// - parameter type: The type of resource to fetch.
+	///
+	/// - returns: A future that resolves to a tuple containing the fetched resource, the document meta, and the document jsonapi object.
 	open func findOne<T: Resource>(_ id: String, ofType type: T.Type) -> Future<(resource: T, meta: Metadata?, jsonapi: JSONAPIData?), SpineError> {
 		let query = Query(resourceType: type, resourceIDs: [id])
 		return findOne(query)
 	}
 
-	/**
-	Fetch all resources with the given type.
-	This does not explicitly impose any limit, but the server may choose to limit the response.
-
-	- parameter type: The type of resource to fetch.
-
-	- returns: A future that resolves to a tuple containing the fetched ResourceCollection, the document meta, and the document jsonapi object.
-	*/
+	/// Fetch all resources with the given type.
+	/// This does not explicitly impose any limit, but the server may choose to limit the response.
+	///
+	/// - parameter type: The type of resource to fetch.
+	///
+	/// - returns: A future that resolves to a tuple containing the fetched ResourceCollection, the document meta, and the document jsonapi object.
 	open func findAll<T: Resource>(_ type: T.Type) -> Future<(resources: ResourceCollection, meta: Metadata?, jsonapi: JSONAPIData?), SpineError> {
 		let query = Query(resourceType: type)
 		return find(query)
@@ -202,22 +201,20 @@ open class Spine {
 
 	// MARK: Loading
 
-	/**
-	Load the given resource if needed. If its `isLoaded` property is true, it returns the resource as is.
-	Otherwise it loads the resource using the passed query.
-
-	The `queryCallback` parameter can be used if the resource should be loaded by using a custom query.
-	For example, in case you want to include a relationship or load a sparse fieldset.
-
-	Spine creates a basic query to load the resource and passes it to the queryCallback.
-	From this callback you return a modified query, or a whole new query if desired. This returned
-	query is then used when loading the resource.
-
-	- parameter resource:      The resource to ensure.
-	- parameter queryCallback: A optional function that returns the query used to load the resource.
-
-	- returns: A future that resolves to the loaded resource.
-	*/
+	/// Load the given resource if needed. If its `isLoaded` property is true, it returns the resource as is.
+	/// Otherwise it loads the resource using the passed query.
+	///
+	/// The `queryCallback` parameter can be used if the resource should be loaded by using a custom query.
+	/// For example, in case you want to include a relationship or load a sparse fieldset.
+	///
+	/// Spine creates a basic query to load the resource and passes it to the queryCallback.
+	/// From this callback you return a modified query, or a whole new query if desired. This returned
+	/// query is then used when loading the resource.
+	///
+	/// - parameter resource:      The resource to ensure.
+	/// - parameter queryCallback: A optional function that returns the query used to load the resource.
+	///
+	/// - returns: A future that resolves to the loaded resource.
 	open func load<T: Resource>(_ resource: T, queryCallback: ((Query<T>) -> Query<T>)? = nil) -> Future<T, SpineError> {
 		var query = Query(resource: resource)
 		if let callback = queryCallback {
@@ -226,22 +223,20 @@ open class Spine {
 		return loadResourceByExecutingQuery(resource, query: query)
 	}
 
-	/**
-	Reload the given resource even when it's already loaded. The returned resource will be the same
-	instance as the passed resource.
-
-	The `queryCallback` parameter can be used if the resource should be loaded by using a custom query.
-	For example, in case you want to include a relationship or load a sparse fieldset.
-
-	Spine creates a basic query to load the resource and passes it to the queryCallback.
-	From this callback you return a modified query, or a whole new query if desired. This returned
-	query is then used when loading the resource.
-
-	- parameter resource:      The resource to reload.
-	- parameter queryCallback: A optional function that returns the query used to load the resource.
-
-	- returns: A future that resolves to the reloaded resource.
-	*/
+	/// Reload the given resource even when it's already loaded. The returned resource will be the same
+	/// instance as the passed resource.
+	///
+	/// The `queryCallback` parameter can be used if the resource should be loaded by using a custom query.
+	/// For example, in case you want to include a relationship or load a sparse fieldset.
+	///
+	/// Spine creates a basic query to load the resource and passes it to the queryCallback.
+	/// From this callback you return a modified query, or a whole new query if desired. This returned
+	/// query is then used when loading the resource.
+	///
+	/// - parameter resource:      The resource to reload.
+	/// - parameter queryCallback: A optional function that returns the query used to load the resource.
+	///
+	/// - returns: A future that resolves to the reloaded resource.
 	open func reload<T: Resource>(_ resource: T, queryCallback: ((Query<T>) -> Query<T>)? = nil) -> Future<T, SpineError> {
 		var query = Query(resource: resource)
 		if let callback = queryCallback {
@@ -276,14 +271,12 @@ open class Spine {
 
 	// MARK: Paginating
 
-	/**
-	Loads the next page of the given resource collection. The newly loaded resources are appended to the passed collection.
-	When the next page is not available, the returned future will fail with a `NextPageNotAvailable` error code.
-
-	- parameter collection: The collection for which to load the next page.
-
-	- returns: A future that resolves to the ResourceCollection including the newly loaded resources.
-	*/
+	/// Loads the next page of the given resource collection. The newly loaded resources are appended to the passed collection.
+	/// When the next page is not available, the returned future will fail with a `NextPageNotAvailable` error code.
+	///
+	/// - parameter collection: The collection for which to load the next page.
+	///
+	/// - returns: A future that resolves to the ResourceCollection including the newly loaded resources.
 	open func loadNextPageOfCollection(_ collection: ResourceCollection) -> Future<ResourceCollection, SpineError> {
 		let promise = Promise<ResourceCollection, SpineError>()
 
@@ -315,14 +308,12 @@ open class Spine {
 		return promise.future
 	}
 
-	/**
-	Loads the previous page of the given resource collection. The newly loaded resources are prepended to the passed collection.
-	When the previous page is not available, the returned future will fail with a `PreviousPageNotAvailable` error code.
-
-	- parameter collection: The collection for which to load the previous page.
-
-	- returns: A future that resolves to the ResourceCollection including the newly loaded resources.
-	*/
+	/// Loads the previous page of the given resource collection. The newly loaded resources are prepended to the passed collection.
+	/// When the previous page is not available, the returned future will fail with a `PreviousPageNotAvailable` error code.
+	///
+	/// - parameter collection: The collection for which to load the previous page.
+	///
+	/// - returns: A future that resolves to the ResourceCollection including the newly loaded resources.
 	open func loadPreviousPageOfCollection(_ collection: ResourceCollection) -> Future<ResourceCollection, SpineError> {
 		let promise = Promise<ResourceCollection, SpineError>()
 
@@ -357,13 +348,11 @@ open class Spine {
 
 	// MARK: Persisting
 
-	/**
-	Saves the given resource.
-
-	- parameter resource: The resource to save.
-
-	- returns: A future that resolves to the saved resource.
-	*/
+	/// Saves the given resource.
+	///
+	/// - parameter resource: The resource to save.
+	///
+	/// - returns: A future that resolves to the saved resource.
 	open func save<T: Resource>(_ resource: T) -> Future<T, SpineError> {
 		let promise = Promise<T, SpineError>()
 		let operation = SaveOperation(resource: resource, spine: self)
@@ -381,13 +370,12 @@ open class Spine {
 		return promise.future
 	}
 
-	/**
-	Deletes the given resource.
 
-	- parameter resource: The resource to delete.
-
-	- returns: A future
-	*/
+	/// Deletes the given resource.
+	///
+	/// - parameter resource: The resource to delete.
+	///
+	/// - returns: A future
 	open func delete<T: Resource>(_ resource: T) -> Future<Void, SpineError> {
 		let promise = Promise<Void, SpineError>()
 		let operation = DeleteOperation(resource: resource, spine: self)
@@ -406,38 +394,27 @@ open class Spine {
 	}
 }
 
-/**
-Extension regarding registration.
-*/
 public extension Spine {
-	/**
-	Registers a resource class.
-
-	- parameter resourceClass: The resource class to register.
-	*/
+	/// Registers a resource class.
+	///
+	/// - parameter resourceClass: The resource class to register.
 	func registerResource(_ resourceClass: Resource.Type) {
 		serializer.registerResource(resourceClass)
 	}
 
-	/**
-	Registers transformer `transformer`.
-
-	- parameter transformer: The Transformer to register.
-	*/
+	/// Registers a value formatter.
+	///
+	/// - parameter formatter: The formatter to register.
 	func registerValueFormatter<T: ValueFormatter>(_ formatter: T) {
 		serializer.registerValueFormatter(formatter)
 	}
 }
 
 
-// MARK: - Failable
-
-/**
-Represents the result of a failable operation.
-
-- Success: The operation succeeded with the given result.
-- Failure: The operation failed with the given error.
-*/
+/// Represents the result of a failable operation.
+///
+/// - success: The operation succeeded with the given result.
+/// - failure: The operation failed with the given error.
 enum Failable<T, E: Error> {
 	case success(T)
 	case failure(E)

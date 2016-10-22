@@ -13,14 +13,14 @@ fileprivate func statusCodeIsSuccess(_ statusCode: Int?) -> Bool {
 }
 
 fileprivate extension Error {
-	///  Promotes an ErrorType to a higher level SpineError.
-	///  Errors that cannot be represented as a SpineError will be returned as SpineError.UnknownError
+	///  Promotes the rror to a SpineError.
+	///  Errors that cannot be represented as a SpineError will be returned as SpineError.unknownError
 	var asSpineError: SpineError {
 		switch self {
 		case is SpineError:
 			return self as! SpineError
 		case is SerializerError:
-			return .serializerError
+			return .serializerError(self as! SerializerError)
 		default:
 			return .unknownError
 		}
@@ -195,7 +195,7 @@ class DeleteOperation: ConcurrentOperation {
 				self.result = .success()
 			} else if let data = responseData , data.count > 0 {
 				do {
-					let document = try self.serializer.deserializeData(data, mappingTargets: nil)
+					let document = try self.serializer.deserializeData(data)
 					self.result = .failure(.serverError(statusCode: statusCode!, apiErrors: document.errors))
 				} catch let error {
 					self.result = .failure(error.asSpineError)
@@ -380,14 +380,12 @@ private class RelationshipOperation: ConcurrentOperation {
 		
 		if statusCodeIsSuccess(statusCode) {
 			self.result = .success()
-		} else if let data = responseData , data.count > 0 {
+		} else if let data = responseData, data.count > 0 {
 			do {
-				let document = try serializer.deserializeData(data, mappingTargets: nil)
+				let document = try serializer.deserializeData(data)
 				self.result = .failure(.serverError(statusCode: statusCode!, apiErrors: document.errors))
-			} catch let error as SpineError {
-				self.result = .failure(error)
-			} catch {
-				self.result = .failure(.serializerError)
+			} catch let error {
+				self.result = .failure(error.asSpineError)
 			}
 		} else {
 			self.result = .failure(.serverError(statusCode: statusCode!, apiErrors: nil))

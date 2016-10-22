@@ -46,12 +46,11 @@ public enum LogLevel: Int {
 	}
 }
 
-/**
-Logging domains
-- Spine:       The main Spine component.
-- Networking:  The networking component, requests, responses etc.
-- Serializing: The (de)serializing component.
-*/
+/// Logging domains
+///
+/// - spine:       The main Spine component.
+/// - networking:  The networking component, requests, responses etc.
+/// - serializing: The (de)serializing component.
 public enum LogDomain {
 	case spine, networking, serializing
 }
