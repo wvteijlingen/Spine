@@ -108,7 +108,7 @@ struct ValueFormatterRegistry {
 	///
 	/// The actual value formatter used is the first registered formatter that supports the given
 	/// value type for the given attribute type. If no suitable value formatter is found,
-	/// a string representation is returned.
+	/// the value is returned as is.
 	///
 	/// - parameter value:        The value to serialize.
 	/// - parameter forAttribute: The attribute to which the value belongs.
@@ -122,7 +122,7 @@ struct ValueFormatterRegistry {
 		}
 		
 		Spine.logWarning(.serializing, "No value formatter found for attribute \(attribute).")
-		return "\(value)"
+		return value
 	}
 }
 
