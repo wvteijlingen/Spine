@@ -92,7 +92,7 @@ class DeserializeOperation: Operation {
                     do {
                         try extractedIncludedResources.append(deserializeSingleRepresentation(representation))
                     } catch SerializerError.resourceTypeUnregistered(let resourceType) {
-                        Spine.logInfo(.serializing, "Cannot perform deserialization for resource type '\(resourceType)' because it is not registered.")
+                        Spine.logWarning(.serializing, "Cannot perform deserialization for resource type '\(resourceType)' because it is not registered.")
                     }
 				}
 			}
