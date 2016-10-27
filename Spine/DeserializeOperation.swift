@@ -89,7 +89,11 @@ class DeserializeOperation: Operation {
 
 			if let data = data["included"].array {
 				for representation in data {
-					try extractedIncludedResources.append(deserializeSingleRepresentation(representation))
+                    do {
+                        try extractedIncludedResources.append(deserializeSingleRepresentation(representation))
+                    } catch SerializerError.resourceTypeUnregistered(let resourceType) {
+                        Spine.logWarning(.serializing, "Cannot perform deserialization for resource type '\(resourceType)' because it is not registered.")
+                    }
 				}
 			}
 		} catch let error as SerializerError {

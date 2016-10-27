@@ -77,7 +77,7 @@ public enum SerializerError: Error, Equatable {
 	case resourceTypeMissing
 	
 	/// The given resource type has not been registered to Spine.
-	case resourceTypeUnregistered
+    case resourceTypeUnregistered(ResourceType)
 	
 	/// 'ID' field is missing from resource JSON.
 	case resourceIDMissing

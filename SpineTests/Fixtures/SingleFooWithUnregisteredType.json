@@ -32,5 +32,12 @@
 				]
 			}
 		}
-	}
+	},
+    "included": [{
+		"id": "11",
+		"type": "unregistered-types",
+		"links": {
+			"self": "http://example.com/unregistered/11"
+		}
+	}]
 }
