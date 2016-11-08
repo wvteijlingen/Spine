@@ -120,7 +120,7 @@ public struct Query<T: Resource> {
 	/// - parameter fieldName: The name of the field to filter on.
 	/// - parameter value:     The value to check for.
 	/// - parameter type:      The comparison operator to use
-	mutating func addPredicateWithField(_ fieldName: String, value: Any, type: NSComparisonPredicate.Operator) {
+	public mutating func addPredicateWithField(_ fieldName: String, value: Any, type: NSComparisonPredicate.Operator) {
 		if let field = T.fields.filter({ $0.name == fieldName }).first {
 			addPredicateWithKey(field.name, value: value, type: type)
 		} else {
@@ -134,7 +134,7 @@ public struct Query<T: Resource> {
 	/// - parameter key:   The key of the field to filter on.
 	/// - parameter value: The value to check for.
 	/// - parameter type:  The comparison operator to use
-	mutating func addPredicateWithKey(_ key: String, value: Any, type: NSComparisonPredicate.Operator) {
+	public mutating func addPredicateWithKey(_ key: String, value: Any, type: NSComparisonPredicate.Operator) {
 		let predicate = NSComparisonPredicate(
 				leftExpression: NSExpression(forKeyPath: key),
 				rightExpression: NSExpression(forConstantValue: value),
