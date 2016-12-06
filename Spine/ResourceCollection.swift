@@ -209,7 +209,7 @@ public class LinkedResourceCollection: ResourceCollection {
 	/// Unlink `resources` from the parent resource by removing then from the collection.
 	/// This marks the resources as unlinked. The relationship will be persisted when
 	/// the parent resource is saved.
-	public func unlinkResources(_ resource: [Resource]) {
+	public func unlinkResources(_ resources: [Resource]) {
 		for resource in resources {
 			unlinkResource(resource)
 		}
