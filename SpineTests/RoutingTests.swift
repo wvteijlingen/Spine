@@ -42,6 +42,16 @@ class RoutingTests: XCTestCase {
 		XCTAssertEqual(url, expectedURL, "URL not as expected.")
 	}
 	
+	func testURLForQueryWithArrayFilter() {
+		var query = Query(resourceType: Foo.self)
+		query.whereAttribute("stringAttribute", equalTo: ["stringValue1", "stringValue2"])
+		
+		let url = spine.router.urlForQuery(query)
+		let expectedURL = URL(string: "http://example.com/foos?filter[string-attribute]=stringValue1,stringValue2")!
+		
+		XCTAssertEqual(url, expectedURL, "URL not as expected.")
+	}
+	
 	func testPagePagination() {
 		var query = Query(resourceType: Foo.self)
 		query.paginate(PageBasedPagination(pageNumber: 1, pageSize: 5))
