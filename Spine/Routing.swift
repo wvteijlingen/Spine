@@ -187,7 +187,8 @@ open class JSONAPIRouter: Router {
 	/**
 	Returns an URLQueryItem that represents a filter in a URL.
 	By default this method only supports 'equal to' predicates. You can override this method to add support for other filtering strategies.
-	It uses the String(describing:) method to convert `value` to a string. If `value` is nil, a string "null" will be used.
+	It uses the String(describing:) method to convert values to strings. If `value` is nil, a string "null" will be used. Arrays will be
+	represented as "firstValue,secondValue,thirdValue".
 
 	- parameter key:          The key that is filtered.
 	- parameter value:        The value on which is filtered.
@@ -197,8 +198,15 @@ open class JSONAPIRouter: Router {
 	*/
 	open func queryItemForFilter(on key: String, value: Any?, operatorType: NSComparisonPredicate.Operator) -> URLQueryItem {
 		assert(operatorType == .equalTo, "The built in router only supports Query filter expressions of type 'equalTo'")
-		let stringValue = value ?? "null"
-		return URLQueryItem(name: "filter[\(key)]", value: String(describing: stringValue))
+		let stringValue: String
+		if let valueArray = value as? [Any] {
+			stringValue = valueArray.map { String(describing: $0) }.joined(separator: ",")
+		} else if let value = value {
+			stringValue = String(describing: value)
+		} else {
+			stringValue = "null"
+		}
+		return URLQueryItem(name: "filter[\(key)]", value: stringValue)
 	}
 
 	/**
