@@ -63,7 +63,7 @@ public struct Query<T: Resource> {
 	public init(resource: T) {
 		assert(resource.id != nil, "Cannot instantiate query for resource, id is nil.")
 		self.resourceType = resource.resourceType
-		self.url = resource.url as URL?
+		self.url = resource.url
 		self.resourceIDs = [resource.id!]
 	}
 	
@@ -75,7 +75,7 @@ public struct Query<T: Resource> {
 	/// - returns: Query
 	public init(resourceType: T.Type, resourceCollection: ResourceCollection) {
 		self.resourceType = T.resourceType
-		self.url = resourceCollection.resourcesURL as URL?
+		self.url = resourceCollection.resourcesURL
 	}
 
 	/// Inits a new query that fetches resource of type `resourceType`, by using the given URL.
