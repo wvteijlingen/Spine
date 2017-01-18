@@ -174,7 +174,7 @@ class DeserializeOperation: Operation {
 		
 		// Extract data
 		resource.id = id
-		resource.url = representation["links"]["self"].URL
+		resource.url = representation["links"]["self"].url
 		resource.meta = representation["meta"].dictionaryObject
 		extractAttributes(from: representation, intoResource: resource)
 		extractRelationships(from: representation, intoResource: resource)
@@ -275,7 +275,7 @@ class DeserializeOperation: Operation {
 				}
 			}
 			
-			if let resourceURL = linkData["links"]?["related"].URL {
+			if let resourceURL = linkData["links"]?["related"].url {
 				resource!.url = resourceURL
 			}
 		}
@@ -294,8 +294,8 @@ class DeserializeOperation: Operation {
 		var resourceCollection: LinkedResourceCollection? = nil
 
 		if let linkData = serializedData["relationships"][key].dictionary {
-			let resourcesURL: URL? = linkData["links"]?["related"].URL
-			let linkURL: URL? = linkData["links"]?["self"].URL
+			let resourcesURL: URL? = linkData["links"]?["related"].url
+			let linkURL: URL? = linkData["links"]?["self"].url
 			
 			if let linkage = linkData["data"]?.array {
 				let mappedLinkage = linkage.map { ResourceIdentifier(type: $0["type"].stringValue, id: $0["id"].stringValue) }
@@ -314,8 +314,8 @@ class DeserializeOperation: Operation {
 	///
 	/// - returns: A RelationshipData object.
 	fileprivate func extractRelationshipData(_ linkData: JSON) -> RelationshipData {
-		let selfURL = linkData["links"]["self"].URL
-		let relatedURL = linkData["links"]["related"].URL
+		let selfURL = linkData["links"]["self"].url
+		let relatedURL = linkData["links"]["related"].url
 		let data: [ResourceIdentifier]?
 		
 		if let toOne = linkData["data"].dictionary {
