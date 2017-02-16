@@ -155,7 +155,7 @@ Resources can be fetched using find methods:
 // Fetch posts with ID 1 and 2
 spine.find(["1", "2"], ofType: Post).onSuccess { resources, meta, jsonapi in
   println("Fetched resource collection: \(resources)")
-.onFailure { error in
+}.onFailure { error in
   println("Fetching failed: \(error)")
 }
 
@@ -172,7 +172,7 @@ query.addAscendingOrder("creationDate") // Sort on creation date
 
 spine.find(query).onSuccess { resources, meta, jsonapi in
   println("Fetched resource collection: \(resources)")
-.onFailure { error in
+}.onFailure { error in
   println("Fetching failed: \(error)")
 }
 ```
@@ -183,7 +183,7 @@ All fetch methods return a Future with `onSuccess` and `onFailure` callbacks.
 ```swift
 spine.save(post).onSuccess { _ in
     println("Saving success")
-.onFailure { error in
+}.onFailure { error in
     println("Saving failed: \(error)")
 }
 ```
@@ -193,7 +193,7 @@ Extra care MUST be taken regarding related resources. Saving does not automatica
 ```swift
 spine.delete(post).onSuccess {
     println("Deleting success")
-.onFailure { error in
+}.onFailure { error in
     println("Deleting failed: \(error)")
 }
 ```
