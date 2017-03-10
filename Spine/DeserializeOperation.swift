@@ -126,7 +126,9 @@ class DeserializeOperation: Operation {
 			extractedLinks = [:]
 			
 			for (key, value) in links {
-				extractedLinks![key] = URL(string: value.stringValue)!
+				if let linkURL = URL(string: value.stringValue) {
+					extractedLinks![key] = linkURL
+				}
 			}
 		}
 		
