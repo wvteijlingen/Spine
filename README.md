@@ -1,5 +1,8 @@
 [![Build Status](https://travis-ci.org/wvteijlingen/Spine.svg?branch=swift-2.0)](https://travis-ci.org/wvteijlingen/Spine) [![Join the chat at https://gitter.im/wvteijlingen/Spine](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/wvteijlingen/Spine?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
+# Not maintained
+I'm not maintaining this library anymore. The project that used this was shelved and I'm too busy with other work, so I cannot afford to spend time on this anymore. Feel free to fork this if you want, but don't expect me to maintain or help with issues for the foreseeable future. ❤️
+
 # Spine
 Spine is a Swift library for working with APIs that adhere to the [jsonapi.org](http://jsonapi.org) standard. It supports mapping to custom model classes, fetching, advanced querying, linking and persisting.
 
