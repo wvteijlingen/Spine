@@ -1,6 +1,8 @@
 [![Build Status](https://travis-ci.org/wvteijlingen/Spine.svg?branch=swift-2.0)](https://travis-ci.org/wvteijlingen/Spine) [![Join the chat at https://gitter.im/wvteijlingen/Spine](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/wvteijlingen/Spine?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 # Not maintained
+**The community is continuing development of Spine at [jsonapi-ios/Spine](https://github.com/jsonapi-ios/Spine)**. Feel free to use that fork, and submit pull-requests or open issues there.
+
 I'm not maintaining this library anymore. The project that used this was shelved and I'm too busy with other work, so I cannot afford to spend time on this anymore. Feel free to fork this if you want, but don't expect me to maintain or help with issues for the foreseeable future. ❤️
 
 # Spine
